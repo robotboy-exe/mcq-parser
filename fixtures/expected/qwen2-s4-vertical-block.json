@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "qwen2-s4-vertical-block",
+  "source": [
+    "archive/migration-docs/qwen-2-reconciled.md §6 S4 (assistant-constructed micro-example)",
+    "archive/migration-docs/qwen-2-reconciled.md §7 S4"
+  ],
+  "provenance": "Assistant-constructed micro-example, explicitly NOT user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/qwen2-s4-vertical-block.txt",
+  "kind": "question",
+  "expected": {
+    "question_contains": [
+      "What is the capital of Nigeria?"
+    ],
+    "a": "Lagos",
+    "b": "Abuja",
+    "c": "Kano",
+    "d": "Ibadan",
+    "flags": null
+  },
+  "must_not": [
+    "The four vertical A-D options are merged into the stem",
+    "An option label remains inside the option text"
+  ],
+  "notes": [
+    "The source states that a vertical A-D block yields four options.",
+    "This chunk has no printed question number; flags are not asserted."
+  ],
+  "discrepancies": []
+}

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "claude-s1-joseph-blank-c",
+  "source": [
+    "archive/migration-docs/claude-migration.md §6 S1 (verbatim user-supplied text)",
+    "archive/migration-docs/claude-migration.md §7 S1 (expected behavior)",
+    "archive/migration-docs/qwen-2-reconciled.md §6 S3 (identical raw text)",
+    "archive/migration-docs/qwen-2-reconciled.md §7 S3 (expected behavior)",
+    "archive/migration-docs/qwen-2-reconciled.md §3 E05"
+  ],
+  "provenance": "Verbatim user-supplied question text. claude S1 and qwen2 S3 are byte-identical, so they share this fixture.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/claude-s1-joseph-blank-c.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "questions": [
+      {
+        "num": 3,
+        "a": "stop the famine",
+        "b": "preserve life",
+        "c": "",
+        "d": "seek revenge",
+        "e": "",
+        "f": "",
+        "flags": [
+          "option C missing"
+        ]
+      }
+    ],
+    "forbidden_flags": [
+      "option D missing"
+    ]
+  },
+  "must_not": [
+    "C contains the text 'D. seek revenge'",
+    "D is empty",
+    "D starts with the literal 'D.' label",
+    "C is reported as present/non-empty"
+  ],
+  "notes": [
+    "claude §6 records that its parser test used a shortened stem with the same options. The expected options and flags above come from §6/§7 and qwen2 §7 S3.",
+    "claude §6 says the parser result was A 'stop the famine', B 'preserve life', C '', D 'seek revenge', flags ['option C missing'].",
+    "qwen2 §7 S3 additionally requires that d does not contain the literal 'D.' prefix."
+  ],
+  "discrepancies": [
+    "Implementation differs between trusted variants: B recovers the blank C via its absorbed-option post-processor; C recovers it via the [^\\S\\n]* regex change. Both are documented to produce the same output asserted here."
+  ]
+}

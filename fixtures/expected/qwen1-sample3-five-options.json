@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "qwen1-sample3-five-options",
+  "source": [
+    "archive/migration-docs/qwen-1-migration.md §6 Sample 3",
+    "archive/migration-docs/qwen-1-migration.md §7 Sample 3",
+    "archive/migration-docs/qwen-2-reconciled.md §3 E18"
+  ],
+  "provenance": "Sample from the qwen-1 migration doc, not identified there as user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/qwen1-sample3-five-options.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "questions": [
+      {
+        "num": 33,
+        "question_contains": [
+          "Abraham and his nephew Lot decided to separate into two different camps"
+        ],
+        "a": "for fear of complete annihilation by the enemies",
+        "b": "to enable them to capture more votes from the two camps",
+        "c": "to keep Chedor-laomer from capturing Sodom and Gomorrah",
+        "d": "to avoid further trouble between their rival herdsmen over pasture and water",
+        "e": "because Lot demanded his independence as he was now of age",
+        "flags": null
+      }
+    ]
+  },
+  "must_not": [
+    "Option E is dropped",
+    "Option E is merged into Option D by parseQuestion",
+    "The original Option D is replaced at parse time"
+  ],
+  "notes": [
+    "qwen-1 §7 requires all five options to be parsed.",
+    "The source does not state the expected flags; flags is null (not asserted).",
+    "The documented form behavior with an answer key of E is: option_d receives the E text and the original D is dropped. That is fillForm behavior, not parseQuestion output. No key is supplied in this raw sample."
+  ],
+  "discrepancies": [
+    "The parse output is expected to include E across A/B/C. The documented form/tick output differs: trusted-variant-B computes 'ABCDEF'.indexOf('E') = 4, a radio value that does not exist, while baseline C maps E/F to D (value 3). This fixture is parse-only."
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "claude-s3-father-of-faith-e-dotless",
+  "source": [
+    "archive/migration-docs/claude-migration.md §6 S3 (assistant-written test input)",
+    "archive/migration-docs/claude-migration.md §7 S2/S3 (expected behavior)"
+  ],
+  "provenance": "Assistant-written test input, not user OCR. Used to test a dotless Option E.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/claude-s3-father-of-faith-e-dotless.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question_contains": [
+      "Who was the father of faith"
+    ],
+    "a": "Isaac",
+    "b": "Jacob",
+    "c": "Moses",
+    "d": "David",
+    "e": "Abraham",
+    "f": "",
+    "flags": []
+  },
+  "must_not": [
+    "D is left blank",
+    "A wrong E is merged into D",
+    "The UI reports 'ticked Option E'"
+  ],
+  "notes": [
+    "The source reports no flags for this sample.",
+    "The sample has no printed question number. A null-num parse would add 'question number missing'; the source's 'no flags' result therefore assumes a numbered parse. The num used in the source test is not documented.",
+    "With a key of E, the documented form behavior is: D becomes 'Abraham' and D is ticked. With a key of A-D, E is dropped. With no key, 'E. Abraham' is appended to D. Those are fillForm behaviors, not parseQuestion output."
+  ],
+  "discrepancies": [
+    "trusted-variant-A: the known-issues doc records that options without a period are absorbed into the question. A would not produce the documented e='Abraham' output for this dotless sample; B and C would."
+  ]
+}

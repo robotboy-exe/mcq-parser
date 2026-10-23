@@ -2,7 +2,7 @@
 
 Status: Phase 1 complete (Workspace Structure + Archive). Phase 2 complete
 (Code Extraction + Baseline Selection). Phase 3 complete (Edge Cases +
-Invariants). Phase 4 not started.
+Invariants). Phase 4 complete (Fixtures). Phase 5 not started.
 
 ## Directory Structure
 
@@ -213,7 +213,136 @@ origin-wide and shared with the live helper, qwen-2 R15).
 
 No edge cases or invariants were invented; every entry cites a source doc.
 
+## Phase 4: Fixtures
+
+### Method
+
+- Inputs were copied verbatim from the `text` code blocks in
+  `archive/migration-docs/*.md`. Line endings present in a source block
+  (including CRLF) were preserved.
+- The S4 block is a list of fragments rather than one paste. Each fragment is
+  its own fixture; where a fragment needs a preceding line for a documented
+  newline rule, the prepended S4 line is recorded in that fixture's
+  `provenance` and `notes`.
+- Expected values were transcribed from the expected-behavior sections of the
+  migration docs. The parser was **not** run to generate any expected output.
+- A fixture has one input file and one expected JSON file. `status` is
+  `CONFIRMED` when the docs state the expected output and `PENDING` when they do
+  not.
+- `flags: null` means the source does not document the flags for that sample;
+  it is not an assertion that no flags occur.
+- `must_not` records the explicit negative expectations in the docs.
+- `discrepancies` records source or trusted-variant differences without
+  resolving them.
+
+### Fixture schema (`schema_version: 1`)
+
+| Field | Meaning |
+|---|---|
+| `kind: "questions"` | Run the full paste path: `splitSections` → `splitQuestions` → `parseQuestion`. |
+| `kind: "question"` | Run `parseQuestion` on the whole input as one chunk. Used for the assistant-written micro-samples. |
+| `kind: "key"` | Run `parseKey` on the input. |
+| `parse_num` | Harness-only number to pass to `parseQuestion` when the raw sample has no printed number. Used only where the source's "no flags" result assumes a numbered parse; it is not a documented book number. |
+| `expected.queue_count` | Number of queued question chunks. |
+| `expected.header` | Documented `exam_year` and/or `subject_contains_any`. |
+| `expected.questions` | Per-question assertions; a question may be selected by `num` and/or `index`. Only documented fields are present. |
+| `expected.questions_with_e` | Question numbers documented to have an Option E. |
+| `expected.forbidden_flags` | Flags that must not appear anywhere in the result. |
+| `expected.form_behavior_no_key` | Documented `fillForm` behavior for future UI tests; not asserted by a parser-only runner. |
+| `expected.key` | Expected `parseKey` map. |
+| `expected.ui_notes` | Documented `tick()` behavior for future UI tests. |
+| `notes` | Source caveats and interpretation limits. |
+| `must_not` | Documented behaviors that must not happen. |
+
+### Inventory
+
+| Fixture | Source | Kind | Status | Documented assertion |
+|---|---|---|---|---|
+| `claude-s1-joseph-blank-c` | claude §6/§7 S1; qwen2 §6/§7 S3 (identical input) | questions | CONFIRMED | Q3: A/B/D text, C empty, flag `option C missing` only; D has no `D.` prefix |
+| `claude-s2-father-of-faith-e-dotted` | claude §6/§7 S2 | question | CONFIRMED | E = `Abraham`; no flags |
+| `claude-s3-father-of-faith-e-dotless` | claude §6/§7 S3 | question | CONFIRMED | dotless `E Abraham` parses as E = `Abraham`; no flags |
+| `claude-s4-father-of-faith-four-options` | claude §6/§7 S4 | question | CONFIRMED | E/F empty; no flags |
+| `claude-s5-option-text-next-line` | claude §6/§7 S5 | question | CONFIRMED | text on the line after `A.` attaches to A; no flags |
+| `qwen1-sample1-quotes-before-capitals` | qwen1 §6/§7 Sample 1 | questions | CONFIRMED | Q36 splits cleanly with a leading quoted stem |
+| `qwen1-sample2-crk-header` | qwen1 §6/§7 Sample 2 | questions | CONFIRMED | year 2021; CRK→CRS subject; header is not a num:null question |
+| `qwen1-sample3-five-options` | qwen1 §6/§7 Sample 3 | questions | CONFIRMED | all five options parse; E exposed |
+| `qwen1-sample4-dotless-option-a` | qwen1 §6/§7 Sample 4 | questions | CONFIRMED | `A 75 years` becomes Option A, not stem text |
+| `qwen1-sample5-question-starting-a` | qwen1 §6/§7 Sample 5 | questions | CONFIRMED | stem-leading `A good` is not Option A |
+| `qwen2-s1-crk-2021-full` | qwen2 §6/§7 S1 | questions | CONFIRMED | 40 items; 2021; Q20 inline options exact and flag-free; E on Q1/21/31-35; no duplicate-letter flags; quoted/underscore stems preserved |
+| `qwen2-s2-article-vs-option` | qwen2 §6/§7 S2 | questions | CONFIRMED | leading `A 5` stays in stem; `A 75/105/85/99 years`; no flags |
+| `qwen2-s4-article-start` | qwen2 §6/§7 S4 (assistant micro-example) | question | CONFIRMED | chunk-leading `A 5` is not an option |
+| `qwen2-s4-dotted-start` | qwen2 §6/§7 S4 (assistant micro-example) | question | CONFIRMED | `A. 5 years` is Option A |
+| `qwen2-s4-dotless-newline-a` | qwen2 §6/§7 S4 (S4 stem line + `A 75`) | question | CONFIRMED | `A 75` after a newline is Option A; no duplicate-letter flag |
+| `qwen2-s4-dotted-newline-b` | qwen2 §6/§7 S4 (`A 75` / `B. 75`) | question | CONFIRMED | `B. 75` after a newline is Option B |
+| `qwen2-s4-vertical-block` | qwen2 §6/§7 S4 (assistant micro-example) | question | CONFIRMED | vertical A-D block yields four options |
+| `qwen2-s4-inline-block` | qwen2 §6/§7 S4 (assistant micro-example) | question | CONFIRMED | fully inline A-D run yields four options |
+| `qwen2-s5-answer-key` | qwen2 §6/§7 S5 | key | CONFIRMED | `1.B 2.C 3.A` → `{1:B, 2:C, 3:A}` |
+
+### Counts by status
+
+| Status | Count |
+|---|---|
+| CONFIRMED | 19 |
+| PENDING | 0 |
+
+Every extracted raw sample has at least the options/flags expected by a source
+doc, so no fixture needed PENDING status. Samples with no raw text were not
+turned into fixtures.
+
+### Duplicates, omissions, and incomplete inputs
+
+- `claude-migration.md` S1 and `qwen-2-reconciled.md` S3 are byte-identical.
+  They share `claude-s1-joseph-blank-c`; only one input/expected pair exists.
+- `claude-migration.md` S6 (four E scenarios) has no full raw paste; only
+  paraphrase fragments. No fixture was created.
+- `claude-migration.md` S7 lists fragments (`=== ANSWER KEY ===`,
+  `1.A 2.B 3.C`, `5. [missing]`, `Vitamin C.`, `Vitamin B-12`, `Group B)`), not
+  raw pastes. The key fragment is covered by `qwen2-s5-answer-key`; the rest are
+  edge-case triggers, not sample inputs.
+- `qwen-1-migration.md` Sample 2 is truncated with a literal `...`; only its
+  documented header/year/subject assertions and the first option are captured.
+- `qwen-2-reconciled.md` S4 is explicitly labelled **not user OCR**. Its six
+  micro-examples are split into six `question` fixtures. The block supplies no
+  stem for the two newline fragments, so `qwen2-s4-dotless-newline-a` pairs the
+  `A 75` fragment with the S4 stem line to provide the preceding newline that
+  E03 requires; the intervening `A. 5 years` line is a separate S4 example and
+  is covered by `qwen2-s4-dotted-start`. `qwen2-s4-dotted-newline-b` uses the
+  verbatim `A 75` / `B. 75` pair; there `A 75` is at chunk start, so the
+  documented dotless rule (E02) leaves it in the stem and only `B. 75` is
+  asserted.
+
+### Discrepancies recorded in fixtures
+
+1. **CRK/CRS alias** — `qwen1-sample2-crk-header` and `qwen2-s1-crk-2021-full`
+   assert the documented CRS/CHRISTIAN RELIGIOUS match, with an explicit note
+   that `claude-migration.md` §8 issue 7 infers the deployed subject list may
+   have no such option (EC-41).
+2. **E/F tick across variants** — E samples note that parse output should match
+   A/B/C, but trusted-variant-B computes radio values 4/5 while baseline C maps
+   E/F to D (EC-40).
+3. **Dotless options in trusted-variant-A** — `claude-s3`, `qwen1-sample4`, and
+   `qwen2-s2` note that A's known dotless-option bug would produce different
+   output.
+4. **Blank-C repair mechanism** — `claude-s1` notes that B recovers the blank C
+   with its post-processor while C uses the `[^\S\n]*` regex; both are documented
+   to produce the same output.
+5. **Q11/Q12 continuation** — `qwen2-s1` records the documented quirk but makes
+   no assertion, because qwen2 calls it unresolved/unconfirmed as desirable.
+6. **Numbering caveat for claude S2-S5** — those samples have no printed question
+   number; the docs' "no flags" result assumes a numbered parse. The num used in
+   the source test is not documented, so the fixture records the caveat rather
+   than inventing one.
+
+### Integrity checks
+
+- 19 input files and 19 expected files; every input has exactly one expected
+  file and every `input_file` path exists.
+- Input files preserve the source line endings, including CRLF in the
+  `qwen-2-reconciled.md` blocks and the S4 micro-examples.
+- All expected files parse as JSON with schema version 1 and a status of
+  `CONFIRMED` or `PENDING`.
+
 ## Next Step
 
-Awaiting Phase 3 verification. Do not proceed to Phase 4 until the edge cases
-and invariants are confirmed correct.
+Awaiting Phase 4 verification. Do not proceed to Phase 5 until the fixtures are
+confirmed correct.

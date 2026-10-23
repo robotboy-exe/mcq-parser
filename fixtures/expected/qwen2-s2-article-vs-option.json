@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "qwen2-s2-article-vs-option",
+  "source": [
+    "archive/migration-docs/qwen-2-reconciled.md §6 S2 (user-supplied, incomplete question)",
+    "archive/migration-docs/qwen-2-reconciled.md §7 S2 (expected behavior)",
+    "archive/migration-docs/qwen-2-reconciled.md §3 E02-E04"
+  ],
+  "provenance": "User-supplied but incomplete: the stem is truncated to '... time ?'; no answer key supplied.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/qwen2-s2-article-vs-option.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "questions": [
+      {
+        "num": 35,
+        "question_contains": [
+          "A 5 year old boy is brought to the clinic... time ?"
+        ],
+        "a": "75 years",
+        "b": "105 years",
+        "c": "85 years",
+        "d": "99 years",
+        "flags": []
+      }
+    ],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)",
+      "option A missing",
+      "option B missing",
+      "option C missing",
+      "option D missing"
+    ]
+  },
+  "must_not": [
+    "'A 5 year old boy' is treated as Option A",
+    "The real newline 'A 75 years' option is dropped",
+    "The question stem is truncated at the leading 'A'",
+    "The duplicate-letter flag is raised"
+  ],
+  "notes": [
+    "The source records this as a failure before the fix: 'Check this one: a letter appears twice (merged questions?)'. The fixed expected behavior is one Option A and no flags.",
+    "The stem is incomplete in the source; only the documented containment above is asserted."
+  ],
+  "discrepancies": [
+    "trusted-variant-A: the known-issues doc records that dotless options are absorbed into the question. A would not produce the documented a='75 years' output for this sample; B and C would."
+  ]
+}

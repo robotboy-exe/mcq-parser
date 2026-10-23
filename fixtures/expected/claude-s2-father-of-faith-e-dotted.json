@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "id": "claude-s2-father-of-faith-e-dotted",
+  "source": [
+    "archive/migration-docs/claude-migration.md §6 S2 (assistant-written test input)",
+    "archive/migration-docs/claude-migration.md §7 S2/S3 (expected behavior)"
+  ],
+  "provenance": "Assistant-written test input, not user OCR. Used to test a dotted Option E.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/claude-s2-father-of-faith-e-dotted.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question_contains": [
+      "Who was the father of faith"
+    ],
+    "a": "Isaac",
+    "b": "Jacob",
+    "c": "Moses",
+    "d": "David",
+    "e": "Abraham",
+    "f": "",
+    "flags": []
+  },
+  "must_not": [
+    "D is left blank",
+    "A wrong E is merged into D",
+    "The UI reports 'ticked Option E'"
+  ],
+  "notes": [
+    "The source reports no flags for this sample.",
+    "The sample has no printed question number. A null-num parse would add 'question number missing'; the source's 'no flags' result therefore assumes a numbered parse. The num used in the source test is not documented.",
+    "With a key of E, the documented form behavior is: D becomes 'Abraham' and D is ticked. With a key of A-D, E is dropped. With no key, 'E. Abraham' is appended to D. Those are fillForm behaviors, not parseQuestion output."
+  ],
+  "discrepancies": [
+    "The parse output is expected to match across A/B/C for this dotted E sample. The documented form/tick output differs: trusted-variant-B computes 'ABCDEF'.indexOf('E') = 4, a radio value that does not exist, while baseline C maps E/F to D (value 3). This fixture is parse-only."
+  ]
+}

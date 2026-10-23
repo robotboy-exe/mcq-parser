@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "qwen1-sample2-crk-header",
+  "source": [
+    "archive/migration-docs/qwen-1-migration.md §6 Sample 2",
+    "archive/migration-docs/qwen-1-migration.md §7 Sample 2",
+    "archive/migration-docs/qwen-2-reconciled.md §3 E15"
+  ],
+  "provenance": "Truncated sample from qwen-1: the option list is elided with a literal '...' line.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/qwen1-sample2-crk-header.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "header": {
+      "year": 2021,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ]
+    },
+    "questions": [
+      {
+        "num": 1,
+        "question_contains": [
+          "What is the meaning of the name Samuel?"
+        ],
+        "a": "because i have asked him of the Lord"
+      }
+    ]
+  },
+  "must_not": [
+    "The header 'IMPROVISED C. R. K. QUESTIONS FOR 2021...' is parsed as a num:null question",
+    "exam_year is not 2021",
+    "The subject is selected without the CRK/CRS alias"
+  ],
+  "notes": [
+    "The raw sample is incomplete: options B-D are replaced by a literal '...' line, so flags for the missing options are not asserted.",
+    "qwen-1 §7 requires year 2021 and a CRS/CHRISTIAN RELIGIOUS subject match.",
+    "The subject expectation is conditional on the deployed subject list containing a CRS or CHRISTIAN RELIGIOUS option; see discrepancies."
+  ],
+  "discrepancies": [
+    "EC-41: qwen-2 says the CRK alias is handled, but claude-migration §8 issue 7 infers the deployed admin_questions subject list may contain no CRS/Christian Religious option, in which case the alias selects nothing."
+  ]
+}

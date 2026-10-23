@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "id": "qwen2-s4-dotless-newline-a",
+  "source": [
+    "archive/migration-docs/qwen-2-reconciled.md §6 S4 (assistant-constructed micro-example: S4 stem line + 'A 75')",
+    "archive/migration-docs/qwen-2-reconciled.md §7 S4",
+    "archive/migration-docs/qwen-2-reconciled.md §3 E02, E03, E04"
+  ],
+  "provenance": "Assistant-constructed micro-example, explicitly NOT user OCR. The S4 fragment 'A 75' needs a preceding line for the documented dotless-after-newline rule (E03); the S4 stem line supplies it. The intervening 'A. 5 years' line is a separate S4 example and is covered by qwen2-s4-dotted-start.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/qwen2-s4-dotless-newline-a.txt",
+  "kind": "question",
+  "expected": {
+    "question_contains": [
+      "A 5 year old boy is brought to the clinic..."
+    ],
+    "a": "75",
+    "flags": null,
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "'A 5 year old...' is treated as Option A",
+    "The newline 'A 75' is left in the question stem",
+    "The duplicate-letter flag is raised"
+  ],
+  "notes": [
+    "§7 S4 states that a newline 'A 75' is Option A.",
+    "E04 documents this exact combination (prose article at chunk start plus a dotless option after a newline): exactly one Option A and no duplicate flag.",
+    "This chunk has no printed question number; flags are not asserted apart from the documented duplicate-letter prohibition."
+  ],
+  "discrepancies": [
+    "trusted-variant-A: options without a period are absorbed into the question (A's known dotless-option bug), so A would not produce a='75' for this sample; B and C would."
+  ]
+}

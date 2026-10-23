@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "claude-s4-father-of-faith-four-options",
+  "source": [
+    "archive/migration-docs/claude-migration.md §6 S4 (assistant-written test input)",
+    "archive/migration-docs/claude-migration.md §7 S4 (expected behavior)"
+  ],
+  "provenance": "Assistant-written test input, not user OCR. Used to test a normal four-option question.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/claude-s4-father-of-faith-four-options.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question_contains": [
+      "Who was the father of faith"
+    ],
+    "a": "Isaac",
+    "b": "Jacob",
+    "c": "Moses",
+    "d": "David",
+    "e": "",
+    "f": "",
+    "flags": []
+  },
+  "must_not": [
+    "An Option E is invented",
+    "E or F is non-empty"
+  ],
+  "notes": [
+    "The source reports no flags for this sample.",
+    "The sample has no printed question number. A null-num parse would add 'question number missing'; the source's 'no flags' result therefore assumes a numbered parse. The num used in the source test is not documented."
+  ],
+  "discrepancies": []
+}

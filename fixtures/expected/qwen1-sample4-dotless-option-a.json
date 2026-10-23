@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "qwen1-sample4-dotless-option-a",
+  "source": [
+    "archive/migration-docs/qwen-1-migration.md §6 Sample 4",
+    "archive/migration-docs/qwen-1-migration.md §7 Sample 4",
+    "archive/migration-docs/qwen-2-reconciled.md §3 E03"
+  ],
+  "provenance": "Sample from the qwen-1 migration doc, not identified there as user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/qwen1-sample4-dotless-option-a.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "questions": [
+      {
+        "num": 35,
+        "question_contains": [
+          "How old was Abram when God appeared to him the second time ?"
+        ],
+        "a": "75 years",
+        "b": "105 years",
+        "c": "85 years",
+        "d": "99 years",
+        "flags": null
+      }
+    ]
+  },
+  "must_not": [
+    "The text 'A 75 years' is merged into the question stem",
+    "Option A is missing",
+    "The leading 'A' in the stem (none here) is treated as an option"
+  ],
+  "notes": [
+    "qwen-1 §7 requires 'A 75 years' to parse as Option A and not merge into the stem.",
+    "The source does not state the expected flags; flags is null (not asserted)."
+  ],
+  "discrepancies": [
+    "trusted-variant-A: the known-issues doc records that dotless options are absorbed into the question. A would not produce the documented a='75 years' output for this sample; B and C would."
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "qwen2-s5-answer-key",
+  "source": [
+    "archive/migration-docs/qwen-2-reconciled.md §6 S5 (answer-key format example from the UI label)",
+    "archive/migration-docs/qwen-2-reconciled.md §7 S5",
+    "archive/migration-docs/claude-migration.md §6 S7 (same fragment: '1.A 2.B 3.C')"
+  ],
+  "provenance": "Answer-key format example taken from the bookmarklet's own UI label.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/qwen2-s5-answer-key.txt",
+  "kind": "key",
+  "expected": {
+    "key": {
+      "1": "B",
+      "2": "C",
+      "3": "A"
+    },
+    "ui_notes": [
+      "When the queue is on book question 1, radio value 1 (Option B) is checked.",
+      "Missing numbers leave the radio untouched and produce a 'pick it yourself' message."
+    ]
+  },
+  "must_not": [
+    "A number is mapped to the wrong letter",
+    "Separators or the absence of a separator changes the mapping"
+  ],
+  "notes": [
+    "The source states this exact mapping. The radio/message behavior is tick() behavior, not parseKey output."
+  ],
+  "discrepancies": []
+}

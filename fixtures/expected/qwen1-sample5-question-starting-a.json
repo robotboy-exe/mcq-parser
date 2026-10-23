@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "qwen1-sample5-question-starting-a",
+  "source": [
+    "archive/migration-docs/qwen-1-migration.md §6 Sample 5",
+    "archive/migration-docs/qwen-1-migration.md §7 Sample 5",
+    "archive/migration-docs/qwen-2-reconciled.md §3 E08"
+  ],
+  "provenance": "Sample from the qwen-1 migration doc, not identified there as user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/qwen1-sample5-question-starting-a.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "questions": [
+      {
+        "num": 30,
+        "question_contains": [
+          "A good example of nature miracles as performed by Jesus was that of"
+        ],
+        "a": "Healing of the leper",
+        "b": "Casting out demons",
+        "c": "Raising the dead",
+        "d": "Calming the storm",
+        "flags": null
+      }
+    ]
+  },
+  "must_not": [
+    "'A good' in the stem is parsed as Option A",
+    "The stem is truncated at the leading 'A'",
+    "The real A-D options on following lines are lost"
+  ],
+  "notes": [
+    "qwen-1 §7 requires 'A good' not to be treated as Option A and the real A-D lines to parse normally.",
+    "The source does not state the expected flags; flags is null (not asserted)."
+  ],
+  "discrepancies": []
+}

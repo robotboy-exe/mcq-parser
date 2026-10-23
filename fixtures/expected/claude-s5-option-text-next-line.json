@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "claude-s5-option-text-next-line",
+  "source": [
+    "archive/migration-docs/claude-migration.md §6 S5 (assistant-written test input)",
+    "archive/migration-docs/claude-migration.md §7 S5 (expected behavior)"
+  ],
+  "provenance": "Assistant-written test input, not user OCR. Used to test option text on the line after its label.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/claude-s5-option-text-next-line.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "a": "stop the famine",
+    "flags": []
+  },
+  "must_not": [
+    "A is reported as missing",
+    "The empty 'A.' label line is treated as a missing option",
+    "The text 'stop the famine' is left in the question instead of A"
+  ],
+  "notes": [
+    "The source only specifies A = 'stop the famine' and 'no flags' for this sample; B/C/D are not asserted here.",
+    "The sample has no printed question number. A null-num parse would add 'question number missing'; the source's 'no flags' result therefore assumes a numbered parse. The num used in the source test is not documented."
+  ],
+  "discrepancies": []
+}
