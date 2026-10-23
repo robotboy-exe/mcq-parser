@@ -11,6 +11,12 @@ You are continuing workspace setup. Phases 1-5 are complete.
 2. **PHASE BOUNDARY**
    This is the final phase. Produce the complete setup report.
 
+3. **FIXTURE INTEGRITY**
+   Treat `fixtures/inputs/` and `fixtures/expected/` as read-only. Do not change
+   an expected value to make a test pass. If an expected value is not backed by
+   a source doc, mark the fixture PENDING or flag it for human review, and record
+   the issue in the final report.
+
 ## Task: Phase 6 Only
 
 ### Read These Files
@@ -45,7 +51,17 @@ For each gap:
 2. Is it covered by other migration docs?
 3. Does it need human input?
 
-Mark each as: RESOLVED, NEEDS_INPUT, or STILL_OPEN.
+Mark each as exactly one of: RESOLVED, NEEDS_INPUT, or STILL_OPEN.
+
+- RESOLVED — closed by baseline code, a trusted variant, another migration doc,
+  or a recorded decision. If the resolution is documentation-only, say so in the
+  evidence column and keep the status RESOLVED.
+- NEEDS_INPUT — cannot be closed without a human decision or a live artifact
+  (for example a save trace or the deployed subject list).
+- STILL_OPEN — the supplied sources conflict or lack the evidence needed to
+  close it, and no specific input request has been identified.
+
+Do not invent a fourth status.
 
 ### Final Setup Report
 
@@ -70,6 +86,8 @@ Include in the report:
 - [ ] All invariants documented
 - [ ] All conflicts flagged
 - [ ] Test harness runs without errors
+- [ ] No fixtures or expected outputs modified (or any correction is flagged
+      and recorded in the report)
 - [ ] No code was modified during setup
 
 ### Human Decisions Required

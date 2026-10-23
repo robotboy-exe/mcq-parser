@@ -50,7 +50,7 @@ fixtures/
 archive/
   migration-docs/      original migration documents (byte-identical copies)
   trusted-variants/    original bookmarklet variants A/B/C
-tests/                 test harness (added in Phase 6)
+tests/runner.js        pure-Node fixture harness (no browser)
 ```
 
 ## Behavior summary
@@ -69,10 +69,11 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 ## Status
 
-Workspace setup phases 1–5 are complete. Phase 6 (test harness + final report)
-is pending; `tests/` is empty and `WORKSPACE_SETUP.md` holds the setup record.
-The baseline is `trusted-variant-C.js` (the merged one-box artifact); see
-`docs/BASELINE_COMPARISON.md` for why.
+Workspace setup phases 1–6 are complete. `tests/runner.js` runs every fixture
+and reports PASS, FAIL, or PENDING; run it for the current status.
+`WORKSPACE_SETUP.md` holds the final setup report and the human decisions still
+needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
+see `docs/BASELINE_COMPARISON.md` for why.
 
 Known open questions (do not silently resolve them):
 

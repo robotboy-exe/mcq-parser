@@ -24,8 +24,7 @@
         "num": 1,
         "question_contains": [
           "What is the meaning of the name Samuel?"
-        ],
-        "a": "because i have asked him of the Lord"
+        ]
       }
     ]
   },
@@ -36,6 +35,7 @@
   ],
   "notes": [
     "The raw sample is incomplete: options B-D are replaced by a literal '...' line, so flags for the missing options are not asserted.",
+    "Option A's exact text is not asserted: no source doc states it, and the parser cannot distinguish the literal '...' line from a continuation of A.",
     "qwen-1 §7 requires year 2021 and a CRS/CHRISTIAN RELIGIOUS subject match.",
     "The subject expectation is conditional on the deployed subject list containing a CRS or CHRISTIAN RELIGIOUS option; see discrepancies."
   ],
