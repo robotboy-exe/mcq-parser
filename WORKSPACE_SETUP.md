@@ -2,13 +2,14 @@
 
 Status: Phase 1 complete (Workspace Structure + Archive). Phase 2 complete
 (Code Extraction + Baseline Selection). Phase 3 complete (Edge Cases +
-Invariants). Phase 4 complete (Fixtures). Phase 5 not started.
+Invariants). Phase 4 complete (Fixtures). Phase 5 complete (Documentation).
+Phase 6 not started.
 
 ## Directory Structure
 
 ```
 project/
-├── README.md                    # placeholder (full version in Phase 5)
+├── README.md                    # project overview and quick start (Phase 5)
 ├── archive/
 │   ├── migration-docs/
 │   │   └── analysis/            # per-source notes (Phase 2)
@@ -25,7 +26,13 @@ project/
 │   └── expected/
 ├── tests/
 ├── docs/
-│   └── BASELINE_COMPARISON.md   # Phase 2 version comparison
+│   ├── BASELINE_COMPARISON.md   # Phase 2 version comparison
+│   ├── EDGE_CASES.md            # Phase 3
+│   ├── INVARIANTS.md            # Phase 3
+│   ├── SPEC.md                  # Phase 5
+│   ├── DECISIONS.md             # Phase 5
+│   ├── AGENTS.md                # Phase 5
+│   └── BUILD.md                 # Phase 5
 └── WORKSPACE_SETUP.md
 ```
 
@@ -342,7 +349,72 @@ turned into fixtures.
 - All expected files parse as JSON with schema version 1 and a status of
   `CONFIRMED` or `PENDING`.
 
+## Phase 5: Documentation
+
+### Docs created
+
+| File | Contents | Evidence used |
+|---|---|---|
+| `docs/SPEC.md` | Scope, input format, output objects, 6 parsing stages, flags, server contract | `src/parser/parser.js`, `src/ui/ui.js`, claude §2/§4, qwen-2 §2.1–§2.10 |
+| `docs/DECISIONS.md` | 23 implementation choices plus 6 open decisions; each has choice, why, risk | claude §5/§8/§9/§10, qwen-2 §5/§9/§10, qwen-1 gaps, baseline code |
+| `docs/AGENTS.md` | Ground rules, dangerous areas, what to preserve/avoid, test and build commands, evidence policy | claude §4/§5/§10, qwen-2 H01–H09, `docs/EDGE_CASES.md`, `docs/INVARIANTS.md` |
+| `docs/BUILD.md` | Requirements, build steps, line-flattening behavior, verification, source-of-truth rules | `src/build/build.js`, `src/bookmarklet.js`, claude §10, INV-05 |
+| `README.md` | Project overview, quick start, layout, behavior summary, phase status, open questions | All of the above; no live-run claims |
+
+No source code was modified in Phase 5. No expected fixture output was
+regenerated. Documentation records existing behavior and cited risks; it does
+not resolve any flagged conflict.
+
+### Documentation scope decisions
+
+- `docs/SPEC.md` describes the baseline code, not the older A/B variants. Where
+  the baseline differs from the docs (for example C's absent post-processor),
+  the doc says so and points to `docs/DECISIONS.md`.
+- `docs/DECISIONS.md` reflects baseline C. The post-processor entry documents
+  its removal; it does not claim the post-processor exists.
+- `docs/AGENTS.md` states that `tests/` is empty at Phase 5 and that Phase 6 is
+  scheduled to add `tests/runner.js`. The intended command is marked as
+  forward-looking, not as a currently working harness.
+- `docs/BUILD.md` documents the actual `build.js` behavior, including its
+  per-line trim and blank-line removal, and warns against multi-line literals
+  whose meaning depends on surrounding whitespace.
+
+### Missing information carried forward
+
+1. No live browser run was ever documented: `fillForm`, `tick`, `splitSections`,
+   and the save flow were not exercised against the real admin page
+   (claude §8 issue 1). `docs/AGENTS.md` treats the save response as the
+   highest-priority live check.
+2. `admin_questions.php`, `cbt_db.php`, `cbt_admin_config.php`, and the original
+   `ocr_helper.js` are not archived. Server limits and the PRG success text come
+   from migration-doc descriptions only.
+3. B1, B3, and the original `ocr_helper.js` were named in the docs but never
+   supplied. They cannot be compared or extracted.
+4. `claude-gaps.md` was never supplied; no gap report for the claude source
+   exists.
+5. Eight edge cases remain UNVERIFIED and three are CONFLICTED
+   (`docs/EDGE_CASES.md`); twelve invariants are AT_RISK and three are
+   CONFLICTED (`docs/INVARIANTS.md`). These statuses are preserved.
+6. The six open product questions listed in `README.md` and
+   `docs/DECISIONS.md` still need human input.
+7. No test harness exists yet; fixture comparison is Phase 6 work.
+
+### Phase 5 verification checklist
+
+- [x] All 5 docs created: `docs/SPEC.md`, `docs/DECISIONS.md`,
+      `docs/AGENTS.md`, `docs/BUILD.md`, `README.md`.
+- [x] `docs/SPEC.md` describes parser behavior from code + migration docs.
+- [x] `docs/DECISIONS.md` explains unusual choices with why and risk.
+- [x] `docs/AGENTS.md` has constraints, dangerous areas, preserve/avoid rules,
+      test guidance, and build guidance.
+- [x] `docs/BUILD.md` explains how to produce the bookmarklet.
+- [x] `README.md` provides project overview and quick start.
+- [x] All docs are based on archived evidence; conflicts are cited, not
+      resolved; no new behavior was added.
+- [x] `WORKSPACE_SETUP.md` updated with the doc list and missing information.
+- [x] No parser or UI code modified.
+
 ## Next Step
 
-Awaiting Phase 4 verification. Do not proceed to Phase 5 until the fixtures are
-confirmed correct.
+Awaiting Phase 5 verification. Do not proceed to Phase 6 until the docs are
+confirmed accurate and evidence-based.
