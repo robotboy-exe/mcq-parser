@@ -1,7 +1,8 @@
 # Workspace Setup
 
 Status: Phase 1 complete (Workspace Structure + Archive). Phase 2 complete
-(Code Extraction + Baseline Selection). Phase 3 not started.
+(Code Extraction + Baseline Selection). Phase 3 complete (Edge Cases +
+Invariants). Phase 4 not started.
 
 ## Directory Structure
 
@@ -149,7 +150,70 @@ No parser behavior was modified. `src/bookmarklet.js` is generated; edit
    handled. No code change.
 7. **B1/B3/OH** — named but not supplied; cannot compare or extract.
 
+## Phase 3: Edge Cases + Invariants
+
+Raw per-doc extraction notes:
+
+- `archive/migration-docs/analysis/claude-migration-phase3.md`
+- `archive/migration-docs/analysis/qwen-1-migration-phase3.md`
+- `archive/migration-docs/analysis/qwen-2-reconciled-phase3.md`
+- `archive/migration-docs/analysis/gap-reports-phase3.md`
+
+Consolidated outputs:
+
+- `docs/EDGE_CASES.md` — 61 edge cases
+- `docs/INVARIANTS.md` — 55 invariants
+
+### Edge cases (count by status)
+
+| Status | Count |
+|---|---|
+| CONFIRMED | 50 |
+| UNVERIFIED | 8 |
+| CONFLICTED | 3 |
+
+UNVERIFIED: letter-like text in prose/options (no guard), key text with
+explanations, fuzzy subject accuracy, year typo/unmatched year, repeated
+injection interval, Option D newline stripping, empty-option server rejection,
+category `id <= 10` limit.
+
+### Invariants (count by status)
+
+| Status | Count |
+|---|---|
+| VERIFIED | 40 |
+| AT_RISK | 12 |
+| CONFLICTED | 3 |
+
+Additional items carried from the raw notes: EC-61 (header year first-match may
+pick a copyright/reference year, qwen-2 R14) and INV-55 (`localStorage` is
+origin-wide and shared with the live helper, qwen-2 R15).
+
+### Conflicts found
+
+1. **E/F framing** (EDGE_CASES EC-40 / INVARIANTS INV-31) —
+   `qwen-2-reconciled.md` treats E/F collapse and the E/F tick as lossy/buggy
+   (B computes radio 4/5); `qwen-2-gaps.md` reclassifies collapse as a hard
+   server constraint; `claude-migration.md` shows C maps E/F to D. Behavior in
+   baseline C is the later documented mapping, but the sources are flagged.
+2. **CRK/CRS alias** (EC-41 / INV-43) — specified as handled, but
+   `claude-migration.md` infers the deployed subject list may contain no CRS /
+   Christian Religious option. Needs live data.
+3. **PRG success detection** (EC-59 / INV-49) — qwen-2-gaps says the PHP PRG
+   flow guarantees the flash text; qwen-2-reconciled marks the live response as
+   never observed and uncertain.
+
+### Version differences and open decisions
+
+4. **Version-specific behaviors** — the older two-textarea variants (A/B/V1)
+   differ from baseline C on E/F ticking and absorbed-option repair. These are
+   documented as version differences, not silently merged.
+5. **Open product decisions** retained: Reset Queue vs key (C keeps the key),
+   key persistence across reloads, `is_active` default, `ocrSubmitted` writer.
+
+No edge cases or invariants were invented; every entry cites a source doc.
+
 ## Next Step
 
-Awaiting Phase 2 verification. Do not proceed to Phase 3 until the baseline and
-extraction are confirmed correct.
+Awaiting Phase 3 verification. Do not proceed to Phase 4 until the edge cases
+and invariants are confirmed correct.
