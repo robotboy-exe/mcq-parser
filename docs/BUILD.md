@@ -36,8 +36,11 @@ node src/build/build.js
    javascript:(function(){try{<body>}catch(e){alert('Bookmarklet Error: '+e.message);}})();
    ```
 
-6. Writes `src/bookmarklet.js` (with a trailing newline) and prints the byte
-   length.
+6. Writes `src/bookmarklet.js` (with a trailing newline) and prints the
+   script-body length. The message says `bytes`, but the number is JavaScript
+   characters, not UTF-8 bytes: two dashes are multibyte, so the written file is
+   4 bytes larger than that count plus the trailing newline (currently 16501
+   bytes total).
 
 The generated file is the only artifact to paste into a bookmark.
 

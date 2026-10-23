@@ -119,7 +119,7 @@ Full comparison: `docs/BASELINE_COMPARISON.md`.
 | `src/parser/parser.js` | Pure parsing: `FIXES`, `OPTION`, key/section regexes, `parseHeader`, `pickSubjectIndex`, `splitQuestions`, `parseQuestion`, `splitSections`, `parseKey`. No DOM, no `localStorage`. |
 | `src/ui/ui.js` | DOM injection, form filling, storage wrapper, queue, key ticking, submit interception, bootstrap (`runOCRBookmarklet`). |
 | `src/build/build.js` | Concatenates parser + UI, wraps in `javascript:(function(){try{…}catch(e){alert(…);}})();`, writes `src/bookmarklet.js`. |
-| `src/bookmarklet.js` | Generated single-line combined output (16496 bytes). |
+| `src/bookmarklet.js` | Generated single-line combined output (16496-character script; 16501-byte UTF-8 file including the trailing newline). |
 
 Extraction was verified without executing the page:
 
@@ -413,6 +413,9 @@ not resolve any flagged conflict.
       resolved; no new behavior was added.
 - [x] `WORKSPACE_SETUP.md` updated with the doc list and missing information.
 - [x] No parser or UI code modified.
+- [x] Second pass: docs re-checked against code and Phase 3 docs; corrected the
+      divider/stem/OPTION whitespace wording and the generated-file size note.
+      No behavior, fixture, or expected output changed.
 
 ## Next Step
 

@@ -100,16 +100,18 @@ or `-1`. `exam_category_id` is never inferred.
 
 Rules are checked in this order; the first match wins:
 
-1. **Divider** — a line with 3+ of `= - * _ ~ # > + @ |`, a key word, ≤120
-   chars, no `?`, not starting with `N.`/`N)`.
+1. **Divider** — a line with 3+ consecutive characters from
+   `= - * _ ~ # > + @ |`, a key word, ≤120 chars, no `?`, not starting with
+   `N.`/`N)`.
 2. **Key-only** — every non-empty line is a key line or placeholder.
 3. **Header** — a line ≤120 chars with a key word, no `?`, not starting with a
    number marker or an option label; accepted when the next 6 non-empty lines
    are all key lines, or the first is key-like and ≥2 of 6 are, or the line
    itself has ≥2 inline pairs.
-4. **Structure** — after the last stem line (`N. ` + ≥12 chars), a line that is
-   key-like or has ≥3 inline pairs, with ≥3 key-like or ≥3-inline-pair lines in
-   that line plus the next 4 non-empty lines.
+4. **Structure** — after the last stem-like line (`N.` or `N)`, then whitespace
+   and ≥12 further chars; key lines excluded), a line that is key-like or has
+   ≥3 inline pairs, with ≥3 key-like or ≥3-inline-pair lines in that line plus
+   the next 4 non-empty lines.
 5. **None** — the whole paste is questions; no key.
 
 The answer section starts at the boundary line if that line is key-like or has
@@ -132,7 +134,8 @@ dropped).
    Newlines are preserved for option matching.
 2. Match `OPTION`:
    - Branch 1 (group 1): A–F preceded by start, newline, or any whitespace,
-     followed by `.`/`)`, consuming horizontal whitespace only.
+     then `.`/`)`; horizontal whitespace (not newlines) is consumed between the
+     letter and the punctuation and after it.
    - Branch 2 (group 2): A–F after a newline, whitespace, then a digit
      lookahead; no dot required. This branch is newline-only.
    - Letter = `m[1] || m[2]`.
