@@ -9,7 +9,7 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 24/24 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 25/25 PASS.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
 - Build: `node src/build/build.js`. Then `wc -l src/bookmarklet.js` must print `1`, and the body (leading `javascript:` stripped) must pass `node --check`; exact snippet in `docs/BUILD.md`.
 - No root `package.json`, lint, typecheck, CI, or test framework. `.opencode/package.json` is only the OpenCode notification plugin; do not `npm install` for project work.

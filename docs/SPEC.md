@@ -130,6 +130,8 @@ infer header metadata from it.
   when `n > last` and `n <= last + 5`. Repeats, backwards numbers, and jumps
   greater than 5 are silently skipped, so their text stays with the previous
   chunk.
+- After parsing, `flagNumberingGaps` flags a kept jump greater than 1 on the
+  later question.
 - Text before the first marker becomes a `num: null` chunk only when it has ≥2
   option matches.
 
@@ -235,9 +237,11 @@ loading, queueing, or saving.
 | `option A/B/C/D missing` | that option is empty (E/F are never flagged missing) |
 | `option X over 500 characters` | any A–F option length > 500 |
 | `a letter appears twice (merged questions?)` | any option letter matched more than once (pre-dedup count) |
+| `question N missing (numbering gap)` | a kept marker jumps by more than 1 after a known question number; attached to the later question. A run of missing numbers uses `questions N-M missing (numbering gap)` |
 
-Not implemented: numbering-gap/repeat flags, empty/missing correct-answer flag,
-E/F-specific flag. (Source: `claude-migration.md` §2.)
+Not implemented: repeat/backwards/large-jump flags, empty/missing
+correct-answer flag, E/F-specific flag. (Source: `claude-migration.md` §2;
+numbering-gap flag added at user request.)
 
 ## 6. Server contract the UI depends on
 

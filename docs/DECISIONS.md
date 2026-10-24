@@ -283,6 +283,17 @@ option-splitting. The original filenames did not encode this order.
 **Risk.** None for the baseline: `trusted-variant-C.js` remains the merged
 artifact built from B2, and the archived B files are reference-only.
 
+## D-29 — Numbering-gap flags go on the following question
+
+**Choice.** After parsing, if a kept marker jumps by more than 1, add
+`question N missing (numbering gap)` (or a range) to the later question's flags.
+**Why.** The operator sees the warning when the queue reaches the question
+after the gap, which is where the missing sequence becomes relevant. It keeps
+the advisory-only rule: nothing is blocked.
+**Risk.** A real restart or OCR digit error can produce a false gap flag; a
+repeat, backwards marker, or jump greater than 5 is still silently skipped and
+does not produce this flag.
+
 ## Open decisions (not resolved by this phase)
 
 None. B1/B2/B3 were supplied and matched in Phase 8 (D-28).

@@ -42,7 +42,7 @@ docs/
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
   EDGE_CASES.md        63 documented edge cases
-  INVARIANTS.md        58 documented invariants
+  INVARIANTS.md        59 documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
 fixtures/
   inputs/              raw samples copied from migration docs
@@ -67,6 +67,8 @@ tests/runner.js        pure-Node fixture harness (no browser)
   and radios 0–3 (a hard server constraint).
 - Shows advisory flags such as `option C missing` in the OCR panel and again
   under the Save button; it never blocks saving.
+- Flags numbering gaps on the following question, e.g. `question 10 missing
+  (numbering gap)` when the paste goes from Q9 to Q11.
 - Loaded queues can jump to a book question number with "Go to question".
 - Persists the queue, header metadata, and key in `localStorage` under
   `ocrQueue`, `ocrMeta`, and `ansKey`; the key survives reloads.

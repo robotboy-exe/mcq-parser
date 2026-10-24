@@ -161,6 +161,18 @@ function parseQuestion({ num, text }) {
   return q;
 }
 
+function flagNumberingGaps(items) {
+  for (let i = 1; i < items.length; i++) {
+    const prev = items[i - 1].num;
+    const cur = items[i].num;
+    if (prev == null || cur == null || cur <= prev + 1) continue;
+    const first = prev + 1;
+    const last = cur - 1;
+    items[i].flags.push(first === last ? `question ${first} missing (numbering gap)` : `questions ${first}-${last} missing (numbering gap)`);
+  }
+  return items;
+}
+
 function splitSections(raw) {
   const lines = [], starts = [];
   let prev = 0;
@@ -231,6 +243,7 @@ if (typeof module !== 'undefined' && module.exports) {
     pickCategoryIndex,
     splitQuestions,
     parseQuestion,
+    flagNumberingGaps,
     splitSections,
     parseKey
   };

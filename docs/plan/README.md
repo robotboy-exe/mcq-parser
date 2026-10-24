@@ -8,7 +8,7 @@ Last updated: 2026-10-24.
 
 ## Current snapshot
 
-- Current test status: `node tests/runner.js` → 24 PASS, 0 FAIL, 0 PENDING.
+- Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
 - P02 pins the current bank hash; re-audit the manifest if the source changes.
@@ -166,6 +166,8 @@ authoritative:
 
 ## Change log
 
+- 2026-10-24 — numbering gaps are flagged on the following question
+  (`gap-q10-missing`); 25 fixtures.
 - 2026-10-24 — header inference extended: answer-key headers fill the form,
-  exam category is inferred, CRS alias added; three synthetic header fixtures.
+  exam category is inferred, CRS alias added; four synthetic header fixtures.
 - 2026-10-24 — plan created; duplicates removed; ANOMALIES.txt received.

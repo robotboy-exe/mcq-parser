@@ -61,6 +61,8 @@ features.
   (INV-16).
 - Duplicate option letters are flagged with the pre-dedup count (INV-17).
 - Flags are advisory and never block load/queue/save (INV-20).
+- Numbering gaps are flagged on the later question via `flagNumberingGaps`
+  (D-29, INV-59); repeats and large jumps are still skipped.
 - E/F collapse into Option D; with a key D is replaced and ticked, without a key
   E/F is appended and nothing is ticked (INV-27, INV-28).
 - No radio is pre-ticked without a key; always clear the form default (INV-29).

@@ -112,7 +112,7 @@ function runOCRBookmarklet() {
     const raw = $('ocr_text').value;
     const parts = splitSections(raw);
     const text = FIXES.reduce((t, [re, fix]) => t.replace(re, fix), parts.questions);
-    const items = splitQuestions(text).map(parseQuestion);
+    const items = flagNumberingGaps(splitQuestions(text).map(parseQuestion));
     const newKey = parts.answers.trim() ? parseKey(parts.answers) : {};
     const hasKey = Object.keys(newKey).length > 0;
     if (!items.length) {

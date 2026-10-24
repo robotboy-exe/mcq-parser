@@ -204,7 +204,7 @@ function parseFixture(spec, inputText) {
       (text, [pattern, replacement]) => text.replace(pattern, replacement),
       sections.questions
     );
-    const items = parser.splitQuestions(fixed).map(parser.parseQuestion);
+    const items = parser.flagNumberingGaps(parser.splitQuestions(fixed).map(parser.parseQuestion));
     return { items, sections, header: parser.parseHeader(fixed) };
   }
 

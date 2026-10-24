@@ -38,15 +38,16 @@ Status definitions:
 | INV-15 | Option text written to the form must not carry its own `A.`/`B.`/etc. label. | VERIFIED | qwen-2-reconciled inv 15 |
 | INV-16 | An empty option must stay empty and be reported as that option missing; a later option must not be pulled into its place. | VERIFIED | qwen-2-reconciled inv 14; claude-migration §4 |
 | INV-17 | Duplicate option letters must be flagged. | VERIFIED | claude-migration §4; qwen-2-reconciled inv 16 |
-| INV-18 | Flags must cover: missing question number, question under 10 chars, missing A–D, options over 500 chars, duplicate letters. | VERIFIED | qwen-2-reconciled §2.8; claude-migration §2 |
+| INV-18 | Flags must cover: missing question number, question under 10 chars, missing A–D, options over 500 chars, duplicate letters, and numbering gaps between kept markers. | VERIFIED | qwen-2-reconciled §2.8; claude-migration §2; user request 2026-10-24 |
 | INV-19 | E and F are never flagged as missing. | VERIFIED | claude-migration §2 |
 | INV-20 | Flags are advisory; they must not silently block loading, queueing, or saving. | VERIFIED | qwen-2-reconciled inv 16 |
 | INV-21 | Question markers must keep the sequence guard `if (last && (n <= last \|\| n > last + 5)) continue;`. | VERIFIED | qwen-1-gaps §5; qwen-1-gaps2 high-risk 4 |
 | INV-22 | The absorbed-option post-processor must stay removed unless rewritten with correct escaping and tested against "Vitamin C." and "Vitamin B-12". | VERIFIED | claude-migration §4 |
 | INV-23 | `OPTION` must keep `[^\S\n]*` after the label so a blank `C.` does not consume the following `D.`. | VERIFIED | claude-migration §2, §4 |
-| INV-24 | Numbering gaps and repeats should be flagged (HO requirement), but the code only skips them. | AT_RISK | claude-migration §4, §8 (issue 6) |
+| INV-24 | Repeats, backwards numbers, and jumps greater than 5 are silently skipped by the sequence guard; this can merge text into the previous question. | AT_RISK | claude-migration §4, §8 (issue 6); qwen-2-reconciled E13 |
 | INV-25 | Removing the post-processor intentionally gives up arbitrary absorbed-label repair; the regex plus loose E/F are the only recovery. | AT_RISK | claude-migration §3 (case 16), §5 |
 | INV-26 | Appending E/F to Option D can exceed the 500-character server limit; the code flags but does not truncate. | AT_RISK | qwen-1-migration §5 risk 4 |
+| INV-59 | A gap between kept question markers (`cur > prev + 1`) adds `question N missing (numbering gap)` to the later question; a run uses `questions N-M missing (numbering gap)`. | VERIFIED | user request 2026-10-24; fixture `gap-q10-missing` |
 
 ## E/F and correct answers
 

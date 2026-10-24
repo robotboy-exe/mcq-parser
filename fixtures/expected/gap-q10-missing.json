@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "gap-q10-missing",
+  "source": [
+    "User-provided paste 2026-10-24 (Q9 then Q11; Q10 omitted by OCR)"
+  ],
+  "provenance": "Real excerpt supplied by the user. Q10 is absent entirely, so the gap flag belongs on the following question (Q11).",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/gap-q10-missing.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "questions": [
+      {
+        "num": 9,
+        "flags": []
+      },
+      {
+        "num": 11,
+        "question_contains": [
+          "David was acknowledging God's role"
+        ],
+        "flags": [
+          "question 10 missing (numbering gap)"
+        ]
+      }
+    ]
+  }
+}
