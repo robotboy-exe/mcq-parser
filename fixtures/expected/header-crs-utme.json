@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "header-crs-utme",
+  "source": [
+    "User request 2026-10-24 (bare UTME must select JAMB / UTME)",
+    "archive/live-sources/admin_questions.html exam_category_id options"
+  ],
+  "provenance": "Synthetic minimal paste: S1 stem under a bare UTME header. A bare UTME must map to JAMB / UTME; only POST UTME selects the post-UTME category.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/header-crs-utme.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "header": {
+      "year": 2024,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ],
+      "category_contains_any": [
+        "JAMB / UTME"
+      ]
+    }
+  }
+}

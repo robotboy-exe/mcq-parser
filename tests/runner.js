@@ -9,11 +9,19 @@ const ROOT = path.resolve(__dirname, '..');
 const EXPECTED_DIR = path.join(ROOT, 'fixtures/expected');
 const DEFAULT_INPUT_DIR = path.join(ROOT, 'fixtures/inputs');
 const SUBJECT_SELECT_FILE = path.join(ROOT, 'archive/live-sources/subjects-select-2026-10-23.html');
+const ADMIN_HTML_FILE = path.join(ROOT, 'archive/live-sources/admin_questions.html');
 
 const SUBJECT_NAMES = [...fs.readFileSync(SUBJECT_SELECT_FILE, 'utf8')
   .matchAll(/<option[^>]*>([^<]+)<\/option>/gi)]
   .map(m => m[1].trim())
   .filter(name => name && !name.startsWith('--'));
+
+const CATEGORY_SELECT = fs.readFileSync(ADMIN_HTML_FILE, 'utf8')
+  .match(/<select[^>]*id="exam_category_id"[\s\S]*?<\/select>/i);
+const CATEGORY_NAMES = CATEGORY_SELECT ? [...CATEGORY_SELECT[0]
+  .matchAll(/<option[^>]*>([^<]+)<\/option>/gi)]
+  .map(m => m[1].trim())
+  .filter(name => name && !name.startsWith('--')) : [];
 
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
@@ -27,7 +35,7 @@ const UNASSERTED_KEYS = {
   question: [],
   key: ['ui_notes']
 };
-const HEADER_KEYS = ['year', 'subject_contains_any'];
+const HEADER_KEYS = ['year', 'subject_contains_any', 'category_contains_any'];
 const QUESTION_KEYS = ['num', 'index', 'a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags'];
 
 function readJson(file) {
@@ -141,6 +149,9 @@ function validateExpected(spec) {
     }
     if (has(header, 'subject_contains_any') && !isStringArray(header.subject_contains_any)) {
       return 'expected.header.subject_contains_any must be an array of strings';
+    }
+    if (has(header, 'category_contains_any') && !isStringArray(header.category_contains_any)) {
+      return 'expected.header.category_contains_any must be an array of strings';
     }
     for (const key of Object.keys(header)) {
       if (!HEADER_KEYS.includes(key)) return `unknown expected.header key: ${show(key)}`;
@@ -297,6 +308,20 @@ function checkHeader(expectedHeader, header, checks) {
       'header.subject (live subject list, 2026-10-23)',
       ok,
       expectedHeader.subject_contains_any,
+      selected
+    ));
+  }
+
+  if (Array.isArray(expectedHeader.category_contains_any)) {
+    const index = parser.pickCategoryIndex(header.header, CATEGORY_NAMES);
+    const selected = index >= 0 ? CATEGORY_NAMES[index] : null;
+    const ok = selected !== null && expectedHeader.category_contains_any.some(
+      name => selected.toUpperCase().includes(name.toUpperCase())
+    );
+    checks.push(makeCheck(
+      'header.category (live category list, admin_questions.html)',
+      ok,
+      expectedHeader.category_contains_any,
       selected
     ));
   }

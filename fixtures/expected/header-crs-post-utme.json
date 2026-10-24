@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "header-crs-post-utme",
+  "source": [
+    "User request 2026-10-24 (exam-category header and CRS alias)",
+    "archive/live-sources/admin_questions.html exam_category_id options"
+  ],
+  "provenance": "Synthetic minimal paste: S1 stem with the full CHRISTIAN RELIGIOUS STUDIES header and POST UTME. POST UTME must win over the JAMB/UTME alias.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/header-crs-post-utme.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "header": {
+      "year": 2025,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ],
+      "category_contains_any": [
+        "POST UTME"
+      ]
+    }
+  }
+}

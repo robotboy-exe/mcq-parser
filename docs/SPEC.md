@@ -84,7 +84,9 @@ Placeholder lines create no entry.
 `parseHeader` returns `{ year, header }`, where `header` is the first 3 lines
 joined, uppercased, and `year` is the first `\b20\d\d\b` match or `null`.
 `pickSubjectIndex` returns the index of the best matching `subject_id` option,
-or `-1`. `exam_category_id` is never inferred.
+or `-1`. `pickCategoryIndex` returns the index of the matching
+`exam_category_id` option for POST UTME, JAMB/UTME, WASSCE/WASCE/WAEC/SSCE/
+NECO/GCE, or General Practice, or `-1`.
 
 ### 3.4 UI state
 
@@ -118,7 +120,8 @@ Rules are checked in this order; the first match wins:
 
 The answer section starts at the boundary line if that line is key-like or has
 ≥2 inline pairs; otherwise it starts on the next line (a pure heading is
-dropped).
+dropped). `splitSections` also returns the dropped `boundary` line so the UI can
+infer header metadata from it.
 
 ### Stage 2 — Question split (`splitQuestions`)
 
@@ -154,14 +157,24 @@ the label is what prevents a blank `C.` from consuming `D.`.
 
 ### Stage 4 — Header inference
 
+- The UI reads three header sources in order: the question part, the dropped
+  section boundary, and the answer section. The question header wins; later
+  sources fill only fields it did not set. A key-only paste uses the boundary
+  and answer-section header.
 - Year: first `20\d\d` in the 3-line header → `exam_year`.
-- Subject step 1: a CRK / `C.R.K.` / `CHRISTIAN RELIGIOUS` header selects the
-  first option containing `CRS` or `CHRISTIAN RELIGIOUS`.
+- Subject step 1: a CRK / CRS / `C.R.K.` / `C.R.S.` / `CHRISTIAN RELIGIOUS
+  [STUDIES]` header selects the first option containing `CRS` or
+  `CHRISTIAN RELIGIOUS`.
 - Subject step 2: otherwise strip the year, the stopwords `THE AND FOR ANSWERS
   QUESTIONS STRUCTURED IMPROVISED PAPER OBJECTIVE SECTION OF IN A`, and
   punctuation; score options by containment in either direction, then by
   overlap of words longer than 2 chars. Highest score wins; ties keep the first.
-- No match leaves the subject untouched.
+- Category: `pickCategoryIndex` maps POST UTME, JAMB/UTME,
+  WASSCE/WASCE/WAEC/SSCE/NECO/GCE, and General Practice to the archived live
+  `exam_category_id` options. POST UTME is checked before JAMB/UTME; a bare
+  `UTME` selects `JAMB / UTME`, and SSCE maps to `WASCE / NECO / GCE` because
+  the live list has no SSCE entry.
+- No match leaves the subject/category untouched.
 - The current live subject list is archived in
   `archive/live-sources/subjects-select-2026-10-23.html`: it contains `CRS`
   (id 14), `English (Oral)` (id 12), and `English Language` (id 6). The parser

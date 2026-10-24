@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "header-crs-ssce",
+  "source": [
+    "User request 2026-10-24 (exam-category header and CRS alias)",
+    "archive/live-sources/admin_questions.html exam_category_id options"
+  ],
+  "provenance": "Synthetic minimal paste: S1 stem with an SSCE header. The live category list has no SSCE entry, so SSCE maps to WASCE / NECO / GCE.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/header-crs-ssce.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "header": {
+      "year": 2023,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ],
+      "category_contains_any": [
+        "WASCE / NECO / GCE"
+      ]
+    }
+  }
+}

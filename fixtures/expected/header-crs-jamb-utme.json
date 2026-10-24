@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "id": "header-crs-jamb-utme",
+  "source": [
+    "User request 2026-10-24 (exam-category header and CRS alias)",
+    "archive/live-sources/admin_questions.html exam_category_id options"
+  ],
+  "provenance": "Synthetic minimal paste: S1 stem under a CRS JAMB/UTME header. The header expectations come from the requested aliases and the archived live category list, not from parser output.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/header-crs-jamb-utme.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "header": {
+      "year": 2024,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ],
+      "category_contains_any": [
+        "JAMB / UTME"
+      ]
+    }
+  }
+}

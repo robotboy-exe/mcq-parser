@@ -39,12 +39,23 @@ function runOCRBookmarklet() {
     r.insertAdjacentElement('afterend', rf);
   }
   const saveMeta = () => store.set('ocrMeta', Object.fromEntries(FIELDS.map(id => [id, $(id).value])));
-  function applyHeaderInfo(text) {
+  function readHeader(text) {
     const { year, header } = parseHeader(text);
+    return {
+      year,
+      subject: pickSubjectIndex(header, Array.from($('subject_id').options).map(o => o.text)),
+      category: pickCategoryIndex(header, Array.from($('exam_category_id').options).map(o => o.text))
+    };
+  }
+  function applyHeaderInfo(...texts) {
+    const infos = texts.map(readHeader);
+    const year = infos.map(x => x.year).find(v => v);
+    const subject = infos.map(x => x.subject).find(v => v >= 0);
+    const category = infos.map(x => x.category).find(v => v >= 0);
     if (year) $('exam_year').value = year;
-    const select = $('subject_id');
-    const idx = pickSubjectIndex(header, Array.from(select.options).map(o => o.text));
-    if (idx >= 0) select.options[idx].selected = true;
+    if (subject !== undefined) $('subject_id').options[subject].selected = true;
+    if (category !== undefined) $('exam_category_id').options[category].selected = true;
+    return Boolean(year) || subject !== undefined || category !== undefined;
   }
   function fillForm(q) {
     Object.entries(store.get('ocrMeta') || {}).forEach(([id, v]) => ($(id).value = v));
@@ -109,6 +120,7 @@ function runOCRBookmarklet() {
         key = newKey;
         store.set('ansKey', key);
         if (queue.items[queue.i]) fillForm(queue.items[queue.i]);
+        if (applyHeaderInfo(parts.boundary, parts.answers)) saveMeta();
         tick(true);
         $('ans_msg').textContent += ' (' + Object.keys(key).length + ' answers in key.)';
         renderOCR();
@@ -117,7 +129,7 @@ function runOCRBookmarklet() {
       }
       return alert('No questions found in that text.');
     }
-    applyHeaderInfo(text);
+    applyHeaderInfo(text, parts.boundary, parts.answers);
     saveMeta();
     key = hasKey ? newKey : {};
     if (hasKey) store.set('ansKey', key);

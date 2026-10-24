@@ -76,7 +76,7 @@ current question.
 
 | ID | Short name | Trigger | Expected behavior | Status | Source |
 |---|---|---|---|---|---|
-| EC-41 | CRK / C.R.K. alias | Header contains CRK variants | Select CRS / CHRISTIAN RELIGIOUS subject; the current live list contains `CRS` (id 14), so CRK selects it | CONFIRMED | qwen-2-reconciled E15; `archive/live-sources/subjects-select-2026-10-23.html`; harness uses that list |
+| EC-41 | CRK / CRS alias | Header contains CRK or CRS variants, including `CHRISTIAN RELIGIOUS STUDIES` | Select CRS / CHRISTIAN RELIGIOUS subject; the current live list contains `CRS` (id 14), so the alias selects it | CONFIRMED | qwen-2-reconciled E15; user request 2026-10-24; `archive/live-sources/subjects-select-2026-10-23.html`; harness uses that list |
 | EC-42 | Year in header | First `20\d\d` in first 3 lines | Written to `exam_year` | CONFIRMED | qwen-2-reconciled E16 |
 | EC-43 | Fuzzy subject name | No alias match | Containment / word-overlap scoring | UNVERIFIED | qwen-2-reconciled E17 |
 | EC-44 | Year typo/missing year | `2O21` (letter O) or no `20\d\d` match | No year written; server rejects if `exam_year` is empty/out of 1900–2100; flag/UI does not validate range | CONFIRMED | qwen-2-gaps; `admin_questions.php` range check |

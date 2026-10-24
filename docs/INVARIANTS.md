@@ -80,9 +80,10 @@ Status definitions:
 | ID | Rule | Status | Source |
 |---|---|---|---|
 | INV-42 | The header is the first three lines; year is the first `20\d\d` match; it is written to `exam_year`. | VERIFIED | qwen-2-reconciled §2.7 |
-| INV-43 | Header CRK/C.R.K. selects a subject containing `CRS` or `CHRISTIAN RELIGIOUS`; the current live list contains `CRS` (id 14), so the alias selects it. | VERIFIED | qwen-2-reconciled inv/E15; `archive/live-sources/subjects-select-2026-10-23.html`; fixture harness uses that list |
+| INV-43 | Header CRK/CRS/C.R.K./C.R.S./CHRISTIAN RELIGIOUS [STUDIES] selects a subject containing `CRS` or `CHRISTIAN RELIGIOUS`; the current live list contains `CRS` (id 14), so the alias selects it. | VERIFIED | qwen-2-reconciled inv/E15; user request 2026-10-24; `archive/live-sources/subjects-select-2026-10-23.html`; fixture harness uses that list |
 | INV-44 | Without an alias, subject selection uses containment then word-overlap scoring (words longer than 2 chars). | AT_RISK | qwen-2-reconciled E17/R13 |
-| INV-45 | `exam_category_id` is never inferred. | VERIFIED | qwen-2-reconciled §2.7; claude-migration §2 |
+| INV-45 | `exam_category_id` is inferred from the header: POST UTME first, then JAMB/UTME, then WASSCE/WASCE/WAEC/SSCE/NECO/GCE, then General Practice; a bare `UTME` selects `JAMB / UTME`, and SSCE maps to `WASCE / NECO / GCE`. | VERIFIED | user request 2026-10-24; `archive/live-sources/admin_questions.html`; fixtures `header-crs-*` |
+| INV-58 | Header metadata is applied from the question part, then the dropped section boundary, then the answer section; the first source to set a field wins. A key-only paste uses the boundary/answer header. | VERIFIED | user request 2026-10-24; browser mock check 2026-10-24 |
 
 ## Saving and server contract
 
@@ -114,8 +115,10 @@ archived PHP/HTML sources and the recorded decisions:
 1. **INV-31 (E/F framing)** — now VERIFIED as a hard server constraint; the PHP
    enforces four options and `correct_option` 0–3. The lossy overwrite of D is
    documented as a side effect.
-2. **INV-43 (CRK alias)** — now VERIFIED against the current live subject
-   list: CRK selects the `CRS` option. The fixture harness now uses that list.
+2. **INV-43 (CRK/CRS alias)** — now VERIFIED against the current live subject
+   list: CRK or CRS selects the `CRS` option, and the full
+   `CHRISTIAN RELIGIOUS STUDIES` name matches through the same alias. The
+   fixture harness now uses that list.
 3. **INV-49 (PRG success)** — now VERIFIED: the PHP stores the flash in the
    session, redirects, and renders it in the redirected page, which is the
    response the bookmarklet fetches.

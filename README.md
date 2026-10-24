@@ -42,7 +42,7 @@ docs/
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
   EDGE_CASES.md        63 documented edge cases
-  INVARIANTS.md        57 documented invariants
+  INVARIANTS.md        58 documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
 fixtures/
   inputs/              raw samples copied from migration docs
@@ -59,6 +59,9 @@ tests/runner.js        pure-Node fixture harness (no browser)
 
 - Accepts `N.` question markers (1–3 digits) and options A–F, dotted or
   dotless-after-newline; inline options are supported.
+- Reads the header from the questions or the answer key and fills the year,
+  subject (including CRS/Christian Religious Studies), and exam category
+  (JAMB/UTME, POST UTME, SSCE, and related names).
 - Splits off an answer key by divider, header, structure, or key-only paste.
 - Collapses E/F answers into Option D, because the page has only four options
   and radios 0–3 (a hard server constraint).

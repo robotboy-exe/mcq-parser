@@ -21,8 +21,8 @@ function parseHeader(text) {
 
 function pickSubjectIndex(header, optionTexts) {
   const aliases = [{
-    match: /\bC\s*\.?\s*R\s*\.?\s*K\b|\bCRK\b|\bCHRISTIAN RELIGIOUS\b/,
-    keywords: ['CRS', 'CHRISTIAN RELIGIOUS']
+    match: /\bC\s*\.?\s*R\s*\.?\s*[SK]\b|\bCHRISTIAN RELIGIOUS(?:\s+STUDIES)?\b/,
+    keywords: ['CRS', 'CHRISTIAN RELIGIOUS STUDIES', 'CHRISTIAN RELIGIOUS']
   }];
   let subjectSet = false;
   let selected = -1;
@@ -82,6 +82,25 @@ function pickSubjectIndex(header, optionTexts) {
     }
   }
   return selected;
+}
+
+function pickCategoryIndex(header, optionTexts) {
+  const rules = [
+    { match: /\bPOST[\s-]*UTME\b/, keywords: ['POST UTME'] },
+    { match: /\bJAMB\b|\bUTME\b/, keywords: ['JAMB', 'UTME'] },
+    { match: /\bWASSCE\b|\bWASCE\b|\bWAEC\b|\bSSCE\b|\bNECO\b|\bGCE\b/, keywords: ['WASCE', 'WASSCE', 'WAEC', 'SSCE', 'NECO', 'GCE'] },
+    { match: /\bGENERAL[\s-]+PRACTICE\b/, keywords: ['GENERAL PRACTICE'] }
+  ];
+  for (const rule of rules) {
+    if (!rule.match.test(header)) continue;
+    for (let i = 0; i < optionTexts.length; i++) {
+      const optText = (optionTexts[i] || '').toUpperCase();
+      if (!optText || optText.includes('-- SELECT')) continue;
+      if (rule.keywords.some(kw => optText.includes(kw))) return i;
+    }
+    return -1;
+  }
+  return -1;
 }
 
 function splitQuestions(text) {
@@ -161,12 +180,12 @@ function splitSections(raw) {
   function boundary(k, how) {
     const line = lines[k] || '';
     const include = isKey(line) || pairs(line) >= 2;
-    return { questions: raw.slice(0, starts[k]), answers: raw.slice(include ? starts[k] : (starts[k + 1] ?? raw.length)), how };
+    return { questions: raw.slice(0, starts[k]), answers: raw.slice(include ? starts[k] : (starts[k + 1] ?? raw.length)), how, boundary: line };
   }
   for (const { t, i } of ne) {
     if (/[=\-*_~#>+@|]{3,}/.test(t) && KEY_WORD.test(t) && t.trim().length <= 120 && !/\?/.test(t) && !/^\s*\d{1,3}[.)]/.test(t)) return boundary(i, 'divider');
   }
-  if (ne.length && ne.every(x => isKey(x.t))) return { questions: '', answers: raw, how: 'key-only' };
+  if (ne.length && ne.every(x => isKey(x.t))) return { questions: '', answers: raw, how: 'key-only', boundary: '' };
   for (const { t, i } of ne) {
     const h = t.trim();
     if (!h || h.length > 120 || !KEY_WORD.test(h) || /\?/.test(h) || /^\s*\d{1,3}\s*[.)]/.test(h) || /^\s*[A-F]\s*[.)]/i.test(h)) continue;
@@ -186,7 +205,7 @@ function splitSections(raw) {
       if (win.filter(x => isKey(x.t) || pairs(x.t) >= 3).length >= 3) return boundary(i, 'structure');
     }
   }
-  return { questions: raw, answers: '', how: 'none' };
+  return { questions: raw, answers: '', how: 'none', boundary: '' };
 }
 
 function parseKey(t) {
@@ -209,6 +228,7 @@ if (typeof module !== 'undefined' && module.exports) {
     LOOSE,
     parseHeader,
     pickSubjectIndex,
+    pickCategoryIndex,
     splitQuestions,
     parseQuestion,
     splitSections,
