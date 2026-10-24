@@ -192,6 +192,9 @@ the label is what prevents a blank `C.` from consuming `D.`.
   Reset Queue clears the queue but not the key; "Clear saved key" clears it.
   The key is read from `ansKey` at boot and therefore survives reloads (decision
   D-14/D-13).
+- "Go to question" prompts for a printed book number (falling back to the
+  1-based list position when no book number matches), sets the queue index, and
+  refills the form.
 - Save: capture-phase `submit` listener, `preventDefault` +
   `stopImmediatePropagation`, force `is_active` on, then `fetch(location.href, {
   method:'POST', body:new FormData(form), credentials:'same-origin' })`.
@@ -208,8 +211,9 @@ the label is what prevents a blank `C.` from consuming `D.`.
 ## 5. Flags and warnings
 
 All flags are advisory. They are rendered as `Check this one: ...` in
-`#ocr_status` inside `.admin-alert.admin-error`, and they never block loading,
-queueing, or saving.
+`#ocr_status` inside `.admin-alert.admin-error`, and duplicated in
+`#ocr_save_flag` under the submit button (after `#ans_res`). They never block
+loading, queueing, or saving.
 
 | Flag | Trigger |
 |---|---|

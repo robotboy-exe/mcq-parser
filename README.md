@@ -62,7 +62,9 @@ tests/runner.js        pure-Node fixture harness (no browser)
 - Splits off an answer key by divider, header, structure, or key-only paste.
 - Collapses E/F answers into Option D, because the page has only four options
   and radios 0–3 (a hard server constraint).
-- Shows advisory flags such as `option C missing`; it never blocks saving.
+- Shows advisory flags such as `option C missing` in the OCR panel and again
+  under the Save button; it never blocks saving.
+- Loaded queues can jump to a book question number with "Go to question".
 - Persists the queue, header metadata, and key in `localStorage` under
   `ocrQueue`, `ocrMeta`, and `ansKey`; the key survives reloads.
 - Forces `is_active` on, so imported questions are saved active.

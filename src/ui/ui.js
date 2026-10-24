@@ -20,7 +20,7 @@ function runOCRBookmarklet() {
   };
   const p = document.createElement('div');
   p.className = 'admin-field';
-  p.innerHTML = `<div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="width:100%;min-height:220px"></textarea><button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
+  p.innerHTML = `<div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="width:100%;min-height:220px"></textarea><button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
   form.before(p);
   const sb = form.querySelector('button[type=submit]');
   if (sb) {
@@ -31,6 +31,12 @@ function runOCRBookmarklet() {
     r.style.color = '#1769aa';
     r.style.marginTop = '12px';
     sb.insertAdjacentElement('afterend', r);
+    const rf = document.createElement('div');
+    rf.id = 'ocr_save_flag';
+    rf.className = 'admin-alert admin-error';
+    rf.style.marginTop = '12px';
+    rf.hidden = true;
+    r.insertAdjacentElement('afterend', rf);
   }
   const saveMeta = () => store.set('ocrMeta', Object.fromEntries(FIELDS.map(id => [id, $(id).value])));
   function applyHeaderInfo(text) {
@@ -80,8 +86,11 @@ function runOCRBookmarklet() {
     const q = queue.items[queue.i];
     const active = queue.items.length > 0;
     $('ocr_input').hidden = q !== undefined;
+    $('ocr_goto').hidden = !active;
     $('ocr_skip').hidden = !q;
     $('ocr_reset').hidden = !active;
+    $('ocr_save_flag').hidden = !(q && q.flags.length);
+    $('ocr_save_flag').textContent = q && q.flags.length ? `Check this one: ${q.flags.join(', ')}` : '';
     $('ocr_status').innerHTML = !active ? '' : !q ? `All ${queue.items.length} questions done.` : `Question ${queue.i + 1} of ${queue.items.length} (book number ${q.num ?? '?'})` + (q.flags.length ? `<div class="admin-alert admin-error">Check this one: ${q.flags.join(', ')}</div>` : '');
   }
   function showOCR() {
@@ -126,6 +135,22 @@ function runOCRBookmarklet() {
     }
   };
   $('ocr_clear_text').onclick = () => { $('ocr_text').value = ''; };
+  $('ocr_goto').onclick = () => {
+    const curQ = queue.items[queue.i];
+    const ans = prompt('Go to book question number:', curQ && curQ.num != null ? String(curQ.num) : '');
+    if (ans === null) return;
+    const n = parseInt(ans, 10);
+    if (!(n > 0)) return;
+    let idx = queue.items.findIndex(x => x.num === n);
+    if (idx < 0 && n <= queue.items.length) idx = n - 1;
+    if (idx < 0) {
+      alert('No loaded question with book number ' + n + ' (or list position ' + n + ').');
+      return;
+    }
+    queue.i = idx;
+    saveQ();
+    showOCR();
+  };
   $('ocr_skip').onclick = () => { queue.i++; saveQ(); showOCR(); };
   $('ocr_reset').onclick = () => {
     queue = { items: [], i: 0 };
