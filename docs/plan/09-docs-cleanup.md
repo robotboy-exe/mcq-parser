@@ -42,17 +42,14 @@ for a smaller fixture count.
 1. **Delete the superseded pair.**
    - `fixtures/inputs/qwen2-s1-crk-2021-full.txt`
    - `fixtures/expected/qwen2-s1-crk-2021-full.json`
-2. **Remove the stray merge artifact.** `merged_bookmarklet.txt` is byte-identical
-   to `archive/trusted-variants/trusted-variant-C.js`; delete the duplicate. Do
-   not delete `.opencode/` or the modified bank source.
-3. **`AGENTS.md` (root).** Update:
+2. **`AGENTS.md` (root).** Update:
    - test count from `19/19` to `25/25` (after the retirement);
    - add `node tools/extract-bank.js --check` to Commands;
    - document the four `input_origin` values and that every input needs an
      expected spec;
    - link `docs/plan/README.md` as the work tracker;
    - keep the existing build, storage, and PHP guardrails.
-4. **`docs/AGENTS.md`.** Add to the danger-zone list:
+3. **`docs/AGENTS.md`.** Add to the danger-zone list:
    - `salvageNormalize` / `splitSectionsWithSalvage`: never run on bank text;
      the `after > before` gate and `inserts >= 2` trigger are mandatory;
    - `splitBulletQuestions` / `splitQuestionItems`: bullet mode only when no
@@ -61,7 +58,7 @@ for a smaller fixture count.
    Update the fixture section: `input_origin`, bank/anomaly/doc/synthetic
    taxonomy, the fact that `bank-*` fixtures include keys, and the mandatory
    regression set (bank-2021 replaces the old S1; S2/S3 remain).
-5. **`docs/SPEC.md`.** State the contract explicitly:
+4. **`docs/SPEC.md`.** State the contract explicitly:
    - one year per paste; use `tools/extract-bank.js` for the bank;
    - strict parse first; salvage only on multiple fused boundaries and only if
      it increases the chunk count;
@@ -69,29 +66,29 @@ for a smaller fixture count.
      `OCR boundaries repaired; verify question and option split`;
    - unnumbered `*` input is a separate mode and yields `num: null`;
    - key detection includes inline multi-pair lines.
-6. **`docs/INVARIANTS.md`.** Add invariants:
+5. **`docs/INVARIANTS.md`.** Add invariants:
    - bank inputs produce zero salvage inserts;
    - `bank-2021/2022/2023/2024` keys parse to 40 entries; 2025 parses to 39;
    - block 2 yields 12 chunks; block 1 yields 19;
    - no parser-generated expectations.
-7. **`docs/EDGE_CASES.md`.** Mark the block-1 and block-2 families as covered
+6. **`docs/EDGE_CASES.md`.** Mark the block-1 and block-2 families as covered
    with their known limits (Q4/Q9 merged, Q5/Q6/Q10/Q11 absent, Q1 unnumbered,
    Q16 missing C/D). Keep the historical notes but make the current status
    unambiguous.
-8. **`docs/DECISIONS.md`.** Record:
+7. **`docs/DECISIONS.md`.** Record:
    - why salvage is a pre-pass rather than loosening `OPTION`/`splitQuestions`;
    - why block 1 is a separate bullet mode;
    - why extraction is external to the parser.
-9. **`README.md` and `WORKSPACE_SETUP.md`.** Read them first; update every
+8. **`README.md` and `WORKSPACE_SETUP.md`.** Read them first; update every
    current-status fixture count (`19`, `19/19`, `19 PASS`), new paths
    (`tools/extract-bank.js`, `tools/bank-slices.json`,
    `fixtures/inputs/bank-*.txt`), and the test command. `WORKSPACE_SETUP.md` has
    several current-status claims plus historical phase narratives; update the
    current ones and label anything historical. Do not rewrite unrelated sections.
-10. **`docs/plan/README.md`.** Mark P01–P09 done, update the current snapshot,
+9. **`docs/plan/README.md`.** Mark P01–P09 done, update the current snapshot,
    update the expected-count table to 25 PASS after the retirement, and append a
    final change-log entry.
-11. **Final audit** (commands below). Fix anything that fails before declaring
+10. **Final audit** (commands below). Fix anything that fails before declaring
     done.
 
 ## Acceptance

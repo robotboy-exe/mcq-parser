@@ -4,7 +4,7 @@ Everything below comes from the claude conversation. Anything it could not confi
 - **B1 / B2 / B3:** the three bookmarklets you supplied in your first message, in that order.
 - **OH:** the original `ocr_helper.js`.
 - **HO:** the Project Handoff document.
-- **T1:** the turn that produced the merged bookmarklet (Reset fix and option-splitting removal).
+- **T1:** the turn that produced the merged bookmarklet (Reset fix and option-splitting removal), now archived as `archive/trusted-variants/trusted-variant-C.js`.
 - **T2:** the key-clearing turn.
 - **T3:** the blank-option and E/F bug-fix turn.
 
@@ -12,7 +12,7 @@ Everything below comes from the claude conversation. Anything it could not confi
 
 ### 1. CURRENT_CODE
 
-**Which version:** the most stable version is the merged bookmarklet, built on B2. It also exists as `/mnt/user-data/outputs/merged_bookmarklet.txt`, but this chat copy is the one to trust.
+**Which version:** the most stable version is archived as `archive/trusted-variants/trusted-variant-C.js`, built on B2. The former `/mnt/user-data/outputs/merged_bookmarklet.txt` was byte-identical and has been removed; C is now the canonical copy.
 
 **What was verified:**
 - `node --check` passed on the full code after stripping `javascript:`.

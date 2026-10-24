@@ -10,13 +10,10 @@ Last updated: 2026-10-24.
 
 - Current test status: `node tests/runner.js` → 20 PASS, 0 FAIL, 0 PENDING.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
-- `ANOMALIES.txt` is present but untracked. The 10 duplicate files listed below
-  are removed in the working tree but not committed.
-- The bank source is modified in the working tree. P02 pins the current hash;
-  re-audit the manifest if it changes.
-- `merged_bookmarklet.txt` is byte-identical to `archive/trusted-variants/trusted-variant-C.js`;
-  P09 deletes the duplicate.
-- `docs/BASELINE_COMPARISON.md` has an uncommitted B2 → C verification edit.
+- `ANOMALIES.txt` and the duplicate-file removals are committed.
+- P02 pins the current bank hash; re-audit the manifest if the source changes.
+- The former `merged_bookmarklet.txt` duplicate has been deleted. The canonical
+  archived copy is `archive/trusted-variants/trusted-variant-C.js`.
 - P03 is done: inline multi-pair keys are detected, and `bank-2021` is confirmed.
   P01/P02 are still pending; the 2021 input was sliced manually.
 

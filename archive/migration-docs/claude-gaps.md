@@ -7,7 +7,8 @@ Checked against the conversation. I found no confirmed misattributions or misdes
 **1. The chat copy of the code is not verified identical to the file.**
 - **Missing:** I typed the code block by hand from a bash display that doubled every backslash. I never diffed that chat text against `merged_bookmarklet.txt`. I can't do it from here, so it is unverified.
 - **Why it matters:** it is the only copy if the container file is lost, and one wrong character in a regex would break parsing without any error.
-- **Fix:** treat `merged_bookmarklet.txt` (the presented file, or the bookmark you installed) as the source of truth and the chat copy as reference only. In the new workspace, strip `javascript:` from the file, run `node --check` on it, and compare its length with the chat copy.
+- **Resolved 2026-10-24:** `merged_bookmarklet.txt` was byte-identical to `archive/trusted-variants/trusted-variant-C.js`. The duplicate has been removed, and C is the canonical archived copy. The chat copy remains unverified.
+- **Fix:** treat `archive/trusted-variants/trusted-variant-C.js` as the source of truth and the chat copy as reference only. In the new workspace, strip `javascript:` from C, run `node --check` on it, and compare its length with the chat copy.
 
 Nothing else blocks migration.
 
