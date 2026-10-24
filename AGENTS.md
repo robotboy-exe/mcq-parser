@@ -4,6 +4,7 @@
 
 - `docs/AGENTS.md` is the detailed contract: dangerous regexes, behavior to preserve, evidence policy. Read it before editing `src/parser/parser.js` or `src/ui/ui.js`.
 - Behavior spec: `docs/SPEC.md`; rationale: `docs/DECISIONS.md`; test status: `docs/INVARIANTS.md`, `docs/EDGE_CASES.md`.
+- Work tracker and session protocol: `docs/plan/README.md`. Read it before starting a work package; update its status row and the package handoff when done.
 - The archived migration docs and live PHP/HTML are the source of truth (not prose guesses): `archive/migration-docs/`, `archive/live-sources/`.
 
 ## Commands
