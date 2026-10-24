@@ -41,21 +41,24 @@ from. See `archive/legacy-bookmarklets/README.md` for the matching evidence.
 
 ### B → C
 
-`claude-migration.md` lists the changes from B2 to the merged bookmarklet and
-C is byte-identical to that document's code block:
+A token-level diff of `archive/legacy-bookmarklets/b2.js` against
+`archive/trusted-variants/trusted-variant-C.js` confirms exactly eight
+behavioral changes and no other differences (2026-10-24). `claude-migration.md`
+lists the same changes, and C is byte-identical to that document's code block:
 
 1. `Reset Queue` uses `{items:[],i:0}`.
 2. The absorbed-option post-processor is removed.
 3. A questions paste replaces the key; a no-key paste clears it.
-4. `OPTION` uses `[^\S\n]*` after the label so a blank `C.` no longer consumes
-   the following `D.`.
+4. `OPTION` uses `[^\S\n]*[.)][^\S\n]*` instead of `\s*[.)]\s*`, so a blank `C.`
+   no longer consumes the following `D.`.
 5. Loose E/F detection (`LOOSE`) is added for `E Abraham` without a dot.
 6. `fillForm` replaces Option D with E/F only when that option's text exists.
 7. `cur()` returns the question object.
 8. `tick()` maps E/F to Option D and gives accurate messages.
 
-C also adds the merged one-box UI, `splitSections` (divider / key-only / header
-/ structure), key-only paste, and the "Show paste box" control.
+The merged one-box UI, `splitSections` (divider / key-only / header /
+structure), key-only paste, and the "Show paste box" control are already
+present in B2, so they are B → B2 changes, not part of B2 → C.
 `trusted-variant-C-KNOWN_ISSUES.md` calls C the most recent merged-textarea
 iteration personally tested by the user, with limited testing time.
 
