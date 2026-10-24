@@ -13,6 +13,12 @@ The parser is kept separate from the UI so it can be tested without a browser.
 # Rebuild the bookmarklet from the modules
 node src/build/build.js
 
+# Run the fixture suite
+node tests/runner.js
+
+# Verify the bank source, slice anchors, counts, and output hashes
+node tools/extract-bank.js --check
+
 # Run the parser directly
 node -e "const p=require('./src/parser/parser.js'); console.log(p.parseQuestion({num:1,text:'Who was the father of faith? A. Abraham B. Moses C. David D. Joseph'}))"
 ```
@@ -41,12 +47,16 @@ docs/
   DECISIONS.md         why the unusual heuristics exist
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
-  EDGE_CASES.md        63 documented edge cases
-  INVARIANTS.md        57 documented invariants
+  EDGE_CASES.md        65 documented edge cases
+  INVARIANTS.md        62 documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
+  plan/                work tracker and package handoffs
 fixtures/
-  inputs/              raw samples copied from migration docs
+  inputs/              bank slices, anomaly blocks, doc samples, synthetic cases
   expected/            documented expected outputs (CONFIRMED/PENDING)
+tools/
+  extract-bank.js      deterministic per-year bank extractor
+  bank-slices.json     source/slice manifest with anchors, counts, and hashes
 archive/
   migration-docs/      original migration documents and claude-gaps.md
   trusted-variants/    original bookmarklet variants A/B/C
@@ -59,7 +69,13 @@ tests/runner.js        pure-Node fixture harness (no browser)
 
 - Accepts `N.` question markers (1–3 digits) and options A–F, dotted or
   dotless-after-newline; inline options are supported.
-- Splits off an answer key by divider, header, structure, or key-only paste.
+- Accepts one exam year per paste; use `tools/extract-bank.js` for the
+  multi-year bank.
+- Handles unnumbered `*` bullet questions as a separate mode (`num: null`).
+- Runs a guarded OCR salvage pre-pass only when multiple fused boundaries are
+  detected and the repair increases the chunk count; banks are left untouched.
+- Splits off an answer key by divider, header, structure, or key-only paste;
+  inline multi-pair key lines are recognized.
 - Collapses E/F answers into Option D, because the page has only four options
   and radios 0–3 (a hard server constraint).
 - Shows advisory flags such as `option C missing`; it never blocks saving.
@@ -73,16 +89,17 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 ## Status
 
-Workspace setup phases 1–9 are complete. `tests/runner.js` runs every fixture
-and reports PASS, FAIL, or PENDING; run it for the current status.
-`WORKSPACE_SETUP.md` holds the final setup report and the human decisions still
-needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
-see `docs/BASELINE_COMPARISON.md` for why.
+Workspace setup phases 1–9 are complete, and the follow-up work plan
+(`docs/plan/README.md`) P01–P09 is done: 25 fixtures, 25 PASS, 0 FAIL,
+0 PENDING. `tests/runner.js` runs every fixture and reports PASS, FAIL, or
+PENDING; `WORKSPACE_SETUP.md` holds the setup report. The baseline is
+`trusted-variant-C.js` (the merged one-box artifact); see
+`docs/BASELINE_COMPARISON.md` for why.
 
-Verification gaps still carried: no live browser run, no live `questions`
-schema, and no real OCR paste beyond the documented S1 sample. After updating
-the bookmarklet, press Reset Queue and re-paste rather than trusting an old
-`ocrQueue` (EC-62/INV-56).
+The real-bank suite (`bank-2021`–`bank-2025`) and both anomaly blocks are now
+covered. Verification gaps still carried: no live browser run and no live
+`questions` schema check. After updating the bookmarklet, press Reset Queue and
+re-paste rather than trusting an old `ocrQueue` (EC-62/INV-56).
 
 Resolved decisions: Reset Queue keeps the key, the key survives reloads, saves
 are forced active, the PRG success text is confirmed from the archived PHP, the

@@ -113,6 +113,13 @@ this table during review.
 | EC-60 | Category limit | More than 10 active categories | Dropdown only exposes `id <= 10`; matcher cannot select beyond | CONFIRMED | qwen-2-gaps §5; `admin_questions.php` query |
 | EC-63 | Live `questions` schema mismatch | PHP inserts into `questions`; only schema evidence is a `questions1` dump with required `practice_title` | Whether live `questions` has that required column is unknown; if it does, every save would fail | UNVERIFIED | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert |
 
+## G. Hostile OCR families (now covered)
+
+| ID | Short name | Trigger | Expected behavior | Status | Source |
+|---|---|---|---|---|---|
+| EC-64 | Unnumbered `*` bullet family | `ANOMALIES.txt` lines 1–95: 19 `*` questions, no numbers | Bullet mode yields 19 chunks with `num: null`; every chunk carries `question number missing`; no invented numbers and no merged-letter flags | CONFIRMED | `anomaly-block1` fixture; P08 |
+| EC-65 | Fused-boundary government block | `ANOMALIES.txt` lines 99–115: mid-line numbers, fused option labels, `for.9.Which` | Guarded salvage makes 50 inserts and yields 12 chunks. Q4 absorbs the unnumbered Q5/Q6 text, Q9 absorbs Q10's options, Q11 is empty and absent, Q16 has only A/B, and trailing `202.` is dropped by the `+5` guard. Bank text is unchanged (0 inserts) | CONFIRMED | `anomaly-block2` fixture; P07 |
+
 ## Conflicts and open statuses
 
 No edge case remains CONFLICTED. The former conflicts and server-side gaps were
@@ -135,7 +142,7 @@ closed by the archived PHP/HTML sources:
 
 ## Counts
 
-- Total: 63
-- CONFIRMED: 57
+- Total: 65
+- CONFIRMED: 59
 - UNVERIFIED: 6
 - CONFLICTED: 0

@@ -1,6 +1,6 @@
 # P07 — Anomaly block 2 and guarded salvage
 
-Status: not started. Depends on: P06. Blocks: P08.
+Status: done. Depends on: P06. Blocks: P08.
 
 ## Self-contained context
 
@@ -195,10 +195,15 @@ Integrate:
 ## Handoff note (append when done)
 
 ```text
-Date:
+Date: 2026-10-24
 Result: 25 PASS / 0 FAIL / 0 PENDING
-Block-2 nums:
-Inserts on block 2:
-Bank no-op result:
-Open questions:
+Block-2 nums: [null, 2, 3, 4, 7, 8, 9, 12, 13, 14, 15, 16] (12 chunks)
+Inserts on block 2: 50 (triggered; after=12 > before=4)
+Bank no-op result: inserts 0 and text unchanged for all five bank inputs
+Files changed: src/parser/parser.js (two functions + exports), src/ui/ui.js
+  (salvage integration + status note), tests/runner.js (salvage integration,
+  nums schema/compare), fixtures/inputs/anomaly-block2.txt,
+  fixtures/expected/anomaly-block2.json, rebuilt src/bookmarklet.js.
+Open questions: none. Q4/Q9 remain merged and Q13/Q16 keep missing-option
+  flags, as the source dictates; only stems are asserted for Q4/Q9.
 ```

@@ -20,6 +20,12 @@ The bookmarklet is injected into the existing "Add a New Question" admin page
 
 It never edits the PHP, the database, or the live `ocr_helper.js`.
 
+The parser expects **one exam year per paste**. The archived bank contains five
+years (2021–2025); extract one year externally with
+`node tools/extract-bank.js` and paste only that output. Multi-year pastes are
+unsupported because the section splitter and numbering guard can pair one
+year's questions with another year's key.
+
 ## 2. Input format
 
 One plain-text paste containing any combination of:
@@ -41,6 +47,11 @@ One plain-text paste containing any combination of:
   produce no key entry.
 - A key-only paste (every non-empty line is a key line) is valid and keeps the
   existing queue.
+- Inline multi-pair key lines (`1.A 2.B 3.C`) are key lines even without a
+  divider or `ANSWERS` heading.
+- Unnumbered questions that start a line with `*` (optionally indented) are a
+  separate bullet mode. They yield `num: null` and the `question number missing`
+  flag; no numbers are invented. Bullet mode is not mixed with numbered input.
 
 Before question parsing, three OCR typo fixes are applied to the question part
 only:
@@ -120,9 +131,32 @@ The answer section starts at the boundary line if that line is key-like or has
 ≥2 inline pairs; otherwise it starts on the next line (a pure heading is
 dropped).
 
-### Stage 2 — Question split (`splitQuestions`)
+### Stage 1.5 — Guarded salvage pre-pass
 
-- Marker regex: `/(?:^|\n)\s*(\d{1,3})\.\s+/g`.
+`splitSectionsWithSalvage` runs the strict `splitSections` first. It then counts
+boundary repairs from `salvageNormalize`: a newline before a mid-line `N.` whose
+next token starts with a capital/quote/paren (or ends the line), a marker after
+an inline run of spaces when the next word is capitalized, and a space before a
+fused `A.`–`F.` label after a lowercase letter or punctuation/digit. Salvage is
+used only when **all** of these hold:
+
+1. at least 2 inserts were made;
+2. the repaired text splits into more question chunks than the strict text;
+3. the extra chunks are produced without changing the strict result otherwise.
+
+If either gate fails, the strict result is returned byte-for-byte. When salvage
+is used, every parsed item gets the advisory flag
+`OCR boundaries repaired; verify question and option split`, and the UI shows
+`OCR boundaries repaired (N inserts); verify the split.`
+
+### Stage 2 — Question split (`splitQuestionItems` / `splitQuestions`)
+
+- If any line-start numbered marker exists, numbered mode (`splitQuestions`) is
+  used. Otherwise, two or more `*` bullets select `splitBulletQuestions`; fewer
+  than two fall back to numbered mode.
+- Bullet mode consumes `*` and its following spaces; each bullet is one chunk
+  with `num: null`.
+- Marker regex (numbered mode): `/(?:^|\n)\s*(\d{1,3})\.\s+/g`.
 - Sequence guard: the first marker is always kept; later markers are kept only
   when `n > last` and `n <= last + 5`. Repeats, backwards numbers, and jumps
   greater than 5 are silently skipped, so their text stays with the previous

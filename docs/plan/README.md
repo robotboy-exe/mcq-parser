@@ -8,14 +8,17 @@ Last updated: 2026-10-24.
 
 ## Current snapshot
 
-- Current test status: `node tests/runner.js` → 20 PASS, 0 FAIL, 0 PENDING.
+- Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
 - P02 pins the current bank hash; re-audit the manifest if the source changes.
 - The former `merged_bookmarklet.txt` duplicate has been deleted. The canonical
   archived copy is `archive/trusted-variants/trusted-variant-C.js`.
-- P03 is done: inline multi-pair keys are detected, and `bank-2021` is confirmed.
-  P01/P02 are still pending; the 2021 input was sliced manually.
+- P01–P09 are all done: `input_origin` is enforced, `tools/extract-bank.js`
+  generates the five per-year inputs deterministically (`--check` verifies
+  source/output hashes, anchors, and counts), the bank and both anomaly blocks
+  are covered, and `qwen2-s1` was retired after its assertions moved to
+  `bank-2021`.
 
 ## Source hierarchy and priority
 
@@ -59,8 +62,8 @@ Every `fixtures/expected/*.json` must eventually carry one of:
 | `doc` | Real sample transcribed in a migration doc, not present in the bank |
 | `synthetic` | Assistant-written input covering a behavior absent from the sources |
 
-`P01` introduces and enforces this field. Until then, provenance lives in the
-free-text `provenance`/`source` fields.
+`P01` introduces and enforces this field; the runner rejects a missing or
+unknown value. Free-text `provenance`/`source` fields still carry detail.
 
 ## Work packages
 
@@ -68,15 +71,15 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 
 | ID | Document | Goal | Depends on | Status |
 |---|---|---|---|---|
-| P01 | [01-origin-taxonomy.md](01-origin-taxonomy.md) | Add and enforce `input_origin`; label the 19 existing fixtures | — | not started |
-| P02 | [02-bank-extraction.md](02-bank-extraction.md) | Deterministic per-year extractor + 5 bank inputs + PENDING specs | P01 | not started; needed before P04–P06 |
+| P01 | [01-origin-taxonomy.md](01-origin-taxonomy.md) | Add and enforce `input_origin`; label the 19 existing fixtures | — | done (20 labelled) |
+| P02 | [02-bank-extraction.md](02-bank-extraction.md) | Deterministic per-year extractor + 5 bank inputs + PENDING specs | P01 | done |
 | P03 | [03-bank-2021-inline-key.md](03-bank-2021-inline-key.md) | 2021 fixture + first parser fix: detect inline keys | P02 (deferred) | done |
-| P04 | [04-bank-2022.md](04-bank-2022.md) | 2022 fixture: inline key, real dotless option, 13 E-option questions | P03 | not started |
-| P05 | [05-bank-2023.md](05-bank-2023.md) | 2023 fixture: inline key + 8 E-option questions | P03 | not started |
-| P06 | [06-bank-2024-2025.md](06-bank-2024-2025.md) | 2024 partial-year fixture + 2025 fixture with missing key entry | P03 | not started |
-| P07 | [07-anomaly-block2-salvage.md](07-anomaly-block2-salvage.md) | Guarded salvage normalizer + block-2 fixture | P06 | not started |
-| P08 | [08-anomaly-block1-bullets.md](08-anomaly-block1-bullets.md) | Unnumbered `*` question mode | P07 | not started |
-| P09 | [09-docs-cleanup.md](09-docs-cleanup.md) | Docs updates, retire superseded fixtures, final audit | all | not started |
+| P04 | [04-bank-2022.md](04-bank-2022.md) | 2022 fixture: inline key, real dotless option, 13 E-option questions | P03 | done |
+| P05 | [05-bank-2023.md](05-bank-2023.md) | 2023 fixture: inline key + 8 E-option questions | P03 | done |
+| P06 | [06-bank-2024-2025.md](06-bank-2024-2025.md) | 2024 partial-year fixture + 2025 fixture with missing key entry | P03 | done |
+| P07 | [07-anomaly-block2-salvage.md](07-anomaly-block2-salvage.md) | Guarded salvage normalizer + block-2 fixture | P06 | done |
+| P08 | [08-anomaly-block1-bullets.md](08-anomaly-block1-bullets.md) | Unnumbered `*` question mode | P07 | done |
+| P09 | [09-docs-cleanup.md](09-docs-cleanup.md) | Docs updates, retire superseded fixtures, final audit | all | done |
 
 ## Dependency graph
 
@@ -138,6 +141,7 @@ node -e "const fs=require('fs');const s=fs.readFileSync('src/bookmarklet.js','ut
 |---|---|---|---|
 | baseline | 19 | 0 | before P03 |
 | P03 (done) | 20 | 0 | inline-key fix + bank-2021; P02 extractor deferred |
+| P02 (done) | 20 | 4 | extractor + bank-2022..2025 PENDING; bank-2021 confirmed |
 | P04 | 21 | 0 | bank-2022 confirmed |
 | P05 | 22 | 0 | bank-2023 confirmed |
 | P06 | 24 | 0 | bank-2024 and bank-2025 confirmed |
@@ -145,8 +149,8 @@ node -e "const fs=require('fs');const s=fs.readFileSync('src/bookmarklet.js','ut
 | P08 | 26 | 0 | anomaly block 1 added |
 | P09 | 25 | 0 | `qwen2-s1` retired; bank-2021 covers it |
 
-P01/P02 are not reflected above. If P02 is executed later, it adds five PENDING
-specs; the 2021 one is already confirmed.
+P02 added four PENDING specs, not five: the 2021 bank fixture was already
+confirmed by P03. P04–P06 replace the PENDING specs with confirmed ones.
 
 ## Removed duplicates (for the audit trail)
 
@@ -167,3 +171,15 @@ authoritative:
 ## Change log
 
 - 2026-10-24 — plan created; duplicates removed; ANOMALIES.txt received.
+- 2026-10-24 — P01 done: `input_origin` required and enforced; all 20 fixtures
+  labelled (7 bank, 1 doc, 12 synthetic).
+- 2026-10-24 — P02 done: extractor + manifest, five bank inputs (2021 unchanged
+  byte-for-byte), four PENDING specs for 2022–2025.
+- 2026-10-24 — P04–P06 done: bank-2022/2023/2024/2025 confirmed from source;
+  24 PASS, 0 FAIL, 0 PENDING; no parser changes.
+- 2026-10-24 — P07 done: guarded salvage pre-pass (50 inserts on block 2,
+  12 chunks; zero inserts on every bank input); anomaly-block2 confirmed.
+- 2026-10-24 — P08 done: `*`-bullet mode yields 19 `num: null` questions;
+  numbered and bank behavior unchanged; 26 PASS.
+- 2026-10-24 — P09 done: docs/contract updated, `qwen2-s1` retired after moving
+  its assertions to `bank-2021`, final audit green; 25 PASS.

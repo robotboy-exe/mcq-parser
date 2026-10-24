@@ -1,10 +1,13 @@
 # Workspace Setup
 
-Status: Phases 1–8 complete. Workspace setup is finished; the final report is
-below. The test harness runs (19 PASS, 0 FAIL, 0 PENDING). Phase 7 closed the
-human-decision gaps and archived the live PHP/HTML/helper sources supplied after
-Phase 6; parser behavior was unchanged, and the UI changes were the two decided
-ones (force `is_active` on, stop handling `ocrSubmitted`).
+Status: Workspace setup phases 1–9 are complete and remain below as the setup
+record. The follow-up work plan (`docs/plan/README.md`, P01–P09) is also
+complete. The current test harness runs 25 PASS, 0 FAIL, 0 PENDING, and
+`node tools/extract-bank.js --check` passes. Phase 7 closed the human-decision
+gaps and archived the live PHP/HTML/helper sources supplied after Phase 6; the
+only Phase 7 UI changes were the two decided ones (force `is_active` on, stop
+handling `ocrSubmitted`). Later parser additions are the inline-key fix, the
+guarded salvage pre-pass, and the unnumbered `*` bullet mode.
 
 ## Directory Structure
 
@@ -24,8 +27,11 @@ project/
 │   ├── build/build.js           # bookmarklet assembler
 │   └── bookmarklet.js           # generated combined output
 ├── fixtures/
-│   ├── inputs/
+│   ├── inputs/                  # bank slices, anomaly blocks, doc/synthetic samples
 │   └── expected/
+├── tools/
+│   ├── extract-bank.js          # deterministic per-year bank extractor
+│   └── bank-slices.json         # source/slice manifest with anchors and hashes
 ├── tests/
 │   └── runner.js                # fixture harness (Phase 6)
 ├── docs/
@@ -317,7 +323,7 @@ No edge cases or invariants were invented; every entry cites a source doc.
 
 | Field | Meaning |
 |---|---|
-| `kind: "questions"` | Run the full paste path: `splitSections` → `splitQuestions` → `parseQuestion`. |
+| `kind: "questions"` | Run the full paste path: `splitSectionsWithSalvage` → `splitQuestionItems` → `parseQuestion`. |
 | `kind: "question"` | Run `parseQuestion` on the whole input as one chunk. Used for the assistant-written micro-samples. |
 | `kind: "key"` | Run `parseKey` on the input. |
 | `parse_num` | Harness-only number to pass to `parseQuestion` when the raw sample has no printed number. Used only where the source's "no flags" result assumes a numbered parse; it is not a documented book number. |
@@ -334,6 +340,11 @@ No edge cases or invariants were invented; every entry cites a source doc.
 
 ### Inventory
 
+**Historical snapshot (Phase 4/6).** This table predates the bank/anomaly work.
+The old S1 fixture is shown as its replacement, `bank-2021`; the retired fixture
+and its assertions were migrated in P09. Current fixtures are the 25
+`fixtures/expected/*.json` files.
+
 | Fixture | Source | Kind | Status | Documented assertion |
 |---|---|---|---|---|
 | `claude-s1-joseph-blank-c` | claude §6/§7 S1; qwen2 §6/§7 S3 (identical input) | questions | CONFIRMED | Q3: A/B/D text, C empty, flag `option C missing` only; D has no `D.` prefix |
@@ -346,7 +357,7 @@ No edge cases or invariants were invented; every entry cites a source doc.
 | `qwen1-sample3-five-options` | qwen1 §6/§7 Sample 3 | questions | CONFIRMED | all five options parse; E exposed |
 | `qwen1-sample4-dotless-option-a` | qwen1 §6/§7 Sample 4 | questions | CONFIRMED | `A 75 years` becomes Option A, not stem text |
 | `qwen1-sample5-question-starting-a` | qwen1 §6/§7 Sample 5 | questions | CONFIRMED | stem-leading `A good` is not Option A |
-| `qwen2-s1-crk-2021-full` | qwen2 §6/§7 S1 | questions | CONFIRMED | 40 items; 2021; Q20 inline options exact and flag-free; E on Q1/21/31-35; no duplicate-letter flags; quoted/underscore stems preserved |
+| `bank-2021` | bank lines 1–297 (replaced the old S1 fixture in P09) | questions | CONFIRMED | 40 items; 2021; key of 40; Q20 inline options exact and flag-free; E on Q1/21/31-35; no duplicate-letter flags; old S1 quoted/underscore assertions preserved |
 | `qwen2-s2-article-vs-option` | qwen2 §6/§7 S2 | questions | CONFIRMED | leading `A 5` stays in stem; `A 75/105/85/99 years`; no flags |
 | `qwen2-s4-article-start` | qwen2 §6/§7 S4 (assistant micro-example) | question | CONFIRMED | chunk-leading `A 5` is not an option |
 | `qwen2-s4-dotted-start` | qwen2 §6/§7 S4 (assistant micro-example) | question | CONFIRMED | `A. 5 years` is Option A |
@@ -360,7 +371,7 @@ No edge cases or invariants were invented; every entry cites a source doc.
 
 | Status | Count |
 |---|---|
-| CONFIRMED | 19 |
+| CONFIRMED | 25 |
 | PENDING | 0 |
 
 Every extracted raw sample has at least the options/flags expected by a source
@@ -392,7 +403,7 @@ turned into fixtures.
 
 ### Discrepancies recorded in fixtures
 
-1. **CRK/CRS alias** — `qwen1-sample2-crk-header` and `qwen2-s1-crk-2021-full`
+1. **CRK/CRS alias** — `qwen1-sample2-crk-header` and `bank-2021`
    assert the documented CRS/CHRISTIAN RELIGIOUS match. The harness now uses
    the current live subject list, which contains `CRS` (id 14), so the alias
    selects it (EC-41). No fixture expectation was changed.
@@ -405,8 +416,8 @@ turned into fixtures.
 4. **Blank-C repair mechanism** — `claude-s1` notes that B recovers the blank C
    with its post-processor while C uses the `[^\S\n]*` regex; both are documented
    to produce the same output.
-5. **Q11/Q12 continuation** — `qwen2-s1` records the documented quirk but makes
-   no assertion, because qwen2 calls it unresolved/unconfirmed as desirable.
+5. **Q11/Q12 continuation** — no fixture asserts the quirk, because qwen2 calls
+   it unresolved/unconfirmed as desirable.
 6. **Numbering caveat for claude S2-S5** — those samples have no printed question
    number; the docs' "no flags" result assumes a numbered parse. The num used in
    the source test is not documented, so the fixture records the caveat rather
@@ -414,7 +425,7 @@ turned into fixtures.
 
 ### Integrity checks
 
-- 19 input files and 19 expected files; every input has exactly one expected
+- 25 input files and 25 expected files; every input has exactly one expected
   file and every `input_file` path exists.
 - Input files preserve the source line endings, including CRLF in the
   `qwen-2-reconciled.md` blocks and the S4 micro-examples.
@@ -547,7 +558,7 @@ Implementation notes and limits:
   `question_contains` and an unknown `kind` (even with `PENDING` status) both
   produced FAIL and a non-zero exit; the temporary files were removed.
 
-### Harness result
+### Harness result (Phase 6 snapshot)
 
 | Result | Count |
 |---|---|
@@ -555,6 +566,9 @@ Implementation notes and limits:
 | FAIL | 0 |
 | PENDING | 0 |
 | Total | 19 |
+
+Current harness result after P01–P09: 25 PASS, 0 FAIL, 0 PENDING, 25 fixtures,
+0 orphan inputs. The table above is the Phase 6 snapshot.
 
 **Phase 4 correction (accepted in Phase 6).** An earlier revision of
 `qwen1-sample2-crk-header` asserted Option A as
@@ -642,16 +656,18 @@ Version differences (A/B/V1 vs baseline C) remain documented in
    artifact. Rationale: documented lineage B → C, superset workflow, fixes for
    A/V1 dotless options and B's E/F radio values, and it passes the documented
    S1/S2/S3 regression set. Full evidence in `docs/BASELINE_COMPARISON.md`.
-2. **Fixtures collected:** 19 total, 19 CONFIRMED, 0 PENDING; 19 currently pass.
+2. **Fixtures collected:** 25 total, 25 CONFIRMED, 0 PENDING; 25 currently pass.
    One undocumented assertion was removed from `qwen1-sample2-crk-header` in
-   Phase 6 (Phase 4 correction; see "Harness result").
-3. **Edge cases confirmed:** 63 documented — 57 CONFIRMED, 6 UNVERIFIED, 0
+   Phase 6 (Phase 4 correction; see "Harness result"). P09 retired the old S1
+   fixture after moving its unique assertions to `bank-2021`.
+3. **Edge cases confirmed:** 65 documented — 59 CONFIRMED, 6 UNVERIFIED, 0
    CONFLICTED (`docs/EDGE_CASES.md`). The removed conflicts were closed by the
    archived PHP/HTML, not by changing fixture expectations. Phase 9 added
-   EC-62 (stale queue) and EC-63 (live schema).
-4. **Invariants verified:** 57 documented — 48 VERIFIED, 9 AT_RISK, 0 CONFLICTED
+   EC-62 (stale queue) and EC-63 (live schema); P08 added EC-64/EC-65 for the
+   anomaly families.
+4. **Invariants verified:** 62 documented — 53 VERIFIED, 9 AT_RISK, 0 CONFLICTED
    (`docs/INVARIANTS.md`). Phase 9 added INV-56 (stale queue) and INV-57 (live
-   schema).
+   schema); P09 added INV-58–INV-62 for extraction, fixtures, and hostile OCR.
 5. **Conflicts remaining:** none CONFLICTED. The CRK/CRS alias is confirmed
    against the current archived subject `<select>`: CRK selects CRS (id 14).
    English (Oral) and English Language also resolve correctly on that list.
@@ -659,7 +675,7 @@ Version differences (A/B/V1 vs baseline C) remain documented in
    PHP and the recorded framing decision. No gap item is STILL_OPEN or
    NEEDS_INPUT.
 7. **Test harness status:** `node tests/runner.js` runs without harness errors;
-   19 PASS, 0 FAIL, 0 PENDING, 0 orphan inputs. The runner exits non-zero on a
+   25 PASS, 0 FAIL, 0 PENDING, 0 orphan inputs. The runner exits non-zero on a
    failing fixture, an unknown `expected` key or wrong-typed assertion value, an
    unknown fixture kind, a confirmed fixture with no executed assertions, a
    missing input, or an orphan input.
@@ -667,7 +683,8 @@ Version differences (A/B/V1 vs baseline C) remain documented in
    workflow. Live browser, stale-queue, and live-schema checks remain open; see
    Phase 9.
 9. **Verification gaps:** no live browser run; live `questions` schema unknown;
-   no real OCR paste beyond S1; stale `ocrQueue` has no version marker or test.
+   stale `ocrQueue` has no version marker or test. The real-bank and anomaly OCR
+   families are now covered by fixtures.
 
 ### Verification checklist
 
@@ -677,10 +694,10 @@ Version differences (A/B/V1 vs baseline C) remain documented in
       hashes and known-issues docs above).
 - [x] Live PHP/HTML/helper/OCR-bank sources preserved in `archive/live-sources/`
       (byte-identical copies; hashes above).
-- [x] All fixtures extracted (19 input/expected pairs, all CONFIRMED; no orphan
+- [x] All fixtures extracted (25 input/expected pairs, all CONFIRMED; no orphan
       inputs — the runner enforces the pairing).
-- [x] All edge cases documented (63; sources cited).
-- [x] All invariants documented (57; sources cited).
+- [x] All edge cases documented (65; sources cited).
+- [x] All invariants documented (62; sources cited).
 - [x] All source conflicts closed or reclassified with evidence; none remains
       CONFLICTED.
 - [x] Test harness runs without errors (`node tests/runner.js`) and exits
@@ -739,7 +756,9 @@ distinguishing code, not by filename order.
 | B3 | `second.js` | `archive/legacy-bookmarklets/b3.js` | Only file with `splitCombinedText`; no key-only path |
 
 `b2.js` is the base of the merged `trusted-variant-C.js` baseline. All three
-archived files pass `node --check`; the fixture suite remains 19/19.
+archived files pass `node --check`; the fixture suite is now 25/25 (at Phase 8
+it had the earlier 19-fixture count; the bank/anomaly plan added six and retired
+one).
 
 ## Phase 9: claude-gaps.md Review
 
@@ -753,7 +772,7 @@ It reports gaps from the pre-workspace conversation, not new parser behavior.
 | 1. Chat copy not verified against file | CLOSED | The repo baseline is authoritative; `src/bookmarklet.js` passes `node --check`. |
 | 2. B1/B2/B3 and `ocr_helper.js` missing | CLOSED | Archived under `archive/legacy-bookmarklets/` and `archive/live-sources/`. |
 | 3. B1/B2/B3 claims not run | CLOSED (static/isolated) | B2 Reset bug and broken option-split regex confirmed; B1/B3 false-split risk confirmed by isolated parser runs. |
-| 4. Almost no fixtures | PARTIAL | 19 fixtures now; still no direct `splitSections` fixture and no real OCR paste beyond S1. |
+| 4. Almost no fixtures | CLOSED | 25 fixtures, including the real bank (2021–2025) and both anomaly blocks; no live browser run yet. |
 | 5. Test harness not saved | CLOSED | `tests/runner.js`. |
 | 6. Stale stored data after update | OPEN | Tracked as EC-62/INV-56; reset and re-paste after updating. |
 | 7. PHP save rules/schema | PARTIAL | Four-option rule and PRG confirmed; `questions` vs `questions1` / `practice_title` tracked as EC-63/INV-57. |
@@ -778,7 +797,8 @@ Direct B1/B2/B3 checks (no baseline change):
   is also a real option label. The removal decision (D-07) still stands.
 
 Phase 9 added EC-62, EC-63, INV-56, and INV-57; no code or fixture changed.
-`node tests/runner.js` remains 19/19.
+The later P01–P09 plan brings the suite to 25/25 and adds the bank/anomaly
+coverage; see `docs/plan/README.md`.
 
 ## Next Step
 

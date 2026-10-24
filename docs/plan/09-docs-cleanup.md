@@ -1,6 +1,6 @@
 # P09 — Docs, fixture retirement, final audit
 
-Status: not started. Depends on: P01–P08. Blocks: none.
+Status: done. Depends on: P01–P08. Blocks: none.
 
 ## Self-contained context
 
@@ -118,10 +118,19 @@ for a smaller fixture count.
 ## Handoff note (append when done)
 
 ```text
-Date:
+Date: 2026-10-24
 Result: 25 PASS / 0 FAIL / 0 PENDING
-Fixtures retired:
-Docs changed:
-Audit command results:
-Remaining risks:
+Fixtures retired: qwen2-s1-crk-2021-full (input + expected). Before deleting, its
+  unique assertions (Q1 e, Q9, Q23-Q25, Q31, Q36, Q38, questions_with_e) were
+  added to bank-2021 and passed.
+Docs changed: AGENTS.md, docs/AGENTS.md, docs/SPEC.md, docs/INVARIANTS.md,
+  docs/EDGE_CASES.md, docs/DECISIONS.md, README.md, WORKSPACE_SETUP.md,
+  docs/plan/README.md (plus P01-P09 handoffs).
+Audit command results: extractor --check exit 0; runner 25 PASS/0 FAIL/0
+  PENDING; git diff --check clean; no qwen2-s1 live references outside
+  historical plan/phase docs; no // comments in the source modules; build one
+  line and new Function check OK; no stale 19/19 current-status claims.
+Remaining risks: no live browser run; live questions schema unverified; stale
+  ocrQueue has no version marker. Q4/Q9 in anomaly block 2 stay merged and
+  Q16 keeps only A/B, matching the source.
 ```

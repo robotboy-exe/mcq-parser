@@ -283,6 +283,43 @@ option-splitting. The original filenames did not encode this order.
 **Risk.** None for the baseline: `trusted-variant-C.js` remains the merged
 artifact built from B2, and the archived B files are reference-only.
 
+## D-29 — Salvage is a guarded pre-pass, not a looser parser
+
+**Choice.** Run strict `splitSections` first. Separately count boundary repairs
+with `salvageNormalize`; use the repaired text only when it made at least two
+inserts **and** produces more question chunks. Otherwise return the strict
+result unchanged.
+**Why.** The old deployed helper recovered 12 hostile-OCR chunks but its
+tolerant marker/option rules also turned the `C.` in the 2021 header `C. R. K.`
+into a spurious chunk. A pre-pass confines tolerance to damaged text and the
+chunk-count gate provably leaves clean text alone (P07).
+**Risk.** A hostile paste can still receive unwanted inserts; the two gates
+reduce but do not eliminate that. The bank no-op probe (`inserts === 0` for all
+five inputs) is a required regression check (INV-58).
+
+## D-30 — Unnumbered `*` questions are a separate mode
+
+**Choice.** `splitQuestionItems` uses numbered mode whenever a line-start `N.`
+marker exists. Otherwise, two or more `*` bullets select
+`splitBulletQuestions`; each becomes `num: null`.
+**Why.** The 19-question block would otherwise collapse into one head chunk with
+duplicate-letter garbage. Inventing numbers would put wrong book numbers in the
+queue and key lookup (P08; INV-61).
+**Risk.** A stray two-bullet list in an otherwise unnumbered paste can select
+bullet mode. Mixed bullet/numbered families are deliberately unsupported.
+
+## D-31 — Bank extraction lives outside the parser
+
+**Choice.** `tools/extract-bank.js` reads `tools/bank-slices.json`, verifies the
+source SHA-256, slice anchors, and counts, and writes one verbatim file per year.
+The parser still receives one year per paste.
+**Why.** The bank holds 2021–2025; a whole-bank paste would let the section
+splitter and numbering guard pair one year's questions with another year's key.
+Extraction is deterministic, hash-checked, and keeps the parser's one-year
+contract unchanged (P02).
+**Risk.** Manifest line numbers are tied to the source hash. If the bank changes,
+stop and re-derive the manifest; do not reuse stale numbers.
+
 ## Open decisions (not resolved by this phase)
 
 None. B1/B2/B3 were supplied and matched in Phase 8 (D-28).

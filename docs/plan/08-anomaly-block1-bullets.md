@@ -1,6 +1,6 @@
 # P08 — Anomaly block 1 (unnumbered `*` questions)
 
-Status: not started. Depends on: P07. Blocks: P09.
+Status: done. Depends on: P07. Blocks: P09.
 
 ## Self-contained context
 
@@ -119,9 +119,15 @@ Integrate:
 ## Handoff note (append when done)
 
 ```text
-Date:
+Date: 2026-10-24
 Result: 26 PASS / 0 FAIL / 0 PENDING
-Bullet count:
-Flag differences:
-Open questions:
+Bullet count: 19 (all num === null)
+Flag differences: every item has "question number missing"; no item has the
+  merged-letter or short-text flag. No-numbered-marker mode selected as designed.
+Files changed: src/parser/parser.js (two functions + exports), src/ui/ui.js and
+  tests/runner.js (splitQuestionItems), fixtures/inputs/anomaly-block1.txt,
+  fixtures/expected/anomaly-block1.json, rebuilt src/bookmarklet.js.
+Verification: block 2 still 12 chunks; all five bank inputs still 0 salvage
+  inserts; build one line and syntax-check passes.
+Open questions: none.
 ```

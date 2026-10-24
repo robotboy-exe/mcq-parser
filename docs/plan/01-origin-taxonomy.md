@@ -1,6 +1,6 @@
 # P01 — Fixture origin taxonomy
 
-Status: not started. Depends on: none. Blocks: P02.
+Status: done. Depends on: none. Blocks: P02.
 
 ## Self-contained context
 
@@ -107,9 +107,13 @@ Synthetic (12):
 ## Handoff note (append when done)
 
 ```text
-Date:
-Result: 19 PASS / 0 FAIL / 0 PENDING
-Files changed:
-Negative checks performed:
-Open questions:
+Date: 2026-10-24
+Result: 20 PASS / 0 FAIL / 0 PENDING (20 fixtures, not 19: P03 added bank-2021)
+Files changed: tests/runner.js (INPUT_ORIGINS + validation before PENDING return);
+  all 20 fixtures/expected/*.json (input_origin added; claude-s1 provenance updated).
+Classification: bank 7 (P01's 6 + bank-2021), doc 1, synthetic 12.
+Negative checks performed: removed input_origin from bank-2021 -> "missing
+  input_origin"; set it to "bogus" -> "unknown input_origin: \"bogus\""; restored.
+Open questions: none. P01's text says 19 fixtures; it predates P03's bank-2021,
+  which is labelled bank so the taxonomy stays honest.
 ```

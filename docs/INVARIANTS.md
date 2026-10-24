@@ -99,10 +99,20 @@ Status definitions:
 | INV-54 | Appended E/F newlines in Option D are stripped because `option_d` is a single-line input. | VERIFIED | claude-migration §8 (issue 3); `admin_questions.html`, `admin_questions.php` |
 | INV-57 | The live `questions` table must accept the archived PHP's INSERT columns; the `practice_title` requirement seen in `questions1` is unverified for `questions`. | AT_RISK | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert; EC-63 |
 
+## Extraction, fixtures, and hostile OCR
+
+| ID | Rule | Status | Source |
+|---|---|---|---|
+| INV-58 | Salvage is a guarded pre-pass: bank inputs produce zero inserts, and the repaired text is used only when inserts ≥ 2 and it yields more chunks than the strict parse. Otherwise the strict result is returned unchanged. | VERIFIED | `src/parser/parser.js`; `tests/runner.js`; P07 |
+| INV-59 | Bank key sizes: 2021, 2022, 2023, and 2024 parse to 40 entries; 2025 parses to 39 because entry 26 is absent from the source. | VERIFIED | `bank-2021`–`bank-2025` fixtures; `tools/extract-bank.js` |
+| INV-60 | Anomaly block 2 yields 12 chunks (`null, 2, 3, 4, 7, 8, 9, 12, 13, 14, 15, 16`); Q4 and Q9 remain merged, Q5/Q6/Q10/Q11 do not exist, and Q16 has only A/B. | VERIFIED | `anomaly-block2` fixture; P07 |
+| INV-61 | Anomaly block 1 (`*` bullets) yields 19 chunks, all with `num: null`, and only in bullet mode when no line-start numbered marker exists. | VERIFIED | `anomaly-block1` fixture; P08 |
+| INV-62 | Expected fixtures are transcribed from sources/docs, never generated from parser output, and every spec declares one of `bank`, `anomaly`, `doc`, or `synthetic`. | VERIFIED | P01/P09; `tests/runner.js`; `AGENTS.md` |
+
 ## Counts
 
-- Total: 57
-- VERIFIED: 48
+- Total: 62
+- VERIFIED: 53
 - AT_RISK: 9
 - CONFLICTED: 0
 
