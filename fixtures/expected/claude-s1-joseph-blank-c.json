@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "synthetic",
   "id": "claude-s1-joseph-blank-c",
   "source": [
     "archive/migration-docs/claude-migration.md §6 S1 (verbatim user-supplied text)",
@@ -8,7 +9,7 @@
     "archive/migration-docs/qwen-2-reconciled.md §7 S3 (expected behavior)",
     "archive/migration-docs/qwen-2-reconciled.md §3 E05"
   ],
-  "provenance": "Verbatim user-supplied question text. claude S1 and qwen2 S3 are byte-identical, so they share this fixture.",
+  "provenance": "Synthetic blank-C variant of bank 2022 Q3: the bank has 'C. punish them'; C is blanked here to cover INV-16/23. claude S1 and qwen2 S3 are byte-identical, so they share this fixture.",
   "status": "CONFIRMED",
   "input_file": "fixtures/inputs/claude-s1-joseph-blank-c.txt",
   "kind": "questions",

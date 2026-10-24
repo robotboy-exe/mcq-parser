@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "bank",
   "id": "qwen1-sample5-question-starting-a",
   "source": [
     "archive/migration-docs/qwen-1-migration.md §6 Sample 5",

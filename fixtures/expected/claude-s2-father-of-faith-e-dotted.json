@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "synthetic",
   "id": "claude-s2-father-of-faith-e-dotted",
   "source": [
     "archive/migration-docs/claude-migration.md §6 S2 (assistant-written test input)",

@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "bank",
   "id": "bank-2021",
   "source": [
     "archive/live-sources/IMPROVISED C.docx.txt lines 1-297",
@@ -20,6 +21,19 @@
     },
     "questions": [
       {
+        "num": 1,
+        "question_contains": [
+          "What is the meaning of the name Samuel?"
+        ],
+        "e": "the end of Peninnah's pride"
+      },
+      {
+        "num": 9,
+        "question_contains": [
+          "Peter and John healed a man who was----- at the Beautiful gate"
+        ]
+      },
+      {
         "num": 20,
         "question_contains": [
           "The rainbow as the sign of God's convenant with Noah implies"
@@ -31,6 +45,45 @@
         "flags": []
       },
       {
+        "num": 23,
+        "question_contains": [
+          "In the book of genesis light was created on the --- day"
+        ]
+      },
+      {
+        "num": 24,
+        "question_contains": [
+          "The names of the two wives of Elkanah were --- and --- respectively"
+        ]
+      },
+      {
+        "num": 25,
+        "question_contains": [
+          "Samuel was __ son born for him by ___"
+        ]
+      },
+      {
+        "num": 31,
+        "question_contains": [
+          "'God opposes the proud, but gives grace to the humble'",
+          "This teaching of peter emphasizes"
+        ]
+      },
+      {
+        "num": 36,
+        "question_contains": [
+          "\"Go and search diligently for the child",
+          "The intention of the speaker in this context was"
+        ]
+      },
+      {
+        "num": 38,
+        "question_contains": [
+          "Lord, do not trouble yourself",
+          "The continuation of this message by the centurion indicated that"
+        ]
+      },
+      {
         "num": 40,
         "question": "Who appeared and talked with Jesus during the transfiguration?",
         "a": "Moses and Elijah",
@@ -39,6 +92,15 @@
         "d": "Elisha and Elijah",
         "flags": []
       }
+    ],
+    "questions_with_e": [
+      1,
+      21,
+      31,
+      32,
+      33,
+      34,
+      35
     ],
     "key": {
       "1": "A",
