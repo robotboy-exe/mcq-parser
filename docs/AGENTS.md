@@ -4,15 +4,23 @@ Read this before changing any parser or UI code. It is derived from the archived
 migration docs and the baseline in `src/`. It deliberately does not propose new
 features.
 
+## Working context
+
+- The user works on a phone (Brave on Android); keep explanations plain and
+  replies short.
+- Do not add unused files, speculative features, or refactors for style.
+
 ## Ground rules
 
 1. **The migration docs are the contract.** Read
    `archive/migration-docs/claude-migration.md`,
    `archive/migration-docs/qwen-1-gaps*.md`,
    `archive/migration-docs/qwen-2-gaps.md`, and
-   `archive/migration-docs/qwen-2-reconciled.md` before editing. Server-side
-   claims and the current subject list are corroborated by
-   `archive/live-sources/` (`admin_questions.php`, `admin_questions.html`).
+   `archive/migration-docs/qwen-2-reconciled.md` before editing. Read
+   `archive/migration-docs/claude-gaps.md` for the pre-workspace gap report and
+   its Phase 9 triage. Server-side claims and the current subject list are
+   corroborated by `archive/live-sources/` (`admin_questions.php`,
+   `admin_questions.html`).
 2. **Do not refactor for style.** The docs repeatedly say the code is a working
    baseline, not a refactor target (qwen-2 H08). Make only changes you can
    test.
@@ -76,6 +84,8 @@ features.
   between them was decided (claude §8 issue 10).
 - Reading, writing, deleting, or relying on `ocrSubmitted`; the bookmarklet is
   deliberately self-contained (INV-40; D-27).
+- Trusting an existing `ocrQueue` after changing parser/UI code. There is no
+  version marker; reset and re-paste instead (EC-62; INV-56).
 
 ## Tests
 
@@ -135,4 +145,5 @@ Items marked UNVERIFIED, AT_RISK, or CONFLICTED in `docs/EDGE_CASES.md` and
 live session. Do not promote them to confirmed defects without reproduction
 (qwen-2 H09). The save/PRG flow is now confirmed from the archived PHP, and the
 current live subject list confirms CRK → CRS. The remaining live checks are the
-full current page markup and any remaining UNVERIFIED/AT_RISK behaviors.
+full current page markup, the live `questions` schema (EC-63/INV-57), stale
+queue behavior (EC-62/INV-56), and any remaining UNVERIFIED/AT_RISK behaviors.

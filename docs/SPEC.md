@@ -88,7 +88,9 @@ or `-1`. `exam_category_id` is never inferred.
 
 ### 3.4 UI state
 
-- `localStorage.ocrQueue`: `{ items: [question...], i: number }`.
+- `localStorage.ocrQueue`: `{ items: [question...], i: number }`. There is no
+  version marker, so a queue written by an older variant can outlive a parser
+  update; reset and re-paste after updating (EC-62/INV-56).
 - `localStorage.ocrMeta`: `{ subject_id, exam_category_id, exam_year }`.
 - `localStorage.ansKey`: the parsed key map.
 - `localStorage.ocrSubmitted`: a legacy shared key. The bookmarklet no longer
@@ -234,5 +236,10 @@ the current rendered page (`archive/live-sources/admin_questions.html`):
   `Question saved successfully (Question ID: N).`
 - CSRF is carried by the form's hidden `csrf_token`; the bookmarklet posts the
   form as-is.
+
+The PHP inserts into `questions`. The only schema evidence supplied is a
+`questions1` dump with a required `practice_title`; whether live `questions` has
+that requirement is unverified (EC-63/INV-57). If it does, every save would
+fail even though the bookmarklet and PHP agree.
 
 See `docs/INVARIANTS.md` for the full rule list and which items are unverified.

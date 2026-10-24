@@ -41,14 +41,14 @@ docs/
   DECISIONS.md         why the unusual heuristics exist
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
-  EDGE_CASES.md        61 documented edge cases
-  INVARIANTS.md        55 documented invariants
+  EDGE_CASES.md        63 documented edge cases
+  INVARIANTS.md        57 documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
 fixtures/
   inputs/              raw samples copied from migration docs
   expected/            documented expected outputs (CONFIRMED/PENDING)
 archive/
-  migration-docs/      original migration documents (byte-identical copies)
+  migration-docs/      original migration documents and claude-gaps.md
   trusted-variants/    original bookmarklet variants A/B/C
   legacy-bookmarklets/ supplied B1/B2/B3 (matched from first/second/third.js)
   live-sources/        admin PHP/HTML, ocr_helper.js, OCR text bank
@@ -73,11 +73,16 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 ## Status
 
-Workspace setup phases 1–8 are complete. `tests/runner.js` runs every fixture
+Workspace setup phases 1–9 are complete. `tests/runner.js` runs every fixture
 and reports PASS, FAIL, or PENDING; run it for the current status.
 `WORKSPACE_SETUP.md` holds the final setup report and the human decisions still
 needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
 see `docs/BASELINE_COMPARISON.md` for why.
+
+Verification gaps still carried: no live browser run, no live `questions`
+schema, and no real OCR paste beyond the documented S1 sample. After updating
+the bookmarklet, press Reset Queue and re-paste rather than trusting an old
+`ocrQueue` (EC-62/INV-56).
 
 Resolved decisions: Reset Queue keeps the key, the key survives reloads, saves
 are forced active, the PRG success text is confirmed from the archived PHP, the
@@ -87,3 +92,5 @@ English (Oral) is separate from English Language.
 
 B1, B2, and B3 were matched to the supplied root files and archived under
 `archive/legacy-bookmarklets/`; the baseline remains `trusted-variant-C.js`.
+`claude-gaps.md` was supplied in Phase 9 and archived under
+`archive/migration-docs/`; its triage is in `WORKSPACE_SETUP.md` Phase 9.

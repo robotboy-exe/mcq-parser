@@ -69,10 +69,14 @@ originals (verified with `cmp`), and SHA-256 hashes are recorded below.
 - `archive/trusted-variants/trusted-variant-B-KNOWN_ISSUES.md`
 - `archive/trusted-variants/trusted-variant-C-KNOWN_ISSUES.md`
 
+### Sources supplied after Phase 8
+
+- `claude-gaps.md` — supplied in Phase 9; archived byte-identically at
+  `archive/migration-docs/claude-gaps.md` (7287 bytes, sha256
+  `6786358665cc851ae11f6c933fa1a41cda945af024f2f82e6d7f7e68817e7cad`).
+
 ### Sources Not Archived
 
-- `claude-gaps.md` — not supplied. Per Phase 1 instructions, gaps found during
-  later reconciliation will be written to a new `claude-gaps.md`.
 - Chat exports — none supplied; `archive/chat-exports/` is empty.
 
 ### Live sources supplied in Phase 7 → `archive/live-sources/`
@@ -222,8 +226,8 @@ Raw per-doc extraction notes:
 
 Consolidated outputs:
 
-- `docs/EDGE_CASES.md` — 61 edge cases
-- `docs/INVARIANTS.md` — 55 invariants
+- `docs/EDGE_CASES.md` — 63 edge cases
+- `docs/INVARIANTS.md` — 57 invariants
 
 ### Edge cases (count by status)
 
@@ -463,11 +467,14 @@ not resolve any flagged conflict.
 3. B1 and B3 were supplied later and matched in Phase 8 to
    `archive/legacy-bookmarklets/b1.js` and `b3.js`; B2 is `b2.js`. The original
    `ocr_helper.js` is archived in `archive/live-sources/`.
-4. `claude-gaps.md` was never supplied; no gap report for the claude source
-   exists.
+4. `claude-gaps.md` was supplied in Phase 9 and archived at
+   `archive/migration-docs/claude-gaps.md`; its triage is in Phase 9. It added
+   two tracked verification gaps: stale `ocrQueue` data (EC-62/INV-56) and the
+   live `questions` schema (EC-63/INV-57).
 5. At Phase 5, eight edge cases were UNVERIFIED and three CONFLICTED; twelve
-   invariants were AT_RISK and three CONFLICTED. Phase 7 closed the conflicts
-   (current counts: 57/4/0 edges, 48/7/0 invariants).
+   invariants were AT_RISK and three CONFLICTED. Phase 7 closed the conflicts;
+   Phase 9 added the two gaps above (current counts: 57/6/0 edges, 48/9/0
+   invariants).
 6. The Phase 5 open product questions were decided in Phase 7; the CRK/CRS
    target was confirmed in Phase 7 and B1/B2/B3 were matched in Phase 8.
 7. No test harness existed at Phase 5; Phase 6 added `tests/runner.js` and
@@ -629,7 +636,7 @@ None of the three source conflicts remains CONFLICTED.
 Version differences (A/B/V1 vs baseline C) remain documented in
 `docs/BASELINE_COMPARISON.md` and `fixtures/expected/`; they are not merged.
 
-### Final status (after Phase 7)
+### Final status (after Phase 9)
 
 1. **Baseline chosen:** `trusted-variant-C.js`, the newest merged one-box
    artifact. Rationale: documented lineage B → C, superset workflow, fixes for
@@ -638,11 +645,13 @@ Version differences (A/B/V1 vs baseline C) remain documented in
 2. **Fixtures collected:** 19 total, 19 CONFIRMED, 0 PENDING; 19 currently pass.
    One undocumented assertion was removed from `qwen1-sample2-crk-header` in
    Phase 6 (Phase 4 correction; see "Harness result").
-3. **Edge cases confirmed:** 61 documented — 57 CONFIRMED, 4 UNVERIFIED, 0
+3. **Edge cases confirmed:** 63 documented — 57 CONFIRMED, 6 UNVERIFIED, 0
    CONFLICTED (`docs/EDGE_CASES.md`). The removed conflicts were closed by the
-   archived PHP/HTML, not by changing fixture expectations.
-4. **Invariants verified:** 55 documented — 48 VERIFIED, 7 AT_RISK, 0 CONFLICTED
-   (`docs/INVARIANTS.md`).
+   archived PHP/HTML, not by changing fixture expectations. Phase 9 added
+   EC-62 (stale queue) and EC-63 (live schema).
+4. **Invariants verified:** 57 documented — 48 VERIFIED, 9 AT_RISK, 0 CONFLICTED
+   (`docs/INVARIANTS.md`). Phase 9 added INV-56 (stale queue) and INV-57 (live
+   schema).
 5. **Conflicts remaining:** none CONFLICTED. The CRK/CRS alias is confirmed
    against the current archived subject `<select>`: CRK selects CRS (id 14).
    English (Oral) and English Language also resolve correctly on that list.
@@ -654,9 +663,11 @@ Version differences (A/B/V1 vs baseline C) remain documented in
    failing fixture, an unknown `expected` key or wrong-typed assertion value, an
    unknown fixture kind, a confirmed fixture with no executed assertions, a
    missing input, or an orphan input.
-8. **Next steps:** start parser work using the fixture-first workflow. A fresh
-   full page source will still be needed later to re-check server-side behavior,
-   but not for parser/subject work.
+8. **Next steps:** diff B2 → C, then start parser work using the fixture-first
+   workflow. Live browser, stale-queue, and live-schema checks remain open; see
+   Phase 9.
+9. **Verification gaps:** no live browser run; live `questions` schema unknown;
+   no real OCR paste beyond S1; stale `ocrQueue` has no version marker or test.
 
 ### Verification checklist
 
@@ -668,8 +679,8 @@ Version differences (A/B/V1 vs baseline C) remain documented in
       (byte-identical copies; hashes above).
 - [x] All fixtures extracted (19 input/expected pairs, all CONFIRMED; no orphan
       inputs — the runner enforces the pairing).
-- [x] All edge cases documented (61; sources cited).
-- [x] All invariants documented (55; sources cited).
+- [x] All edge cases documented (63; sources cited).
+- [x] All invariants documented (57; sources cited).
 - [x] All source conflicts closed or reclassified with evidence; none remains
       CONFLICTED.
 - [x] Test harness runs without errors (`node tests/runner.js`) and exits
@@ -704,11 +715,17 @@ Version differences (A/B/V1 vs baseline C) remain documented in
 
 ### Remaining human input
 
-1. **B1/B2/B3.** Supplied in Phase 8 and matched by their distinguishing
-   features; archived under `archive/legacy-bookmarklets/`. No further input is
-   needed for the baseline, which remains `trusted-variant-C.js`.
-2. **Deployed PHP.** `admin_questions.php` is archived, but there is no live
-   server access. Re-check it only if server-side behavior changes.
+1. **Live browser run.** Exercise the bookmarklet on the real Add-a-New-Question
+   page in Brave on Android: install the bookmarklet, load, fill, tick, save,
+   and check the bookmark-length/URL-decoding behavior.
+2. **Live database schema.** `cbt_db.php`, `cbt_admin_config.php`, and the
+   `questions` schema were not supplied. Confirm whether `questions` has the
+   `practice_title` requirement seen in the `questions1` dump (EC-63/INV-57).
+3. **Real OCR pastes.** More verbatim samples are optional but would close the
+   remaining fixture-coverage gap (claude-gaps item 4).
+
+B1/B2/B3 and `claude-gaps.md` were supplied in Phases 8–9; no further input is
+needed for the baseline, which remains `trusted-variant-C.js`.
 
 ## Phase 8: B1/B2/B3 Identification
 
@@ -724,8 +741,48 @@ distinguishing code, not by filename order.
 `b2.js` is the base of the merged `trusted-variant-C.js` baseline. All three
 archived files pass `node --check`; the fixture suite remains 19/19.
 
+## Phase 9: claude-gaps.md Review
+
+`claude-gaps.md` was supplied after Phase 8 and archived byte-identically at
+`archive/migration-docs/claude-gaps.md` (7287 bytes, sha256
+`6786358665cc851ae11f6c933fa1a41cda945af024f2f82e6d7f7e68817e7cad`).
+It reports gaps from the pre-workspace conversation, not new parser behavior.
+
+| Item | Status | Resolution |
+|---|---|---|
+| 1. Chat copy not verified against file | CLOSED | The repo baseline is authoritative; `src/bookmarklet.js` passes `node --check`. |
+| 2. B1/B2/B3 and `ocr_helper.js` missing | CLOSED | Archived under `archive/legacy-bookmarklets/` and `archive/live-sources/`. |
+| 3. B1/B2/B3 claims not run | CLOSED (static/isolated) | B2 Reset bug and broken option-split regex confirmed; B1/B3 false-split risk confirmed by isolated parser runs. |
+| 4. Almost no fixtures | PARTIAL | 19 fixtures now; still no direct `splitSections` fixture and no real OCR paste beyond S1. |
+| 5. Test harness not saved | CLOSED | `tests/runner.js`. |
+| 6. Stale stored data after update | OPEN | Tracked as EC-62/INV-56; reset and re-paste after updating. |
+| 7. PHP save rules/schema | PARTIAL | Four-option rule and PRG confirmed; `questions` vs `questions1` / `practice_title` tracked as EC-63/INV-57. |
+| 8. Handoff document stale | SUPERSEDED | Workspace docs are authoritative; the Bulk Import link remains deliberately undecided. |
+| 9. “Correct” / “ideally” interpretations | PARTIAL | D-07 records removal of the post-processor; EC-13 remains UNVERIFIED. |
+| 10. Working preferences missing | CLOSED | Added to `docs/AGENTS.md` “Working context”. |
+| 11. Threshold origins unknown | OPEN (evidence) | Behavior and risk are documented; tuning provenance is still unknown. |
+| 12. Turn-by-turn chronology | NON-BLOCKING | Phases in this report provide the working chronology. |
+| 13. Real question examples | NON-BLOCKING | Archived HTML has only truncated rows; full text was not supplied. |
+| 14. B3 quirks | NON-BLOCKING | B3 is archived; only relevant if its ideas are reused. |
+| 15. Brave bookmark limits | OPEN | Same as the missing live browser run. |
+
+Direct B1/B2/B3 checks (no baseline change):
+
+- **B2 Reset Queue** — the handler assigns `queue={items,i:0}` where `items` is
+  not in scope; it throws before rendering.
+- **B2 option splitter** — its `new RegExp` template contains single backslashes,
+  so `\n` and `\s` become a newline and `s`; the splitter barely matches and can
+  merge options.
+- **B1/B3 option splitter** — correctly escaped, so it can mis-split
+  `Vitamin C.` / `Vitamin B-12`; the exact output depends on whether the letter
+  is also a real option label. The removal decision (D-07) still stands.
+
+Phase 9 added EC-62, EC-63, INV-56, and INV-57; no code or fixture changed.
+`node tests/runner.js` remains 19/19.
+
 ## Next Step
 
-Workspace setup is complete. Run `node tests/runner.js` and begin parser work
-with the fixture-first workflow. Do not change parser behavior without a failing
-fixture and a documented decision.
+Workspace setup is closed. Diff B2 → C, then begin parser work with the
+fixture-first workflow. The live browser run, live `questions` schema, and
+stale-queue behavior remain verification gaps. Do not change parser behavior
+without a failing fixture and a documented decision.

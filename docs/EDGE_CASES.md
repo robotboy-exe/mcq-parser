@@ -99,6 +99,7 @@ this table during review.
 | EC-52 | Page scroll on save | Save via AJAX | Page stays in place; no auto-scroll | CONFIRMED | qwen-1-migration §3 |
 | EC-53 | Media-required question | Diagram/video needed | Cannot be created via bookmarklet; attach later in native Edit UI | CONFIRMED | qwen-2-gaps §4 |
 | EC-54 | Newlines in Option D | E/F appended to D | `option_d` is `<input type=text>`; the browser strips `\n\n` | CONFIRMED | claude-migration §8 (issue 3); `admin_questions.html`, `admin_questions.php` |
+| EC-62 | Old-format queue after update | `ocrQueue` written by an older variant | Shape is shared, but old items may lack `e`/`f` or contain old misparses; no version marker exists. Reset and re-paste after updating until a migration/version check exists | UNVERIFIED | `archive/migration-docs/claude-gaps.md` item 6 |
 
 ## F. Saving and server
 
@@ -110,6 +111,7 @@ this table during review.
 | EC-58 | Network failure | `fetch` rejects | `NOT saved: network problem. Try again.` | CONFIRMED | qwen-2-reconciled E23; claude-migration §3 (case 25) |
 | EC-59 | PRG success detection | POST returns redirected GET with session flash | Success regex matches the flash text | CONFIRMED | `admin_questions.php` stores the flash, redirects, and renders it; qwen-2-gaps §1 |
 | EC-60 | Category limit | More than 10 active categories | Dropdown only exposes `id <= 10`; matcher cannot select beyond | CONFIRMED | qwen-2-gaps §5; `admin_questions.php` query |
+| EC-63 | Live `questions` schema mismatch | PHP inserts into `questions`; only schema evidence is a `questions1` dump with required `practice_title` | Whether live `questions` has that required column is unknown; if it does, every save would fail | UNVERIFIED | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert |
 
 ## Conflicts and open statuses
 
@@ -127,10 +129,13 @@ closed by the archived PHP/HTML sources:
   success text.
 - EC-44, EC-54, EC-57, and EC-60 are now confirmed directly from
   `archive/live-sources/admin_questions.php` and `admin_questions.html`.
+- EC-62 and EC-63 remain UNVERIFIED: both need live state, not another code
+  reading. EC-62 needs an old queue sample; EC-63 needs the live `questions`
+  schema.
 
 ## Counts
 
-- Total: 61
+- Total: 63
 - CONFIRMED: 57
-- UNVERIFIED: 4
+- UNVERIFIED: 6
 - CONFLICTED: 0

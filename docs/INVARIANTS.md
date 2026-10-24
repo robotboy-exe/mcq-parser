@@ -73,6 +73,7 @@ Status definitions:
 | INV-40 | `ocrSubmitted` is not read, written, or deleted by the bookmarklet (D-27). | VERIFIED | user decision; `src/ui/ui.js` |
 | INV-41 | Reset Queue must not throw; it must use `{items:[],i:0}`. | VERIFIED | claude-migration §4 |
 | INV-55 | `localStorage` is origin-wide and shared with the live `ocr_helper.js`; the key names and shapes are a de-facto contract, so changing them can affect both tools. | AT_RISK | qwen-2-reconciled R15, §2.9 |
+| INV-56 | A stale `ocrQueue` from an older variant must not be trusted; reset and re-paste after updating until the queue has a version marker or migration check. | AT_RISK | `archive/migration-docs/claude-gaps.md` item 6; EC-62 |
 
 ## Header metadata
 
@@ -96,12 +97,13 @@ Status definitions:
 | INV-52 | Media uploads are out of scope: the bookmarklet has no file-selection UI and clears image/video inputs. | VERIFIED | qwen-2-gaps §4 |
 | INV-53 | Saving must not scroll the page to the top. | VERIFIED | qwen-1-migration §3, §9 |
 | INV-54 | Appended E/F newlines in Option D are stripped because `option_d` is a single-line input. | VERIFIED | claude-migration §8 (issue 3); `admin_questions.html`, `admin_questions.php` |
+| INV-57 | The live `questions` table must accept the archived PHP's INSERT columns; the `practice_title` requirement seen in `questions1` is unverified for `questions`. | AT_RISK | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert; EC-63 |
 
 ## Counts
 
-- Total: 55
+- Total: 57
 - VERIFIED: 48
-- AT_RISK: 7
+- AT_RISK: 9
 - CONFLICTED: 0
 
 ## Conflict summary
@@ -120,4 +122,5 @@ archived PHP/HTML sources and the recorded decisions:
 
 Remaining AT_RISK items are listed in the tables above; they are operational
 risks (repeated injection, numbering gaps, absorbed-label repair, E/F size,
-fuzzy subject matching, shared storage), not unresolved source conflicts.
+fuzzy subject matching, shared/stale storage, live schema), not unresolved
+source conflicts.
