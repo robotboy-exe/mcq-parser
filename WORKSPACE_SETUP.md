@@ -1,8 +1,10 @@
 # Workspace Setup
 
-Status: Phases 1–6 complete. Workspace setup is finished; the final report is
-below. The test harness runs (19 PASS, 0 FAIL, 0 PENDING). No parser code was
-changed during setup.
+Status: Phases 1–8 complete. Workspace setup is finished; the final report is
+below. The test harness runs (19 PASS, 0 FAIL, 0 PENDING). Phase 7 closed the
+human-decision gaps and archived the live PHP/HTML/helper sources supplied after
+Phase 6; parser behavior was unchanged, and the UI changes were the two decided
+ones (force `is_active` on, stop handling `ocrSubmitted`).
 
 ## Directory Structure
 
@@ -14,6 +16,7 @@ project/
 │   │   └── analysis/            # per-source notes (Phase 2)
 │   ├── trusted-variants/
 │   │   └── analysis/            # per-source notes (Phase 2)
+│   ├── live-sources/            # PHP/HTML/helper + OCR bank (Phase 7)
 │   └── chat-exports/            # empty; no chat exports were supplied
 ├── src/
 │   ├── parser/parser.js         # pure parsing logic
@@ -72,6 +75,48 @@ originals (verified with `cmp`), and SHA-256 hashes are recorded below.
   later reconciliation will be written to a new `claude-gaps.md`.
 - Chat exports — none supplied; `archive/chat-exports/` is empty.
 
+### Live sources supplied in Phase 7 → `archive/live-sources/`
+
+These were placed in the repo root after Phase 6 and archived byte-identically
+during Phase 7:
+
+| File | Size (bytes) | SHA-256 |
+|---|---|---|
+| admin_questions.php | 55694 | 3d25463196e7c038cf5fe852376d94d9b6adc12495db704eace6fa64e0fcd0d9 |
+| admin_questions.html | 84225 | 72c49a9868b944cd0a07e1fbaa7afac521ed38e8644899790557452552295b83 |
+| admin_questions-stale-2026-10-23.html | 76039 | 9874ec5d6c77f4e78340c4730627ba6492b020b7699e0d1ce068d4caa88d9580 |
+| ocr_helper.js | 4991 | b9dfff72397ff8e87adae6dacb56187296d35d3e81fc3e0e64efad067f9b86ae |
+| ocr_helper_deployed.js | 4979 | 9caff07490011a5850667b849b7e2ed41c3ac71ed4a0bfe94861b085d395cfa3 |
+| IMPROVISED C.docx.txt | 35182 | e5a1f7ab6c688ff43c59bd66413963651fb945ea6625727ae46b2242ab1c9535 |
+| subjects-select-2026-10-23.html | 2050 | 02d0ddd8e004c0027c5d22ffb7168739d734066a442df1465205eb1c5192db30 |
+
+Evidence gained:
+
+- `admin_questions.php` confirms the four-option/0–3 radio constraint, the
+  1900–2100 year check, the category `id <= 10` query, the exact success text,
+  and the session-flash + redirect (PRG) flow.
+- `admin_questions.html` is the updated live page source supplied in Phase 7.
+  It has 16 subjects including **CRS (id 14)** and **English (Oral) (id 12)**,
+  alongside English Language (id 6), plus new subject/year filter forms. The
+  question-entry form's ids, names, radio values, `is_active` checkbox, and
+  success/error classes are unchanged, so the bookmarklet's selectors still
+  match.
+- `admin_questions-stale-2026-10-23.html` is the earlier snapshot; it lacks
+  CRS/English (Oral) and is retained only as history. Do not use it as evidence
+  for the current subject list.
+- `subjects-select-2026-10-23.html` is the extracted current subject
+  `<select>`. The parser matches option **text**, not IDs. The archived list is
+  the fixture harness's subject dropdown (`tests/runner.js`), so the CRK
+  fixtures prove selection of the real `CRS` option.
+- `ocr_helper.js` differs from `ocr_helper_deployed.js` by one regex: the
+  non-deployed copy allows an opening quote/parenthesis before the capital
+  (`(?=["“‘'(]?[A-Z])`), so questions beginning with quotation marks still
+  split. The bookmarklet's `splitQuestions` already accepts a quoted start
+  (`qwen1-sample1-quotes-before-capitals` passes).
+- `IMPROVISED C.docx.txt` is the OCR text bank; its header is
+  `IMPROVISED C. R. K. QUESTIONS FOR 2021`, which is why CRK appears in practice
+  while the target subject list is CRS-oriented.
+
 ## Phase 2: Code Extraction + Baseline Selection
 
 ### Code versions found
@@ -87,8 +132,12 @@ Partial/non-versions:
 
 - `qwen-2-reconciled.md` §1.2 is a readable `parseQuestion` companion, not a
   standalone artifact.
-- B1, B3 and the original `ocr_helper.js` are named in `claude-migration.md`
-  but their code was never supplied. `ocr_helper.js` remains unavailable.
+- B1, B2 and B3 are the three bookmarklets supplied in the first Claude
+  message. They arrived as `first.js`, `second.js`, and `third.js`, in the
+  wrong order; Phase 8 identified and archived them as
+  `archive/legacy-bookmarklets/b1.js`, `b2.js`, and `b3.js`. See that
+  directory's `README.md` for the matching evidence.
+- The original `ocr_helper.js` is now archived in `archive/live-sources/`.
 
 Per-source notes are in `archive/migration-docs/analysis/` and
 `archive/trusted-variants/analysis/`.
@@ -119,7 +168,7 @@ Full comparison: `docs/BASELINE_COMPARISON.md`.
 | `src/parser/parser.js` | Pure parsing: `FIXES`, `OPTION`, key/section regexes, `parseHeader`, `pickSubjectIndex`, `splitQuestions`, `parseQuestion`, `splitSections`, `parseKey`. No DOM, no `localStorage`. |
 | `src/ui/ui.js` | DOM injection, form filling, storage wrapper, queue, key ticking, submit interception, bootstrap (`runOCRBookmarklet`). |
 | `src/build/build.js` | Concatenates parser + UI, wraps in `javascript:(function(){try{…}catch(e){alert(…);}})();`, writes `src/bookmarklet.js`. |
-| `src/bookmarklet.js` | Generated single-line combined output (16496-character script; 16501-byte UTF-8 file including the trailing newline). |
+| `src/bookmarklet.js` | Generated single-line combined output (16535-character script after Phase 7; 16540-byte UTF-8 file including the trailing newline). |
 
 Extraction was verified without executing the page:
 
@@ -136,7 +185,11 @@ Extraction was verified without executing the page:
 No parser behavior was modified. `src/bookmarklet.js` is generated; edit
 `src/parser/parser.js` / `src/ui/ui.js` and re-run `node src/build/build.js`.
 
-### Conflicts and ambiguities (flagged, not resolved)
+### Conflicts and ambiguities (flagged in Phase 2; closed in Phase 7)
+
+Phase 2 deliberately left these open. Phase 7 closed items 1, 3, 4, 5, and 6
+with the live sources and the recorded decisions; items 2 and 7 remain as noted.
+
 
 1. **E/F merge framing** — `qwen-2-reconciled.md` calls it a lossy limitation;
    `qwen-2-gaps.md` reclassifies it as a hard server constraint. Both agree the
@@ -155,7 +208,8 @@ No parser behavior was modified. `src/bookmarklet.js` is generated; edit
 6. **CRK/CRS alias** — `claude-migration.md` infers the subject list may not
    contain CRS, so the alias may match nothing; the parser spec describes it as
    handled. No code change.
-7. **B1/B3/OH** — named but not supplied; cannot compare or extract.
+7. **B1/B2/B3/OH** — B1/B2/B3 supplied later and matched in Phase 8;
+   `ocr_helper.js` archived in Phase 7.
 
 ## Phase 3: Edge Cases + Invariants
 
@@ -179,6 +233,10 @@ Consolidated outputs:
 | UNVERIFIED | 8 |
 | CONFLICTED | 3 |
 
+This is the Phase 3 snapshot. Phase 7 closed the conflicts and confirmed the
+server-side items from the archived PHP/HTML; current counts are in "Final
+status".
+
 UNVERIFIED: letter-like text in prose/options (no guard), key text with
 explanations, fuzzy subject accuracy, year typo/unmatched year, repeated
 injection interval, Option D newline stripping, empty-option server rejection,
@@ -191,6 +249,9 @@ category `id <= 10` limit.
 | VERIFIED | 40 |
 | AT_RISK | 12 |
 | CONFLICTED | 3 |
+
+This is the Phase 3 snapshot; Phase 7 reclassified these (current counts in
+"Final status").
 
 Additional items carried from the raw notes: EC-61 (header year first-match may
 pick a copyright/reference year, qwen-2 R14) and INV-55 (`localStorage` is
@@ -210,13 +271,19 @@ origin-wide and shared with the live helper, qwen-2 R15).
    flow guarantees the flash text; qwen-2-reconciled marks the live response as
    never observed and uncertain.
 
+All three were closed in Phase 7: E/F was decided as a hard constraint, the PHP
+confirmed the PRG flash, and the current live subject list (supplied later)
+contains CRS, so the alias is confirmed.
+
 ### Version differences and open decisions
 
 4. **Version-specific behaviors** — the older two-textarea variants (A/B/V1)
    differ from baseline C on E/F ticking and absorbed-option repair. These are
    documented as version differences, not silently merged.
-5. **Open product decisions** retained: Reset Queue vs key (C keeps the key),
-   key persistence across reloads, `is_active` default, `ocrSubmitted` writer.
+5. **Open product decisions** at Phase 3 were: Reset Queue vs key, key
+   persistence across reloads, `is_active` default, and the `ocrSubmitted`
+   writer. All four were decided in Phase 7 (see "Phase 7: Decision
+   Close-out").
 
 No edge cases or invariants were invented; every entry cites a source doc.
 
@@ -322,9 +389,9 @@ turned into fixtures.
 ### Discrepancies recorded in fixtures
 
 1. **CRK/CRS alias** — `qwen1-sample2-crk-header` and `qwen2-s1-crk-2021-full`
-   assert the documented CRS/CHRISTIAN RELIGIOUS match, with an explicit note
-   that `claude-migration.md` §8 issue 7 infers the deployed subject list may
-   have no such option (EC-41).
+   assert the documented CRS/CHRISTIAN RELIGIOUS match. The harness now uses
+   the current live subject list, which contains `CRS` (id 14), so the alias
+   selects it (EC-41). No fixture expectation was changed.
 2. **E/F tick across variants** — E samples note that parse output should match
    A/B/C, but trusted-variant-B computes radio values 4/5 while baseline C maps
    E/F to D (EC-40).
@@ -388,20 +455,21 @@ not resolve any flagged conflict.
 
 1. No live browser run was ever documented: `fillForm`, `tick`, `splitSections`,
    and the save flow were not exercised against the real admin page
-   (claude §8 issue 1). `docs/AGENTS.md` treats the save response as the
-   highest-priority live check.
-2. `admin_questions.php`, `cbt_db.php`, `cbt_admin_config.php`, and the original
-   `ocr_helper.js` are not archived. Server limits and the PRG success text come
-   from migration-doc descriptions only.
-3. B1, B3, and the original `ocr_helper.js` were named in the docs but never
-   supplied. They cannot be compared or extracted.
+   (claude §8 issue 1). The PHP source now confirms the save/PRG response, but
+   no live browser run has been performed.
+2. At Phase 5, `admin_questions.php`, `admin_questions.html`, and the original
+   `ocr_helper.js` were not archived. Phase 7 supplied and archived them.
+   `cbt_db.php` and `cbt_admin_config.php` were not supplied.
+3. B1 and B3 were supplied later and matched in Phase 8 to
+   `archive/legacy-bookmarklets/b1.js` and `b3.js`; B2 is `b2.js`. The original
+   `ocr_helper.js` is archived in `archive/live-sources/`.
 4. `claude-gaps.md` was never supplied; no gap report for the claude source
    exists.
-5. Eight edge cases remain UNVERIFIED and three are CONFLICTED
-   (`docs/EDGE_CASES.md`); twelve invariants are AT_RISK and three are
-   CONFLICTED (`docs/INVARIANTS.md`). These statuses are preserved.
-6. The six open product questions listed in `README.md` and
-   `docs/DECISIONS.md` still need human input.
+5. At Phase 5, eight edge cases were UNVERIFIED and three CONFLICTED; twelve
+   invariants were AT_RISK and three CONFLICTED. Phase 7 closed the conflicts
+   (current counts: 57/4/0 edges, 48/7/0 invariants).
+6. The Phase 5 open product questions were decided in Phase 7; the CRK/CRS
+   target was confirmed in Phase 7 and B1/B2/B3 were matched in Phase 8.
 7. No test harness existed at Phase 5; Phase 6 added `tests/runner.js` and
    fixture comparison now runs.
 
@@ -459,10 +527,9 @@ node tests/runner.js
 
 Implementation notes and limits:
 
-- `header.subject_contains_any` is checked against a synthetic dropdown built
-  from the documented names plus one unrelated decoy. No deployed subject list
-  was supplied, so this tests the CRK/CRS alias mapping only, not live data
-  (EC-41/INV-43 remain open).
+- `header.subject_contains_any` is checked against the archived current live
+  subject `<select>` (`archive/live-sources/subjects-select-2026-10-23.html`),
+  so CRK selects the real `CRS` option (EC-41/INV-43 now verified).
 - `expected.form_behavior_no_key` and `expected.ui_notes` are documented future
   UI assertions; this parser-only runner does not execute them.
 - `must_not` entries are natural-language documentation. The harness checks the
@@ -527,41 +594,42 @@ has been identified. No fourth status is used.
 | G7 | Complete `localStorage` key inventory | qwen-1-gaps2 Item 1 | RESOLVED | INV-36; `docs/SPEC.md` §3.4 |
 | G8 | Backend CSS class dependencies | qwen-1-gaps2 Item 2 | RESOLVED | Documentation only; INV-04 is still AT_RISK (classes inferred, not observed) |
 | G9 | `ocr_helper.js` load location / cleanup order | qwen-1-gaps2 Item 3 | RESOLVED | Documentation only; cleanup requirement is corroborated by qwen-1-migration §3/§10 (INV-01, EC-49), but the exact "bottom of the PHP" location is only in the gap report and remains uncorroborated |
-| G10 | PRG flash detection guaranteed | qwen-2-gaps §1 | NEEDS_INPUT | INV-49 / EC-59 are CONFLICTED; needs a live save trace |
-| G11 | E/F merge is a hard server constraint | qwen-2-gaps §2 | NEEDS_INPUT | INV-31 / EC-40 are CONFLICTED on framing; needs the human framing decision. Both sources agree the code behavior is E/F → D |
-| G12 | Ignoring missing-option flags causes server rejection | qwen-2-gaps §3 | RESOLVED | Documentation only; INV-20 (flags advisory) + INV-51 (four non-empty options); EC-57 is UNVERIFIED without the PHP |
+| G10 | PRG flash detection guaranteed | qwen-2-gaps §1 | RESOLVED | `admin_questions.php` stores `cbt_admin_flash`, redirects with `Location`, and renders the flash in the redirected page; the bookmarklet's fetch follows the redirect. INV-49/EC-59 now VERIFIED/CONFIRMED |
+| G11 | E/F merge is a hard server constraint | qwen-2-gaps §2 | RESOLVED | Human framing decision: hard constraint. `admin_questions.php` requires exactly four non-empty options and `correct_option` 0–3; INV-31/EC-40 now VERIFIED/CONFIRMED. D side effect documented in `docs/DECISIONS.md` D-09 |
+| G12 | Ignoring missing-option flags causes server rejection | qwen-2-gaps §3 | RESOLVED | INV-20 (flags advisory) + INV-51 (four non-empty options); EC-57 confirmed by `admin_questions.php` |
 | G13 | Media uploads are out of scope | qwen-2-gaps §4 | RESOLVED | INV-52; EC-53 |
 | G14 | Category dropdown is limited to `id <= 10` | qwen-2-gaps §5 | RESOLVED | Documentation only; INV-51; EC-60 is UNVERIFIED without the PHP |
 | G15 | `exam_year` must be 1900–2100 | qwen-2-gaps §6 | RESOLVED | Documentation only; INV-51; EC-44 is UNVERIFIED without the PHP |
 
-Coverage: the trusted variants contain only the bookmarklet, not the PHP or
-server contract, so they cannot confirm G12–G15. Those items are covered by
-other migration docs (qwen-2-gaps, qwen-2-reconciled) and are now documented,
-but their server-side claims stay UNVERIFIED until the PHP or a live run is
-available. G1–G7 are covered by the baseline code and/or the other migration
-docs cited; G8 and G9 are documentation-only. G10 needs a live save trace, and
-G11 needs a human framing decision plus confirmation of the server constraint.
+Coverage: in Phase 7 the archived `admin_questions.php` confirmed the
+server-side claims behind G10 and G12–G15, and the PHP/HTML confirmed the E/F
+constraint behind G11. The trusted variants still cover only the bookmarklet,
+not the server. G1–G7 are covered by the baseline code and/or the migration
+docs cited; G8 and G9 remain documentation-only (the PHP confirms the CSS
+classes, but the exact `ocr_helper.js` load location is still uncorroborated).
 
-`NEEDS_INPUT`: G10 (live save trace) and G11 (E/F documentation framing). G8,
-G9, G12, G14, and G15 are RESOLVED only in the documentation sense; their
-server-side or deployment claims remain UNVERIFIED until the PHP or a live run
-is available. No gap item is STILL_OPEN after this classification.
+`NEEDS_INPUT`: none of the original G1–G15. The CRK/CRS target is now confirmed
+by the current subject list (CRS, id 14). B1/B2/B3 were matched in Phase 8 and
+are not gap-report items. No gap item is STILL_OPEN.
 
 ### Conflicts remaining
 
-1. **E/F framing** — hard server constraint (qwen-2-gaps) vs lossy limitation
-   (qwen-2-reconciled). Behavior is unchanged and agreed: E/F collapse to D.
-   See INV-31, EC-40.
-2. **CRK/CRS alias** — specified as handled, but the deployed subject list may
-   contain no CRS/CHRISTIAN RELIGIOUS option. See INV-43, EC-41. Needs live data.
-3. **PRG success detection** — one source says the redirected response is
-   guaranteed to contain the flash text; another marks the live response as
-   never observed. See INV-49, EC-59. Needs a live save trace.
+None of the three source conflicts remains CONFLICTED.
+
+1. **E/F framing** — resolved as a hard server constraint by human decision and
+   by the PHP's four-option/0–3 validation. The lossy overwrite of D is recorded
+   as a side effect. See INV-31, EC-40, D-09.
+2. **CRK/CRS alias** — resolved: the current live subject list contains `CRS`
+   (id 14), and the harness now tests against that list, so CRK selects it. See
+   INV-43, EC-41.
+3. **PRG success detection** — resolved by `admin_questions.php`: the flash is
+   stored in the session, the POST redirects, and the redirected page renders
+   it, so the fetched response contains the success text. See INV-49, EC-59.
 
 Version differences (A/B/V1 vs baseline C) remain documented in
 `docs/BASELINE_COMPARISON.md` and `fixtures/expected/`; they are not merged.
 
-### Final status
+### Final status (after Phase 7)
 
 1. **Baseline chosen:** `trusted-variant-C.js`, the newest merged one-box
    artifact. Rationale: documented lineage B → C, superset workflow, fixes for
@@ -570,22 +638,25 @@ Version differences (A/B/V1 vs baseline C) remain documented in
 2. **Fixtures collected:** 19 total, 19 CONFIRMED, 0 PENDING; 19 currently pass.
    One undocumented assertion was removed from `qwen1-sample2-crk-header` in
    Phase 6 (Phase 4 correction; see "Harness result").
-3. **Edge cases confirmed:** 61 documented — 50 CONFIRMED, 8 UNVERIFIED, 3
-   CONFLICTED (`docs/EDGE_CASES.md`).
-4. **Invariants verified:** 55 documented — 40 VERIFIED, 12 AT_RISK, 3
-   CONFLICTED (`docs/INVARIANTS.md`).
-5. **Conflicts remaining:** the three listed above.
-6. **Gaps status:** G1–G9 and G12–G15 RESOLVED (G8, G9, G12, G14, and G15 are
-   documentation-only, with server-side/deployment claims still UNVERIFIED);
-   G10–G11 NEEDS_INPUT; no gap item is STILL_OPEN.
+3. **Edge cases confirmed:** 61 documented — 57 CONFIRMED, 4 UNVERIFIED, 0
+   CONFLICTED (`docs/EDGE_CASES.md`). The removed conflicts were closed by the
+   archived PHP/HTML, not by changing fixture expectations.
+4. **Invariants verified:** 55 documented — 48 VERIFIED, 7 AT_RISK, 0 CONFLICTED
+   (`docs/INVARIANTS.md`).
+5. **Conflicts remaining:** none CONFLICTED. The CRK/CRS alias is confirmed
+   against the current archived subject `<select>`: CRK selects CRS (id 14).
+   English (Oral) and English Language also resolve correctly on that list.
+6. **Gaps status:** G1–G15 RESOLVED. G10 and G11 are now backed by the archived
+   PHP and the recorded framing decision. No gap item is STILL_OPEN or
+   NEEDS_INPUT.
 7. **Test harness status:** `node tests/runner.js` runs without harness errors;
    19 PASS, 0 FAIL, 0 PENDING, 0 orphan inputs. The runner exits non-zero on a
    failing fixture, an unknown `expected` key or wrong-typed assertion value, an
    unknown fixture kind, a confirmed fixture with no executed assertions, a
    missing input, or an orphan input.
-8. **Next steps:** review the open conflicts, provide a live save trace and the
-   deployed subject list, then start parser work using the fixture-first
-   workflow.
+8. **Next steps:** start parser work using the fixture-first workflow. A fresh
+   full page source will still be needed later to re-check server-side behavior,
+   but not for parser/subject work.
 
 ### Verification checklist
 
@@ -593,40 +664,68 @@ Version differences (A/B/V1 vs baseline C) remain documented in
       recorded above).
 - [x] All trusted variants preserved in `archive/` (byte-identical copies;
       hashes and known-issues docs above).
+- [x] Live PHP/HTML/helper/OCR-bank sources preserved in `archive/live-sources/`
+      (byte-identical copies; hashes above).
 - [x] All fixtures extracted (19 input/expected pairs, all CONFIRMED; no orphan
       inputs — the runner enforces the pairing).
 - [x] All edge cases documented (61; sources cited).
 - [x] All invariants documented (55; sources cited).
-- [x] All conflicts flagged (three, not silently resolved).
+- [x] All source conflicts closed or reclassified with evidence; none remains
+      CONFLICTED.
 - [x] Test harness runs without errors (`node tests/runner.js`) and exits
       non-zero on a failing fixture or an orphan input.
-- [x] No parser/UI application code was modified during setup.
-      `src/parser/parser.js`, `src/ui/ui.js`, and `src/bookmarklet.js` are
-      unchanged from Phase 5; the only new executable file is `tests/runner.js`.
+- [x] Parser code was not modified in Phases 1–7. The UI was modified only for
+      the two decided behaviors: force `is_active` on and stop handling
+      `ocrSubmitted`. `src/bookmarklet.js` was rebuilt and syntax-checked.
       One expected fixture was corrected as a Phase 4 provenance fix (see
-      "Harness result").
+      "Harness result"); no fixture expectation changed in Phase 7.
 
-### Human decisions required
+## Phase 7: Decision Close-out
 
-1. **Reset Queue vs answer key.** Current behavior keeps the key. Should Reset
-   Queue clear it? (INV-34; `docs/DECISIONS.md`.)
-2. **Key persistence.** Should the key survive page reloads?
-3. **Default save state.** Should saves default to inactive (`is_active`)?
-4. **Live save flow.** Provide a live PRG save trace to settle success detection
-   (INV-49/EC-59). The baseline code is unchanged pending that evidence.
-5. **Deployed subject list.** Provide the live `subject_id` options to confirm
-   or reject the CRK/CRS alias (INV-43/EC-41).
-6. **Legacy `ocrSubmitted`.** Who writes it, and should the bookmarklet keep
-   reading it? (INV-40/EC-51.)
-7. **Missing sources.** B1, B3, the original `ocr_helper.js`, and
-   `claude-gaps.md` were never supplied. Provide them if comparison is wanted.
-8. **E/F documentation framing.** Decide whether the docs should describe E/F
-   collapsing as a hard server constraint or as a lossy limitation. Code
-   behavior does not change either way.
+### Decisions recorded
+
+| # | Question | Decision | Effect |
+|---|---|---|---|
+| 1 | Reset Queue vs key | Keep key | Queue-only reset; "Clear saved key" stays separate (D-26) |
+| 2 | Key persistence | Persist across reloads | `ansKey` read at boot, not cleared (D-25) |
+| 3 | Default save state | Force active | `is_active` checked in `fillForm` and before submit (D-24) |
+| 4 | PRG save detection | Confirmed from PHP | Flash stored in session, redirect, rendered in fetched response (D-18/INV-49) |
+| 5 | Deployed subject list | Alias confirmed on current list | CRK selects CRS (id 14); English (Oral) and English Language disambiguate on the archived list (D-16/INV-43) |
+| 6 | Legacy `ocrSubmitted` | Stop handling it | No read/write/delete; no boot-time queue advance (D-22/D-27) |
+| 7 | Missing sources | `ocr_helper.js` and B1/B2/B3 supplied | Helper archived; B1/B2/B3 matched and archived in Phase 8 |
+| 8 | E/F framing | Hard server constraint | PHP confirms four options/0–3; lossy D side effect documented (D-09) |
+
+### Code changes
+
+- `src/ui/ui.js`: force `is_active` on in `fillForm` and immediately before
+  submit; remove the `ocrSubmitted` boot block.
+- `src/bookmarklet.js`: regenerated from the modules (16535 script characters; 16540 bytes including the trailing newline).
+- No parser changes, no fixture expectation changes, no PHP changes.
+
+### Remaining human input
+
+1. **B1/B2/B3.** Supplied in Phase 8 and matched by their distinguishing
+   features; archived under `archive/legacy-bookmarklets/`. No further input is
+   needed for the baseline, which remains `trusted-variant-C.js`.
+2. **Deployed PHP.** `admin_questions.php` is archived, but there is no live
+   server access. Re-check it only if server-side behavior changes.
+
+## Phase 8: B1/B2/B3 Identification
+
+The three supplied root files were matched to the B1/B2/B3 labels by their
+distinguishing code, not by filename order.
+
+| Label | Original | Archived | Key evidence |
+|---|---|---|---|
+| B1 | `first.js` | `archive/legacy-bookmarklets/b1.js` | No "Show paste box"; weaker `splitCombined`; option-splitting uses `\\n` / `\\s` |
+| B2 | `third.js` | `archive/legacy-bookmarklets/b2.js` | `splitSections`, key-only path, "Show paste box"; Reset bug `{items,i:0}` |
+| B3 | `second.js` | `archive/legacy-bookmarklets/b3.js` | Only file with `splitCombinedText`; no key-only path |
+
+`b2.js` is the base of the merged `trusted-variant-C.js` baseline. All three
+archived files pass `node --check`; the fixture suite remains 19/19.
 
 ## Next Step
 
-Workspace setup is complete. Review the eight human decisions above, then run
-`node tests/runner.js` and begin parser work with the fixture-first workflow.
-Do not change parser behavior without a failing fixture and a documented
-decision.
+Workspace setup is complete. Run `node tests/runner.js` and begin parser work
+with the fixture-first workflow. Do not change parser behavior without a failing
+fixture and a documented decision.

@@ -1,0 +1,2114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="description"
+      content="Skymenu Mathematics - Mathematics lessons, textbook chapters, practice questions, videos and useful mathematics resources."
+    />
+
+    <meta name="author" content="Skymenu Mathematics" />
+
+    <title>Question Administration | Skymenu CBT</title>
+
+    <!-- Main Website CSS -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Optional favicon -->
+
+    <link rel="icon" href="images/favicon.png" sizes="32x32" />
+    <link rel="icon" href="images/favicon.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="images/favicon.png" />
+    <meta name="msapplication-TileImage" content="images/favicon.png" />
+
+    <meta name="google-adsense-account" content="ca-pub-9863459493132398" />
+
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9863459493132398"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+
+  <body>
+    <!-- =========================================================
+     HEADER
+========================================================= -->
+
+    <header class="site-header">
+      <!-- =====================================================
+         TOP HEADER / LOGO
+    ====================================================== -->
+
+      <div class="header-top">
+        <a href="" aria-label="Skymenu home">
+          <img class="logo" src="images/logo.png" />
+        </a>
+        <form
+          class="search"
+          action="search_processor.php"
+          method="get"
+          role="search"
+        >
+          <input
+            type="search"
+            name="search"
+            placeholder="Search videos by title..."
+            aria-label="Search videos by title"
+            required
+          />
+          <button type="submit" aria-label="Search">⌕</button>
+        </form>
+      </div>
+
+      <!-- =====================================================
+         DESKTOP NAVIGATION
+    ====================================================== -->
+
+      <nav class="navbar" aria-label="Main navigation">
+        <div class="nav">
+          <!-- HOME -->
+          <div class="nav-item">
+            <a href="index.php"> Home </a>
+          </div>
+
+          <!-- =================================================
+                 MATHEMATICS BASICS
+            ================================================== -->
+
+          <div class="nav-item">
+            <a href="#" aria-haspopup="true"> Mathematics Basics ▾ </a>
+
+            <div class="dropdown">
+              <a href="standard-form.php"> Standard Form </a>
+
+              <a href="whole-numbers.php"> Whole Numbers </a>
+
+              <a href="decimals.php"> Decimals </a>
+
+              <a href="fractions.php"> Fractions </a>
+
+              <a href="algebra.php"> Algebra </a>
+
+              <a href="indices.php"> Indices </a>
+
+              <a href="geometry.php"> Geometry </a>
+            </div>
+          </div>
+
+          <!-- VIDEO LESSONS -->
+          <div class="nav-item">
+            <a href="videos.php"> Video Lessons </a>
+          </div>
+
+          <!-- =================================================
+                 PRACTICE
+            ================================================== -->
+
+          <div class="nav-item">
+            <a href="#" aria-haspopup="true"> Practice ▾ </a>
+
+            <div class="dropdown">
+              <a href="cbt_practice.php"> CBT Practice Questions </a>
+            </div>
+          </div>
+
+          <!-- =================================================
+                 TEXTBOOK LESSONS
+            ================================================== -->
+
+          <div class="nav-item">
+            <a href="#" aria-haspopup="true"> Textbook Lessons ▾ </a>
+
+            <div class="dropdown">
+              <a href="spl.php"> Skymenu Point Line </a>
+
+              <a href="chapter1.php"> Standard Form </a>
+
+              <a href="chapter2.php"> Reciprocal </a>
+
+              <a href="chapter3.php"> Roman Numerals </a>
+
+              <a href="chapter4.php"> Algebra </a>
+            </div>
+          </div>
+
+          <!-- cbt -->
+          <div class="nav-item">
+            <a href="cbt.php"> CBT Test </a>
+          </div>
+
+          <!-- news -->
+          <div class="nav-item">
+            <a href="news.php"> Educational News </a>
+          </div>
+
+          <!-- GLOSSARY -->
+          <div class="nav-item">
+            <a href="glossary.php"> Glossary </a>
+          </div>
+
+          <!-- ABOUT -->
+          <div class="nav-item">
+            <a href="about.php"> About </a>
+          </div>
+
+          <!-- CONTACT -->
+          <div class="nav-item">
+            <a href="contact.php"> Contact </a>
+          </div>
+        </div>
+
+        <!-- =====================================================
+             MOBILE NAVIGATION
+        ====================================================== -->
+
+        <div class="mobile-nav">
+          <strong class="mobile-nav-title"> SKYMENU </strong>
+
+          <label for="mobile-nav-select" class="mobile-nav-label"> </label>
+
+          <select
+            id="mobile-nav-select"
+            class="mobile-nav-select"
+            aria-label="Mobile navigation"
+          >
+            <option value="">Choose a section</option>
+
+            <!-- HOME -->
+
+            <option value="index.php">Home</option>
+
+            <!-- VIDEO LESSONS -->
+
+            <option value="videos.php">Video Lessons</option>
+
+            <!-- PRACTICE -->
+
+            <option value="cbt_practice.php">CBT Practice Questions</option>
+
+            <!-- cbt -->
+
+            <option value="cbt.php">CBT Test Live</option>
+
+            <!-- news -->
+
+            <option value="news.php">Educational News</option>
+
+            <!-- news -->
+
+            <option value="spl.php">Skymenu Point Line</option>
+
+            <!-- =================================================
+                     TEXTBOOK CHAPTERS
+                ================================================== -->
+
+            <option value="chapter1.php">Textbook - Standard Form</option>
+
+            <option value="chapter2.php">Textbook - Reciprocal</option>
+
+            <option value="chapter3.php">Textbook - Roman Numerals</option>
+
+            <option value="chapter4.php">Textbook - Algebra</option>
+
+            <!-- =================================================
+                     MATHEMATICS
+                ================================================== -->
+
+            <option value="standard-form.php">
+              Mathematics - Standard Form
+            </option>
+
+            <option value="whole-numbers.php">
+              Mathematics - Whole Numbers
+            </option>
+
+            <option value="decimals.php">Mathematics - Decimals</option>
+
+            <option value="fractions.php">Mathematics - Fractions</option>
+
+            <option value="algebra.php">Mathematics - Algebra</option>
+
+            <option value="indices.php">Mathematics - Indices</option>
+
+            <option value="geometry.php">Mathematics - Geometry</option>
+
+            <!-- OTHER PAGES -->
+
+            <option value="glossary.php">Glossary</option>
+
+            <option value="about.php">About</option>
+
+            <option value="contact.php">Contact</option>
+          </select>
+        </div>
+      </nav>
+    </header>
+
+    <!-- =========================================================
+     MOBILE NAVIGATION JAVASCRIPT
+========================================================= -->
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const mobileNav = document.getElementById("mobile-nav-select");
+
+        if (mobileNav) {
+          mobileNav.addEventListener("change", function () {
+            const selectedPage = this.value;
+
+            /*
+             * Do nothing when the default
+             * "Choose a section" option is selected.
+             */
+
+            if (selectedPage && selectedPage !== "#") {
+              window.location.href = selectedPage;
+            }
+          });
+        }
+      });
+    </script>
+    <style>
+      .admin-page {
+        background: #f4f7fb;
+        min-height: 70vh;
+        padding: 32px 16px 50px;
+        color: #263445;
+      }
+      .admin-wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .admin-hero {
+        background: linear-gradient(135deg, #0d3b66, #1769aa);
+        color: #fff;
+        border-radius: 15px;
+        padding: 26px;
+        margin-bottom: 20px;
+      }
+      .admin-hero h1 {
+        margin: 0 0 8px;
+        font-size: clamp(24px, 4vw, 34px);
+      }
+      .admin-hero p {
+        margin: 0;
+        line-height: 1.6;
+        opacity: 0.95;
+      }
+      .admin-card {
+        background: #fff;
+        border-radius: 13px;
+        padding: 24px;
+        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+        margin-bottom: 20px;
+      }
+      .admin-card h2 {
+        margin: 0 0 16px;
+        color: #0d3b66;
+      }
+      .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .admin-field {
+        margin-bottom: 16px;
+      }
+      .admin-field label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 7px;
+      }
+      .admin-field input,
+      .admin-field textarea,
+      .admin-field select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #d5dfe9;
+        border-radius: 8px;
+        padding: 11px 12px;
+        font: inherit;
+        background: #fff;
+        color: #263445;
+      }
+      .admin-field textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+      .admin-field input:focus,
+      .admin-field textarea:focus,
+      .admin-field select:focus {
+        outline: 2px solid #1769aa;
+        outline-offset: 1px;
+      }
+      .admin-btn {
+        border: 0;
+        border-radius: 8px;
+        padding: 12px 18px;
+        font-weight: 700;
+        cursor: pointer;
+        background: #1769aa;
+        color: #fff;
+      }
+      .admin-btn:hover {
+        background: #0d3b66;
+      }
+      .admin-btn-muted {
+        background: #e9edf2;
+        color: #263445;
+      }
+      .admin-btn-edit {
+        background: #1769aa;
+      }
+      .admin-btn-delete {
+        background: #b42318;
+      }
+      .admin-btn-delete:hover {
+        background: #8e1717;
+      }
+      .admin-alert {
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        line-height: 1.5;
+      }
+      .admin-error {
+        background: #ffe8e8;
+        color: #8e1717;
+        border: 1px solid #f2bcbc;
+      }
+      .admin-success {
+        background: #e3f7eb;
+        color: #12633a;
+        border: 1px solid #bce6cc;
+      }
+      .admin-note {
+        color: #536273;
+        line-height: 1.55;
+        font-size: 14px;
+      }
+      .admin-correct {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .admin-correct label {
+        border: 1px solid #d5dfe9;
+        border-radius: 8px;
+        padding: 11px 14px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        cursor: pointer;
+      }
+      .admin-topline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .admin-table-wrap {
+        overflow-x: auto;
+      }
+      .admin-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+      }
+      .admin-table th,
+      .admin-table td {
+        text-align: left;
+        vertical-align: top;
+        padding: 11px;
+        border-bottom: 1px solid #e6ebf1;
+      }
+      .admin-table th {
+        background: #f7f9fc;
+        color: #34465a;
+      }
+      .admin-status {
+        font-weight: 700;
+      }
+      .admin-status.active {
+        color: #147344;
+      }
+      .admin-status.inactive {
+        color: #a33b18;
+      }
+      .question-entry-grid {
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        align-items: start;
+      }
+      .question-image-preview {
+        margin-top: 12px;
+      }
+      .question-image-preview img {
+        display: block;
+        max-width: 100%;
+        max-height: 240px;
+        width: auto;
+        height: auto;
+        border: 1px solid #d5dfe9;
+        border-radius: 8px;
+        padding: 4px;
+        background: #f7f9fc;
+      }
+      .question-image-remove {
+        display: flex !important;
+        gap: 8px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      .admin-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+      .admin-pagination-summary {
+        font-size: 14px;
+        color: #536273;
+      }
+      .admin-pagination-links {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      .admin-page-link {
+        display: inline-block;
+        min-width: 36px;
+        text-align: center;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border: 1px solid #d5dfe9;
+        border-radius: 7px;
+        background: #fff;
+        color: #1769aa;
+        text-decoration: none;
+        font-weight: 700;
+      }
+      .admin-page-link:hover {
+        background: #edf4fb;
+      }
+      .admin-page-link.active {
+        background: #1769aa;
+        border-color: #1769aa;
+        color: #fff;
+      }
+      .admin-page-ellipsis {
+        padding: 0 3px;
+        color: #536273;
+      }
+      @media (max-width: 650px) {
+        .admin-grid,
+        .question-entry-grid {
+          grid-template-columns: 1fr;
+        }
+        .admin-card {
+          padding: 18px;
+        }
+        .admin-page {
+          padding: 20px 10px;
+        }
+      }
+    </style>
+
+    <main class="admin-page">
+      <div class="admin-wrap">
+        <section class="admin-hero">
+          <h1><font color="white">CBT Question Administration</font></h1>
+          <p>
+            Register multiple-choice questions and assign each question to a
+            subject and exam category.
+          </p>
+        </section>
+
+        <section class="admin-card">
+          <div class="admin-topline">
+            <h2>Add a New Question</h2>
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="REDACTED" />
+              <input type="hidden" name="action" value="logout" />
+              <button class="admin-btn admin-btn-muted" type="submit">
+                Log out
+              </button>
+            </form>
+          </div>
+          <form method="post" autocomplete="off" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="REDACTED" />
+            <input type="hidden" name="action" value="save_question" />
+
+            <div class="admin-grid">
+              <div class="admin-field">
+                <label for="subject_id">Subject</label>
+                <select id="subject_id" name="subject_id" required>
+                  <option value="">-- Select Subject --</option>
+                  <option value="11">Agricultural Science</option>
+                  <option value="4">Biology</option>
+                  <option value="3">Chemistry</option>
+                  <option value="10">Commerce</option>
+                  <option value="7">Economics</option>
+                  <option value="6">English Language</option>
+                  <option value="8">Geography</option>
+                  <option value="9">Government</option>
+                  <option value="1">Mathematics</option>
+                  <option value="5">Physics</option>
+                </select>
+              </div>
+              <div class="admin-field">
+                <label for="exam_category_id">Exam Category</label>
+                <select id="exam_category_id" name="exam_category_id" required>
+                  <option value="">-- Select Exam Category --</option>
+                  <option value="1">General Practice</option>
+                  <option value="3">JAMB / UTME</option>
+                  <option value="5">POST UTME</option>
+                  <option value="4">WASCE / NECO / GCE</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="admin-field">
+              <label for="exam_year">Exam Year</label>
+              <input
+                id="exam_year"
+                name="exam_year"
+                type="number"
+                min="1900"
+                max="2100"
+                step="1"
+                value="2026"
+                required
+              />
+              <p class="admin-note">
+                Enter the year the exam question belongs to, for example 2024,
+                2025, or 2026.
+              </p>
+            </div>
+
+            <div class="admin-grid question-entry-grid">
+              <div class="admin-field">
+                <label for="question_text">Question</label>
+                <textarea
+                  id="question_text"
+                  name="question_text"
+                  maxlength="60000"
+                  required
+                ></textarea>
+              </div>
+              <div class="admin-field">
+                <label for="question_image"
+                  >Question Picture / Diagram (optional)</label
+                >
+                <input
+                  id="question_image"
+                  name="question_image"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+                />
+                <p class="admin-note">
+                  Upload a diagram or picture related to this question. Accepted
+                  formats: JPG, PNG, WebP, or GIF. Maximum size: 8 MB.
+                </p>
+              </div>
+            </div>
+
+            <div class="admin-grid">
+              <div class="admin-field">
+                <label for="option_a">Option A</label>
+                <input
+                  id="option_a"
+                  name="option_a"
+                  type="text"
+                  maxlength="500"
+                  value=""
+                  required
+                />
+              </div>
+              <div class="admin-field">
+                <label for="option_b">Option B</label>
+                <input
+                  id="option_b"
+                  name="option_b"
+                  type="text"
+                  maxlength="500"
+                  value=""
+                  required
+                />
+              </div>
+              <div class="admin-field">
+                <label for="option_c">Option C</label>
+                <input
+                  id="option_c"
+                  name="option_c"
+                  type="text"
+                  maxlength="500"
+                  value=""
+                  required
+                />
+              </div>
+              <div class="admin-field">
+                <label for="option_d">Option D</label>
+                <input
+                  id="option_d"
+                  name="option_d"
+                  type="text"
+                  maxlength="500"
+                  value=""
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="admin-field">
+              <label>Correct Answer</label>
+              <div class="admin-correct">
+                <label
+                  ><input
+                    type="radio"
+                    name="correct_option"
+                    value="0"
+                    checked
+                    required
+                  />
+                  Option A</label
+                >
+                <label
+                  ><input
+                    type="radio"
+                    name="correct_option"
+                    value="1"
+                    required
+                  />
+                  Option B</label
+                >
+                <label
+                  ><input
+                    type="radio"
+                    name="correct_option"
+                    value="2"
+                    required
+                  />
+                  Option C</label
+                >
+                <label
+                  ><input
+                    type="radio"
+                    name="correct_option"
+                    value="3"
+                    required
+                  />
+                  Option D</label
+                >
+              </div>
+              <p class="admin-note">
+                Choose the option that contains the correct answer.
+              </p>
+            </div>
+
+            <div class="admin-field">
+              <label for="answer_explanation">Answer Explanation</label>
+              <textarea
+                id="answer_explanation"
+                name="answer_explanation"
+                maxlength="60000"
+                placeholder="Explain why the correct option is right..."
+              ></textarea>
+              <p class="admin-note">
+                Optional. This explanation can be shown to candidates in the
+                result review page.
+              </p>
+            </div>
+
+            <div class="admin-field">
+              <label for="answer_video"
+                >Answer Illustration (Video or Picture — optional)</label
+              >
+              <input
+                id="answer_video"
+                name="answer_video"
+                type="file"
+                accept="video/mp4,video/webm,video/ogg,image/jpeg,image/png,image/webp,image/gif,.mp4,.webm,.ogv,.ogg,.jpg,.jpeg,.png,.webp,.gif"
+              />
+              <p class="admin-note">
+                Optional. Upload either a video or picture. Videos: MP4, WebM,
+                OGV/OGG (maximum 50 MB). Pictures: JPG, JPEG, PNG, WebP, GIF
+                (maximum 8 MB). Uploading a new file replaces the existing
+                answer illustration.
+              </p>
+            </div>
+
+            <div class="admin-field">
+              <label
+                ><input
+                  type="checkbox"
+                  name="is_active"
+                  value="1"
+                  checked
+                  style="width: auto"
+                />
+                Make question active immediately</label
+              >
+            </div>
+
+            <button class="admin-btn" type="submit">Save Question</button>
+          </form>
+        </section>
+
+        <section class="admin-card">
+          <h2>Recently Added Questions</h2>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Question</th>
+                  <th>Subject</th>
+                  <th>Exam Category</th>
+                  <th>Exam Year</th>
+                  <th>Diagram</th>
+                  <th>Explanation</th>
+                  <th>Answer Illustration</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>261</td>
+                  <td>What is the remainder when</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=261&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #261? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="261" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>260</td>
+                  <td>
+                    Given that x varies inversely as the square of y and that
+                    when x = 2 , y = 1/3 , find the value of x when y = 1/2
+                  </td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=260&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #260? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="260" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>259</td>
+                  <td>.</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=259&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #259? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="259" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>258</td>
+                  <td>.</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=258&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #258? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="258" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>257</td>
+                  <td>.</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=257&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #257? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="257" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>256</td>
+                  <td>
+                    In a class of 40 students, 24 play football, 18 play
+                    volleyball and 6 do not play any game. How many students
+                    play both football and volley…
+                  </td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=256&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #256? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="256" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>255</td>
+                  <td>
+                    How many subsets will a set containing 5 elements have ?
+                  </td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>—</td>
+                  <td>Added</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=255&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #255? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="255" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>254</td>
+                  <td>Simplify and express in standard form</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=254&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #254? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="254" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>253</td>
+                  <td>.</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=253&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #253? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="253" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>252</td>
+                  <td>.</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=252&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #252? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="252" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>251</td>
+                  <td>In the figure below, determine the angle marked y</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=251&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #251? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="251" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>250</td>
+                  <td>Determine PS</td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>Uploaded</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=250&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #250? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="250" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>249</td>
+                  <td>
+                    A shopkeeper marks his goods to gain 20% . He allows 5%
+                    discount for cash . Find his percentage profit when he sells
+                    in cash
+                  </td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=249&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #249? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="249" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>248</td>
+                  <td>
+                    Find the principal that earns #1,693.80 interest in 10 years
+                    at a rate of 6% per annual
+                  </td>
+                  <td>Mathematics</td>
+                  <td>JAMB / UTME</td>
+                  <td>2025</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>Picture uploaded</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=248&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #248? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="248" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>247</td>
+                  <td>
+                    The political neutrality in civil servants implies that they
+                  </td>
+                  <td>Government</td>
+                  <td>JAMB / UTME</td>
+                  <td>2023</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=247&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #247? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="247" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>246</td>
+                  <td>
+                    A political authority which which maintains sovereign power
+                    over a specific geographical area is termed
+                  </td>
+                  <td>Government</td>
+                  <td>JAMB / UTME</td>
+                  <td>2023</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=246&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #246? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="246" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>245</td>
+                  <td>
+                    When a constitution is difficult to amend it is said to be
+                  </td>
+                  <td>Government</td>
+                  <td>JAMB / UTME</td>
+                  <td>2023</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=245&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #245? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="245" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>244</td>
+                  <td>Public opinion is very important because it</td>
+                  <td>Government</td>
+                  <td>JAMB / UTME</td>
+                  <td>2023</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=244&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #244? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="244" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>243</td>
+                  <td>
+                    The principle of checks and balances is necessary because it
+                  </td>
+                  <td>Government</td>
+                  <td>JAMB / UTME</td>
+                  <td>2023</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=243&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #243? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="243" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>242</td>
+                  <td>
+                    A system in which a few powerful rich nobles own the lands
+                    which is hired out to the poor people to farm is called
+                  </td>
+                  <td>Government</td>
+                  <td>JAMB / UTME</td>
+                  <td>2023</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td><span class="admin-status active">Active</span></td>
+                  <td>
+                    <div
+                      style="
+                        display: flex;
+                        gap: 6px;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      "
+                    >
+                      <a
+                        class="admin-btn admin-btn-edit"
+                        href="/admin_questions.php?edit=242&amp;page=1"
+                        style="
+                          display: inline-block;
+                          text-decoration: none;
+                          padding: 8px 11px;
+                        "
+                        >Edit</a
+                      >
+                      <form
+                        method="post"
+                        onsubmit="
+                          return confirm(
+                            'Delete question #242? This cannot be undone.',
+                          );
+                        "
+                        style="margin: 0"
+                      >
+                        <input
+                          type="hidden"
+                          name="csrf_token"
+                          value="REDACTED"
+                        />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value="delete_question"
+                        />
+                        <input type="hidden" name="return_page" value="1" />
+                        <input type="hidden" name="question_id" value="242" />
+                        <button
+                          class="admin-btn admin-btn-delete"
+                          type="submit"
+                          style="padding: 8px 11px"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="admin-pagination">
+            <div class="admin-pagination-summary">
+              Showing 1–20 of 238 questions (20 per page)
+            </div>
+            <nav
+              class="admin-pagination-links"
+              aria-label="Question list pages"
+            >
+              <span
+                class="admin-page-link"
+                aria-disabled="true"
+                style="opacity: 0.45"
+                >&laquo; Prev</span
+              >
+
+              <span class="admin-page-link active" aria-current="page">1</span>
+              <a class="admin-page-link" href="/admin_questions.php?page=2"
+                >2</a
+              >
+              <a class="admin-page-link" href="/admin_questions.php?page=3"
+                >3</a
+              >
+
+              <span class="admin-page-ellipsis">…</span>
+              <a class="admin-page-link" href="/admin_questions.php?page=12"
+                >12</a
+              >
+
+              <a
+                class="admin-page-link"
+                href="/admin_questions.php?page=2"
+                aria-label="Next page"
+                >Next &raquo;</a
+              >
+            </nav>
+          </div>
+        </section>
+      </div>
+    </main>
+    <footer>
+      <div class="footer-grid">
+        <div>
+          <img
+            class="footer-logo"
+            src="data:image/png;base64,"
+            alt="Skymenu logo"
+          />
+          <p>Standard Key International Examination Number Link.</p>
+          <p>Mathematics lessons, video tutorials and practice resources.</p>
+        </div>
+        <div>
+          <h3>Quick Links</h3>
+          <a href="">Home</a>
+          <a href="standard-form.php">Mathematics</a>
+          <a href="chapter1.php">Lessons</a>
+          <a href="videos.php#video-library">Video Lessons</a>
+          <a href="practice.php">Practice</a>
+        </div>
+        <div>
+          <h3>Information</h3>
+          <a href="about.php">About</a>
+          <a href="contact.php">Contact</a>
+          <a href="glossary.php">Glossary</a>
+          <a href="privacy.php">Privacy Policy</a>
+          <a href="terms.php">Terms &amp; Conditions</a>
+          <a href="policy_safety.php">Policy &amp; Safety</a>
+        </div>
+        <div>
+          <h3>Contact Us</h3>
+          <p>Phone: +234 816 901 5642</p>
+          <p>
+            Email:
+            <a href="mailto:info@skymenupake.com">info@skymenupake.com</a>
+          </p>
+        </div>
+      </div>
+      <div class="copyright">© 2026 Skymenu. All rights reserved.</div>
+    </footer>
+<script src="ocr_helper.js"></script>
+</html>

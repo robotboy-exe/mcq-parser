@@ -10,7 +10,9 @@ features.
    `archive/migration-docs/claude-migration.md`,
    `archive/migration-docs/qwen-1-gaps*.md`,
    `archive/migration-docs/qwen-2-gaps.md`, and
-   `archive/migration-docs/qwen-2-reconciled.md` before editing.
+   `archive/migration-docs/qwen-2-reconciled.md` before editing. Server-side
+   claims and the current subject list are corroborated by
+   `archive/live-sources/` (`admin_questions.php`, `admin_questions.html`).
 2. **Do not refactor for style.** The docs repeatedly say the code is a working
    baseline, not a refactor target (qwen-2 H08). Make only changes you can
    test.
@@ -19,8 +21,9 @@ features.
    (`save_question`, `correct_option`, `option_a`–`option_d`), the four-option
    rule, and the success flash text are off-limits (qwen-2 H03; INV-06).
 4. **Do not change `localStorage` key names or shapes.** `ocrQueue`,
-   `ocrMeta`, `ansKey`, `ocrSubmitted` are shared with the live helper
-   (INV-36, INV-55).
+   `ocrMeta`, and `ansKey` are shared with the live helper; `ocrSubmitted`
+   remains a shared key name but the bookmarklet no longer touches it
+   (INV-36, INV-55; D-22).
 5. **Edit modules, not the build output.** `src/bookmarklet.js` is generated.
    Change `src/parser/parser.js` or `src/ui/ui.js`, then rebuild.
 6. **The bookmarklet is a single line with no `//` comments.** A `//` comment
@@ -39,8 +42,8 @@ features.
 | `splitSections` | Rule order (divider → key-only → header → structure) is fragile. A false positive splits a question; a miss leaves key lines in the question stream (claude §5.9). |
 | `splitQuestions` numbering guard | `n <= last || n > last + 5` drops repeats and large jumps. It can merge real questions after a restart or OCR digit error (INV-21, INV-24). |
 | `fillForm` / `tick` | They must agree on the E/F→D mapping and on ticking nothing when E/F text is absent. `tick()` computes radio index 3 for E/F; radio values 4/5 do not exist (INV-27, INV-28, INV-30). |
-| Save detector | Hard-coded to the exact success text. The live PRG response has not been observed in this workspace. Do not "fix" it without a live trace (INV-49; qwen-2 H07/H09). |
-| Header inference | First `20\d\d` in the first 3 lines can be a copyright year; fuzzy subject matching can pick the wrong option. Both are known AT_RISK/UNVERIFIED (EC-44, EC-61, EC-43; INV-42–INV-44). |
+| Save detector | Hard-coded to the exact success text. The archived PHP confirms the PRG flash flow, so the detector matches the server contract. Do not change one side without the other (INV-49; qwen-2 H07/H09). |
+| Header inference | First `20\d\d` in the first 3 lines can be a copyright year; fuzzy subject matching can pick the wrong option for names that share words. Both are known risks (EC-61, EC-43; INV-44). EC-44 is confirmed by the PHP. |
 
 ## What to preserve
 
@@ -55,7 +58,9 @@ features.
 - No radio is pre-ticked without a key; always clear the form default (INV-29).
 - `FIXES` applies to the question part only, before parsing (INV-38).
 - Reset Queue uses `{ items: [], i: 0 }` and does not touch the key (INV-34,
-  INV-41).
+  INV-41; D-26).
+- The key is read from `ansKey` at boot and survives reloads (D-25).
+- `is_active` is forced on during fill and again before submit (D-24).
 - The success/error container `#ans_res` is inserted after the submit button
   (INV-03).
 
@@ -69,8 +74,8 @@ features.
   product decision; it is still open (claude §8 issue 4).
 - Treating this bookmarklet as part of the PHP Bulk Import plan; no link
   between them was decided (claude §8 issue 10).
-- Setting `ocrSubmitted` or relying on it; this code never writes it and its
-  writer is unknown (INV-40).
+- Reading, writing, deleting, or relying on `ocrSubmitted`; the bookmarklet is
+  deliberately self-contained (INV-40; D-27).
 
 ## Tests
 
@@ -128,5 +133,6 @@ Verification used during development: strip the leading `javascript:` and run
 Items marked UNVERIFIED, AT_RISK, or CONFLICTED in `docs/EDGE_CASES.md` and
 `docs/INVARIANTS.md` were inferred from code or docs and were not observed in a
 live session. Do not promote them to confirmed defects without reproduction
-(qwen-2 H09). The highest-priority live check is the save response under the
-PRG flow.
+(qwen-2 H09). The save/PRG flow is now confirmed from the archived PHP, and the
+current live subject list confirms CRK → CRS. The remaining live checks are the
+full current page markup and any remaining UNVERIFIED/AT_RISK behaviors.

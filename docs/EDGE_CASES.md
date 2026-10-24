@@ -70,16 +70,16 @@ current question.
 | EC-37 | E/F without key | No valid key entry | E/F appended to D as `E. ...` / `F. ...`; no radio ticked | CONFIRMED | claude-migration §3 (case 13); qwen-2-reconciled E19 |
 | EC-38 | Key says E but no E text | Key E, no E option text loaded | D left alone; nothing ticked; manual-pick message | CONFIRMED | claude-migration §3 (case 14) |
 | EC-39 | Loose E/F detection | Line starting with lone `E`/`F` + whitespace + text after D/E | Recognized as E/F; fragile | CONFIRMED | claude-migration §3 (case 15) |
-| EC-40 | Legacy E/F tick radio mapping | Key E/F with the older variants (A/B) | B computes radio values 4/5 (nonexistent); C maps E/F to D (value 3) | CONFLICTED | qwen-2-reconciled R10/U01 vs claude-migration §2, §9 |
+| EC-40 | Legacy E/F tick radio mapping | Key E/F with the older variants (A/B) | B computes radio values 4/5 (nonexistent); C maps E/F to D (value 3) | CONFIRMED | qwen-2-reconciled R10/U01; claude-migration §2, §9; PHP enforces radios 0–3 |
 
 ## D. Header metadata
 
 | ID | Short name | Trigger | Expected behavior | Status | Source |
 |---|---|---|---|---|---|
-| EC-41 | CRK / C.R.K. alias | Header contains CRK variants | Select CRS / CHRISTIAN RELIGIOUS subject | CONFLICTED | qwen-2-reconciled E15 vs claude-migration §8 (issue 7: alias may match nothing) |
+| EC-41 | CRK / C.R.K. alias | Header contains CRK variants | Select CRS / CHRISTIAN RELIGIOUS subject; the current live list contains `CRS` (id 14), so CRK selects it | CONFIRMED | qwen-2-reconciled E15; `archive/live-sources/subjects-select-2026-10-23.html`; harness uses that list |
 | EC-42 | Year in header | First `20\d\d` in first 3 lines | Written to `exam_year` | CONFIRMED | qwen-2-reconciled E16 |
 | EC-43 | Fuzzy subject name | No alias match | Containment / word-overlap scoring | UNVERIFIED | qwen-2-reconciled E17 |
-| EC-44 | Year typo/missing year | `2O21` (letter O) or no `20\d\d` match | No year written; server rejects if `exam_year` is empty/out of 1900–2100; flag/UI does not validate range | UNVERIFIED | qwen-2-gaps |
+| EC-44 | Year typo/missing year | `2O21` (letter O) or no `20\d\d` match | No year written; server rejects if `exam_year` is empty/out of 1900–2100; flag/UI does not validate range | CONFIRMED | qwen-2-gaps; `admin_questions.php` range check |
 | EC-61 | Header year false positive | Header contains an earlier `20\d\d` such as a copyright/reference year | First `20\d\d` wins and is written to `exam_year`; no check that it is the exam year | CONFIRMED | qwen-2-reconciled R14 |
 
 Note: EC-61 was present in the raw phase-3 notes (qwen-2 R14) and was added to
@@ -95,10 +95,10 @@ this table during review.
 | EC-48 | Prior server error present | `.admin-error` on boot | Text fields are not refilled and the status is rendered; `tick()` still runs and may tick the correct-option radio from the saved key | CONFIRMED | qwen-2-reconciled E25; src/ui/ui.js |
 | EC-49 | Duplicate UI cleanup | Bookmarklet clicked again | Remove old `ocr_helper.js`, `#ocr_input` `.admin-field`, `#ans_panel` before injecting | CONFIRMED | qwen-1-migration §3; qwen-2-reconciled invariant 1 |
 | EC-50 | Repeated injection interval | Click repeatedly | New interval/DOM each time (inferred risk) | UNVERIFIED | qwen-2-reconciled R12 |
-| EC-51 | Legacy `ocrSubmitted` flag | Flag present in localStorage at boot | Deleted; queue advances if no error. Writer never present in supplied code | CONFIRMED | qwen-2-reconciled E26/U03 |
+| EC-51 | Legacy `ocrSubmitted` flag | Flag present in localStorage at boot | Ignored; the bookmarklet does not read, delete, or advance on it (D-27) | CONFIRMED | qwen-2-reconciled E26/U03; user decision; `src/ui/ui.js` |
 | EC-52 | Page scroll on save | Save via AJAX | Page stays in place; no auto-scroll | CONFIRMED | qwen-1-migration §3 |
 | EC-53 | Media-required question | Diagram/video needed | Cannot be created via bookmarklet; attach later in native Edit UI | CONFIRMED | qwen-2-gaps §4 |
-| EC-54 | Newlines in Option D | E/F appended to D | `option_d` is `<input type=text>`; browser may strip `\n\n` | UNVERIFIED | claude-migration §8 (issue 3) |
+| EC-54 | Newlines in Option D | E/F appended to D | `option_d` is `<input type=text>`; the browser strips `\n\n` | CONFIRMED | claude-migration §8 (issue 3); `admin_questions.html`, `admin_questions.php` |
 
 ## F. Saving and server
 
@@ -106,28 +106,31 @@ this table during review.
 |---|---|---|---|---|---|
 | EC-55 | Logged out at submit | Response contains `Administrator Login` | Targeted re-login message | CONFIRMED | qwen-2-reconciled E21; claude-migration §3 (case 25) |
 | EC-56 | Server validation error | Response contains `.admin-error` | Error text surfaced in `#ans_res` | CONFIRMED | qwen-2-reconciled E22 |
-| EC-57 | Empty option hard rejection | An option is empty and user saves | PHP rejects: "Please fill in all four answer options." | UNVERIFIED | qwen-2-gaps §3 |
+| EC-57 | Empty option hard rejection | An option is empty and user saves | PHP rejects: "Please fill in all four answer options." | CONFIRMED | qwen-2-gaps §3; `admin_questions.php` |
 | EC-58 | Network failure | `fetch` rejects | `NOT saved: network problem. Try again.` | CONFIRMED | qwen-2-reconciled E23; claude-migration §3 (case 25) |
-| EC-59 | PRG success detection | POST returns redirected GET with session flash | Success regex matches the flash text | CONFLICTED | qwen-2-reconciled U02/R11 (uncertain) vs qwen-2-gaps §1 (verified) |
-| EC-60 | Category limit | More than 10 active categories | Dropdown only exposes `id <= 10`; matcher cannot select beyond | UNVERIFIED | qwen-2-gaps §5 |
+| EC-59 | PRG success detection | POST returns redirected GET with session flash | Success regex matches the flash text | CONFIRMED | `admin_questions.php` stores the flash, redirects, and renders it; qwen-2-gaps §1 |
+| EC-60 | Category limit | More than 10 active categories | Dropdown only exposes `id <= 10`; matcher cannot select beyond | CONFIRMED | qwen-2-gaps §5; `admin_questions.php` query |
 
 ## Conflicts and open statuses
 
-- **EC-40** — the docs describe the older two-textarea variants' E/F tick
-  behavior. The baseline C maps E/F to D (radio 3); qwen-2's R10 describes B's
-  radio 4/5 defect. Both are documented; not silently merged.
-- **EC-41** — qwen-2 says the alias is handled; claude infers the deployed
-  subject list may contain no CRS/Christian Religious option, so the alias may
-  select nothing. Needs live data.
-- **EC-59** — the PRG flow is claimed verified from PHP by qwen-2-gaps, but
-  qwen-2-reconciled marks the live response as uncertain and never observed.
-- Server-side boundaries (EC-44, EC-57, EC-60) come from `admin_questions.php`
-  descriptions; the PHP itself is not archived, so they are UNVERIFIED in this
-  workspace.
+No edge case remains CONFLICTED. The former conflicts and server-side gaps were
+closed by the archived PHP/HTML sources:
+
+- **EC-40** — the older two-textarea variants are still a documented version
+  difference (B computes radios 4/5; baseline C maps E/F to D/3). The PHP
+  confirms only radios 0–3 exist, so baseline C is correct.
+- **EC-41** — the current live subject list contains `CRS` (id 14), so the CRK
+  alias selects it. The harness uses the archived list. English (Oral) and
+  English Language are separate options and resolve correctly.
+- **EC-59** — the archived PHP stores the flash in the session, redirects, and
+  renders it in the redirected page, so the fetched response contains the
+  success text.
+- EC-44, EC-54, EC-57, and EC-60 are now confirmed directly from
+  `archive/live-sources/admin_questions.php` and `admin_questions.html`.
 
 ## Counts
 
 - Total: 61
-- CONFIRMED: 50
-- UNVERIFIED: 8
-- CONFLICTED: 3
+- CONFIRMED: 57
+- UNVERIFIED: 4
+- CONFLICTED: 0

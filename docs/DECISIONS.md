@@ -93,11 +93,13 @@ reduces but does not remove the risk (claude §5.3).
 **Choice.** With a key, E/F replaces D and ticks D. Without a key, E/F is
 appended to D as labeled text; nothing is ticked.
 **Why.** The page has exactly four option fields and `correct_option` 0–3.
-There are no E/F radios (claude §9; qwen-2 D10; INV-27, INV-30).
+There are no E/F radios (claude §9; qwen-2 D10; INV-27, INV-30). The original
+PHP (`admin_questions.php`) confirms the four-option rule and 0–3 range, so this
+is recorded as a hard server constraint; the lossy overwrite of D is a side
+effect, not the framing.
 **Risk.** Lossy: D's original text is overwritten when E/F is the key answer;
 appended E/F text can make D exceed 500 characters; `option_d` is a single-line
-input, so the `\n\n` separator may be stripped. Sources correctly disagree on
-whether this is a hard server constraint or a lossy limitation (INV-31).
+input, so the `\n\n` separator is stripped (confirmed by the archived form).
 
 ## D-10 — Never pre-tick an answer
 
@@ -136,16 +138,17 @@ it deletes the old key. A key-only paste keeps the queue.
 **Why.** The user's stated rule: an answer key is relevant only in the moment.
 Mid-queue correction is supported by pasting only the key (claude §9, §7).
 **Risk.** A questions paste with a missed key section silently clears a good
-key. Key persistence across reloads remains read-from-storage and was not
-explicitly decided (claude §8 issue 5; INV-32, INV-33).
+key. Key persistence across reloads is resolved: the key is read from `ansKey`
+and survives reloads (user decision, D-25). (INV-32, INV-33.)
 
 ## D-14 — Reset Queue leaves the key intact
 
 **Choice.** `queue = { items: [], i: 0 }`; `ansKey` is untouched.
-**Why.** This is the implemented behavior. The docs record it as an open
-product decision, not a settled requirement (claude §8 issue 4; INV-34).
-**Risk.** A user may expect Reset to clear everything. Not changed without a
-decision.
+**Why.** This is the implemented behavior and the resolved product decision
+(user decision, D-26): Reset is queue-only, and "Clear saved key" remains the
+explicit key-clearing action (claude §8 issue 4; INV-34).
+**Risk.** A user who expects Reset to clear everything may be surprised; the two
+buttons are deliberately separate.
 
 ## D-15 — Header limited to first 3 lines; first `20\d\d` wins
 
@@ -163,9 +166,10 @@ The UI does not validate the 1900–2100 range (EC-44, EC-61; qwen-2 R14).
 score options by containment then word overlap.
 **Why.** The paper label and the database subject name differ; the fuzzy path
 handles headers that do not use an alias (qwen-2 D13).
-**Risk.** Containment/overlap can pick the wrong subject (e.g. `Biology` vs
-`Marine Biology`). The deployed subject list may contain no CRS option, so the
-alias may select nothing (claude §8 issue 7; EC-41/INV-43 conflict; qwen-2 R13).
+**Risk.** Containment/overlap can still pick the wrong subject for names that
+share words. On the current list, `English (Oral)` and `English Language`
+resolve correctly, and CRK selects `CRS` (id 14); new or renamed subjects can
+reintroduce collisions (EC-41/INV-43; qwen-2 R13).
 
 ## D-17 — `FIXES` for three OCR typos only
 
@@ -184,10 +188,11 @@ text and must be intentional (qwen-2 §7).
 `/Question saved successfully \(Question ID: (\d+)\)/`.
 **Why.** It keeps the queue state on the page, preserves the CSRF token and
 action, and advances automatically (qwen-2 D12; claude §9).
-**Risk.** Coupled to the exact flash wording and to the PRG response actually
-containing that text. One source says the PHP PRG flow guarantees it; another
-marks the live response as never observed (INV-49 conflict; qwen-2 R11). Do not
-change the detector without observing a live save (qwen-2 H07).
+**Risk.** Coupled to the exact flash wording. The archived PHP confirms the PRG
+flow: it stores `cbt_admin_flash`, redirects with `Location`, and renders the
+flash in the redirected page, so the fetched response does contain the success
+text (INV-49 resolved; `admin_questions.php`). Still do not change the detector
+without updating the server contract (qwen-2 H07).
 
 ## D-19 — 600 ms polling of the queue index
 
@@ -207,21 +212,23 @@ server-side validation then decides.
 
 ## D-21 — Shared `localStorage` key names
 
-**Choice.** Use `ocrQueue`, `ocrMeta`, `ansKey`, `ocrSubmitted` with the
-documented shapes.
+**Choice.** Use `ocrQueue`, `ocrMeta`, and `ansKey` with the documented shapes.
+`ocrSubmitted` remains a shared key name but the bookmarklet no longer touches
+it (D-22).
 **Why.** They enable reload-safe bulk entry and a key keyed by printed book
 number (qwen-2 D11).
 **Risk.** Storage is origin-wide and shared with the live `ocr_helper.js`;
 renaming or reshaping these keys can affect both tools (INV-55; qwen-2 R15).
 
-## D-22 — `ocrSubmitted` is read/deleted, never written
+## D-22 — `ocrSubmitted` is no longer handled
 
-**Choice.** At boot, delete `ocrSubmitted` and advance the queue if no
-`.admin-error` is present.
-**Why.** Presumed legacy from the older helper (OH). Its writer is not present
-in any supplied code (claude §2; qwen-2 U03).
-**Risk.** Purpose and correct behavior are unknown. It is an unresolved item,
-not a validated feature.
+**Choice.** The bookmarklet does not read, write, or delete `ocrSubmitted`.
+**Why.** Its writer is not in any supplied code. The deployed helper shares the
+same queue storage, so a stale flag could have advanced the bookmarklet's queue
+unexpectedly. The user decided the bookmarklet should be self-contained
+(D-27).
+**Risk.** If the deployed helper relies on the bookmarklet to consume its flag,
+that handoff no longer happens. No supplied code writes the flag.
 
 ## D-23 — Build produces a single-line `javascript:` URL
 
@@ -233,14 +240,56 @@ comments that would truncate the URL (claude §10; INV-05).
 leading/trailing whitespace inside template literals; a future multi-line string
 could be altered by the build. Always edit the modules, not the generated file.
 
+## D-24 — Force `is_active` on
+
+**Choice.** Check the `is_active` box in `fillForm` and again immediately before
+submit, so every imported question is saved active.
+**Why.** User decision: imports should go live immediately rather than depending
+on the form's remembered state.
+**Risk.** An unreviewed question is visible to students as soon as it is saved.
+The server records `is_active` from the checkbox (`admin_questions.php`), so the
+forced state is authoritative.
+
+## D-25 — The key persists across reloads
+
+**Choice.** Read `ansKey` at boot; do not clear it on load.
+**Why.** User decision: a reload mid-queue must not lose the key.
+**Risk.** A stale key remains until a questions paste replaces it or the user
+presses "Clear saved key".
+
+## D-26 — Reset Queue keeps the key
+
+**Choice.** Reset clears only the queue; the key stays.
+**Why.** User decision: key clearing is the separate "Clear saved key" action.
+**Risk.** Users who expect a full reset must use both controls.
+
+## D-27 — Do not consume the legacy `ocrSubmitted` flag
+
+**Choice.** Remove the boot-time read/delete/advance block.
+**Why.** User decision: both tools share queue storage, so an old/stale flag
+could skip a question. Nothing in the bookmarklet writes it.
+**Risk.** Any external helper that relied on this bookmarklet to consume its
+flag no longer gets that behavior.
+
+## D-28 — B1/B2/B3 mapping
+
+**Choice.** Treat the supplied root files as B1 = `first.js`, B2 = `third.js`,
+B3 = `second.js`; archive them as `archive/legacy-bookmarklets/b1.js`,
+`b2.js`, and `b3.js`.
+**Why.** B3 is the only file with `splitCombinedText` and no key-only path; B2
+has `splitSections`, "Show paste box", and the Reset bug; B1 has no "Show paste
+box" and the weaker `splitCombined` splitter with correctly escaped
+option-splitting. The original filenames did not encode this order.
+**Risk.** None for the baseline: `trusted-variant-C.js` remains the merged
+artifact built from B2, and the archived B files are reference-only.
+
 ## Open decisions (not resolved by this phase)
 
-1. Should Reset Queue clear the key? (Current: no.)
-2. Should the key survive page reloads? (Current: yes, read from `ansKey`.)
-3. Should saves default to inactive (`is_active`)? (Current: leave as-is.)
-4. Who writes `ocrSubmitted`, and is the boot advance still wanted?
-5. Does the deployed subject list contain a CRS/Christian Religious option?
-6. Does the live PRG response actually contain the success flash text?
+None. B1/B2/B3 were supplied and matched in Phase 8 (D-28).
+
+Everything previously listed here is resolved by D-14, D-18, D-22, D-24–D-28.
 
 Sources: `claude-migration.md` §8–§9, `qwen-2-reconciled.md` U02/U03/R11–R15,
-`qwen-2-gaps.md`.
+`qwen-2-gaps.md`, `archive/live-sources/admin_questions.php`,
+`archive/live-sources/subjects-select-2026-10-23.html`, and the recorded user
+decisions.

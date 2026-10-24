@@ -2,6 +2,10 @@
 
 ## Versions compared
 
+The supplied legacy bookmarklets are archived as B1 (`archive/legacy-bookmarklets/b1.js`),
+B2 (`b2.js`), and B3 (`b3.js`); B2 is the source the merged C baseline was built
+from. See `archive/legacy-bookmarklets/README.md` for the matching evidence.
+
 | Label | Source | OPTION handling | UI shape | Status |
 |---|---|---|---|---|
 | A | `archive/trusted-variants/trusted-variant-A.js` | Lookbehind; requires `.`/`)` after label | Two textareas | Superseded; known dotless-option bug |

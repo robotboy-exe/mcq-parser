@@ -50,6 +50,8 @@ fixtures/
 archive/
   migration-docs/      original migration documents (byte-identical copies)
   trusted-variants/    original bookmarklet variants A/B/C
+  legacy-bookmarklets/ supplied B1/B2/B3 (matched from first/second/third.js)
+  live-sources/        admin PHP/HTML, ocr_helper.js, OCR text bank
 tests/runner.js        pure-Node fixture harness (no browser)
 ```
 
@@ -59,27 +61,29 @@ tests/runner.js        pure-Node fixture harness (no browser)
   dotless-after-newline; inline options are supported.
 - Splits off an answer key by divider, header, structure, or key-only paste.
 - Collapses E/F answers into Option D, because the page has only four options
-  and radios 0–3.
+  and radios 0–3 (a hard server constraint).
 - Shows advisory flags such as `option C missing`; it never blocks saving.
 - Persists the queue, header metadata, and key in `localStorage` under
-  `ocrQueue`, `ocrMeta`, and `ansKey`.
+  `ocrQueue`, `ocrMeta`, and `ansKey`; the key survives reloads.
+- Forces `is_active` on, so imported questions are saved active.
+- Does not read, write, or delete the legacy `ocrSubmitted` key.
 - Never changes the PHP, the CSRF token, or the server field names.
 
 Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 ## Status
 
-Workspace setup phases 1–6 are complete. `tests/runner.js` runs every fixture
+Workspace setup phases 1–8 are complete. `tests/runner.js` runs every fixture
 and reports PASS, FAIL, or PENDING; run it for the current status.
 `WORKSPACE_SETUP.md` holds the final setup report and the human decisions still
 needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
 see `docs/BASELINE_COMPARISON.md` for why.
 
-Known open questions (do not silently resolve them):
+Resolved decisions: Reset Queue keeps the key, the key survives reloads, saves
+are forced active, the PRG success text is confirmed from the archived PHP, the
+legacy `ocrSubmitted` flag is ignored, and CRK maps to the live `CRS` option
+(id 14). The current subject list is archived in `archive/live-sources/`;
+English (Oral) is separate from English Language.
 
-- Should Reset Queue clear the key? (Current behavior: no.)
-- Should the key survive page reloads?
-- Should saves default to inactive?
-- Does the live save flow return the expected success text?
-- Does the deployed subject list contain a CRS/Christian Religious option?
-- Who writes the legacy `ocrSubmitted` flag?
+B1, B2, and B3 were matched to the supplied root files and archived under
+`archive/legacy-bookmarklets/`; the baseline remains `trusted-variant-C.js`.

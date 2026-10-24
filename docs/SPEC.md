@@ -91,8 +91,8 @@ or `-1`. `exam_category_id` is never inferred.
 - `localStorage.ocrQueue`: `{ items: [question...], i: number }`.
 - `localStorage.ocrMeta`: `{ subject_id, exam_category_id, exam_year }`.
 - `localStorage.ansKey`: the parsed key map.
-- `localStorage.ocrSubmitted`: read and deleted at boot; this bookmarklet never
-  writes it.
+- `localStorage.ocrSubmitted`: a legacy shared key. The bookmarklet no longer
+  reads, writes, or deletes it (decision D-22).
 
 ## 4. Parsing stages
 
@@ -160,10 +160,17 @@ the label is what prevents a blank `C.` from consuming `D.`.
   punctuation; score options by containment in either direction, then by
   overlap of words longer than 2 chars. Highest score wins; ties keep the first.
 - No match leaves the subject untouched.
+- The current live subject list is archived in
+  `archive/live-sources/subjects-select-2026-10-23.html`: it contains `CRS`
+  (id 14), `English (Oral)` (id 12), and `English Language` (id 6). The parser
+  matches option text, not IDs. A CRK header therefore selects `CRS`; an
+  English (Oral) header selects `English (Oral)`, not English Language.
 
 ### Stage 5 — Fill (`fillForm`)
 
 - Restore `ocrMeta`; set `question_text`; set `option_a`–`option_d`.
+- Force the `is_active` checkbox on, so every imported question is saved active
+  (decision D-24).
 - Clear all `correct_option` radios first.
 - If the key has this question's number:
   - A–D → tick that radio (index 0–3).
@@ -181,13 +188,17 @@ the label is what prevents a blank `C.` from consuming `D.`.
 - Key lifecycle: a paste with questions replaces the key; a paste with questions
   and no key clears it; a key-only paste replaces the key and keeps the queue;
   Reset Queue clears the queue but not the key; "Clear saved key" clears it.
+  The key is read from `ansKey` at boot and therefore survives reloads (decision
+  D-14/D-13).
 - Save: capture-phase `submit` listener, `preventDefault` +
-  `stopImmediatePropagation`, `fetch(location.href, { method:'POST', body:new
-  FormData(form), credentials:'same-origin' })`.
-- Success: response matches `/Question saved successfully \(Question ID:
-  (\d+)\)/`. On success: show the ID, refresh meta, clear `question_image`,
-  `answer_video`, `answer_explanation`, advance the queue (or `form.reset()`),
-  tick the next answer.
+  `stopImmediatePropagation`, force `is_active` on, then `fetch(location.href, {
+  method:'POST', body:new FormData(form), credentials:'same-origin' })`.
+- Success: the PHP writes `cbt_admin_flash`, redirects, and the redirected GET
+  renders it as `.admin-success`; the fetched response matches
+  `/Question saved successfully \(Question ID: (\d+)\)/`. On success: show the
+  ID, refresh meta, clear `question_image`, `answer_video`,
+  `answer_explanation`, advance the queue (or `form.reset()`), tick the next
+  answer.
 - Failure: `.admin-error` text from a parsed reply, a logged-out message when
   the reply contains `Administrator Login`, an unexpected-reply message with the
   status code, or `NOT saved: network problem. Try again.`
@@ -211,8 +222,8 @@ E/F-specific flag. (Source: `claude-migration.md` §2.)
 
 ## 6. Server contract the UI depends on
 
-From the migration docs, not from archived PHP (the PHP itself is not in this
-workspace):
+From the archived live source (`archive/live-sources/admin_questions.php`) and
+the current rendered page (`archive/live-sources/admin_questions.html`):
 
 - Exactly 4 non-empty options, each ≤500 characters.
 - `correct_option` integer 0–3 (no E/F radios).

@@ -11,7 +11,9 @@ Source: `archive/migration-docs/claude-migration.md` (42397 bytes).
 No other full code snapshots. Section 1 names alternatives B1, B2, B3 (the
 three bookmarklets the user supplied in the first Claude message) and OH
 (`ocr_helper.js`), but does not reproduce B1/B3/OH. B2 is described as the base
-of the merged artifact; B1/B3 source was not supplied to this workspace.
+of the merged artifact. The three files were supplied later and matched in
+Phase 8 (B1 = `first.js`, B2 = `third.js`, B3 = `second.js`); see
+`archive/legacy-bookmarklets/README.md`.
 
 ## Context
 

@@ -8,6 +8,12 @@ const parser = require('../src/parser/parser.js');
 const ROOT = path.resolve(__dirname, '..');
 const EXPECTED_DIR = path.join(ROOT, 'fixtures/expected');
 const DEFAULT_INPUT_DIR = path.join(ROOT, 'fixtures/inputs');
+const SUBJECT_SELECT_FILE = path.join(ROOT, 'archive/live-sources/subjects-select-2026-10-23.html');
+
+const SUBJECT_NAMES = [...fs.readFileSync(SUBJECT_SELECT_FILE, 'utf8')
+  .matchAll(/<option[^>]*>([^<]+)<\/option>/gi)]
+  .map(m => m[1].trim())
+  .filter(name => name && !name.startsWith('--'));
 
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
@@ -279,20 +285,16 @@ function checkHeader(expectedHeader, header, checks) {
   }
 
   if (Array.isArray(expectedHeader.subject_contains_any)) {
-    // No deployed subject list was supplied with the fixtures. Use a synthetic
-    // dropdown built only from the documented names plus one unrelated decoy,
-    // so this checks the CRK/CRS alias mapping, not the live option list.
-    const subjectNames = ['Mathematics'];
-    for (const name of expectedHeader.subject_contains_any) {
-      if (!subjectNames.includes(name)) subjectNames.push(name);
-    }
-    const index = parser.pickSubjectIndex(header.header, subjectNames);
-    const selected = index >= 0 ? subjectNames[index] : null;
+    // Use the archived live subject <select> supplied after Phase 7, so the
+    // alias is checked against the real option names (including CRS and
+    // English (Oral)).
+    const index = parser.pickSubjectIndex(header.header, SUBJECT_NAMES);
+    const selected = index >= 0 ? SUBJECT_NAMES[index] : null;
     const ok = selected !== null && expectedHeader.subject_contains_any.some(
       name => selected.toUpperCase().includes(name.toUpperCase())
     );
     checks.push(makeCheck(
-      'header.subject (synthetic list; live data unavailable)',
+      'header.subject (live subject list, 2026-10-23)',
       ok,
       expectedHeader.subject_contains_any,
       selected

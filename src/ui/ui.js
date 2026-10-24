@@ -72,6 +72,7 @@ function runOCRBookmarklet() {
       const radio = form.querySelector(`input[name="correct_option"][value="${correctIndex}"]`);
       if (radio) radio.checked = true;
     }
+    if (form.elements.is_active) form.elements.is_active.checked = true;
   }
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
   const saveQ = () => store.set('ocrQueue', queue);
@@ -186,6 +187,7 @@ function runOCRBookmarklet() {
     e.preventDefault();
     e.stopImmediatePropagation();
     if (!queue.items.length) saveMeta();
+    if (form.elements.is_active) form.elements.is_active.checked = true;
     const b = form.querySelector('button[type=submit]'), r = $('ans_res');
     let s;
     b.disabled = true;
@@ -233,13 +235,6 @@ function runOCRBookmarklet() {
     }
   }, 600);
   const failed = document.querySelector('.admin-error');
-  if (store.get('ocrSubmitted')) {
-    store.del('ocrSubmitted');
-    if (!failed) {
-      queue.i++;
-      saveQ();
-    }
-  }
   failed ? renderOCR() : showOCR();
   tick();
 }
