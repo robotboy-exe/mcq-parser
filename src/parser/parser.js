@@ -155,9 +155,9 @@ function splitSections(raw) {
   lines.push(raw.slice(prev));
   starts.push(prev);
   const ne = lines.map((t, i) => ({ t, i })).filter(x => x.t.trim());
-  const isKey = t => KEY_LINE.test(t) || PLACEHOLDER.test(t);
-  const isStem = t => !isKey(t) && STEM_LINE.test(t);
   const pairs = t => (t.match(INLINE_PAIR) || []).length;
+  const isKey = t => KEY_LINE.test(t) || PLACEHOLDER.test(t) || pairs(t) >= 2;
+  const isStem = t => !isKey(t) && STEM_LINE.test(t);
   function boundary(k, how) {
     const line = lines[k] || '';
     const include = isKey(line) || pairs(line) >= 2;

@@ -18,7 +18,7 @@ const SUBJECT_NAMES = [...fs.readFileSync(SUBJECT_SELECT_FILE, 'utf8')
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
 const ASSERTED_KEYS = {
-  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'forbidden_flags'],
+  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'key', 'forbidden_flags'],
   question: ['a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'forbidden_flags'],
   key: ['key']
 };
@@ -351,6 +351,11 @@ function runFixture(spec, inputText) {
           question ? question.e : 'question not found'
         ));
       }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(expected, 'key')) {
+      const actualKey = parser.parseKey(actual.sections.answers);
+      checks.push(makeCheck('key', deepEqual(actualKey, expected.key), expected.key, actualKey));
     }
 
     checkForbiddenFlags(actual.items, expected.forbidden_flags, checks);

@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "id": "bank-2021",
+  "source": [
+    "archive/live-sources/IMPROVISED C.docx.txt lines 1-297",
+    "2021 questions (lines 1-290) and inline answer key (lines 291-297)"
+  ],
+  "provenance": "Verbatim 2021 slice from the bank, including the inline multi-pair answer key.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/bank-2021.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 40,
+    "header": {
+      "year": 2021,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ]
+    },
+    "questions": [
+      {
+        "num": 20,
+        "question_contains": [
+          "The rainbow as the sign of God's convenant with Noah implies"
+        ],
+        "a": "love",
+        "b": "mercy",
+        "c": "redemption",
+        "d": "reconciliation",
+        "flags": []
+      },
+      {
+        "num": 40,
+        "question": "Who appeared and talked with Jesus during the transfiguration?",
+        "a": "Moses and Elijah",
+        "b": "Moses and Samuel",
+        "c": "Samuel and Elisha",
+        "d": "Elisha and Elijah",
+        "flags": []
+      }
+    ],
+    "key": {
+      "1": "A",
+      "2": "B",
+      "3": "A",
+      "4": "B",
+      "5": "C",
+      "6": "B",
+      "7": "C",
+      "8": "C",
+      "9": "C",
+      "10": "D",
+      "11": "B",
+      "12": "A",
+      "13": "B",
+      "14": "A",
+      "15": "B",
+      "16": "A",
+      "17": "C",
+      "18": "B",
+      "19": "B",
+      "20": "B",
+      "21": "C",
+      "22": "D",
+      "23": "D",
+      "24": "A",
+      "25": "B",
+      "26": "C",
+      "27": "B",
+      "28": "D",
+      "29": "A",
+      "30": "C",
+      "31": "C",
+      "32": "B",
+      "33": "D",
+      "34": "C",
+      "35": "A",
+      "36": "D",
+      "37": "B",
+      "38": "B",
+      "39": "D",
+      "40": "A"
+    },
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  }
+}
