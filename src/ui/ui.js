@@ -90,9 +90,11 @@ function runOCRBookmarklet() {
   }
   $('ocr_load').onclick = () => {
     const raw = $('ocr_text').value;
-    const parts = splitSections(raw);
+    const sections = splitSectionsWithSalvage(raw);
+    const parts = sections.parts;
     const text = FIXES.reduce((t, [re, fix]) => t.replace(re, fix), parts.questions);
-    const items = splitQuestions(text).map(parseQuestion);
+    const items = splitQuestionItems(text).map(parseQuestion);
+    if (sections.salvaged) items.forEach(item => item.flags.push('OCR boundaries repaired; verify question and option split'));
     const newKey = parts.answers.trim() ? parseKey(parts.answers) : {};
     const hasKey = Object.keys(newKey).length > 0;
     if (!items.length) {
@@ -116,6 +118,7 @@ function runOCRBookmarklet() {
     queue = { items, i: 0 };
     saveQ();
     showOCR();
+    if (sections.salvaged) $('ocr_status').innerHTML += '<div class="admin-note">OCR boundaries repaired (' + sections.inserts + ' inserts); verify the split.</div>';
     if (hasKey) {
       tick();
       $('ans_msg').textContent += ' (' + Object.keys(key).length + ' answers in key.)';
