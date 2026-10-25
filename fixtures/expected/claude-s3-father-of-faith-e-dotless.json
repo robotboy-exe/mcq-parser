@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "synthetic",
   "id": "claude-s3-father-of-faith-e-dotless",
   "source": [
     "archive/migration-docs/claude-migration.md §6 S3 (assistant-written test input)",

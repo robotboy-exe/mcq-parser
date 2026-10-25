@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "synthetic",
   "id": "qwen2-s5-answer-key",
   "source": [
     "archive/migration-docs/qwen-2-reconciled.md §6 S5 (answer-key format example from the UI label)",

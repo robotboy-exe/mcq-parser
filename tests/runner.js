@@ -23,6 +23,8 @@ const CATEGORY_NAMES = CATEGORY_SELECT ? [...CATEGORY_SELECT[0]
   .map(m => m[1].trim())
   .filter(name => name && !name.startsWith('--')) : [];
 
+const INPUT_ORIGINS = new Set(['bank', 'anomaly', 'doc', 'synthetic']);
+
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
 const ASSERTED_KEYS = {
@@ -449,6 +451,16 @@ function run() {
 
     if (spec.status !== 'CONFIRMED' && spec.status !== 'PENDING') {
       results.push({ id, kind: spec.kind, status: 'FAIL', detail: `unknown status: ${show(spec.status)}` });
+      continue;
+    }
+
+    if (!has(spec, 'input_origin')) {
+      results.push({ id, kind: spec.kind, status: 'FAIL', detail: 'missing input_origin' });
+      continue;
+    }
+
+    if (!INPUT_ORIGINS.has(spec.input_origin)) {
+      results.push({ id, kind: spec.kind, status: 'FAIL', detail: `unknown input_origin: ${show(spec.input_origin)}` });
       continue;
     }
 

@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "synthetic",
   "id": "claude-s5-option-text-next-line",
   "source": [
     "archive/migration-docs/claude-migration.md §6 S5 (assistant-written test input)",

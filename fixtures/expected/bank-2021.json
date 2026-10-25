@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "bank",
   "id": "bank-2021",
   "source": [
     "archive/live-sources/IMPROVISED C.docx.txt lines 1-297",

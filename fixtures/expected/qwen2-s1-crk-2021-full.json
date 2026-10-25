@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "bank",
   "id": "qwen2-s1-crk-2021-full",
   "source": [
     "archive/migration-docs/qwen-2-reconciled.md §6 S1 (user-supplied, complete as pasted)",

@@ -85,6 +85,12 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   unit 59 PASS; build one line, no `%`, body parses. The UI paths for Fixes 3
   and 7 are covered by injected pure helpers (`commitSave`, `heartbeatTick`);
   the DOM wiring itself has no browser test.
+- P01 closed on 2026-10-25: `input_origin` is required and validated by the
+  runner, and all 25 current fixtures carry it (7 bank, 1 doc, 17 synthetic).
+  The package was written for 19; P03's `bank-2021` and the 2026-10-24 header
+  and gap fixtures were classified too. `gap-q10-missing` is a real user paste
+  marked synthetic because the taxonomy has no user-paste value. Runner 25
+  PASS; negative missing/unknown checks reproduced and restored.
 - Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
@@ -139,8 +145,8 @@ Every `fixtures/expected/*.json` must eventually carry one of:
 | `doc` | Real sample transcribed in a migration doc, not present in the bank |
 | `synthetic` | Assistant-written input covering a behavior absent from the sources |
 
-`P01` introduces and enforces this field. Until then, provenance lives in the
-free-text `provenance`/`source` fields.
+`P01` enforces this field. The free-text `provenance`/`source` fields still carry
+the detailed evidence.
 
 ## Work packages
 
@@ -148,7 +154,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 
 | ID | Document | Goal | Depends on | Status |
 |---|---|---|---|---|
-| P01 | [01-origin-taxonomy.md](01-origin-taxonomy.md) | Add and enforce `input_origin`; label the 19 existing fixtures | — | not started |
+| P01 | [01-origin-taxonomy.md](01-origin-taxonomy.md) | Add and enforce `input_origin`; label the 25 current fixtures | — | done (2026-10-25) |
 | P02 | [02-bank-extraction.md](02-bank-extraction.md) | Deterministic per-year extractor + 5 bank inputs + PENDING specs | P01 | not started; needed before P04–P06 |
 | P03 | [03-bank-2021-inline-key.md](03-bank-2021-inline-key.md) | 2021 fixture + first parser fix: detect inline keys | P02 (deferred) | done |
 | P04 | [04-bank-2022.md](04-bank-2022.md) | 2022 fixture: inline key, real dotless option, 13 E-option questions | P03 | not started |
@@ -314,6 +320,9 @@ authoritative:
   with exam year 1800 was rejected so no row was inserted. Unverified
   list/stop and media removal covered by unit + mock. Active.md §3 retired;
   unit 49 PASS.
+- 2026-10-25 — P01 done: `input_origin` is required and limited to
+  bank/anomaly/doc/synthetic; all 25 fixtures labelled; missing and unknown
+  values fail the runner. Runner 25 PASS.
 - 2026-10-25 — AS-09 done: confirmed-save log/advance faults keep the marker and
   stop without retry; saved log is re-read and merged by id with mode kept and
   capped at 200; `has-explanation` and `meta-changed` join the gate; the

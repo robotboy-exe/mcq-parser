@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "doc",
   "id": "qwen2-s2-article-vs-option",
   "source": [
     "archive/migration-docs/qwen-2-reconciled.md §6 S2 (user-supplied, incomplete question)",

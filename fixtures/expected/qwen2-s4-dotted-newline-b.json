@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "synthetic",
   "id": "qwen2-s4-dotted-newline-b",
   "source": [
     "archive/migration-docs/qwen-2-reconciled.md §6 S4 (assistant-constructed micro-example: 'A 75' / 'B. 75')",

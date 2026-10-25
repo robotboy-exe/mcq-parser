@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "synthetic",
   "id": "gap-q10-missing",
   "source": [
     "User-provided paste 2026-10-24 (Q9 then Q11; Q10 omitted by OCR)"

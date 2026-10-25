@@ -1,5 +1,6 @@
 {
   "schema_version": 1,
+  "input_origin": "synthetic",
   "id": "header-crs-ssce",
   "source": [
     "User request 2026-10-24 (exam-category header and CRS alias)",
