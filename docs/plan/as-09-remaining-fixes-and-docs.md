@@ -1,6 +1,6 @@
 # AS-09 — Remaining review fixes and doc corrections
 
-Status: not started. Depends on: AS-08.
+Status: done (2026-10-25). Depends on: AS-08.
 
 ## Source and scope
 
@@ -62,11 +62,27 @@ Read the named sections completely. Keep each fix minimal; do not refactor.
 ## Handoff note (append when done)
 
 ```text
-Date:
-Result: runner ...; unit ...
-Fixes: 3 ...; 4 ...; 5 ...; 6 ...; 7 ...; nit ...
-Files:
-Build: one line / no % / body parses
-Docs: ...
-Open questions:
+Date: 2026-10-25
+Result: runner 25 PASS / 0 FAIL / 0 PENDING; unit 59 PASS / 0 FAIL.
+Fixes: 3 confirmed-save log and queue-advance failures now keep the marker,
+  show "Saved as #N but could not be logged. Do not retry.", and stop the run;
+  4 saved log is re-read from storage and merged by id before appending, each
+  entry's mode is kept, cap 200; 5 has-explanation blocks text in the
+  Answer Explanation box; 6 subject/category/year are snapshotted when the
+  batch tick is set, meta-changed blocks a later difference, resetConfirm
+  clears the snapshot; 7 a heartbeat write failure sets the stop flag and
+  releases the lock; nit out is declared before add.
+Files: src/parser/parser.js, src/ui/ui.js, src/bookmarklet.js (rebuilt),
+  tests/unit.js, docs/Auto-Save-Spec.md, docs/SPEC.md, docs/INVARIANTS.md,
+  docs/plan/README.md, this file.
+Build: one line / no % / body parses.
+Docs: Auto-Save-Spec §3/§6/§9 corrected (stop not skip, POST to location.href,
+  edit check location.pathname + ?edit=); SPEC §7.4 records both targets and
+  the log merge/fault behavior; INV-62/65/66/67 refreshed for the new blockers,
+  merge, and heartbeat failure.
+Open questions: the package's "SPEC §2" item points at Input format, which has
+  no POST text; the fix was applied to SPEC §7.4 and Auto-Save-Spec §6, the
+  sections that actually describe the request. Fixes 3 and 7 remain UI/DOM
+  wiring; their fault decisions are unit-tested through commitSave and
+  heartbeatTick, but there is still no browser harness for the click path.
 ```

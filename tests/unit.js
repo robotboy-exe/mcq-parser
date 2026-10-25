@@ -103,6 +103,107 @@ test('appendSavedLog keeps the newest entries up to the cap', () => {
   eq(parser.appendSavedLog(log, { id: 3 }, 1), [{ id: 3 }]);
 });
 
+test('mergeSavedLog combines interleaved tabs by id and keeps every mode', () => {
+  const stored = [{ id: 1, inactive: true, mode: 'draft' }, { id: 2, inactive: false, mode: 'active' }];
+  const current = [{ id: 2, inactive: false, mode: 'active' }, { id: 3, inactive: true, mode: 'draft' }];
+  const merged = parser.mergeSavedLog(stored, current, { id: 4, inactive: false, mode: 'active' }, 200);
+  eq(merged.map(entry => entry.id), [1, 2, 3, 4]);
+  eq(merged.map(entry => entry.mode), ['draft', 'active', 'draft', 'active']);
+  const kept = parser.mergeSavedLog([{ id: 5, inactive: false, mode: 'active' }], [{ id: 5, inactive: false }], null, 200);
+  eq(kept[0].mode, 'active');
+});
+
+test('mergeSavedLog keeps the newest 200 entries after a cross-tab append', () => {
+  const stored = Array.from({ length: 200 }, (_, i) => ({ id: i + 1, mode: 'draft' }));
+  const merged = parser.mergeSavedLog(stored, [], { id: 201, mode: 'active' }, 200);
+  eq(merged.length, 200);
+  eq(merged[0].id, 2);
+  eq(merged[199].id, 201);
+});
+
+test('commitSave reports a log read, log write, or queue advance fault', () => {
+  const readFail = parser.commitSave({
+    read: () => { throw new Error('read'); },
+    current: [{ id: 1 }],
+    entry: { id: 2 },
+    write: () => {}
+  });
+  eq(readFail.ok, false);
+  eq(readFail.stage, 'log');
+  eq(readFail.log, [{ id: 1 }]);
+
+  const writeFail = parser.commitSave({
+    read: () => [],
+    current: [],
+    entry: { id: 9, mode: 'draft' },
+    write: () => { throw new Error('write'); }
+  });
+  eq(writeFail.ok, false);
+  eq(writeFail.stage, 'log');
+  eq(writeFail.log.map(entry => entry.id), [9]);
+
+  const advanceFail = parser.commitSave({
+    read: () => [],
+    current: [],
+    entry: { id: 10, mode: 'draft' },
+    write: () => {},
+    advance: () => { throw new Error('queue'); }
+  });
+  eq(advanceFail.ok, false);
+  eq(advanceFail.stage, 'queue');
+  eq(advanceFail.log.map(entry => entry.id), [10]);
+});
+
+test('commitSave merges storage before appending the new entry', () => {
+  let written = null;
+  const result = parser.commitSave({
+    read: () => [{ id: 1, mode: 'draft' }],
+    current: [{ id: 1, mode: 'draft' }],
+    entry: { id: 2, mode: 'active' },
+    cap: 200,
+    write: log => { written = log; }
+  });
+  eq(result.ok, true);
+  eq(written.map(entry => entry.id), [1, 2]);
+  eq(written.map(entry => entry.mode), ['draft', 'active']);
+});
+
+test('heartbeatTick stops and releases the lock when the write throws', () => {
+  let released = 0;
+  const failed = parser.heartbeatTick({
+    lock: null,
+    tabId: 't1',
+    now: 1000,
+    write: () => { throw new Error('storage'); },
+    release: () => { released++; }
+  });
+  eq(failed, { action: 'stop-release', stop: true, release: true });
+  eq(released, 1);
+  let written = null;
+  const ok = parser.heartbeatTick({
+    lock: null,
+    tabId: 't1',
+    now: 1000,
+    write: lock => { written = lock; }
+  });
+  eq(ok, { action: 'continue', stop: false, release: false });
+  eq(written, { tabId: 't1', at: 1000 });
+  const other = parser.heartbeatTick({
+    lock: { tabId: 't2', at: 900 },
+    tabId: 't1',
+    now: 1000,
+    write: () => { throw new Error('should not write'); }
+  });
+  eq(other, { action: 'stop', stop: true, release: false });
+  const stale = parser.heartbeatTick({
+    lock: { tabId: 't2', at: 1000 },
+    tabId: 't1',
+    now: 16000,
+    write: () => {}
+  });
+  eq(stale.action, 'continue');
+});
+
 test('maxSavedId and savedForBatch filter the log', () => {
   const log = [{ id: '10', batchId: 'b1' }, { id: 12, batchId: 'b2' }, { id: null, batchId: 'b1' }];
   eq(parser.maxSavedId(log), 12);
@@ -264,9 +365,11 @@ function cleanState() {
     keyConflicts: [],
     meta: { subject: 'CRS', category: 'UTME', year: '2021', subjectText: 'CRS' },
     confirmed: true,
+    confirmedMeta: null,
     radioLetter: 'A',
     hasImage: false,
     hasVideo: false,
+    hasExplanation: false,
     savingMarker: null,
     saveInProgress: false,
     stopRequested: false,
@@ -311,6 +414,37 @@ test('autosaveBlockers gates active mode confirmation and mode changes', () => {
   changed.mode = 'draft';
   changed.runMode = 'active';
   eq(parser.autosaveBlockers(changed)[0].code, 'mode-changed');
+});
+
+test('autosaveBlockers blocks explanation text and a changed pinned metadata', () => {
+  const explanation = cleanState();
+  explanation.hasExplanation = true;
+  eq(parser.autosaveBlockers(explanation)[0], {
+    code: 'has-explanation',
+    detail: 'The Answer Explanation box has text. Clear it first.'
+  });
+  const pinned = cleanState();
+  pinned.confirmedMeta = { subject: 'CRS', category: 'UTME', year: '2021' };
+  eq(parser.autosaveBlockers(pinned), []);
+  pinned.meta = { subject: 'CRS', category: 'UTME', year: '2022', subjectText: 'CRS' };
+  eq(parser.autosaveBlockers(pinned)[0], {
+    code: 'meta-changed',
+    detail: 'Subject, category or year changed since you confirmed.'
+  });
+  const category = cleanState();
+  category.confirmedMeta = { subject: 'CRS', category: 'UTME', year: '2021' };
+  category.meta = { subject: 'CRS', category: 'POST UTME', year: '2021', subjectText: 'CRS' };
+  eq(parser.autosaveBlockers(category)[0].code, 'meta-changed');
+});
+
+test('autosaveBlockers keeps the first blocker order after the new codes', () => {
+  const s = cleanState();
+  s.hasExplanation = true;
+  s.confirmedMeta = { subject: 'CRS', category: 'UTME', year: '2021' };
+  s.meta = { subject: 'CRS', category: 'UTME', year: '', subjectText: 'CRS' };
+  const codes = parser.autosaveBlockers(s).map(blocker => blocker.code);
+  assert(codes.indexOf('meta-missing') < codes.indexOf('meta-changed'), codes.join(', '));
+  assert(codes.indexOf('meta-changed') < codes.indexOf('has-explanation'), codes.join(', '));
 });
 
 test('autosaveBlockers reports a queue gap', () => {
@@ -397,7 +531,7 @@ test('blockerText maps every known code to a plain sentence', () => {
     'key-letter', 'no-answer', 'answer-mismatch', 'ef-present', 'flags', 'options-not-abcd',
     'option-empty', 'option-duplicate', 'option-long', 'question-short',
     'meta-missing', 'not-confirmed', 'mode-unconfirmed', 'mode-changed',
-    'file-attached', 'saving-marker', 'save-in-progress',
+    'meta-changed', 'file-attached', 'has-explanation', 'saving-marker', 'save-in-progress',
     'stopped', 'run-cap', 'lock', 'hidden', 'saved-log', 'duplicate', 'form-edited'];
   for (const code of codes) {
     const text = parser.blockerText({ code, detail: 'detail' });

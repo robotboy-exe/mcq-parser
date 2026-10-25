@@ -55,8 +55,8 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 52 PASS, 0 FAIL.
-- Auto-Save AS-01 through AS-08 are done. AS-06 closed on 2026-10-25 with the
+  `node tests/unit.js` → 59 PASS, 0 FAIL.
+- Auto-Save AS-01 through AS-09 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
   the run cap is now 10. Two-tab live testing is limited by hide-pause on one
   browser; the lock reason is covered by unit + mock.
@@ -77,6 +77,14 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   saved Inactive with list `, inactive`; #1766-#1768 were deleted and no test
   rows remained. Logged out; cookies and the temporary credentials file were
   removed. AS-09 is next.
+- AS-09 closed on 2026-10-25: Fix 3 (confirmed-save log/advance faults keep the
+  marker and stop), Fix 4 (saved log re-read/merged by id, mode kept, cap 200),
+  Fix 5 (`has-explanation`), Fix 6 (confirmed metadata snapshot +
+  `meta-changed`), Fix 7 (heartbeat write failure stops and releases the lock),
+  the `out`/`add` order nit, and the Phase 3 doc corrections. Runner 25 PASS;
+  unit 59 PASS; build one line, no `%`, body parses. The UI paths for Fixes 3
+  and 7 are covered by injected pure helpers (`commitSave`, `heartbeatTick`);
+  the DOM wiring itself has no browser test.
 - Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
@@ -157,7 +165,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | AS-06 | [as-06-verification-and-docs.md](as-06-verification-and-docs.md) | Docs close-out, dry-run/live acceptance, cap 3→10 | AS-05 | done |
 | AS-07 | [as-07-duplicate-scope-and-marker.md](as-07-duplicate-scope-and-marker.md) | Fix 1 scoped duplicate check, Fix 2 marker guard, unverified list + stop, remove media guess | AS-06 | done (live checks passed 2026-10-25) |
 | AS-08 | [as-08-active-mode.md](as-08-active-mode.md) | Opt-in active save mode, mode gate/suffix, live 2-question test | AS-07 | done (live 2-question test 2026-10-25) |
-| AS-09 | [as-09-remaining-fixes-and-docs.md](as-09-remaining-fixes-and-docs.md) | Fixes 3–7, nit, Phase 3 doc corrections | AS-08 | not started |
+| AS-09 | [as-09-remaining-fixes-and-docs.md](as-09-remaining-fixes-and-docs.md) | Fixes 3–7, nit, Phase 3 doc corrections | AS-08 | done (2026-10-25) |
 
 ## Dependency graph
 
@@ -306,6 +314,11 @@ authoritative:
   with exam year 1800 was rejected so no row was inserted. Unverified
   list/stop and media removal covered by unit + mock. Active.md §3 retired;
   unit 49 PASS.
+- 2026-10-25 — AS-09 done: confirmed-save log/advance faults keep the marker and
+  stop without retry; saved log is re-read and merged by id with mode kept and
+  capped at 200; `has-explanation` and `meta-changed` join the gate; the
+  heartbeat write failure stops and releases the lock; Phase 3 docs corrected.
+  Unit 59 PASS; build one line, no `%`, body parses.
 - 2026-10-25 — Auto-Save phased as AS-01…AS-06; build gains full-line comment
   stripping and a no-`%` guard; unit harness planned.
 - 2026-10-24 — numbering gaps are flagged on the following question

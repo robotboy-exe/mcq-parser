@@ -108,6 +108,7 @@ function runOCRBookmarklet() {
   let autoTabId = newBatchId();
   let autoHeartbeat = null;
   let confirmTicked = false;
+  let confirmedMeta = null;
   let activeMode = false;
   let activeConfirmed = false;
   let runMode = null;
@@ -125,13 +126,20 @@ function runOCRBookmarklet() {
     if (autoHeartbeat) clearTimeout(autoHeartbeat);
     autoHeartbeat = null;
     const lock = readLock();
-    if (lock && lock.tabId === autoTabId) store.del('autoLock');
+    if (lock && lock.tabId === autoTabId) {
+      try { store.del('autoLock'); } catch (e) {}
+    }
   }
   function heartbeat() {
     if (!autoRunning) return;
-    const lock = readLock();
-    if (lock && lock.tabId !== autoTabId && lockAlive(lock)) { stopAuto = true; return; }
-    store.set('autoLock', { tabId: autoTabId, at: Date.now() });
+    const step = heartbeatTick({
+      lock: readLock(),
+      tabId: autoTabId,
+      now: Date.now(),
+      write: lock => store.set('autoLock', lock),
+      release: releaseLock
+    });
+    if (step.stop) { stopAuto = true; return; }
     autoHeartbeat = setTimeout(heartbeat, 5000);
   }
   function acquireLock() {
@@ -175,6 +183,7 @@ function runOCRBookmarklet() {
       keyConflicts: keyConflicts,
       meta: meta,
       confirmed: confirmTicked,
+      confirmedMeta: confirmedMeta,
       activeMode: activeMode,
       activeConfirmed: activeConfirmed,
       mode: activeMode ? 'active' : 'draft',
@@ -182,6 +191,7 @@ function runOCRBookmarklet() {
       radioLetter: radio ? 'ABCD'[Number(radio.value)] : null,
       hasImage: Boolean(e.question_image && (e.question_image.value || (e.question_image.files && e.question_image.files.length))),
       hasVideo: Boolean(e.answer_video && (e.answer_video.value || (e.answer_video.files && e.answer_video.files.length))),
+      hasExplanation: Boolean(e.answer_explanation && e.answer_explanation.value && e.answer_explanation.value.trim()),
       savingMarker: (() => { try { return store.get('ocrSaving'); } catch (err) { return null; } })(),
       saveInProgress: saveInProgress,
       stopRequested: stopAuto,
@@ -252,7 +262,16 @@ function runOCRBookmarklet() {
     cb.type = 'checkbox';
     cb.id = 'ocr_confirm_tick';
     cb.checked = confirmTicked;
-    cb.onchange = () => { confirmTicked = cb.checked; renderAuto(); };
+    cb.onchange = () => {
+      confirmTicked = cb.checked;
+      if (cb.checked) {
+        const m = currentMeta();
+        confirmedMeta = { subject: m.subject, category: m.category, year: m.year };
+      } else {
+        confirmedMeta = null;
+      }
+      renderAuto();
+    };
     label.appendChild(cb);
     label.appendChild(document.createTextNode(' These are correct.'));
     box.appendChild(label);
@@ -315,6 +334,7 @@ function runOCRBookmarklet() {
   }
   function resetConfirm() {
     confirmTicked = false;
+    confirmedMeta = null;
     activeMode = false;
     activeConfirmed = false;
     runMode = null;
@@ -414,12 +434,22 @@ function runOCRBookmarklet() {
       let inactive = null;
       if (auto) inactive = await verifyInactive(result.id);
       const entry = { num: num, id: result.id, at: Date.now(), batchId: savedBatchId, inactive: auto ? inactive : false, mode: auto ? (active ? 'active' : 'draft') : 'manual' };
-      savedLog = appendSavedLog(savedLog, entry, 200);
-      store.set('ocrSavedLog', savedLog);
       const sameQueue = queue.i === savedIndex && queue.items[savedIndex] === q && (queue.batchId || null) === savedBatchId;
-      if (sameQueue && q) {
-        queue.i++;
-        saveQ();
+      const committed = commitSave({
+        read: () => store.get('ocrSavedLog') || [],
+        current: savedLog,
+        entry: entry,
+        cap: 200,
+        write: log => store.set('ocrSavedLog', log),
+        advance: sameQueue && q ? () => { queue.i++; saveQ(); } : null
+      });
+      savedLog = committed.log;
+      if (!committed.ok) {
+        const failText = 'Saved as #' + result.id + ' but could not be logged. Do not retry.';
+        lastBlocked = failText;
+        setResult(failText, true);
+        stopAuto = true;
+        return { kind: 'saved', id: result.id, inactive: inactive, entry: entry, failed: committed.stage };
       }
       clearSavedMarker(priorSaving, num);
       ['question_image', 'answer_video'].forEach(n => { const el = form.elements[n]; if (el) el.value = ''; });

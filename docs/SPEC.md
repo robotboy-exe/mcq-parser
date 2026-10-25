@@ -341,8 +341,8 @@ form stops the run with `form no longer matches`.
 
 The manual submit and the auto loop both call
 `saveCurrentQuestion({auto, active})`. It writes `ocrSaving`, posts
-`FormData(form)` with same-origin credentials and a 30-second abort timeout,
-then classifies the reply:
+`FormData(form)` to `location.href` with same-origin credentials and a
+30-second abort timeout, then classifies the reply:
 
 - **Rejected** — `Administrator Login`, or `.admin-error` with no redirect.
   Show the server text, clear the marker, do not advance.
@@ -351,9 +351,12 @@ then classifies the reply:
 - **Ambiguous** — anything else, including a timeout or network error. Keep the
   marker, show `Unknown. It may have saved. Check the list.`, and never retry.
 
-On Saved: auto-only state verification (`?edit=<id>`), append to
-`ocrSavedLog`, advance the queue directly, clear the marker, clear the media and
-explanation fields, refresh meta, and tick the next answer. Draft auto removes
+On Saved: auto-only state verification (`location.pathname + '?edit=<id>'`),
+re-read `ocrSavedLog` and merge by `id` (keeping each entry's `mode`, capped at
+200), advance the queue directly, clear the marker, clear the media and
+explanation fields, refresh meta, and tick the next answer. A storage failure
+while logging or advancing keeps the marker, stops the run, and shows
+`Saved as #N but could not be logged. Do not retry.` Draft auto removes
 `is_active` and sets `autosave=1`; active auto sets `is_active=1` and
 `autosave=1`; manual keeps the active tick. Draft expects the edit page to show
 inactive and active expects it checked. A mismatch stops the run with a red

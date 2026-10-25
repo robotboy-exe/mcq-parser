@@ -19,7 +19,7 @@ Add an opt-in **Auto-save** mode to the existing merged bookmarklet (`bookmarkle
 - `ansKey`: **unchanged shape** (a plain `{num: letter}` map), so every existing reader keeps working.
 - `ansKeyBatch`: new. It is set to `queue.batchId` whenever a key is loaded together with questions. A key-only paste attaches to the current queue's `batchId`. Clearing the key, or loading questions with no key, deletes `ansKeyBatch`. **Reset Queue now also clears `ansKey`, `ansKeyBatch` and `queue.batchId`**, consistent with "key only relevant in the moment".
 - `ocrSaving`: crash marker `{num, at}`.
-- `ocrSavedLog`: array of `{num, id, at, batchId, inactive, mode}`. Written only after a verified save; capped at 200 entries. `inactive` is `true` when the edit-page check confirmed inactive, `false` for a manual save or a save verified active, and `null` when the check was inconclusive. `mode` is `draft`, `active`, or `manual`; old entries without `mode` are treated as manual when `inactive === false`, otherwise draft.
+- `ocrSavedLog`: array of `{num, id, at, batchId, inactive, mode}`. Written only after a verified save; storage is re-read and merged by `id` before each append (keeping each entry's `mode`), and the log is capped at 200 entries. `inactive` is `true` when the edit-page check confirmed inactive, `false` for a manual save or a save verified active, and `null` when the check was inconclusive. `mode` is `draft`, `active`, or `manual`; old entries without `mode` are treated as manual when `inactive === false`, otherwise draft.
 - `autoLock`: `{tab, at}` heartbeat.
 - A queue without `batchId`, or a key without a matching `ansKeyBatch`, is treated as legacy: manual use is unchanged, auto-save is blocked.
 
@@ -58,14 +58,14 @@ The manual submit handler is rewritten to call this same function. It returns `'
 
 1. Set the guard flag. Write `ocrSaving`.
 2. Build `FormData(form)`. If `auto`, draft mode calls `fd.delete('is_active')`, active mode calls `fd.set('is_active','1')`, and both set `fd.set('autosave','1')`. If manual, keep today's behaviour (Decision A). **Remove the two forced `is_active = true` lines** from `fillForm` and the submit handler, but keep manual saves active by leaving the checkbox ticked on the manual path only.
-3. `fetch(location.pathname, {method:'POST', body: fd, credentials:'same-origin', signal})` with a 30-second `AbortController` timeout.
+3. `fetch(location.href, {method:'POST', body: fd, credentials:'same-origin', signal})` with a 30-second `AbortController` timeout.
 4. Classify the response:
    - **Rejected (definite, not saved):** the page contains `.admin-error` and `response.redirected` is false. Show the server's text. Clear `ocrSaving`.
    - **Session expired (definite, not saved):** the page contains "Administrator Login". Clear `ocrSaving`.
    - **Saved:** `response.redirected` is true, there is no `.admin-error`, the text matches `Question saved successfully \(Question ID: (\d+)\)`, and the ID is **greater than every ID in `ocrSavedLog`**. A stale flash fails the redirect or ID check.
    - **Anything else, a timeout, or a network error:** **ambiguous**. Keep `ocrSaving`. Tell the user: "Unknown. It may have saved. Check the list." Never retry.
 5. After **Saved**, do these in order:
-   1. Optionally verify state (auto only): GET `?edit=<id>`, parse the `is_active` checkbox, and compare it with the run mode. A draft run expects unchecked and an active run expects checked. A mismatch shows a red `SAVED AS ACTIVE` (draft) or `SAVED AS INACTIVE` (active) warning and stops the run. `null` is logged unverified; two consecutive unverified auto saves stop the run.
+   1. Optionally verify state (auto only): GET `location.pathname + '?edit=<id>'`, parse the `is_active` checkbox, and compare it with the run mode. A draft run expects unchecked and an active run expects checked. A mismatch shows a red `SAVED AS ACTIVE` (draft) or `SAVED AS INACTIVE` (active) warning and stops the run. `null` is logged unverified; two consecutive unverified auto saves stop the run.
    2. Append to `ocrSavedLog`.
    3. Advance `queue.i` and call `saveQ()`.
    4. **Then** clear `ocrSaving`.
@@ -114,7 +114,7 @@ The manual submit handler is rewritten to call this same function. It returns `'
 Nothing in this build requires a server change. The two safeguards the server would have provided are done in the browser instead:
 
 - **Inactive is enforced and checked in the browser in draft mode.** The tool removes the "active" tick before saving. After each save it opens the question's edit page and checks that it is inactive. If any question comes back active, the run stops and shows a red warning. Active mode instead sets the tick, checks that the edit page is active, and stops with `SAVED AS INACTIVE` if it is not live.
-- **Repeats are blocked in the browser.** Before each auto-save, the tool skips the question if its number is already in this batch's saved log. It also skips the question if the newest 20 questions on the admin page show the same normalized subject, exam year, category and question text. A long question reaches the table as its first 139 characters plus `…`; a truncated row matches by prefix once it is at least 40 characters, and an untruncated row matches only the full text. A row whose year or category cannot be read falls back to subject and text.
+- **Repeats are blocked in the browser.** Before each auto-save, the tool stops the run if its number is already in this batch's saved log. It also stops the run if the newest 20 questions on the admin page show the same normalized subject, exam year, category and question text. A long question reaches the table as its first 139 characters plus `…`; a truncated row matches by prefix once it is at least 40 characters, and an untruncated row matches only the full text. A row whose year or category cannot be read falls back to subject and text.
 
 Known limit: this catches repeats from the same run or the last 20 saves. It does not catch a repeat of a question saved long ago. The batch confirmation screen should say so.
 

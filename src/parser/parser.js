@@ -309,6 +309,77 @@ function appendSavedLog(log, entry, cap) {
   return list.concat([entry]).slice(-max);
 }
 
+function mergeSavedLog(stored, current, entry, cap) {
+  const max = Number.isInteger(cap) && cap > 0 ? cap : 200;
+  const list = [];
+  const at = new Map();
+  const merge = item => {
+    if (!item) return;
+    if (item.id == null) {
+      list.push(item);
+      return;
+    }
+    const key = String(item.id);
+    const index = at.get(key);
+    if (index == null) {
+      at.set(key, list.length);
+      list.push(item);
+      return;
+    }
+    const prior = list[index];
+    const next = Object.assign({}, item);
+    if (next.mode == null && prior && prior.mode != null) next.mode = prior.mode;
+    list[index] = next;
+  };
+  (Array.isArray(stored) ? stored : []).forEach(merge);
+  (Array.isArray(current) ? current : []).forEach(merge);
+  if (entry) merge(entry);
+  return list.slice(-max);
+}
+
+function commitSave(opts) {
+  const o = opts || {};
+  const cap = Number.isInteger(o.cap) && o.cap > 0 ? o.cap : 200;
+  let stored = [];
+  try {
+    stored = typeof o.read === 'function' ? o.read() : (Array.isArray(o.stored) ? o.stored : []);
+  } catch (e) {
+    return { ok: false, stage: 'log', log: Array.isArray(o.current) ? o.current : [] };
+  }
+  if (!Array.isArray(stored)) stored = [];
+  const log = mergeSavedLog(stored, o.current, o.entry, cap);
+  try {
+    if (typeof o.write === 'function') o.write(log);
+  } catch (e) {
+    return { ok: false, stage: 'log', log: log };
+  }
+  if (typeof o.advance === 'function') {
+    try {
+      o.advance();
+    } catch (e) {
+      return { ok: false, stage: 'queue', log: log };
+    }
+  }
+  return { ok: true, stage: null, log: log };
+}
+
+function heartbeatTick(opts) {
+  const o = opts || {};
+  const lock = o.lock;
+  const now = Number(o.now == null ? Date.now() : o.now);
+  const at = Number((lock && lock.at) || 0);
+  if (lock && lock.tabId !== o.tabId && !(now - at >= 15000)) {
+    return { action: 'stop', stop: true, release: false };
+  }
+  try {
+    if (typeof o.write === 'function') o.write({ tabId: o.tabId, at: now });
+  } catch (e) {
+    if (typeof o.release === 'function') o.release();
+    return { action: 'stop-release', stop: true, release: true };
+  }
+  return { action: 'continue', stop: false, release: false };
+}
+
 function maxSavedId(log) {
   let max = 0;
   for (const entry of Array.isArray(log) ? log : []) {
@@ -460,12 +531,20 @@ function classifySaveResponse(reply) {
   return { kind: 'ambiguous', message: 'Unknown. It may have saved. Check the list.' };
 }
 
+function sameMeta(snapshot, meta) {
+  const s = snapshot || {};
+  const m = meta || {};
+  return String(s.subject == null ? '' : s.subject) === String(m.subject == null ? '' : m.subject)
+    && String(s.category == null ? '' : s.category) === String(m.category == null ? '' : m.category)
+    && String(s.year == null ? '' : s.year) === String(m.year == null ? '' : m.year);
+}
+
 function autosaveBlockers(state) {
   const s = state || {};
   const queue = s.queue || {};
   const items = Array.isArray(queue.items) ? queue.items : [];
-  const add = (code, detail) => out.push({ code, detail: detail || '' });
   const out = [];
+  const add = (code, detail) => out.push({ code, detail: detail || '' });
   const q = items[queue.i];
 
   if (!items.length) {
@@ -514,7 +593,9 @@ function autosaveBlockers(state) {
   if (!s.confirmed) add('not-confirmed', 'Tick the batch confirmation before starting.');
   if (s.activeMode && !s.activeConfirmed) add('mode-unconfirmed', 'Tick the live-save confirmation before starting.');
   if (s.runMode && s.mode && s.runMode !== s.mode) add('mode-changed', 'The save mode changed during the run.');
+  if (s.confirmedMeta && !sameMeta(s.confirmedMeta, meta)) add('meta-changed', 'Subject, category or year changed since you confirmed.');
   if (s.hasImage || s.hasVideo) add('file-attached', 'A file is already attached to this question.');
+  if (s.hasExplanation) add('has-explanation', 'The Answer Explanation box has text. Clear it first.');
   if (s.savingMarker) add('saving-marker', 'An earlier save is unconfirmed. Check the list before starting.');
   if (s.saveInProgress) add('save-in-progress', 'A save is already running.');
   if (s.stopRequested) add('stopped', 'Auto-save is stopping.');
@@ -554,7 +635,9 @@ function blockerText(blocker) {
     case 'not-confirmed': return 'Cannot auto-save:' + detail;
     case 'mode-unconfirmed': return 'Cannot auto-save:' + detail;
     case 'mode-changed': return 'Cannot auto-save:' + detail;
+    case 'meta-changed': return 'Cannot auto-save:' + detail;
     case 'file-attached': return 'Cannot auto-save:' + detail;
+    case 'has-explanation': return 'Cannot auto-save:' + detail;
     case 'saving-marker': return 'Cannot auto-save:' + detail;
     case 'save-in-progress': return 'Cannot auto-save:' + detail;
     case 'stopped': return 'Cannot auto-save:' + detail;
@@ -597,6 +680,10 @@ if (typeof module !== 'undefined' && module.exports) {
     isConsecutiveQueue,
     keyCoversQueue,
     appendSavedLog,
+    mergeSavedLog,
+    commitSave,
+    heartbeatTick,
+    sameMeta,
     maxSavedId,
     savedForBatch,
     unverifiedSaves,
