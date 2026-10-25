@@ -54,7 +54,7 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 
 ## Current snapshot
 
-- Current test status: `node tests/runner.js` → 27 PASS, 0 FAIL, 2 PENDING;
+- Current test status: `node tests/runner.js` → 29 PASS, 0 FAIL, 0 PENDING;
   `node tests/unit.js` → 59 PASS, 0 FAIL.
 - Auto-Save AS-01 through AS-09 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
@@ -105,6 +105,10 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   key, eight E-option questions (Q33-Q40), Q1 option boundaries, and Q33/Q40
   option text. No parser change was needed. Runner 27 PASS / 2 PENDING; unit
   59 PASS.
+- P06 closed on 2026-10-25: `bank-2024` is confirmed as the partial Q17-Q40
+  slice with its 40-entry key and no asserted header; `bank-2025` is confirmed
+  with 40 questions and 39 key entries (26 absent). No parser change was
+  needed. Runner 29 PASS / 0 PENDING; unit 59 PASS. P07 is next.
 - Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
@@ -173,7 +177,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | P03 | [03-bank-2021-inline-key.md](03-bank-2021-inline-key.md) | 2021 fixture + first parser fix: detect inline keys | P02 (done) | done |
 | P04 | [04-bank-2022.md](04-bank-2022.md) | 2022 fixture: inline key, real dotless option, 13 E-option questions | P03 | done (2026-10-25) |
 | P05 | [05-bank-2023.md](05-bank-2023.md) | 2023 fixture: inline key + 8 E-option questions | P03 | done (2026-10-25) |
-| P06 | [06-bank-2024-2025.md](06-bank-2024-2025.md) | 2024 partial-year fixture + 2025 fixture with missing key entry | P03 | not started |
+| P06 | [06-bank-2024-2025.md](06-bank-2024-2025.md) | 2024 partial-year fixture + 2025 fixture with missing key entry | P03 | done (2026-10-25) |
 | P07 | [07-anomaly-block2-salvage.md](07-anomaly-block2-salvage.md) | Guarded salvage normalizer + block-2 fixture | P06 | not started |
 | P08 | [08-anomaly-block1-bullets.md](08-anomaly-block1-bullets.md) | Unnumbered `*` question mode | P07 | not started |
 | P09 | [09-docs-cleanup.md](09-docs-cleanup.md) | Docs updates, retire superseded fixtures, final audit | all | not started |
@@ -271,7 +275,7 @@ node -e "const fs=require('fs');const s=fs.readFileSync('src/bookmarklet.js','ut
 | baseline (after P01/P02) | 25 | 4 | P03's bank-2021 already confirmed; 2022-2025 PENDING |
 | P04 (done) | 26 | 3 | bank-2022 confirmed |
 | P05 (done) | 27 | 2 | bank-2023 confirmed |
-| P06 | 29 | 0 | bank-2024 and bank-2025 confirmed |
+| P06 (done) | 29 | 0 | bank-2024 and bank-2025 confirmed |
 | P07 | 30 | 0 | anomaly block 2 added |
 | P08 | 31 | 0 | anomaly block 1 added |
 | P09 | 30 | 0 | `qwen2-s1` retired; bank-2021 covers it |
@@ -347,6 +351,9 @@ authoritative:
 - 2026-10-25 — P05 done: `bank-2023` confirmed (40-entry inline key, eight
   E-option questions, Q1/Q33/Q40 option boundaries). No parser change. Runner
   27 PASS / 2 PENDING; unit 59 PASS.
+- 2026-10-25 — P06 done: `bank-2024` confirmed (Q17-Q40, 40 key entries, no
+  header asserted) and `bank-2025` confirmed (40 questions, 39 key entries, 26
+  absent). No parser change. Runner 29 PASS / 0 PENDING; unit 59 PASS.
 - 2026-10-25 — AS-09 done: confirmed-save log/advance faults keep the marker and
   stop without retry; saved log is re-read and merged by id with mode kept and
   capped at 200; `has-explanation` and `meta-changed` join the gate; the

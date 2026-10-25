@@ -7,8 +7,79 @@
     "2025 questions (lines 1133-1415) and answer block (lines 1416-1456)"
   ],
   "provenance": "Verbatim 2025 slice from the bank. The key has 39 entries because Q26 is marked missing in the source text.",
-  "status": "PENDING",
+  "status": "CONFIRMED",
   "input_file": "fixtures/inputs/bank-2025.txt",
   "kind": "questions",
-  "expected": {}
+  "expected": {
+    "queue_count": 40,
+    "header": {
+      "year": 2025,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ]
+    },
+    "questions": [
+      {
+        "num": 1,
+        "question": "On the fourth day of creation God created",
+        "a": "the great sea monsters.",
+        "b": "the firmament",
+        "c": "the two great lights",
+        "d": "every flying bird."
+      },
+      {
+        "num": 40,
+        "question": "The history of Barak's war story was flawed by the fact that he",
+        "a": "consulted the oracles to find out the outcome of his battle.",
+        "b": "conspired with Jael to take out Sisera and the Canaanites.",
+        "c": "took the tribes of Zebulun and Naphtali to war with him.",
+        "d": "sought the presence of Deborah as a reinforcement to his courage."
+      }
+    ],
+    "key": {
+      "1": "C",
+      "2": "D",
+      "3": "C",
+      "4": "A",
+      "5": "B",
+      "6": "C",
+      "7": "C",
+      "8": "C",
+      "9": "D",
+      "10": "A",
+      "11": "B",
+      "12": "C",
+      "13": "D",
+      "14": "B",
+      "15": "C",
+      "16": "A",
+      "17": "B",
+      "18": "C",
+      "19": "B",
+      "20": "B",
+      "21": "B",
+      "22": "D",
+      "23": "B",
+      "24": "C",
+      "25": "C",
+      "27": "D",
+      "28": "A",
+      "29": "C",
+      "30": "C",
+      "31": "B",
+      "32": "C",
+      "33": "B",
+      "34": "B",
+      "35": "D",
+      "36": "C",
+      "37": "C",
+      "38": "C",
+      "39": "C",
+      "40": "D"
+    },
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  }
 }
