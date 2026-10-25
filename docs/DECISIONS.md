@@ -253,8 +253,9 @@ on the form's remembered state.
 The server records `is_active` from the checkbox (`admin_questions.php`), so the
 forced state is authoritative.
 
-**Superseded by D-31 (Auto-Save) for auto saves.** Manual saves remain active;
-auto saves remove `is_active` and verify the result.
+**Superseded by D-31 (Auto-Save) for auto saves and by D-39 for active mode.**
+Manual saves remain active; draft auto saves remove `is_active`, active auto
+saves set it, and both verify the result.
 
 ## D-25 — The key persists across reloads
 
@@ -312,15 +313,17 @@ auto-saved. Supersedes D-14 and D-26.
 **Risk.** A user who expected Reset to preserve the key must re-paste it. The
 separate "Clear saved key" action still exists.
 
-## D-31 — Auto saves inactive; manual stays active
+## D-31 — Draft auto saves inactive; manual stays active
 
 **Choice.** `fillForm`/`showOCR` tick `is_active` only on the manual path. The
-manual submit ensures `is_active=1`. Auto deletes `is_active` from the
-`FormData`, sets `autosave=1`, and verifies the edit page after a save.
+manual submit ensures `is_active=1`. Draft auto deletes `is_active` from the
+`FormData`, sets `autosave=1`, and verifies the edit page after a save; active
+mode is D-39.
 **Why.** Auto-save creates drafts for review; the ordinary manual import remains
-immediately active. Supersedes D-24 and the forced-on half of INV-50.
+immediately active. Supersedes D-24 and the forced-on half of INV-50, and is
+superseded in part by D-39 for active mode.
 **Risk.** Auto depends on the browser verification to catch a server or form
-that reactivates the question; the verification result can be unknown.
+that changes the state; the verification result can be unknown.
 
 ## D-32 — Batch identity and legacy blocking
 
@@ -401,6 +404,26 @@ explicit uploader signal, not text guessing.
 **Risk.** A batch that genuinely needs an image can be auto-saved without one
 if the uploader does not attach it. The explicit file check still refuses when
 a file is already chosen.
+
+## D-39 — Active mode is opt-in, confirmed twice, and fixed per run
+
+**Choice.** Draft stays the default. Active mode is an in-memory checkbox that
+is never persisted. Starting an active run needs both `These are correct.` and
+`I understand these go live to students now.`; the selected mode is captured in
+`runMode` at Start and a change during a run is a blocker. Active auto saves set
+`is_active=1` and `autosave=1` and verify that the edit page is active; draft
+auto saves keep deleting `is_active` and verify that it is inactive. Manual
+saves are unchanged and remain active. The saved log records `mode`, and the
+saved-list suffix names active, inactive, mixed, wrong-state, and unverified
+results. The AS-07 two-consecutive-unverified stop still applies in both modes.
+**Why.** Canonical replication needs some batches live immediately, but a
+live save must be a deliberate second confirmation and must not change under a
+running loop. The mode is client-side only; it adds no server change and no new
+storage key (the `ocrSavedLog` entry gains `mode`).
+**Risk.** Active questions are visible to students as soon as each save lands;
+a wrong-state check stops the run but cannot undo a save. Old saved-log entries
+have no `mode`; they are treated as manual when `inactive === false`, otherwise
+draft, so an old verified-active auto save shows as active/manual.
 
 ## Auto-Save verification notes
 

@@ -55,8 +55,8 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 49 PASS, 0 FAIL.
-- Auto-Save AS-01 through AS-07 are done. AS-06 closed on 2026-10-25 with the
+  `node tests/unit.js` → 52 PASS, 0 FAIL.
+- Auto-Save AS-01 through AS-08 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
   the run cap is now 10. Two-tab live testing is limited by hide-pause on one
   browser; the lock reason is covered by unit + mock.
@@ -69,6 +69,14 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   refusal made 0 POST and the cleared marker let one POST reach the server
   (rejected with exam year 1800, so no row was inserted). Mock checks cover the
   unverified list/stop and media/file-attached. AS-08 may start.
+- AS-08 closed on 2026-10-25: opt-in active mode, mode gate/suffix, and the
+  mode-aware save path are implemented. Runner 25 PASS; unit 52 PASS; build one
+  line, no `%`, body parses. Mock active/draft runs and the AS-07 draft
+  regression pass. Live (Accounting / JAMB / UTME / 2024, Samuel watching):
+  #1766 and #1767 saved Active with list `, active`; draft regression #1768
+  saved Inactive with list `, inactive`; #1766-#1768 were deleted and no test
+  rows remained. Logged out; cookies and the temporary credentials file were
+  removed. AS-09 is next.
 - Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
@@ -148,7 +156,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | AS-05 | [as-05-ui-and-loop.md](as-05-ui-and-loop.md) | Opt-in UI, loop, lock, visibility, dry run | AS-04 | done (code + mock; hide-pause verified 2026-10-25) |
 | AS-06 | [as-06-verification-and-docs.md](as-06-verification-and-docs.md) | Docs close-out, dry-run/live acceptance, cap 3→10 | AS-05 | done |
 | AS-07 | [as-07-duplicate-scope-and-marker.md](as-07-duplicate-scope-and-marker.md) | Fix 1 scoped duplicate check, Fix 2 marker guard, unverified list + stop, remove media guess | AS-06 | done (live checks passed 2026-10-25) |
-| AS-08 | [as-08-active-mode.md](as-08-active-mode.md) | Opt-in active save mode, mode gate/suffix, live 2-question test | AS-07 | not started |
+| AS-08 | [as-08-active-mode.md](as-08-active-mode.md) | Opt-in active save mode, mode gate/suffix, live 2-question test | AS-07 | done (live 2-question test 2026-10-25) |
 | AS-09 | [as-09-remaining-fixes-and-docs.md](as-09-remaining-fixes-and-docs.md) | Fixes 3–7, nit, Phase 3 doc corrections | AS-08 | not started |
 
 ## Dependency graph

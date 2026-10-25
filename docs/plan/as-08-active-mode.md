@@ -1,6 +1,6 @@
 # AS-08 — Active Mode
 
-Status: not started. Depends on: AS-07. Blocks: AS-09.
+Status: done (2026-10-25). Depends on: AS-07. Blocks: AS-09.
 
 ## Source and scope
 
@@ -71,16 +71,28 @@ adding the two mode codes.
 - Do not touch PHP, the server contract, or existing storage keys.
 - Commit only at the phase boundary as `docs/Active.md` §1 directs.
 
-## Handoff note (append when done)
+## Handoff note
 
 ```text
-Date:
-Result: runner ...; unit ...
-Dry run: active wording ...; draft wording ...; Start gating ...
-Mock: active FormData ...; draft FormData ...; mid-run toggle ...
-Live: 2 active rows ..., draft regression ..., rows deleted ...
-Files:
-Build: one line / no % / body parses
-Docs: ...
-Open questions:
+Date: 2026-10-25
+Result: runner 25 PASS; unit 52 PASS; build one line / no % / body parses.
+Dry run: active wording uses "Would save #N as ACTIVE"; draft uses "as draft";
+Start stays disabled until the batch tick and, in active mode, the live tick;
+the mode box is disabled during a run.
+Mock: active posted is_active=1 + autosave=1; draft posted no is_active +
+autosave=1; the mid-run mode change was rejected; active/draft mismatches stop
+with the mode-specific warning. AS-07 unverified list/stop, manual marker, and
+file-attached checks still pass.
+Live (Accounting / JAMB / UTME / 2024, Samuel watching): #1766 and #1767 both
+Active, list ", active", result "(active)"; draft regression #1768 Inactive,
+post had no is_active and autosave=1, list ", inactive", result "(inactive)".
+Deleted #1766-#1768; no AS08 rows remained. Logged out; cookies cleared;
+credentials file deleted.
+Files: src/parser/parser.js, src/ui/ui.js, src/bookmarklet.js, tests/unit.js,
+docs/SPEC.md, docs/Auto-Save-Spec.md, docs/DECISIONS.md, docs/INVARIANTS.md,
+docs/EDGE_CASES.md, docs/AGENTS.md, docs/plan/README.md,
+docs/plan/as-08-active-mode.md.
+Review fix: re-render the confirmation panel after Clear saved key and a failed
+load; qualify the mode-specific docs (D-24, D-31, INV-50, SPEC, EC-69).
+Open questions: none.
 ```

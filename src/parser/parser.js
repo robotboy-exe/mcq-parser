@@ -337,11 +337,34 @@ function trackUnverified(streak, inactive) {
   return { streak: n, stop: false };
 }
 
-function savedInactiveSuffix(entries) {
-  const states = (Array.isArray(entries) ? entries : []).map(entry => entry && entry.inactive);
-  if (states.some(state => state === false)) return ', includes a question saved active';
-  if (states.some(state => state !== true)) return ', inactive status not verified';
-  return ', inactive';
+function savedEntryMode(entry) {
+  const mode = entry && entry.mode;
+  if (mode === 'active' || mode === 'draft' || mode === 'manual') return mode;
+  return entry && entry.inactive === false ? 'manual' : 'draft';
+}
+
+function savedModeSuffix(entries) {
+  const list = (Array.isArray(entries) ? entries : []).filter(entry => entry);
+  if (!list.length) return '';
+  let mismatches = 0;
+  for (const entry of list) {
+    if (entry.inactive === null || entry.inactive === undefined) continue;
+    const mode = savedEntryMode(entry);
+    if (mode === 'manual') continue;
+    if (mode === 'draft' && entry.inactive !== true) mismatches++;
+    if (mode === 'active' && entry.inactive !== false) mismatches++;
+  }
+  if (mismatches) return ', MISMATCH: ' + mismatches + ' saved in the wrong state';
+  if (list.some(entry => entry.inactive === null || entry.inactive === undefined)) return ', status not verified';
+  let active = 0;
+  let draft = 0;
+  for (const entry of list) {
+    if (savedEntryMode(entry) === 'draft') draft++;
+    else active++;
+  }
+  if (!draft) return ', active';
+  if (!active) return ', inactive';
+  return ', ' + active + ' active, ' + draft + ' inactive';
 }
 
 function formatSavedRange(entries) {
@@ -357,7 +380,7 @@ function formatSavedRange(entries) {
   const range = unique.length === 1 || gap
     ? unique.map(id => '#' + id).join(', ')
     : '#' + unique[0] + ' to #' + unique[unique.length - 1];
-  return 'Saved this batch: ' + range + savedInactiveSuffix(entries);
+  return 'Saved this batch: ' + range + savedModeSuffix(entries);
 }
 
 function recentRowsFromTable(headers, rows) {
@@ -489,6 +512,8 @@ function autosaveBlockers(state) {
     add('meta-missing', 'Subject, category or year is missing.');
   }
   if (!s.confirmed) add('not-confirmed', 'Tick the batch confirmation before starting.');
+  if (s.activeMode && !s.activeConfirmed) add('mode-unconfirmed', 'Tick the live-save confirmation before starting.');
+  if (s.runMode && s.mode && s.runMode !== s.mode) add('mode-changed', 'The save mode changed during the run.');
   if (s.hasImage || s.hasVideo) add('file-attached', 'A file is already attached to this question.');
   if (s.savingMarker) add('saving-marker', 'An earlier save is unconfirmed. Check the list before starting.');
   if (s.saveInProgress) add('save-in-progress', 'A save is already running.');
@@ -527,6 +552,8 @@ function blockerText(blocker) {
     case 'question-short': return 'Cannot auto-save:' + detail;
     case 'meta-missing': return 'Cannot auto-save:' + detail;
     case 'not-confirmed': return 'Cannot auto-save:' + detail;
+    case 'mode-unconfirmed': return 'Cannot auto-save:' + detail;
+    case 'mode-changed': return 'Cannot auto-save:' + detail;
     case 'file-attached': return 'Cannot auto-save:' + detail;
     case 'saving-marker': return 'Cannot auto-save:' + detail;
     case 'save-in-progress': return 'Cannot auto-save:' + detail;
@@ -574,7 +601,7 @@ if (typeof module !== 'undefined' && module.exports) {
     savedForBatch,
     unverifiedSaves,
     trackUnverified,
-    savedInactiveSuffix,
+    savedModeSuffix,
     formatSavedRange,
     recentRowsFromTable,
     recentDuplicate,

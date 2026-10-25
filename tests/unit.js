@@ -145,20 +145,29 @@ test('formatSavedRange handles contiguous, sparse, single, and empty', () => {
   eq(parser.formatSavedRange(undefined), 'Saved this batch: none');
 });
 
-test('formatSavedRange reports active and unverified saves honestly', () => {
-  eq(parser.savedInactiveSuffix([{ inactive: true }]), ', inactive');
-  eq(parser.savedInactiveSuffix([{ inactive: true }, { inactive: false }]), ', includes a question saved active');
-  eq(parser.savedInactiveSuffix([{ inactive: true }, { inactive: null }]), ', inactive status not verified');
-  eq(parser.savedInactiveSuffix([{ inactive: false }, { inactive: null }]), ', includes a question saved active');
-  eq(parser.savedInactiveSuffix([{ id: 1 }]), ', inactive status not verified');
-  eq(
-    parser.formatSavedRange([{ id: 7, inactive: false }]),
-    'Saved this batch: #7, includes a question saved active'
-  );
-  eq(
-    parser.formatSavedRange([{ id: 7, inactive: null }]),
-    'Saved this batch: #7, inactive status not verified'
-  );
+test('savedModeSuffix classifies draft, active, mixed, manual and legacy entries', () => {
+  eq(parser.savedModeSuffix([]), '');
+  eq(parser.savedModeSuffix([{ inactive: true, mode: 'draft' }]), ', inactive');
+  eq(parser.savedModeSuffix([{ inactive: false, mode: 'active' }]), ', active');
+  eq(parser.savedModeSuffix([{ inactive: true, mode: 'draft' }, { inactive: false, mode: 'active' }]), ', 1 active, 1 inactive');
+  eq(parser.savedModeSuffix([{ inactive: false, mode: 'manual' }]), ', active');
+  eq(parser.savedModeSuffix([{ inactive: true }]), ', inactive');
+  eq(parser.savedModeSuffix([{ inactive: false }]), ', active');
+  eq(parser.savedModeSuffix([{ inactive: null }]), ', status not verified');
+});
+
+test('savedModeSuffix reports mismatches before unverified entries', () => {
+  eq(parser.savedModeSuffix([{ inactive: false, mode: 'draft' }]), ', MISMATCH: 1 saved in the wrong state');
+  eq(parser.savedModeSuffix([{ inactive: true, mode: 'active' }]), ', MISMATCH: 1 saved in the wrong state');
+  eq(parser.savedModeSuffix([{ inactive: false, mode: 'draft' }, { inactive: true, mode: 'active' }]), ', MISMATCH: 2 saved in the wrong state');
+  eq(parser.savedModeSuffix([{ inactive: false, mode: 'draft' }, { inactive: null, mode: 'draft' }]), ', MISMATCH: 1 saved in the wrong state');
+  eq(parser.savedModeSuffix([{ inactive: true, mode: 'manual' }]), ', active');
+});
+
+test('formatSavedRange reports active, mismatched and unverified saves honestly', () => {
+  eq(parser.formatSavedRange([{ id: 7, inactive: false, mode: 'active' }]), 'Saved this batch: #7, active');
+  eq(parser.formatSavedRange([{ id: 7, inactive: false, mode: 'draft' }]), 'Saved this batch: #7, MISMATCH: 1 saved in the wrong state');
+  eq(parser.formatSavedRange([{ id: 7, inactive: null, mode: 'draft' }]), 'Saved this batch: #7, status not verified');
 });
 
 test('recentDuplicate flags a matching subject, category, year and 139-character prefix', () => {
@@ -277,6 +286,33 @@ test('autosaveBlockers clears a clean batch', () => {
   eq(parser.autosaveBlockers(cleanState()), []);
 });
 
+test('autosaveBlockers gates active mode confirmation and mode changes', () => {
+  const clean = cleanState();
+  clean.activeMode = false;
+  clean.activeConfirmed = false;
+  clean.mode = 'draft';
+  clean.runMode = null;
+  eq(parser.autosaveBlockers(clean), []);
+  const unconfirmed = cleanState();
+  unconfirmed.activeMode = true;
+  unconfirmed.activeConfirmed = false;
+  unconfirmed.mode = 'active';
+  unconfirmed.runMode = null;
+  eq(parser.autosaveBlockers(unconfirmed)[0].code, 'mode-unconfirmed');
+  const confirmed = cleanState();
+  confirmed.activeMode = true;
+  confirmed.activeConfirmed = true;
+  confirmed.mode = 'active';
+  confirmed.runMode = 'active';
+  eq(parser.autosaveBlockers(confirmed), []);
+  const changed = cleanState();
+  changed.activeMode = false;
+  changed.activeConfirmed = true;
+  changed.mode = 'draft';
+  changed.runMode = 'active';
+  eq(parser.autosaveBlockers(changed)[0].code, 'mode-changed');
+});
+
 test('autosaveBlockers reports a queue gap', () => {
   const s = cleanState();
   s.queue.items = [cleanQuestion(1), cleanQuestion(3)];
@@ -360,7 +396,8 @@ test('blockerText maps every known code to a plain sentence', () => {
   const codes = ['batch-missing', 'batch-mismatch', 'queue-number', 'key-coverage', 'key-conflict',
     'key-letter', 'no-answer', 'answer-mismatch', 'ef-present', 'flags', 'options-not-abcd',
     'option-empty', 'option-duplicate', 'option-long', 'question-short',
-    'meta-missing', 'not-confirmed', 'file-attached', 'saving-marker', 'save-in-progress',
+    'meta-missing', 'not-confirmed', 'mode-unconfirmed', 'mode-changed',
+    'file-attached', 'saving-marker', 'save-in-progress',
     'stopped', 'run-cap', 'lock', 'hidden', 'saved-log', 'duplicate', 'form-edited'];
   for (const code of codes) {
     const text = parser.blockerText({ code, detail: 'detail' });

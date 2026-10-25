@@ -216,7 +216,8 @@ the label is what prevents a blank `C.` from consuming `D.`.
   refills the form.
 - Save: capture-phase `submit` listener, `preventDefault` +
   `stopImmediatePropagation`, then the shared `saveCurrentQuestion({auto:false})`
-  described in §7. Manual saves tick `is_active`; auto saves remove it.
+  described in §7. Manual saves tick `is_active`; draft auto saves remove it and
+  active auto saves set `is_active=1`.
 - Success: the PHP writes `cbt_admin_flash`, redirects, and the redirected GET
   renders it as `.admin-success`; the fetched response matches
   `/Question saved successfully \(Question ID: (\d+)\)/`. On success: show the
@@ -283,7 +284,7 @@ section records the contract as implemented.
 | `ansKeyBatch` | the matching `batchId` | Key loaded with the questions; a key-only paste attaches to the current queue |
 | `ansKeyConflicts` | `[{num, letters}]` | Key loaded; identical repeats are not conflicts |
 | `ocrSaving` | `{num, at}` crash marker | Immediately before a save request |
-| `ocrSavedLog` | `[{num, id, at, batchId, inactive}]`, capped at 200 | Only after a verified save; `inactive` is `true`/`false`/`null` (confirmed, active/manual, or unverified) |
+| `ocrSavedLog` | `[{num, id, at, batchId, inactive, mode}]`, capped at 200 | Only after a verified save; `inactive` is `true`/`false`/`null` (confirmed, active/manual, or unverified); `mode` is `draft`, `active`, or `manual` |
 | `autoLock` | `{tabId, at}` heartbeat | While a run is active |
 
 A queue without `batchId`, or a key whose `ansKeyBatch` does not match it, is
@@ -292,12 +293,17 @@ queue, key, conflicts, and both batch ids (D-30).
 
 ### 7.2 Confirmation and controls
 
-The panel adds Start, Stop, and a Dry run button, none of which is persisted.
+The panel adds Start, Stop, a Dry run button, and a `Save as active (live
+immediately)` checkbox, none of which is persisted. Draft is the default.
 Before Start, a batch block shows Subject, Category, Year, question count, key
-count, and the first/last question numbers. Start stays disabled until
-`These are correct.` is ticked. The tick resets on a new paste, a key-only
-paste, Reset, Clear saved key, or a change to subject/category/year. Start is
-also disabled while `ocrSaving` exists or the queue is finished.
+count, the first/last question numbers, and the selected mode. It shows
+`Mode: ACTIVE. Saved questions go live immediately.` in red bold, or
+`Mode: draft (inactive).` Start stays disabled until `These are correct.` is
+ticked and, in active mode, `I understand these go live to students now.` is
+also ticked. The ticks reset on a new paste, a key-only paste, Reset, Clear
+saved key, or a change to subject/category/year. Start is also disabled while
+`ocrSaving` exists or the queue is finished, and the mode box is disabled while
+a run is active.
 
 ### 7.3 Gate
 
@@ -317,14 +323,16 @@ first one and stops. An empty list means safe. It checks:
 8. Detected option letters are exactly `ABCD`.
 9. Options A–D are non-empty, distinct after case/whitespace normalization, and
    each ≤500 UTF-8 bytes; the stem is at least 10 characters.
-10. Subject, category, and year are set and the confirmation is ticked.
-11. No file is selected in `question_image` or `answer_video`. Diagram/table
+10. Subject, category, and year are set and the confirmation is ticked. In
+    active mode the live-save confirmation is also ticked.
+11. The selected mode did not change since Start.
+12. No file is selected in `question_image` or `answer_video`. Diagram/table
     words do not block; the uploader decides whether a batch needs images
     (D-38).
-12. No `ocrSaving` marker, no save in progress, Stop is off, the run cap is not
+13. No `ocrSaving` marker, no save in progress, Stop is off, the run cap is not
     reached, and this tab holds `autoLock` (another tab is refused while its
     lock is under 15 seconds old).
-13. The page is visible; a hidden tab finishes the current save and pauses.
+14. The page is visible; a hidden tab finishes the current save and pauses.
 
 The form is also compared with the loaded question before each save; an edited
 form stops the run with `form no longer matches`.
@@ -332,7 +340,7 @@ form stops the run with `form no longer matches`.
 ### 7.4 Save classification and marker
 
 The manual submit and the auto loop both call
-`saveCurrentQuestion({auto})`. It writes `ocrSaving`, posts
+`saveCurrentQuestion({auto, active})`. It writes `ocrSaving`, posts
 `FormData(form)` with same-origin credentials and a 30-second abort timeout,
 then classifies the reply:
 
@@ -343,15 +351,19 @@ then classifies the reply:
 - **Ambiguous** — anything else, including a timeout or network error. Keep the
   marker, show `Unknown. It may have saved. Check the list.`, and never retry.
 
-On Saved: auto-only inactivity verification (`?edit=<id>`), append to
+On Saved: auto-only state verification (`?edit=<id>`), append to
 `ocrSavedLog`, advance the queue directly, clear the marker, clear the media and
-explanation fields, refresh meta, and tick the next answer. Auto removes
-`is_active` from the form and sets `autosave=1`; manual keeps the active tick.
-If verification finds the question active, a red `SAVED AS ACTIVE` warning stops
-the run but the save is still logged and advanced so it cannot repeat. The log
-records the verification result, and the saved-list suffix distinguishes
-`inactive`, `includes a question saved active`, and
-`inactive status not verified`.
+explanation fields, refresh meta, and tick the next answer. Draft auto removes
+`is_active` and sets `autosave=1`; active auto sets `is_active=1` and
+`autosave=1`; manual keeps the active tick. Draft expects the edit page to show
+inactive and active expects it checked. A mismatch stops the run with a red
+warning (`SAVED AS ACTIVE` in draft, `SAVED AS INACTIVE` in active) but the save
+is still logged and advanced so it cannot repeat. An unverified check is logged
+as `inactive: null`; two consecutive unverified auto saves stop the run and are
+named in the saved list. The log records the mode, and the saved-list suffix
+distinguishes `inactive`, `active`, a mixed batch, a wrong-state mismatch, and
+`status not verified`. Old entries without `mode` fall back to manual when
+`inactive === false`, otherwise draft.
 
 Queue-mutating controls (Load, Go to, Skip, Reset, Clear saved key) refuse while
 a save is in flight, and a successful save only advances the queue if it still
@@ -371,8 +383,9 @@ normally (Fix 2).
 - The run cap is 10 (raised from 3 after the 2026-10-25 live sign-off). Start
   again resets the count and continues.
 - Dry run copies the queue and uses the current form metadata. It logs
-  `Would save #n: subject/category/year, A to D, answer X.` and writes nothing
-  to the queue, marker, saved log, or lock.
+  `Would save #n as draft: subject/category/year, A to D, answer X.` or
+  `Would save #n as ACTIVE: ...` and writes nothing to the queue, marker, saved
+  log, or lock.
 - Duplicate safeguards stop (not skip) the run when the number is already in
   this batch's saved log, or a recent admin-table row has the same normalized
   subject, exam year, category and question text. A long row is the server's
