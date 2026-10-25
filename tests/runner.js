@@ -213,7 +213,7 @@ function parseFixture(spec, inputText) {
       (text, [pattern, replacement]) => text.replace(pattern, replacement),
       sections.questions
     );
-    const items = parser.flagNumberingGaps(parser.splitQuestions(fixed).map(parser.parseQuestion));
+    const items = parser.flagNumberingGaps(parser.splitQuestionItems(fixed).map(parser.parseQuestion));
     if (salvage.salvaged) items.forEach(item => item.flags.push(SALVAGE_FLAG));
     return { items, sections, header: parser.parseHeader(fixed) };
   }

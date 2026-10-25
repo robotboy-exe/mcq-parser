@@ -1,6 +1,6 @@
 # P08 — Anomaly block 1 (unnumbered `*` questions)
 
-Status: not started. Depends on: P07. Blocks: P09.
+Status: done (2026-10-25). Depends on: P07. Blocks: P09.
 
 ## Self-contained context
 
@@ -99,7 +99,7 @@ Integrate:
 
 | Command | Expected |
 |---|---|
-| `node tests/runner.js` | 26 PASS, 0 FAIL, 0 PENDING; exit 0 |
+| `node tests/runner.js` | 31 PASS, 0 FAIL, 0 PENDING; exit 0 |
 | block-1 probe | 19 items, all `num === null` |
 | block-2 probe | still 12 items, unchanged |
 | bank probe | unchanged; no salvage inserts |
@@ -119,9 +119,14 @@ Integrate:
 ## Handoff note (append when done)
 
 ```text
-Date:
-Result: 26 PASS / 0 FAIL / 0 PENDING
-Bullet count:
-Flag differences:
-Open questions:
+Date: 2026-10-25
+Result: 31 PASS / 0 FAIL / 0 PENDING; unit 59 PASS.
+Bullet count: 19, all `num === null`.
+Flag differences: none. Every bullet carries `question number missing`; the
+  parsed Q0/Q18 match the package text. Block 2 still parses as 12 items with
+  the same nums, and all bank inputs still have 0 salvage inserts.
+Parser changes: added and exported `splitBulletQuestions` and
+  `splitQuestionItems`; UI and runner now call `splitQuestionItems` after the
+  salvage pre-pass. Build: one line, no `%`, body parses.
+Open questions: none. The UI DOM path still has no browser test.
 ```

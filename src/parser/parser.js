@@ -124,6 +124,21 @@ function splitQuestions(text) {
   return chunks;
 }
 
+function splitBulletQuestions(text) {
+  const marks = [...text.matchAll(/(?:^|\n)[^\S\n]*\*[^\S\n]+/g)];
+  if (marks.length < 2) return null;
+  return marks.map((m, i) => ({
+    num: null,
+    text: text.slice(m.index + m[0].length, marks[i + 1]?.index)
+  }));
+}
+
+function splitQuestionItems(text) {
+  if (/(?:^|\n)[^\S\n]*\d{1,3}\.\s+/.test(text)) return splitQuestions(text);
+  const bullets = splitBulletQuestions(text);
+  return bullets || splitQuestions(text);
+}
+
 function parseQuestion({ num, text }) {
   const raw = text.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
   const clean = s => s.replace(/\s+/g, ' ').trim();
@@ -695,6 +710,8 @@ if (typeof module !== 'undefined' && module.exports) {
     pickSubjectIndex,
     pickCategoryIndex,
     splitQuestions,
+    splitBulletQuestions,
+    splitQuestionItems,
     parseQuestion,
     flagNumberingGaps,
     splitSections,

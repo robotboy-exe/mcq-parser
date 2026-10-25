@@ -54,7 +54,7 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 
 ## Current snapshot
 
-- Current test status: `node tests/runner.js` → 30 PASS, 0 FAIL, 0 PENDING;
+- Current test status: `node tests/runner.js` → 31 PASS, 0 FAIL, 0 PENDING;
   `node tests/unit.js` → 59 PASS, 0 FAIL.
 - Auto-Save AS-01 through AS-09 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
@@ -116,6 +116,11 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   option split`; the runner also asserts the `nums` sequence. All five bank
   inputs are byte-identical no-ops (0 inserts). Runner 30 PASS; unit 59 PASS;
   build one line, no `%`, body parses. P08 is next.
+- P08 closed on 2026-10-25: unnumbered `*` blocks parse in bullet mode only when
+  there are no line-start `N.` markers. Block 1 yields 19 items, all
+  `num: null`, with `question number missing`; block 2 stays at 12 and the bank
+  stays unchanged. Runner 31 PASS; unit 59 PASS; build one line, no `%`, body
+  parses. P09 is the docs/audit close-out.
 - Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
@@ -186,7 +191,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | P05 | [05-bank-2023.md](05-bank-2023.md) | 2023 fixture: inline key + 8 E-option questions | P03 | done (2026-10-25) |
 | P06 | [06-bank-2024-2025.md](06-bank-2024-2025.md) | 2024 partial-year fixture + 2025 fixture with missing key entry | P03 | done (2026-10-25) |
 | P07 | [07-anomaly-block2-salvage.md](07-anomaly-block2-salvage.md) | Guarded salvage normalizer + block-2 fixture | P06 | done (2026-10-25) |
-| P08 | [08-anomaly-block1-bullets.md](08-anomaly-block1-bullets.md) | Unnumbered `*` question mode | P07 | not started |
+| P08 | [08-anomaly-block1-bullets.md](08-anomaly-block1-bullets.md) | Unnumbered `*` question mode | P07 | done (2026-10-25) |
 | P09 | [09-docs-cleanup.md](09-docs-cleanup.md) | Docs updates, retire superseded fixtures, final audit | all | not started |
 | AS-01 | [as-01-contract-and-harness.md](as-01-contract-and-harness.md) | Contract changes, build comment/`%` guard, unit harness | — | done |
 | AS-02 | [as-02-primitives-and-batch.md](as-02-primitives-and-batch.md) | `parseKeyDetailed`, E/F flag, batch/storage primitives | AS-01 | done |
@@ -284,7 +289,7 @@ node -e "const fs=require('fs');const s=fs.readFileSync('src/bookmarklet.js','ut
 | P05 (done) | 27 | 2 | bank-2023 confirmed |
 | P06 (done) | 29 | 0 | bank-2024 and bank-2025 confirmed |
 | P07 (done) | 30 | 0 | anomaly block 2 added |
-| P08 | 31 | 0 | anomaly block 1 added |
+| P08 (done) | 31 | 0 | anomaly block 1 added |
 | P09 | 30 | 0 | `qwen2-s1` retired; bank-2021 covers it |
 
 P01/P02 are reflected in the baseline. P03 ran before P02, so the 2021 slice is
@@ -365,6 +370,9 @@ authoritative:
   chunks with 50 inserts, the salvage flag is appended in UI and runner, `nums`
   is asserted, and all bank inputs get 0 inserts. Runner 30 PASS; unit 59 PASS;
   build one line, no `%`, body parses.
+- 2026-10-25 — P08 done: bullet mode added for unnumbered `*` blocks; block 1
+  parses as 19 `num: null` items, block 2 and the bank are unchanged. Runner 31
+  PASS; unit 59 PASS; build one line, no `%`, body parses.
 - 2026-10-25 — AS-09 done: confirmed-save log/advance faults keep the marker and
   stop without retry; saved log is re-read and merged by id with mode kept and
   capped at 200; `has-explanation` and `meta-changed` join the gate; the

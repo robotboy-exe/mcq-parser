@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "input_origin": "anomaly",
+  "id": "anomaly-block1",
+  "source": [
+    "archive/live-sources/ANOMALIES.txt lines 1-95"
+  ],
+  "provenance": "Verbatim unnumbered bullet block from the hostile OCR source: 19 questions, each starting with `*` and using indented A-D options.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/anomaly-block1.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 19,
+    "questions": [
+      {
+        "index": 0,
+        "question": "Profit maximization is characteristic of",
+        "a": "capitalism",
+        "b": "communism",
+        "c": "communalism",
+        "d": "feudalism",
+        "flags": [
+          "question number missing"
+        ]
+      },
+      {
+        "index": 3,
+        "question_contains": [
+          "The payment of tax by citizens as and when due is a"
+        ],
+        "b": "duty and obligation"
+      },
+      {
+        "index": 11,
+        "question_contains": [
+          "In the Oyo Empire, the Are-Ona Kakanfo resided outside the capital city in order to"
+        ]
+      },
+      {
+        "index": 18,
+        "question_contains": [
+          "The Code Conduct Bureau requires public officials to"
+        ],
+        "a": "declare their assets before taking office",
+        "d": "be punished for malpractice",
+        "flags": [
+          "question number missing"
+        ]
+      }
+    ],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)",
+      "question text missing or very short"
+    ]
+  }
+}

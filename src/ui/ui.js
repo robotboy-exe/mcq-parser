@@ -617,7 +617,7 @@ function runOCRBookmarklet() {
     const salvage = splitSectionsWithSalvage(raw);
     const parts = salvage.parts;
     const text = FIXES.reduce((t, [re, fix]) => t.replace(re, fix), parts.questions);
-    const items = flagNumberingGaps(splitQuestions(text).map(parseQuestion));
+    const items = flagNumberingGaps(splitQuestionItems(text).map(parseQuestion));
     if (salvage.salvaged) items.forEach(item => item.flags.push(SALVAGE_FLAG));
     const detailed = parts.answers.trim() ? parseKeyDetailed(parts.answers) : { key: {}, conflicts: [] };
     const newKey = detailed.key;
