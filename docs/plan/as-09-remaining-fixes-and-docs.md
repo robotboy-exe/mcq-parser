@@ -80,9 +80,9 @@ Docs: Auto-Save-Spec §3/§6/§9 corrected (stop not skip, POST to location.href
   edit check location.pathname + ?edit=); SPEC §7.4 records both targets and
   the log merge/fault behavior; INV-62/65/66/67 refreshed for the new blockers,
   merge, and heartbeat failure.
-Open questions: the package's "SPEC §2" item points at Input format, which has
-  no POST text; the fix was applied to SPEC §7.4 and Auto-Save-Spec §6, the
-  sections that actually describe the request. Fixes 3 and 7 remain UI/DOM
-  wiring; their fault decisions are unit-tested through commitSave and
-  heartbeatTick, but there is still no browser harness for the click path.
+Open questions: none for the §2 item. The review's section numbers came from
+  the packet; SPEC §7.4 was confirmed as the right place, and SPEC §2 (Input
+  format) was correctly left alone. Fixes 3 and 7 remain UI/DOM wiring; their
+  fault decisions are unit-tested through commitSave and heartbeatTick, but
+  there is still no browser harness for the click path.
 ```

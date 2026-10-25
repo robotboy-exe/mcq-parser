@@ -229,6 +229,8 @@ Every code needs a `blockerText` entry and a place in the all-codes unit test. E
 
 # D. Docs to update (one list)
 
+> Section numbers below are hints taken from the review packet and may not match the repo's `docs/` files. Find each item by its content. If the stated section doesn't contain it, put it in the section that does, and say where you put it.
+
 **Phase 1**
 - INV-69: "subject, exam year, category and question text; unreadable year or category falls back to subject and text".
 - D-34, Auto-Save-Spec §9 and SPEC §7.5: add the same scope.
@@ -246,7 +248,7 @@ Every code needs a `blockerText` entry and a place in the all-codes unit test. E
 
 **Phase 3**
 - Auto-Save-Spec §9 says the tool "skips" a question. The code stops, per D-34. Edit the spec to say stops.
-- SPEC §2: the POST uses `location.href`, and the edit-page check uses `location.pathname`.
+- The POST uses `fetch(location.href, ...)` and the edit-page check uses `fetch(location.pathname + '?edit=' + id)`. Make every doc that describes the fetch targets say so.
 
 # E. Decisions and open items
 
