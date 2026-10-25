@@ -1,6 +1,6 @@
 # AS-07 — Duplicate scope, marker, and unverified status
 
-Status: not started. Depends on: AS-06. Blocks: AS-08.
+Status: done (live checks passed 2026-10-25). Depends on: AS-06. Blocks: AS-08.
 
 ## Source and scope
 
@@ -193,3 +193,9 @@ Docs: Phase 1 (INV-69, D-34, Auto-Save-Spec §9, SPEC §7.5), AS-07 extra
   SPEC §7.4, INV-66 unverified list/stop. Active.md §3 retired.
 Open questions: none for AS-07. AS-08 may start.
 ```
+
+## Final review (2026-10-25)
+
+Accepted `5f05f8a`. Runner 25 PASS, unit 49 PASS, build one line / no `%` /
+body parses. Live snapshots show 20 recent rows (#1737-#1756) and no AS test
+rows. No code change; this follow-up only marks the package status as done.
