@@ -347,12 +347,18 @@ checks the list and clears it. A hidden tab or a second tab pauses the run.
 ## D-34 — Duplicate safeguards stop the run
 
 **Choice.** If the question number is already in this batch's saved log, or a
-recent table row has the same subject and first 140 characters, auto stops and
-shows the reason. It does not silently skip.
+recent table row has the same normalized subject, exam year, category and
+question text, auto stops and shows the reason. It does not silently skip. A
+long row is the server's first 139 characters plus `…`; a truncated row of at
+least 40 characters matches by prefix, an untruncated row only on the full
+text. A row with an unreadable year or category is treated as unknown for that
+field and falls back to subject and text.
 **Why.** The user chose visibility over speed. A silent skip can hide a real
-duplicate.
+duplicate. Scoping by year and category allows deliberate cross-year and
+cross-category copies.
 **Risk.** The check only covers this run/log and the loaded 20-row page; it
-cannot catch a duplicate saved long ago.
+cannot catch a duplicate saved long ago. A missing row year or category makes
+the check broader, not narrower.
 
 ## D-35 — Full-line comments, no `%` in the bookmarklet
 
@@ -383,6 +389,18 @@ non-empty.
 the flag makes the reason visible to the user and lets the gate block it.
 **Risk.** Every E/F question now shows an advisory flag in manual mode. The
 existing E/F fixtures must expect it.
+
+## D-38 — The uploader owns the media decision
+
+**Choice.** Remove the `NEEDS_PICTURE` word list, the `needs-media` blocker,
+and its test. Keep the `file-attached` blocker. Diagram, figure, graph, table,
+passage and similar words no longer block auto-save.
+**Why.** The uploader decides whether a batch needs images. Guessing from words
+is redundant and causes false stops. A future media feature must use an
+explicit uploader signal, not text guessing.
+**Risk.** A batch that genuinely needs an image can be auto-saved without one
+if the uploader does not attach it. The explicit file check still refuses when
+a file is already chosen.
 
 ## Auto-Save verification notes
 

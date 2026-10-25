@@ -103,6 +103,7 @@ function runOCRBookmarklet() {
   let autoRunning = false;
   let autoDry = false;
   let autoRunCount = 0;
+  let unverifiedStreak = 0;
   let autoCap = 10;
   let autoTabId = newBatchId();
   let autoHeartbeat = null;
@@ -153,14 +154,11 @@ function runOCRBookmarklet() {
     };
   }
   function recentRows() {
-    return Array.from(document.querySelectorAll('.admin-table tbody tr')).map(tr => {
-      const td = tr.querySelectorAll('td');
-      return {
-        id: td[0] ? td[0].textContent.trim() : '',
-        subject: td[2] ? td[2].textContent.trim() : '',
-        question: td[1] ? td[1].textContent.trim() : ''
-      };
-    }).filter(row => row.id && row.question);
+    const table = document.querySelector('.admin-table');
+    if (!table) return [];
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent);
+    const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent));
+    return recentRowsFromTable(headers, rows);
   }
   function gateState(useQueue) {
     const q = useQueue || queue;
@@ -206,6 +204,14 @@ function runOCRBookmarklet() {
     const summary = document.createElement('div');
     summary.textContent = 'Batch: ' + (meta.subjectText || '?') + ' / ' + (meta.categoryText || '?') + ' / ' + (meta.year || '?') + ' — ' + queue.items.length + ' questions, ' + Object.keys(key).length + ' key answers, #' + first + ' to #' + last + '.';
     box.appendChild(summary);
+    const yearLine = document.createElement('div');
+    const yearStrong = document.createElement('strong');
+    yearStrong.textContent = 'Year: ' + (meta.year || '?');
+    yearLine.appendChild(yearStrong);
+    box.appendChild(yearLine);
+    const scopeNote = document.createElement('div');
+    scopeNote.textContent = 'Check the year. Duplicate checks only compare questions from the same year and category. They also only see this batch and the 20 newest rows on the page.';
+    box.appendChild(scopeNote);
     if (!queue.batchId) {
       const legacy = document.createElement('div');
       legacy.textContent = 'This queue has no batch identity. Paste the questions again.';
@@ -229,7 +235,10 @@ function runOCRBookmarklet() {
   function savedCopyText() {
     const entries = savedForBatch(savedLog, queue.batchId);
     if (!entries.length) return 'No saves in this batch.';
-    return entries.map(entry => 'Question ' + entry.num + ' saved as #' + entry.id + '.').join('\n');
+    return entries.map(entry => unverifiedSaves([entry]).length
+      ? 'Question ' + entry.num + ' (#' + entry.id + '): active status not verified'
+      : 'Question ' + entry.num + ' saved as #' + entry.id + '.'
+    ).join('\n');
   }
   function renderSaved() {
     const box = $('ocr_saved_box');
@@ -383,11 +392,23 @@ function runOCRBookmarklet() {
       showOCR(auto);
       last = cur().i;
       if (last > -1) tick(); else form.reset();
+      let unverifiedStop = false;
+      if (auto) {
+        const tracked = trackUnverified(unverifiedStreak, inactive);
+        unverifiedStreak = tracked.streak;
+        if (tracked.stop) {
+          unverifiedStop = true;
+          stopAuto = true;
+        }
+      }
       if (auto && inactive === false) {
         setResult('SAVED AS ACTIVE: question #' + result.id + '. Check the list and turn it off.', true);
         stopAuto = true;
       } else if (auto && inactive === true) {
         setResult('Saved as question #' + result.id + ' (inactive).', false);
+      } else if (unverifiedStop) {
+        lastBlocked = 'Stopped after 2 unverified checks. Check the saved list before continuing.';
+        setResult(lastBlocked, true);
       } else if (auto) {
         setResult('Saved as question #' + result.id + '. Could not verify inactive; check the list.', false);
       } else {
@@ -481,6 +502,7 @@ function runOCRBookmarklet() {
     if (autoRunning) return;
     stopAuto = false;
     autoRunCount = 0;
+    unverifiedStreak = 0;
     autoDry = false;
     autoStatus = '';
     lastBlocked = '';
@@ -685,6 +707,12 @@ function runOCRBookmarklet() {
     if (!queue.items.length) saveMeta();
     const b = form.querySelector('button[type=submit]'), r = $('ans_res');
     if (saveInProgress) return;
+    let marker = null;
+    try { marker = store.get('ocrSaving'); } catch (err) {}
+    if (marker) {
+      setResult("An earlier save is unconfirmed. Check the list, then tap 'I checked. Clear warning.'", true);
+      return;
+    }
     if (autoRunning) stopAuto = true;
     b.disabled = true;
     setResult('Saving...', false);

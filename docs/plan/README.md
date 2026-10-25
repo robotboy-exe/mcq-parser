@@ -55,15 +55,20 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 35 PASS, 0 FAIL.
-- Auto-Save AS-01 through AS-06 are done. AS-06 closed on 2026-10-25 with the
+  `node tests/unit.js` → 49 PASS, 0 FAIL.
+- Auto-Save AS-01 through AS-07 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
   the run cap is now 10. Two-tab live testing is limited by hide-pause on one
   browser; the lock reason is covered by unit + mock.
-- The follow-up track AS-07…AS-09 is planned from `docs/Active.md` but not
-  started. AS-07 combines Fix 1, Fix 2, the two unverified-status changes, and
-  removal of `needs-media` so active mode cannot go live before the draft-only
-  barrier clears.
+- AS-07 closed on 2026-10-25: Fix 1 (scoped duplicate check), Fix 2 (manual
+  marker refusal), the per-question unverified list, the two-consecutive stop,
+  and removal of `needs-media`. Runner 25 PASS; unit 49 PASS; build one line,
+  no `%`, body parses. Live checks on the real admin page passed: #1754 was
+  139 + `…`; Start stopped a same-year/category repeat with 0 POST; a 2022
+  repeat and a different long question dry-ran as saves; the manual-marker
+  refusal made 0 POST and the cleared marker let one POST reach the server
+  (rejected with exam year 1800, so no row was inserted). Mock checks cover the
+  unverified list/stop and media/file-attached. AS-08 may start.
 - Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
@@ -142,7 +147,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | AS-04 | [as-04-save-pipeline.md](as-04-save-pipeline.md) | Shared `saveCurrentQuestion`, classification, marker/log | AS-03 | done (code; live smoke in AS-06) |
 | AS-05 | [as-05-ui-and-loop.md](as-05-ui-and-loop.md) | Opt-in UI, loop, lock, visibility, dry run | AS-04 | done (code + mock; hide-pause verified 2026-10-25) |
 | AS-06 | [as-06-verification-and-docs.md](as-06-verification-and-docs.md) | Docs close-out, dry-run/live acceptance, cap 3→10 | AS-05 | done |
-| AS-07 | [as-07-duplicate-scope-and-marker.md](as-07-duplicate-scope-and-marker.md) | Fix 1 scoped duplicate check, Fix 2 marker guard, unverified list + stop, remove media guess | AS-06 | not started |
+| AS-07 | [as-07-duplicate-scope-and-marker.md](as-07-duplicate-scope-and-marker.md) | Fix 1 scoped duplicate check, Fix 2 marker guard, unverified list + stop, remove media guess | AS-06 | done (live checks passed 2026-10-25) |
 | AS-08 | [as-08-active-mode.md](as-08-active-mode.md) | Opt-in active save mode, mode gate/suffix, live 2-question test | AS-07 | not started |
 | AS-09 | [as-09-remaining-fixes-and-docs.md](as-09-remaining-fixes-and-docs.md) | Fixes 3–7, nit, Phase 3 doc corrections | AS-08 | not started |
 
@@ -287,6 +292,12 @@ authoritative:
   mock lock, and the 3-question live test passed. Boot-fill regression fixed;
   cap raised to 10; blocked-reason color fixed. One-browser limit recorded for
   the two-tab lock message.
+- 2026-10-25 — AS-07 done: live #1754 confirmed 139 + `…`; Start stopped a
+  same-year/category repeat with 0 POST; 2022 repeat and a different long
+  question dry-ran as saves; manual-marker refusal made 0 POST, then one POST
+  with exam year 1800 was rejected so no row was inserted. Unverified
+  list/stop and media removal covered by unit + mock. Active.md §3 retired;
+  unit 49 PASS.
 - 2026-10-25 — Auto-Save phased as AS-01…AS-06; build gains full-line comment
   stripping and a no-`%` guard; unit harness planned.
 - 2026-10-24 — numbering gaps are flagged on the following question

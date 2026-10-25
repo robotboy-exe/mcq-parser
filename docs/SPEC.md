@@ -317,14 +317,14 @@ first one and stops. An empty list means safe. It checks:
 8. Detected option letters are exactly `ABCD`.
 9. Options A–D are non-empty, distinct after case/whitespace normalization, and
    each ≤500 UTF-8 bytes; the stem is at least 10 characters.
-10. The stem/options do not match `NEEDS_PICTURE` (diagram, figure, graph,
-    picture, chart, table, passage, "read/use the following", "questions N to").
-11. Subject, category, and year are set and the confirmation is ticked.
-12. No file is selected in `question_image` or `answer_video`.
-13. No `ocrSaving` marker, no save in progress, Stop is off, the run cap is not
+10. Subject, category, and year are set and the confirmation is ticked.
+11. No file is selected in `question_image` or `answer_video`. Diagram/table
+    words do not block; the uploader decides whether a batch needs images
+    (D-38).
+12. No `ocrSaving` marker, no save in progress, Stop is off, the run cap is not
     reached, and this tab holds `autoLock` (another tab is refused while its
     lock is under 15 seconds old).
-14. The page is visible; a hidden tab finishes the current save and pauses.
+13. The page is visible; a hidden tab finishes the current save and pauses.
 
 The form is also compared with the loaded question before each save; an edited
 form stops the run with `form no longer matches`.
@@ -357,6 +357,11 @@ Queue-mutating controls (Load, Go to, Skip, Reset, Clear saved key) refuse while
 a save is in flight, and a successful save only advances the queue if it still
 points at the same batch/index/item it started with.
 
+The manual submit refuses while an `ocrSaving` marker exists: it makes no POST
+and shows `An earlier save is unconfirmed. Check the list, then tap 'I checked.
+Clear warning.'`. After the marker is cleared, the same manual save proceeds
+normally (Fix 2).
+
 ### 7.5 Lock, cap, dry run, duplicates
 
 - `autoLock` is refreshed every 5 seconds by a recursive `setTimeout`; a lock
@@ -370,8 +375,11 @@ points at the same batch/index/item it started with.
   to the queue, marker, saved log, or lock.
 - Duplicate safeguards stop (not skip) the run when the number is already in
   this batch's saved log, or a recent admin-table row has the same normalized
-  subject and first 140 characters of text. This covers this run/log and the
-  loaded 20 rows; it cannot see older saves.
+  subject, exam year, category and question text. A long row is the server's
+  first 139 characters plus `…`; a truncated row of at least 40 characters
+  matches by prefix, and an untruncated row matches only the full text. A row
+  whose year or category cannot be read falls back to subject and text. This
+  covers this run/log and the loaded 20 rows; it cannot see older saves.
 
 All server-derived text is rendered with `textContent` or created nodes, never
 `innerHTML`. Option sizes are compared in UTF-8 bytes.

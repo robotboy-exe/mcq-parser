@@ -323,6 +323,20 @@ function savedForBatch(log, batchId) {
   return (Array.isArray(log) ? log : []).filter(entry => entry && entry.batchId === batchId);
 }
 
+function unverifiedSaves(entries) {
+  return (Array.isArray(entries) ? entries : []).filter(entry => entry && (entry.inactive === null || entry.inactive === undefined));
+}
+
+function trackUnverified(streak, inactive) {
+  const n = Number.isInteger(streak) && streak > 0 ? streak : 0;
+  if (inactive === null) {
+    const next = n + 1;
+    return { streak: next, stop: next >= 2 };
+  }
+  if (inactive === true || inactive === false) return { streak: 0, stop: false };
+  return { streak: n, stop: false };
+}
+
 function savedInactiveSuffix(entries) {
   const states = (Array.isArray(entries) ? entries : []).map(entry => entry && entry.inactive);
   if (states.some(state => state === false)) return ', includes a question saved active';
@@ -346,20 +360,51 @@ function formatSavedRange(entries) {
   return 'Saved this batch: ' + range + savedInactiveSuffix(entries);
 }
 
-function recentDuplicate(rows, subject, questionText) {
+function recentRowsFromTable(headers, rows) {
+  const head = (Array.isArray(headers) ? headers : []).map(text => normalizeAnswer(text));
+  const at = name => head.indexOf(normalizeAnswer(name));
+  const col = {
+    id: at('ID'),
+    question: at('Question'),
+    subject: at('Subject'),
+    category: at('Exam Category'),
+    year: at('Exam Year')
+  };
+  const cell = (cells, i) => (i >= 0 && Array.isArray(cells) && cells[i] != null ? String(cells[i]).trim() : '');
+  return (Array.isArray(rows) ? rows : []).map(cells => ({
+    id: cell(cells, col.id),
+    question: cell(cells, col.question),
+    subject: cell(cells, col.subject),
+    category: cell(cells, col.category),
+    year: cell(cells, col.year)
+  })).filter(row => row.id && row.question);
+}
+
+function recentDuplicate(rows, subject, questionText, category, year) {
   const wantSubject = normalizeAnswer(subject);
-  const wantText = normalizeAnswer(questionText).slice(0, 140);
+  const wantText = normalizeAnswer(questionText);
+  const wantCategory = normalizeAnswer(category);
+  const wantYear = String(year == null ? '' : year).trim();
   if (!wantText) return null;
   for (const row of Array.isArray(rows) ? rows : []) {
     if (!row) continue;
     if (normalizeAnswer(row.subject) !== wantSubject) continue;
-    const rowText = normalizeAnswer(row.question).replace(/(?:…|\.\.\.)$/, '').trim().slice(0, 140);
-    if (rowText && rowText === wantText) return row;
+    const rowCategory = normalizeAnswer(row.category);
+    if (rowCategory && rowCategory !== wantCategory) continue;
+    const rowYear = String(row.year == null ? '' : row.year).trim();
+    if (rowYear && Number(rowYear) !== Number(wantYear)) continue;
+    let rowText = normalizeAnswer(row.question).replace(/^\[[^\]]*\]\s*/, '');
+    if (!rowText) continue;
+    if (/(?:…|\.\.\.)$/.test(rowText)) {
+      rowText = rowText.replace(/(?:…|\.\.\.)$/, '').trim();
+      if (rowText.length >= 40 && wantText.indexOf(rowText) === 0) return row;
+    } else if (rowText === wantText) {
+      return row;
+    }
   }
   return null;
 }
 
-const NEEDS_PICTURE = /diagram|figure|graph|picture|chart|table|passage|read the following|use the following|questions? \d+ (to|-)/i;
 const SAVE_SUCCESS = /Question saved successfully \(Question ID: (\d+)\)/;
 
 function savedLogHasNum(log, batchId, num) {
@@ -439,8 +484,6 @@ function autosaveBlockers(state) {
     if (byteLength(q[letter]) > 500) add('option-long', 'Option ' + letter.toUpperCase() + ' is over 500 characters.');
   }
   if (String(q.question || '').trim().length < 10) add('question-short', 'The question text is missing or very short.');
-  const media = [q.question, q.a, q.b, q.c, q.d].some(text => NEEDS_PICTURE.test(String(text || '')));
-  if (media) add('needs-media', 'This question needs a picture or passage; add it by hand.');
   const meta = s.meta || {};
   if (meta.subject == null || meta.subject === '' || meta.category == null || meta.category === '' || meta.year == null || meta.year === '') {
     add('meta-missing', 'Subject, category or year is missing.');
@@ -457,8 +500,8 @@ function autosaveBlockers(state) {
   }
   if (s.visible === false) add('hidden', 'This tab is hidden; auto-save is paused.');
   if (savedLogHasNum(s.savedLog, queue.batchId, q.num)) add('saved-log', 'Question ' + q.num + ' was already saved in this batch.');
-  const dup = recentDuplicate(s.recentRows, meta.subjectText || meta.subject, q.question);
-  if (dup) add('duplicate', 'This looks like question #' + (dup.id == null ? '?' : dup.id) + ' already in the recent list.');
+  const dup = recentDuplicate(s.recentRows, meta.subjectText || meta.subject, q.question, meta.categoryText || meta.category, meta.year);
+  if (dup) add('duplicate', 'This looks like question #' + (dup.id == null ? '?' : dup.id) + ' (' + (meta.year || '?') + ', ' + (meta.categoryText || meta.category || '?') + ') already in the recent list.');
   if (s.form && !formMatchesQuestion(s.form, q)) add('form-edited', 'The form no longer matches the loaded question. Save it by hand or reload the queue item.');
   return out;
 }
@@ -482,7 +525,6 @@ function blockerText(blocker) {
     case 'option-duplicate': return 'Cannot auto-save:' + detail;
     case 'option-long': return 'Cannot auto-save:' + detail;
     case 'question-short': return 'Cannot auto-save:' + detail;
-    case 'needs-media': return 'Cannot auto-save:' + detail;
     case 'meta-missing': return 'Cannot auto-save:' + detail;
     case 'not-confirmed': return 'Cannot auto-save:' + detail;
     case 'file-attached': return 'Cannot auto-save:' + detail;
@@ -510,7 +552,6 @@ if (typeof module !== 'undefined' && module.exports) {
     KEY_WORD,
     INLINE_PAIR,
     LOOSE,
-    NEEDS_PICTURE,
     SAVE_SUCCESS,
     parseHeader,
     pickSubjectIndex,
@@ -531,8 +572,11 @@ if (typeof module !== 'undefined' && module.exports) {
     appendSavedLog,
     maxSavedId,
     savedForBatch,
+    unverifiedSaves,
+    trackUnverified,
     savedInactiveSuffix,
     formatSavedRange,
+    recentRowsFromTable,
     recentDuplicate,
     savedLogHasNum,
     formMatchesQuestion,

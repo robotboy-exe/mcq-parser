@@ -46,11 +46,10 @@ It returns a list of reasons, and an empty list means safe. The loop stops on th
 7. `q.flags` is empty. `q.e` and `q.f` are empty, and the parser pushes `'E/F options present'`.
 8. Detected option letters are **exactly** `ABCD`.
 9. Options A to D are non-empty, case- and whitespace-normalised distinct, and each is ≤ 500 **bytes**. The question text is ≥ 10 characters.
-10. The stem or options match `/diagram|figure|graph|picture|chart|table|passage|read the following|use the following|questions? \d+ (to|-)/i`. This is the "needs a picture or passage" block.
-11. Subject, category and year are set, and the confirmation box is ticked.
-12. No file is chosen in `question_image` or `answer_video`.
-13. No `ocrSaving` marker, no save in progress, the Stop flag is off, the run cap is not reached, and this tab holds the lock.
-14. The page is visible (`!document.hidden`). On hide, finish the current save and pause. Never start a save while hidden.
+10. Subject, category and year are set, and the confirmation box is ticked.
+11. No file is chosen in `question_image` or `answer_video`. Diagram/table words do not block; the uploader decides whether a batch needs images (D-38).
+12. No `ocrSaving` marker, no save in progress, the Stop flag is off, the run cap is not reached, and this tab holds the lock.
+13. The page is visible (`!document.hidden`). On hide, finish the current save and pause. Never start a save while hidden.
 
 ## 6. One save function: `saveCurrentQuestion({auto})`
 
@@ -93,14 +92,12 @@ The manual submit handler is rewritten to call this same function. It returns `'
 - option order exactly `ABCD`;
 - duplicate options;
 - the byte-length check;
-- the diagram and passage regex;
 - `parseKey` conflict output.
 
 **Dry-run scenarios:**
 
 - clean batch;
 - a gap in the middle;
-- a stem containing "diagram";
 - one E key letter in the middle (the loop stops there, resumes after a manual save);
 - a legacy queue with no `batchId`.
 
@@ -116,7 +113,7 @@ The manual submit handler is rewritten to call this same function. It returns `'
 Nothing in this build requires a server change. The two safeguards the server would have provided are done in the browser instead:
 
 - **Inactive is enforced and checked in the browser.** The tool removes the "active" tick before saving. After each save it opens the question's edit page and checks that it is inactive. If any question comes back active, the run stops and shows a red warning.
-- **Repeats are blocked in the browser.** Before each auto-save, the tool skips the question if its number is already in this batch's saved log. It also skips the question if the newest 20 questions on the admin page show the same subject and the same first 140 characters of text.
+- **Repeats are blocked in the browser.** Before each auto-save, the tool skips the question if its number is already in this batch's saved log. It also skips the question if the newest 20 questions on the admin page show the same normalized subject, exam year, category and question text. A long question reaches the table as its first 139 characters plus `…`; a truncated row matches by prefix once it is at least 40 characters, and an untruncated row matches only the full text. A row whose year or category cannot be read falls back to subject and text.
 
 Known limit: this catches repeats from the same run or the last 20 saves. It does not catch a repeat of a question saved long ago. The batch confirmation screen should say so.
 

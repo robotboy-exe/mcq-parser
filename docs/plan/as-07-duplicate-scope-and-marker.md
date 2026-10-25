@@ -143,3 +143,53 @@ Build: one line / no % / body parses
 Docs: ...
 Open questions:
 ```
+
+## Handoff note (2026-10-25, done)
+
+```text
+Status: done.
+Result: runner 25 PASS / 0 FAIL / 0 PENDING; unit 49 PASS / 0 FAIL.
+Build: one line / no % / body parses.
+Live gate: live row #1754 was 140 characters: 139 + '…'
+  (Accounting / JAMB / UTME / 2024).
+
+Fix 1 live checks (real admin_questions.php):
+1. Picked #1754, the only truncated row on page 1; 139 + '…'.
+2. Start with a repeat of #1754 at 2024 / JAMB / UTME stopped at #1 with
+   "Cannot auto-save: This looks like question #1754 (2024, JAMB / UTME) already
+   in the recent list." 0 POST, queue index unchanged, no saved log, no marker,
+   no lock. Dry run showed the same message.
+3. Same question at 2022 / JAMB / UTME dry-ran
+   "Would save #1: Accounting / JAMB / UTME / 2022, A to D, answer A."
+4. A different 179-character question at 2024 / JAMB / UTME dry-ran
+   "Would save #1: Accounting / JAMB / UTME / 2024, A to D, answer A."
+
+Fix 2 live check (real admin_questions.php):
+- With ocrSaving present, manual submit made 0 POST and showed
+  "An earlier save is unconfirmed. Check the list, then tap 'I checked. Clear
+  warning.'"; marker kept.
+- After Clear warning, the same manual form posted once. Exam year was set to
+  1800 on purpose, so the server rejected it:
+  "NOT saved: Please enter a valid exam year between 1900 and 2100."; marker
+  cleared; no row created (row count stayed 20).
+- The invalid year proves the POST proceeded without inserting a live question.
+
+Unverified list/stop (mock evidence, not live): 3-question unverified run saved
+  #900/#901, stopped after the second, list read "Question 1 (#900): active
+  status not verified; Question 2 (#901): active status not verified", lock
+  released, 2 POSTs.
+Reset/mixed (mock evidence, not live): 6-question mix saved null, verified,
+  null, null and stopped after #4; Start again saved #5 null and #6 verified and
+  finished. List named #900/#902/#903/#904, not verified #901/#905.
+Media (mock evidence, not live): "diagram"/"table" question saved #900 with no
+  blocker; an attached file stopped with "A file is already attached to this
+  question." and no POST.
+Files: src/parser/parser.js, src/ui/ui.js, src/bookmarklet.js (rebuilt),
+  tests/unit.js, docs/INVARIANTS.md, docs/DECISIONS.md, docs/SPEC.md,
+  docs/Auto-Save-Spec.md, docs/EDGE_CASES.md, docs/AGENTS.md, docs/Active.md,
+  docs/plan/README.md.
+Docs: Phase 1 (INV-69, D-34, Auto-Save-Spec §9, SPEC §7.5), AS-07 extra
+  (Auto-Save-Spec §5/§8, SPEC §7.3, INV-62, AGENTS gate row, D-38), Fix 2 in
+  SPEC §7.4, INV-66 unverified list/stop. Active.md §3 retired.
+Open questions: none for AS-07. AS-08 may start.
+```

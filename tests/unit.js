@@ -111,6 +111,28 @@ test('maxSavedId and savedForBatch filter the log', () => {
   eq(parser.savedForBatch(log, null), []);
 });
 
+test('unverifiedSaves selects only null or missing inactive results', () => {
+  eq(parser.unverifiedSaves([]), []);
+  eq(parser.unverifiedSaves(undefined), []);
+  const one = { num: 1, id: 10, inactive: null };
+  eq(parser.unverifiedSaves([one]), [one]);
+  const missing = { num: 2, id: 11 };
+  eq(parser.unverifiedSaves([missing]), [missing]);
+  const verified = [{ num: 3, id: 12, inactive: true }, { num: 4, id: 13, inactive: false }];
+  eq(parser.unverifiedSaves(verified), []);
+  eq(parser.unverifiedSaves([verified[0], one, verified[1], missing]), [one, missing]);
+});
+
+test('trackUnverified stops after two consecutive unverified saves', () => {
+  const first = parser.trackUnverified(0, null);
+  eq(first, { streak: 1, stop: false });
+  eq(parser.trackUnverified(first.streak, null), { streak: 2, stop: true });
+  eq(parser.trackUnverified(1, true), { streak: 0, stop: false });
+  eq(parser.trackUnverified(1, false), { streak: 0, stop: false });
+  eq(parser.trackUnverified(0, null), { streak: 1, stop: false });
+  eq(parser.trackUnverified(undefined, null), { streak: 1, stop: false });
+});
+
 test('formatSavedRange handles contiguous, sparse, single, and empty', () => {
   const range = n => [{ id: n, inactive: true }];
   eq(
@@ -139,20 +161,74 @@ test('formatSavedRange reports active and unverified saves honestly', () => {
   );
 });
 
-test('recentDuplicate matches normalized subject and the 140-char prefix', () => {
-  const rows = [
-    { id: 5, subject: 'CRS', question: 'Who was the father of faith? …' },
-    { id: 6, subject: 'Government', question: 'Who was the father of faith? …' }
-  ];
-  eq(parser.recentDuplicate(rows, 'crs', 'Who was the father of faith?'), rows[0]);
-  eq(parser.recentDuplicate(rows, 'crs', 'A different question entirely'), null);
-  eq(parser.recentDuplicate(rows, 'Government', 'Who was the father of faith?'), rows[1]);
-  const long = 'a'.repeat(140);
-  eq(
-    parser.recentDuplicate([{ id: 7, subject: 'CRS', question: long + '…' }], 'CRS', long + ' more text'),
-    { id: 7, subject: 'CRS', question: long + '…' }
-  );
-  eq(parser.recentDuplicate([], 'CRS', 'Who was the father of faith?'), null);
+test('recentDuplicate flags a matching subject, category, year and 139-character prefix', () => {
+  const long = 'a'.repeat(139);
+  const row = { id: 7, subject: 'CRS', category: 'JAMB / UTME', year: '2021', question: long + '…' };
+  eq(parser.recentDuplicate([row], 'CRS', long + ' more text', 'JAMB / UTME', '2021'), row);
+});
+
+test('recentDuplicate ignores a truncated row for a different question', () => {
+  const row = { id: 8, subject: 'CRS', category: 'JAMB / UTME', year: '2021', question: 'b'.repeat(139) + '…' };
+  eq(parser.recentDuplicate([row], 'CRS', 'a'.repeat(139) + ' more text', 'JAMB / UTME', '2021'), null);
+});
+
+test('recentDuplicate matches an untruncated row only on the full question', () => {
+  const row = { id: 9, subject: 'CRS', category: 'JAMB / UTME', year: '2021', question: 'Who was the father of faith?' };
+  eq(parser.recentDuplicate([row], 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), row);
+  eq(parser.recentDuplicate([row], 'CRS', 'Who was the father of faith', 'JAMB / UTME', '2021'), null);
+});
+
+test('recentDuplicate normalizes double spaces and line breaks in the row', () => {
+  const row = { id: 10, subject: 'CRS', category: 'JAMB / UTME', year: '2021', question: 'Who  was the\nfather of faith?' };
+  eq(parser.recentDuplicate([row], 'crs', 'Who was the father of faith?', 'jamb / utme', 2021), row);
+});
+
+test('recentDuplicate strips a leading [Subject] prefix from the row', () => {
+  const row = { id: 11, subject: 'CRS', category: 'JAMB / UTME', year: '2021', question: '[CRS] Who was the father of faith?' };
+  eq(parser.recentDuplicate([row], 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), row);
+});
+
+test('recentDuplicate ignores the same text under a different subject', () => {
+  const row = { id: 12, subject: 'Government', category: 'JAMB / UTME', year: '2021', question: 'Who was the father of faith?' };
+  eq(parser.recentDuplicate([row], 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), null);
+});
+
+test('recentDuplicate ignores the same text under a different year', () => {
+  const row = { id: 13, subject: 'CRS', category: 'JAMB / UTME', year: '2020', question: 'Who was the father of faith?' };
+  eq(parser.recentDuplicate([row], 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), null);
+});
+
+test('recentDuplicate ignores the same text under a different category', () => {
+  const row = { id: 14, subject: 'CRS', category: 'POST UTME', year: '2021', question: 'Who was the father of faith?' };
+  eq(parser.recentDuplicate([row], 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), null);
+});
+
+test('recentDuplicate treats an empty row year or category as unknown', () => {
+  const noCategory = { id: 15, subject: 'CRS', category: '', year: '2021', question: 'Who was the father of faith?' };
+  eq(parser.recentDuplicate([noCategory], 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), noCategory);
+  const noYear = { id: 16, subject: 'CRS', category: 'JAMB / UTME', year: '', question: 'Who was the father of faith?' };
+  eq(parser.recentDuplicate([noYear], 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), noYear);
+});
+
+test('recentRowsFromTable maps an extra column before Question by header', () => {
+  const headers = ['ID', 'Extra', 'Question', 'Subject', 'Exam Category', 'Exam Year'];
+  const rows = [['5', 'x', 'Who was the father of faith?', 'CRS', 'JAMB / UTME', '2021']];
+  eq(parser.recentRowsFromTable(headers, rows), [{
+    id: '5', question: 'Who was the father of faith?', subject: 'CRS', category: 'JAMB / UTME', year: '2021'
+  }]);
+});
+
+test('recentRowsFromTable leaves a missing Exam Year empty and falls back', () => {
+  const headers = ['ID', 'Question', 'Subject', 'Exam Category'];
+  const rows = [['5', 'Who was the father of faith?', 'CRS', 'JAMB / UTME']];
+  const parsed = parser.recentRowsFromTable(headers, rows);
+  eq(parsed[0].year, '');
+  eq(parser.recentDuplicate(parsed, 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), parsed[0]);
+});
+
+test('recentDuplicate returns null without rows or question text', () => {
+  eq(parser.recentDuplicate([], 'CRS', 'Who was the father of faith?', 'JAMB / UTME', '2021'), null);
+  eq(parser.recentDuplicate([{ id: 1, subject: 'CRS', question: 'x' }], 'CRS', '', 'JAMB / UTME', '2021'), null);
 });
 
 
@@ -209,13 +285,18 @@ test('autosaveBlockers reports a queue gap', () => {
   eq(first.code, 'queue-number');
 });
 
-test('autosaveBlockers reports a media question', () => {
+test('autosaveBlockers ignores diagram and table words', () => {
   const s = cleanState();
-  s.queue.items = [cleanQuestion(1, 'Study the diagram below and answer.')];
+  s.queue.items = [cleanQuestion(1, 'Study the diagram in the table below and answer.')];
   s.key = { 1: 'A' };
   s.form = { question: s.queue.items[0].question, options: ['Isaac', 'Jacob', 'Moses', 'David'] };
-  const first = parser.autosaveBlockers(s)[0];
-  eq(first.code, 'needs-media');
+  eq(parser.autosaveBlockers(s), []);
+});
+
+test('autosaveBlockers still reports an attached file', () => {
+  const s = cleanState();
+  s.hasImage = true;
+  eq(parser.autosaveBlockers(s)[0].code, 'file-attached');
 });
 
 test('autosaveBlockers reports an E key on the current question', () => {
@@ -245,13 +326,20 @@ test('autosaveBlockers keeps key coverage ahead of a hidden tab', () => {
   eq(first.code, 'key-coverage');
 });
 
-test('autosaveBlockers stops on saved-log and recent duplicates', () => {
+test('autosaveBlockers stops on saved-log and scoped recent duplicates', () => {
   const s = cleanState();
   s.savedLog = [{ num: 1, id: 9, batchId: 'b1' }];
   eq(parser.autosaveBlockers(s)[0].code, 'saved-log');
+  const longQ = 'Who was the father of faith? ' + 'x'.repeat(120);
   const t = cleanState();
-  t.recentRows = [{ id: 77, subject: 'CRS', question: 'Who was the father of faith? …' }];
-  eq(parser.autosaveBlockers(t)[0].code, 'duplicate');
+  t.queue.items[0].question = longQ;
+  t.form = { question: longQ, options: ['Isaac', 'Jacob', 'Moses', 'David'] };
+  t.recentRows = [{ id: 77, subject: 'CRS', category: 'UTME', year: '2021', question: longQ.slice(0, 139) + '…' }];
+  const blocker = parser.autosaveBlockers(t)[0];
+  eq(blocker.code, 'duplicate');
+  const text = parser.blockerText(blocker);
+  assert(text.indexOf('2021') > -1, 'missing year: ' + text);
+  assert(text.indexOf('UTME') > -1, 'missing category: ' + text);
 });
 
 test('autosaveBlockers stops when the form was edited', () => {
@@ -271,7 +359,7 @@ test('formMatchesQuestion and savedLogHasNum are exact', () => {
 test('blockerText maps every known code to a plain sentence', () => {
   const codes = ['batch-missing', 'batch-mismatch', 'queue-number', 'key-coverage', 'key-conflict',
     'key-letter', 'no-answer', 'answer-mismatch', 'ef-present', 'flags', 'options-not-abcd',
-    'option-empty', 'option-duplicate', 'option-long', 'question-short', 'needs-media',
+    'option-empty', 'option-duplicate', 'option-long', 'question-short',
     'meta-missing', 'not-confirmed', 'file-attached', 'saving-marker', 'save-in-progress',
     'stopped', 'run-cap', 'lock', 'hidden', 'saved-log', 'duplicate', 'form-edited'];
   for (const code of codes) {

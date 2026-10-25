@@ -18,21 +18,16 @@ check in this workspace.
 ## 2. Order of work
 1. **Phase 1:** Fix 1, the duplicate check with year and category scope.
 2. **Phase 2:** Active Mode (Part A).
-3. **Phase 3:** Fix 2, then Fixes 3 to 7, the doc corrections and the nit.
+3. **Phase 3:** Fixes 3 to 7, the doc corrections and the nit.
 
-**Until Fix 1 and Fix 2 are both done, use draft mode only.** Active mode puts a duplicate or a wrong state in front of students immediately.
+**Fix 1 and Fix 2 are done (AS-07, 2026-10-25).** Active mode is AS-08; it still needs its own live test before it is used on students.
 
-## 3. Manual duplicate check (only when needed, until Phase 1 ships)
-Do this only if the batch's paper, subject and year may have been loaded before. Skip it for new material.
-1. Open Recently Added Questions on `admin_questions.php` and filter by the batch's Subject, Exam Year and Exam Category.
-2. Compare the opening words of the first few questions with the Question column.
-3. If they're there, don't load the batch.
+## 3. Manual duplicate check — retired (2026-10-25)
+Fix 1 passed its tests and its live check. Do not do a manual duplicate check before loading a batch.
 
 No check is needed after a batch. If the tool shows "Unknown. It may have saved", look at the list before doing anything else.
 
-**Retire this section** when Fix 1 passes its tests and its live check.
-
-**Limit that remains after Fix 1:** the automatic check only sees the 20 newest rows on the page. It can't catch a re-import of something loaded a while ago, so know what you have already loaded.
+**Limit that remains:** the automatic check only sees the 20 newest rows on the page. It can't catch a re-import of something loaded a while ago, so know what you have already loaded.
 
 ---
 
@@ -267,6 +262,7 @@ Every code needs a `blockerText` entry and a place in the all-codes unit test. E
 
 # F. Done when
 - All unit tests above pass, along with the existing runner and unit tests.
-- The Fix 1 live check and the Active Mode live test pass.
+- The Fix 1 and Fix 2 live checks pass (AS-07, 2026-10-25).
+- The Active Mode live test passes (AS-08).
 - The build check passes: one line, no `%`, body parses.
 - The docs in section D are updated.
