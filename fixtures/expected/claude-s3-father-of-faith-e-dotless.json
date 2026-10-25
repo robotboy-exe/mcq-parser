@@ -20,7 +20,9 @@
     "d": "David",
     "e": "Abraham",
     "f": "",
-    "flags": []
+    "flags": [
+      "E/F options present"
+    ]
   },
   "must_not": [
     "D is left blank",
@@ -28,6 +30,7 @@
     "The UI reports 'ticked Option E'"
   ],
   "notes": [
+    "Auto-Save-Spec §5.7: an E/F option now adds the advisory flag \"E/F options present\"; the earlier migration-doc \"no flags\" note predates that contract.",
     "The source reports no flags for this sample.",
     "The sample has no printed question number. A null-num parse would add 'question number missing'; the source's 'no flags' result therefore assumes a numbered parse. The num used in the source test is not documented.",
     "With a key of E, the documented form behavior is: D becomes 'Abraham' and D is ticked. With a key of A-D, E is dropped. With no key, 'E. Abraham' is appended to D. Those are fillForm behaviors, not parseQuestion output."

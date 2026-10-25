@@ -31,11 +31,15 @@ features.
 4. **Do not change `localStorage` key names or shapes.** `ocrQueue`,
    `ocrMeta`, and `ansKey` are shared with the live helper; `ocrSubmitted`
    remains a shared key name but the bookmarklet no longer touches it
-   (INV-36, INV-55; D-22).
+   (INV-36, INV-55; D-22). Auto-Save adds `batchId`, `ansKeyBatch`,
+   `ansKeyConflicts`, `ocrSaving`, `ocrSavedLog`, and `autoLock`; additions are
+   allowed, existing shapes must stay compatible (D-30, D-32, D-36).
 5. **Edit modules, not the build output.** `src/bookmarklet.js` is generated.
    Change `src/parser/parser.js` or `src/ui/ui.js`, then rebuild.
-6. **The bookmarklet is a single line with no `//` comments.** A `//` comment
-   truncates the `javascript:` URL (INV-05).
+6. **The bookmarklet is a single line with no comments and no `%`.** Full-line
+   `//` comments are allowed in the modules and stripped by `build.js`; inline
+   `//` comments remain forbidden (INV-05). The build fails if the output
+   contains `%`, because a bookmark manager may decode it.
 7. **Preserve behavior even when it looks wrong.** E/F→D, the +5 numbering
    guard, flags being advisory, and the absent post-processor are deliberate.
    Fix only with a failing fixture and a documented decision.
@@ -52,6 +56,10 @@ features.
 | `fillForm` / `tick` | They must agree on the E/F→D mapping and on ticking nothing when E/F text is absent. `tick()` computes radio index 3 for E/F; radio values 4/5 do not exist (INV-27, INV-28, INV-30). |
 | Save detector | Hard-coded to the exact success text. The archived PHP confirms the PRG flash flow, so the detector matches the server contract. Do not change one side without the other (INV-49; qwen-2 H07/H09). |
 | Header inference | First `20\d\d` in the first 3 lines can be a copyright year; fuzzy subject matching can pick the wrong option for names that share words. Both are known risks (EC-61, EC-43; INV-44). EC-44 is confirmed by the PHP. |
+| Auto-Save gate | `autosaveBlockers` is the safety wall. Do not weaken or reorder it to make a batch run; add a documented decision and a test first. It must block gaps, inexact key coverage, conflicts, E/F, flags, bad options, media, missing meta, markers, cap, lock, hidden, saved-log, recent duplicates, and an edited form (D-33, D-34; SPEC §7.3). |
+| Save marker/classification | `ocrSaving` is cleared only on definite Saved/Rejected. Ambiguous keeps it, disables Start, and never retries. Saved requires a redirect, no `.admin-error`, the success regex, and an ID above every logged ID (INV-64, INV-65). |
+| Auto-Save lock/loop | Use the recursive `setTimeout` heartbeat and `autoLock`; never use `setInterval` as the engine, `MutationObserver` for success, or `button.click()`/`requestSubmit()` to advance. A hidden tab finishes the current save and pauses (INV-67). |
+| Dry run | It must copy the queue, use current metadata, POST nothing, and write nothing to `ocrQueue`, `ocrSaving`, `ocrSavedLog`, or `autoLock` (INV-68). |
 
 ## What to preserve
 
@@ -67,10 +75,11 @@ features.
   E/F is appended and nothing is ticked (INV-27, INV-28).
 - No radio is pre-ticked without a key; always clear the form default (INV-29).
 - `FIXES` applies to the question part only, before parsing (INV-38).
-- Reset Queue uses `{ items: [], i: 0 }` and does not touch the key (INV-34,
-  INV-41; D-26).
+- Reset Queue uses `{ items: [], i: 0 }` and also clears `ansKey`,
+  `ansKeyBatch`, `ansKeyConflicts`, and `batchId` (INV-34, INV-41; D-30).
 - The key is read from `ansKey` at boot and survives reloads (D-25).
-- `is_active` is forced on during fill and again before submit (D-24).
+- Manual saves keep `is_active` ticked during fill and submit; auto saves remove
+  it from the form, set `autosave=1`, and verify the edit page (D-31, INV-50).
 - The success/error container `#ans_res` is inserted after the submit button
   (INV-03).
 
@@ -81,7 +90,14 @@ features.
 - Adding a post-processor without correct escaping and tests against
   `Vitamin C.` and `Vitamin B-12` (INV-22).
 - Changing the key lifecycle (including Reset-vs-key) without an explicit
-  product decision; it is still open (claude §8 issue 4).
+  product decision; D-30 now fixes Reset to clear the key and batch ids.
+- Clearing `ocrSaving` on an ambiguous result, retrying an ambiguous save,
+  writing `ocrSavedLog` before a verified save, or silently skipping a duplicate.
+- Raising the auto-save run cap beyond 10 or removing it without an explicit
+  decision. It was raised from 3 after the 2026-10-25 live sign-off. Two-tab
+  lock evidence is limited on one phone browser because hide-pause releases the
+  lock when tab 1 becomes hidden; use the unit/mock evidence for the lock
+  reason.
 - Treating this bookmarklet as part of the PHP Bulk Import plan; no link
   between them was decided (claude §8 issue 10).
 - Reading, writing, deleting, or relying on `ocrSubmitted`; the bookmarklet is
@@ -100,10 +116,12 @@ Commands:
 
 ```sh
 node tests/runner.js
+node tests/unit.js
 ```
 
-The harness is parser-only; it does not execute DOM, storage, `fillForm`,
-`tick`, or save behavior.
+The fixture harness is parser-only; it does not execute DOM, storage,
+`fillForm`, `tick`, or save behavior. `tests/unit.js` covers the pure auto-save
+helpers and does not touch the DOM either.
 
 The mandatory regression set is the three documented cases (qwen-2 H04):
 

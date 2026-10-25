@@ -1,3 +1,4 @@
+// Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
   [/persidential/gi, 'presidential'],
@@ -158,6 +159,7 @@ function parseQuestion({ num, text }) {
     if (q[l] && q[l].length > 500) q.flags.push(`option ${l.toUpperCase()} over 500 characters`);
   }
   if (Object.values(count).some(c => c > 1)) q.flags.push('a letter appears twice (merged questions?)');
+  if (q.e || q.f) q.flags.push('E/F options present');
   return q;
 }
 
@@ -220,13 +222,276 @@ function splitSections(raw) {
   return { questions: raw, answers: '', how: 'none', boundary: '' };
 }
 
-function parseKey(t) {
-  const k = {};
+function keyPairs(t) {
+  const pairs = [];
   const r = /(\d{1,3})\s*[.\-:)]*\s*\(?([A-Fa-f])\)?(?![A-Za-z])/g;
   let m;
-  while ((m = r.exec(t))) k[+m[1]] = m[2].toUpperCase();
-  return k;
+  while ((m = r.exec(t))) pairs.push({ num: +m[1], letter: m[2].toUpperCase() });
+  return pairs;
 }
+
+function parseKeyDetailed(t) {
+  const key = {};
+  const seen = {};
+  const conflicts = [];
+  for (const { num, letter } of keyPairs(t)) {
+    if (!seen[num]) seen[num] = [];
+    if (!seen[num].includes(letter)) seen[num].push(letter);
+    key[num] = letter;
+  }
+  Object.keys(seen).sort((a, b) => a - b).forEach(num => {
+    if (seen[num].length > 1) conflicts.push({ num: +num, letters: seen[num] });
+  });
+  return { key, conflicts };
+}
+
+function parseKey(t) {
+  return parseKeyDetailed(t).key;
+}
+
+function newBatchId(cryptoObj) {
+  const c = cryptoObj || (typeof crypto !== 'undefined' ? crypto : null);
+  if (c && typeof c.randomUUID === 'function') {
+    try {
+      return c.randomUUID();
+    } catch (e) {}
+  }
+  let r = '';
+  while (r.length < 12) r += Math.random().toString(36).slice(2);
+  return 'b' + Date.now().toString(36) + '-' + r.slice(0, 12);
+}
+
+function byteLength(s) {
+  const text = String(s == null ? '' : s);
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(text).length;
+  return unescape(encodeURIComponent(text)).length;
+}
+
+function normalizeAnswer(s) {
+  return String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function optionLetters(q) {
+  return ['a', 'b', 'c', 'd', 'e', 'f'].filter(l => (q[l] || '').trim()).map(l => l.toUpperCase());
+}
+
+function isConsecutiveQueue(items) {
+  if (!Array.isArray(items) || !items.length) return false;
+  let prev = null;
+  for (const item of items) {
+    const num = item && item.num;
+    if (!Number.isInteger(num)) return false;
+    if (prev !== null && num !== prev + 1) return false;
+    prev = num;
+  }
+  return true;
+}
+
+function keyCoversQueue(key, items) {
+  if (!key || !Array.isArray(items) || !items.length) return false;
+  const nums = Object.keys(key);
+  if (nums.length !== items.length) return false;
+  const wanted = {};
+  for (const item of items) {
+    if (!item || !Number.isInteger(item.num)) return false;
+    wanted[item.num] = true;
+  }
+  for (const n of nums) {
+    if (!wanted[+n]) return false;
+    if (!/^[A-F]$/.test(key[n])) return false;
+  }
+  return true;
+}
+
+function appendSavedLog(log, entry, cap) {
+  const max = Number.isInteger(cap) && cap > 0 ? cap : 200;
+  const list = Array.isArray(log) ? log : [];
+  return list.concat([entry]).slice(-max);
+}
+
+function maxSavedId(log) {
+  let max = 0;
+  for (const entry of Array.isArray(log) ? log : []) {
+    const id = Number(entry && entry.id);
+    if (Number.isFinite(id) && id > max) max = id;
+  }
+  return max;
+}
+
+function savedForBatch(log, batchId) {
+  if (!batchId) return [];
+  return (Array.isArray(log) ? log : []).filter(entry => entry && entry.batchId === batchId);
+}
+
+function formatSavedRange(entries) {
+  const ids = (Array.isArray(entries) ? entries : [])
+    .map(entry => Number(entry && entry.id))
+    .filter(id => Number.isFinite(id) && id > 0);
+  const unique = Array.from(new Set(ids)).sort((a, b) => a - b);
+  if (!unique.length) return 'Saved this batch: none, inactive';
+  let gap = false;
+  for (let i = 1; i < unique.length; i++) {
+    if (unique[i] !== unique[i - 1] + 1) gap = true;
+  }
+  const range = unique.length === 1 || gap
+    ? unique.map(id => '#' + id).join(', ')
+    : '#' + unique[0] + ' to #' + unique[unique.length - 1];
+  return 'Saved this batch: ' + range + ', inactive';
+}
+
+function recentDuplicate(rows, subject, questionText) {
+  const wantSubject = normalizeAnswer(subject);
+  const wantText = normalizeAnswer(questionText).slice(0, 140);
+  if (!wantText) return null;
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!row) continue;
+    if (normalizeAnswer(row.subject) !== wantSubject) continue;
+    const rowText = normalizeAnswer(row.question).replace(/(?:…|\.\.\.)$/, '').trim().slice(0, 140);
+    if (rowText && rowText === wantText) return row;
+  }
+  return null;
+}
+
+const NEEDS_PICTURE = /diagram|figure|graph|picture|chart|table|passage|read the following|use the following|questions? \d+ (to|-)/i;
+const SAVE_SUCCESS = /Question saved successfully \(Question ID: (\d+)\)/;
+
+function savedLogHasNum(log, batchId, num) {
+  return savedForBatch(log, batchId).some(entry => entry && entry.num === num);
+}
+
+function formMatchesQuestion(form, q) {
+  if (!form || !q) return false;
+  if (normalizeAnswer(form.question) !== normalizeAnswer(q.question)) return false;
+  const options = Array.isArray(form.options) ? form.options : [];
+  return ['a', 'b', 'c', 'd'].every((letter, i) => normalizeAnswer(options[i]) === normalizeAnswer(q[letter]));
+}
+
+function classifySaveResponse(reply) {
+  const r = reply || {};
+  const text = String(r.text == null ? '' : r.text);
+  if (text.indexOf('Administrator Login') > -1) {
+    return { kind: 'rejected', reason: 'expired', message: 'you were logged out. Reload the page and log in.' };
+  }
+  if (r.errorText && !r.redirected) {
+    return { kind: 'rejected', reason: 'validation', message: String(r.errorText).trim() };
+  }
+  if (r.redirected && !r.errorText) {
+    const m = text.match(SAVE_SUCCESS);
+    if (m) {
+      const id = Number(m[1]);
+      if (id > Number(r.lastId || 0)) return { kind: 'saved', id };
+    }
+  }
+  return { kind: 'ambiguous', message: 'Unknown. It may have saved. Check the list.' };
+}
+
+function autosaveBlockers(state) {
+  const s = state || {};
+  const queue = s.queue || {};
+  const items = Array.isArray(queue.items) ? queue.items : [];
+  const add = (code, detail) => out.push({ code, detail: detail || '' });
+  const out = [];
+  const q = items[queue.i];
+
+  if (!items.length) {
+    add('queue-number', 'The queue is empty.');
+    return out;
+  }
+  if (!q) {
+    add('queue-number', 'All questions in this batch are done.');
+    return out;
+  }
+  if (!queue.batchId) add('batch-missing', 'This queue has no batch identity. Paste the questions again.');
+  else if (!s.keyBatch || s.keyBatch !== queue.batchId) add('batch-mismatch', 'The saved key belongs to a different batch. Paste the matching key.');
+  if (!isConsecutiveQueue(items)) add('queue-number', 'The question numbers are not consecutive.');
+  if (!keyCoversQueue(s.key, items)) add('key-coverage', 'The key does not cover exactly these question numbers with A to F answers.');
+  if (Array.isArray(s.keyConflicts) && s.keyConflicts.length) {
+    const c = s.keyConflicts[0];
+    add('key-conflict', 'The key gives more than one answer for question ' + c.num + ' (' + (c.letters || []).join(', ') + ').');
+  }
+  const keyLetter = s.key && s.key[q.num];
+  if (keyLetter === 'E' || keyLetter === 'F') add('key-letter', "Question " + q.num + "'s key is " + keyLetter + '; the form has only four options.');
+  if (!s.radioLetter) add('no-answer', 'No answer is ticked.');
+  else if (s.radioLetter !== keyLetter) add('answer-mismatch', 'The ticked answer does not match the key.');
+  if (q.e || q.f) add('ef-present', 'This question has an E/F option, which the form cannot hold.');
+  const otherFlags = (q.flags || []).filter(flag => flag !== 'E/F options present');
+  if (otherFlags.length) add('flags', 'Check this one first: ' + otherFlags.join(', ') + '.');
+  const letters = optionLetters(q);
+  if (letters.some(letter => 'ABCD'.indexOf(letter) < 0)) add('options-not-abcd', 'The options are not exactly A, B, C and D.');
+  for (const letter of 'abcd') {
+    if (!(q[letter] || '').trim()) add('option-empty', 'Option ' + letter.toUpperCase() + ' is empty.');
+  }
+  const seen = {};
+  for (const letter of 'abcd') {
+    const text = normalizeAnswer(q[letter]);
+    if (!text) continue;
+    if (seen[text]) add('option-duplicate', 'Options ' + seen[text] + ' and ' + letter.toUpperCase() + ' have the same text.');
+    else seen[text] = letter.toUpperCase();
+  }
+  for (const letter of 'abcd') {
+    if (byteLength(q[letter]) > 500) add('option-long', 'Option ' + letter.toUpperCase() + ' is over 500 characters.');
+  }
+  if (String(q.question || '').trim().length < 10) add('question-short', 'The question text is missing or very short.');
+  const media = [q.question, q.a, q.b, q.c, q.d].some(text => NEEDS_PICTURE.test(String(text || '')));
+  if (media) add('needs-media', 'This question needs a picture or passage; add it by hand.');
+  const meta = s.meta || {};
+  if (meta.subject == null || meta.subject === '' || meta.category == null || meta.category === '' || meta.year == null || meta.year === '') {
+    add('meta-missing', 'Subject, category or year is missing.');
+  }
+  if (!s.confirmed) add('not-confirmed', 'Tick the batch confirmation before starting.');
+  if (s.hasImage || s.hasVideo) add('file-attached', 'A file is already attached to this question.');
+  if (s.savingMarker) add('saving-marker', 'An earlier save is unconfirmed. Check the list before starting.');
+  if (s.saveInProgress) add('save-in-progress', 'A save is already running.');
+  if (s.stopRequested) add('stopped', 'Auto-save is stopping.');
+  if (Number.isInteger(s.runCap) && Number(s.runCount || 0) >= s.runCap) add('run-cap', 'This run reached its limit of ' + s.runCap + ' saves.');
+  if (s.lock && s.lock.tabId !== s.tabId) {
+    const age = Number(s.now == null ? Date.now() : s.now) - Number(s.lock.at || 0);
+    if (!(age >= 15000)) add('lock', 'Another tab is auto-saving.');
+  }
+  if (s.visible === false) add('hidden', 'This tab is hidden; auto-save is paused.');
+  if (savedLogHasNum(s.savedLog, queue.batchId, q.num)) add('saved-log', 'Question ' + q.num + ' was already saved in this batch.');
+  const dup = recentDuplicate(s.recentRows, meta.subjectText || meta.subject, q.question);
+  if (dup) add('duplicate', 'This looks like question #' + (dup.id == null ? '?' : dup.id) + ' already in the recent list.');
+  if (s.form && !formMatchesQuestion(s.form, q)) add('form-edited', 'The form no longer matches the loaded question. Save it by hand or reload the queue item.');
+  return out;
+}
+
+function blockerText(blocker) {
+  const b = blocker || {};
+  const detail = b.detail ? ' ' + b.detail : '';
+  switch (b.code) {
+    case 'batch-missing': return 'Cannot auto-save:' + detail;
+    case 'batch-mismatch': return 'Cannot auto-save:' + detail;
+    case 'queue-number': return 'Cannot auto-save:' + detail;
+    case 'key-coverage': return 'Cannot auto-save:' + detail;
+    case 'key-conflict': return 'Cannot auto-save:' + detail;
+    case 'key-letter': return 'Cannot auto-save:' + detail;
+    case 'no-answer': return 'Cannot auto-save:' + detail;
+    case 'answer-mismatch': return 'Cannot auto-save:' + detail;
+    case 'ef-present': return 'Cannot auto-save:' + detail;
+    case 'flags': return 'Cannot auto-save:' + detail;
+    case 'options-not-abcd': return 'Cannot auto-save:' + detail;
+    case 'option-empty': return 'Cannot auto-save:' + detail;
+    case 'option-duplicate': return 'Cannot auto-save:' + detail;
+    case 'option-long': return 'Cannot auto-save:' + detail;
+    case 'question-short': return 'Cannot auto-save:' + detail;
+    case 'needs-media': return 'Cannot auto-save:' + detail;
+    case 'meta-missing': return 'Cannot auto-save:' + detail;
+    case 'not-confirmed': return 'Cannot auto-save:' + detail;
+    case 'file-attached': return 'Cannot auto-save:' + detail;
+    case 'saving-marker': return 'Cannot auto-save:' + detail;
+    case 'save-in-progress': return 'Cannot auto-save:' + detail;
+    case 'stopped': return 'Cannot auto-save:' + detail;
+    case 'run-cap': return 'Cannot auto-save:' + detail;
+    case 'lock': return 'Cannot auto-save:' + detail;
+    case 'hidden': return 'Cannot auto-save:' + detail;
+    case 'saved-log': return 'Cannot auto-save:' + detail;
+    case 'duplicate': return 'Cannot auto-save:' + detail;
+    case 'form-edited': return 'Cannot auto-save:' + detail;
+    default: return 'Cannot auto-save:' + (b.detail || 'unknown reason.');
+  }
+}
+
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -238,6 +503,8 @@ if (typeof module !== 'undefined' && module.exports) {
     KEY_WORD,
     INLINE_PAIR,
     LOOSE,
+    NEEDS_PICTURE,
+    SAVE_SUCCESS,
     parseHeader,
     pickSubjectIndex,
     pickCategoryIndex,
@@ -245,6 +512,24 @@ if (typeof module !== 'undefined' && module.exports) {
     parseQuestion,
     flagNumberingGaps,
     splitSections,
-    parseKey
+    keyPairs,
+    parseKeyDetailed,
+    parseKey,
+    newBatchId,
+    byteLength,
+    normalizeAnswer,
+    optionLetters,
+    isConsecutiveQueue,
+    keyCoversQueue,
+    appendSavedLog,
+    maxSavedId,
+    savedForBatch,
+    formatSavedRange,
+    recentDuplicate,
+    savedLogHasNum,
+    formMatchesQuestion,
+    autosaveBlockers,
+    blockerText,
+    classifySaveResponse
   };
 }

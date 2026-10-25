@@ -150,6 +150,9 @@ explicit key-clearing action (claude §8 issue 4; INV-34).
 **Risk.** A user who expects Reset to clear everything may be surprised; the two
 buttons are deliberately separate.
 
+**Superseded by D-30 (Auto-Save).** Reset now also clears `ansKey`,
+`ansKeyBatch`, `ansKeyConflicts`, and `queue.batchId`.
+
 ## D-15 — Header limited to first 3 lines; first `20\d\d` wins
 
 **Choice.** Join the first 3 lines, uppercase them, take the first `20\d\d`,
@@ -250,6 +253,9 @@ on the form's remembered state.
 The server records `is_active` from the checkbox (`admin_questions.php`), so the
 forced state is authoritative.
 
+**Superseded by D-31 (Auto-Save) for auto saves.** Manual saves remain active;
+auto saves remove `is_active` and verify the result.
+
 ## D-25 — The key persists across reloads
 
 **Choice.** Read `ansKey` at boot; do not clear it on load.
@@ -262,6 +268,8 @@ presses "Clear saved key".
 **Choice.** Reset clears only the queue; the key stays.
 **Why.** User decision: key clearing is the separate "Clear saved key" action.
 **Risk.** Users who expect a full reset must use both controls.
+
+**Superseded by D-30 (Auto-Save).** Reset now clears the key and batch identity.
 
 ## D-27 — Do not consume the legacy `ocrSubmitted` flag
 
@@ -293,6 +301,119 @@ the advisory-only rule: nothing is blocked.
 **Risk.** A real restart or OCR digit error can produce a false gap flag; a
 repeat, backwards marker, or jump greater than 5 is still silently skipped and
 does not produce this flag.
+
+## D-30 — Reset Queue also clears the key and batch identity
+
+**Choice.** Reset sets `queue = {items:[], i:0}`, deletes `ansKey`,
+`ansKeyBatch`, and `ansKeyConflicts`, and therefore removes `batchId`.
+**Why.** Auto-Save treats a key as relevant only to the batch it was loaded
+with. A leftover key with no queue is a legacy state that must not be
+auto-saved. Supersedes D-14 and D-26.
+**Risk.** A user who expected Reset to preserve the key must re-paste it. The
+separate "Clear saved key" action still exists.
+
+## D-31 — Auto saves inactive; manual stays active
+
+**Choice.** `fillForm`/`showOCR` tick `is_active` only on the manual path. The
+manual submit ensures `is_active=1`. Auto deletes `is_active` from the
+`FormData`, sets `autosave=1`, and verifies the edit page after a save.
+**Why.** Auto-save creates drafts for review; the ordinary manual import remains
+immediately active. Supersedes D-24 and the forced-on half of INV-50.
+**Risk.** Auto depends on the browser verification to catch a server or form
+that reactivates the question; the verification result can be unknown.
+
+## D-32 — Batch identity and legacy blocking
+
+**Choice.** A questions load creates `queue.batchId` and, when a key is present,
+`ansKeyBatch = queue.batchId`. A key-only paste attaches to the current queue's
+batch id or deletes `ansKeyBatch`. A queue without `batchId`, or a key whose
+`ansKeyBatch` does not match, is legacy: manual use works, auto is blocked.
+**Why.** It prevents an old key from being paired with a new queue and gives the
+saved log a batch scope.
+**Risk.** Existing stored queues become manual-only until the user re-pastes the
+questions. Adding `batchId` is additive but changes the `ocrQueue` shape.
+
+## D-33 — Auto-save is opt-in, gated, and never retries
+
+**Choice.** Auto-save starts only from a click after the batch confirmation is
+ticked. It re-checks every gate before each save, writes `ocrSaving` before the
+request, clears it only on a definite result, and treats an unknown result as
+ambiguous and stops.
+**Why.** A draft save must not duplicate questions or silently continue after an
+uncertain response.
+**Risk.** An interrupted save leaves a marker that blocks Start until the user
+checks the list and clears it. A hidden tab or a second tab pauses the run.
+
+## D-34 — Duplicate safeguards stop the run
+
+**Choice.** If the question number is already in this batch's saved log, or a
+recent table row has the same subject and first 140 characters, auto stops and
+shows the reason. It does not silently skip.
+**Why.** The user chose visibility over speed. A silent skip can hide a real
+duplicate.
+**Risk.** The check only covers this run/log and the loaded 20-row page; it
+cannot catch a duplicate saved long ago.
+
+## D-35 — Full-line comments, no `%` in the bookmarklet
+
+**Choice.** Full-line `//` comments are allowed in the modules and stripped by
+`build.js`. Inline `//` comments remain forbidden. The build fails if the final
+bookmarklet contains `%`; the one inline `width:100%` was removed because the
+admin page CSS already sets it.
+**Why.** The spec asks for readable commented source, but `//` truncates a
+`javascript:` URL and `%` can be decoded by a bookmark manager.
+**Risk.** A future template literal with a line starting `//` would be stripped;
+keep template literals single-line or avoid a leading `//`.
+
+## D-36 — `parseKeyDetailed` shares the key matcher
+
+**Choice.** Add `parseKeyDetailed(text)` returning `{key, conflicts}`. `parseKey`
+returns only `key`, built by the same matcher. Conflicts are repeated numbers
+with differing letters; identical repeats are not conflicts.
+**Why.** Existing readers and fixtures keep the plain map, while auto-save can
+block an ambiguous key.
+**Risk.** Conflicts are cached in `ansKeyConflicts` so a reload cannot hide
+them; that is an additive storage key.
+
+## D-37 — Parser flags E/F options
+
+**Choice.** `parseQuestion` adds `E/F options present` when `q.e` or `q.f` is
+non-empty.
+**Why.** Auto-save must not send an E/F question through the four-option form;
+the flag makes the reason visible to the user and lets the gate block it.
+**Risk.** Every E/F question now shows an advisory flag in manual mode. The
+existing E/F fixtures must expect it.
+
+## Auto-Save verification notes
+
+- **2026-10-25, mock browser (Chromium 152, local copy of
+  `admin_questions.html`):** the five dry-run scenarios reported the expected
+  would-save or stop reason, and the queue, marker, saved log, and lock stayed
+  unchanged. A run hidden mid-save finished exactly one POST, paused, and did
+  not start another. A locked queue refused Start. These checks support
+  D-30…D-37 but do not replace the live acceptance test.
+- **Boot fill regression found during AS-06:** the new paused-warning and flag
+  nodes both carry `.admin-error`, so the old “is there a server error?” check
+  at the end of injection matched the tool's own UI and skipped `showOCR()`.
+  The check now runs before the panel is injected, preserving EC-48 while
+  restoring EC-47 (queue refill after reload). Rebuilt and re-checked.
+- **Live findings (2026-10-25, real admin page, Samuel watching):**
+  #1516–#1518 saved and appeared Inactive. A network cut during the second save
+  left #1519 saved once and question 2 ambiguous, with the marker kept and no
+  retry. A server rejection (exam year 1800) was classified `NOT saved` while a
+  stale #1520 success was still visible. The browser's `required` attribute
+  blocks a blank option before the manual save runs, so the server-side blank
+  option error can only be reached by bypassing native validation or by
+  auto-save; this is now an edge-case note, not a defect.
+- **Two-tab limitation:** on one phone browser, switching to tab 2 hides tab 1,
+  which pauses it and releases `autoLock` before tab 2 can Start. The live
+  observation was tab 1 paused and tab 2 saved (no concurrent saves), not the
+  lock message. The lock reason remains covered by `tests/unit.js` and the
+  mock-browser check. Separate browsers cannot stand in because `autoLock` is
+  per-profile `localStorage`.
+- **Cosmetic follow-up (fixed 2026-10-25):** the blocked-reason line near the
+  controls now turns red and bold when it has text, matching the rejection
+  styling of `#ans_res`. It resets when the reason is cleared.
 
 ## Open decisions (not resolved by this phase)
 

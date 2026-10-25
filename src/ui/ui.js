@@ -10,6 +10,7 @@ function runOCRBookmarklet() {
     alert('Please open the "Add a New Question" page first.');
     return;
   }
+  const hadServerError = Boolean(document.querySelector('.admin-error'));
   const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   const $ = id => document.getElementById(id);
   const L = localStorage;
@@ -20,7 +21,7 @@ function runOCRBookmarklet() {
   };
   const p = document.createElement('div');
   p.className = 'admin-field';
-  p.innerHTML = `<div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="width:100%;min-height:220px"></textarea><button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
+  p.innerHTML = `<div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_auto"><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_auto_status" class="admin-note"></div><div id="ocr_auto_blocked" class="admin-note"></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
   form.before(p);
   const sb = form.querySelector('button[type=submit]');
   if (sb) {
@@ -57,7 +58,7 @@ function runOCRBookmarklet() {
     if (category !== undefined) $('exam_category_id').options[category].selected = true;
     return Boolean(year) || subject !== undefined || category !== undefined;
   }
-  function fillForm(q) {
+  function fillForm(q, auto) {
     Object.entries(store.get('ocrMeta') || {}).forEach(([id, v]) => ($(id).value = v));
     $('question_text').value = q.question;
     const keyAnswer = key[q.num];
@@ -89,10 +90,288 @@ function runOCRBookmarklet() {
       const radio = form.querySelector(`input[name="correct_option"][value="${correctIndex}"]`);
       if (radio) radio.checked = true;
     }
-    if (form.elements.is_active) form.elements.is_active.checked = true;
+    if (!auto && form.elements.is_active) form.elements.is_active.checked = true;
   }
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
   const saveQ = () => store.set('ocrQueue', queue);
+  let last = queue.i;
+  let savedLog = [];
+  try { savedLog = store.get('ocrSavedLog') || []; } catch (e) {}
+  if (!Array.isArray(savedLog)) savedLog = [];
+  let saveInProgress = false;
+  let stopAuto = false;
+  let autoRunning = false;
+  let autoDry = false;
+  let autoRunCount = 0;
+  let autoCap = 10;
+  let autoTabId = newBatchId();
+  let autoHeartbeat = null;
+  let confirmTicked = false;
+  let lastBlocked = '';
+  let autoStatus = '';
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  function readLock() {
+    try { return store.get('autoLock'); } catch (e) { return null; }
+  }
+  function lockAlive(lock) {
+    return Boolean(lock && Date.now() - Number(lock.at || 0) < 15000);
+  }
+  function releaseLock() {
+    if (autoHeartbeat) clearTimeout(autoHeartbeat);
+    autoHeartbeat = null;
+    const lock = readLock();
+    if (lock && lock.tabId === autoTabId) store.del('autoLock');
+  }
+  function heartbeat() {
+    if (!autoRunning) return;
+    const lock = readLock();
+    if (lock && lock.tabId !== autoTabId && lockAlive(lock)) { stopAuto = true; return; }
+    store.set('autoLock', { tabId: autoTabId, at: Date.now() });
+    autoHeartbeat = setTimeout(heartbeat, 5000);
+  }
+  function acquireLock() {
+    const lock = readLock();
+    if (lock && lock.tabId !== autoTabId && lockAlive(lock)) return false;
+    store.set('autoLock', { tabId: autoTabId, at: Date.now() });
+    if (autoHeartbeat) clearTimeout(autoHeartbeat);
+    autoHeartbeat = setTimeout(heartbeat, 5000);
+    return true;
+  }
+  function selectedText(id) {
+    const el = $(id);
+    return el && el.selectedIndex >= 0 ? el.options[el.selectedIndex].text : '';
+  }
+  function currentMeta() {
+    const e = form.elements;
+    return {
+      subject: e.subject_id ? e.subject_id.value : '',
+      category: e.exam_category_id ? e.exam_category_id.value : '',
+      year: e.exam_year ? e.exam_year.value : '',
+      subjectText: selectedText('subject_id'),
+      categoryText: selectedText('exam_category_id')
+    };
+  }
+  function recentRows() {
+    return Array.from(document.querySelectorAll('.admin-table tbody tr')).map(tr => {
+      const td = tr.querySelectorAll('td');
+      return {
+        id: td[0] ? td[0].textContent.trim() : '',
+        subject: td[2] ? td[2].textContent.trim() : '',
+        question: td[1] ? td[1].textContent.trim() : ''
+      };
+    }).filter(row => row.id && row.question);
+  }
+  function gateState(useQueue) {
+    const q = useQueue || queue;
+    const e = form.elements;
+    const radio = form.querySelector('input[name=correct_option]:checked');
+    const meta = currentMeta();
+    return {
+      queue: q,
+      key: key,
+      keyBatch: (() => { try { return store.get('ansKeyBatch'); } catch (err) { return null; } })(),
+      keyConflicts: keyConflicts,
+      meta: meta,
+      confirmed: confirmTicked,
+      radioLetter: radio ? 'ABCD'[Number(radio.value)] : null,
+      hasImage: Boolean(e.question_image && (e.question_image.value || (e.question_image.files && e.question_image.files.length))),
+      hasVideo: Boolean(e.answer_video && (e.answer_video.value || (e.answer_video.files && e.answer_video.files.length))),
+      savingMarker: (() => { try { return store.get('ocrSaving'); } catch (err) { return null; } })(),
+      saveInProgress: saveInProgress,
+      stopRequested: stopAuto,
+      runCount: autoRunCount,
+      runCap: autoCap,
+      lock: readLock(),
+      tabId: autoTabId,
+      now: Date.now(),
+      visible: !document.hidden,
+      savedLog: savedLog,
+      recentRows: recentRows(),
+      form: {
+        question: e.question_text ? e.question_text.value : '',
+        options: ['option_a', 'option_b', 'option_c', 'option_d'].map(id => e[id] ? e[id].value : '')
+      }
+    };
+  }
+  function renderBatchConfirm() {
+    const box = $('ocr_batch_confirm');
+    if (!box) return;
+    box.textContent = '';
+    if (!queue.items.length) { box.hidden = true; return; }
+    box.hidden = false;
+    const meta = currentMeta();
+    const first = queue.items[0].num;
+    const last = queue.items[queue.items.length - 1].num;
+    const summary = document.createElement('div');
+    summary.textContent = 'Batch: ' + (meta.subjectText || '?') + ' / ' + (meta.categoryText || '?') + ' / ' + (meta.year || '?') + ' — ' + queue.items.length + ' questions, ' + Object.keys(key).length + ' key answers, #' + first + ' to #' + last + '.';
+    box.appendChild(summary);
+    if (!queue.batchId) {
+      const legacy = document.createElement('div');
+      legacy.textContent = 'This queue has no batch identity. Paste the questions again.';
+      box.appendChild(legacy);
+    }
+    if (keyConflicts.length) {
+      const conflict = document.createElement('div');
+      conflict.textContent = 'Key conflict: question ' + keyConflicts[0].num + ' has ' + keyConflicts[0].letters.join(', ') + '.';
+      box.appendChild(conflict);
+    }
+    const label = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = 'ocr_confirm_tick';
+    cb.checked = confirmTicked;
+    cb.onchange = () => { confirmTicked = cb.checked; renderAuto(); };
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' These are correct.'));
+    box.appendChild(label);
+  }
+  function savedCopyText() {
+    const entries = savedForBatch(savedLog, queue.batchId);
+    if (!entries.length) return 'No saves in this batch.';
+    return entries.map(entry => 'Question ' + entry.num + ' saved as #' + entry.id + '.').join('\n');
+  }
+  function renderSaved() {
+    const box = $('ocr_saved_box');
+    const list = $('ocr_saved_list');
+    if (!box || !list) return;
+    const entries = savedForBatch(savedLog, queue.batchId);
+    box.hidden = !entries.length;
+    list.textContent = entries.length ? formatSavedRange(entries) + ' ' + savedCopyText().split('\n').join('; ') : '';
+  }
+  function renderPaused() {
+    const box = $('ocr_paused');
+    const text = $('ocr_paused_text');
+    if (!box || !text) return;
+    let marker = null;
+    try { marker = store.get('ocrSaving'); } catch (e) {}
+    if (!marker || saveInProgress) { box.hidden = true; return; }
+    box.hidden = false;
+    const when = marker.at ? new Date(marker.at).toLocaleTimeString() : 'an earlier time';
+    text.textContent = 'Question ' + (marker.num == null ? '?' : marker.num) + ' may have saved at ' + when + '. It was not retried. Check Recently Added Questions first.';
+  }
+  function renderAuto() {
+    if (!$('ocr_auto_start')) return;
+    renderBatchConfirm();
+    const marker = (() => { try { return store.get('ocrSaving'); } catch (e) { return null; } })();
+    const disabled = autoRunning || !confirmTicked || Boolean(marker) || !queue.items[queue.i];
+    $('ocr_auto_start').disabled = disabled;
+    $('ocr_auto_stop').disabled = !autoRunning;
+    $('ocr_auto_dry').disabled = autoRunning;
+    const status = $('ocr_auto_status');
+    if (autoRunning) {
+      status.textContent = autoDry ? 'Dry run: ' + autoRunCount + ' would-save so far.' : 'Auto-save running: ' + autoRunCount + ' of ' + autoCap + ' saved this run.';
+    } else if (autoStatus) {
+      status.textContent = autoStatus;
+    } else {
+      const batchSaved = savedForBatch(savedLog, queue.batchId);
+      status.textContent = batchSaved.length ? formatSavedRange(batchSaved) : 'Auto-save is idle.';
+    }
+    const blockedEl = $('ocr_auto_blocked');
+    blockedEl.textContent = lastBlocked;
+    blockedEl.style.color = lastBlocked ? '#b00020' : '';
+    blockedEl.style.fontWeight = lastBlocked ? 'bold' : '';
+    renderSaved();
+    renderPaused();
+  }
+  function resetConfirm() {
+    confirmTicked = false;
+    lastBlocked = '';
+    autoStatus = '';
+  }
+  function showBlocked(blocker) {
+    lastBlocked = blockerText(blocker);
+  }
+  function setResult(text, danger) {
+    const r = $('ans_res');
+    if (!r) return;
+    r.textContent = text;
+    r.style.color = danger ? '#b00020' : '#1769aa';
+  }
+  async function verifyInactive(id) {
+    let ctl = null, timer = null;
+    try {
+      ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      if (ctl) timer = setTimeout(() => ctl.abort(), 30000);
+      const res = await fetch(location.pathname + '?edit=' + encodeURIComponent(id), { credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
+      if (!res.ok) return null;
+      const txt = await res.text();
+      const doc = new DOMParser().parseFromString(txt, 'text/html');
+      const cb = doc.querySelector('input[name=is_active], #is_active');
+      if (!cb) return null;
+      return cb.checked ? false : true;
+    } catch (e) {
+      return null;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+  async function saveCurrentQuestion(opts) {
+    const auto = Boolean(opts && opts.auto);
+    if (saveInProgress) return { kind: 'busy', message: 'A save is already running.' };
+    saveInProgress = true;
+    const q = queue.items[queue.i];
+    const num = q ? q.num : null;
+    store.set('ocrSaving', { num: num, at: Date.now() });
+    let ctl = null, timer = null;
+    try {
+      if (!auto && form.elements.is_active) form.elements.is_active.checked = true;
+      const fd = new FormData(form);
+      if (auto) {
+        fd.delete('is_active');
+        fd.set('autosave', '1');
+      }
+      ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      if (ctl) timer = setTimeout(() => ctl.abort(), 30000);
+      const res = await fetch(location.pathname, { method: 'POST', body: fd, credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
+      const txt = await res.text();
+      const doc = new DOMParser().parseFromString(txt, 'text/html');
+      const er = doc.querySelector('.admin-error');
+      const result = classifySaveResponse({ redirected: res.redirected, text: txt, errorText: er ? er.textContent.trim() : '', lastId: maxSavedId(savedLog) });
+      if (result.kind === 'rejected') {
+        store.del('ocrSaving');
+        setResult('NOT saved: ' + result.message, true);
+        return result;
+      }
+      if (result.kind === 'ambiguous') {
+        setResult('Unknown. It may have saved. Check the list.', true);
+        return result;
+      }
+      let inactive = null;
+      if (auto) inactive = await verifyInactive(result.id);
+      const entry = { num: num, id: result.id, at: Date.now(), batchId: queue.batchId || null };
+      savedLog = appendSavedLog(savedLog, entry, 200);
+      store.set('ocrSavedLog', savedLog);
+      if (queue.items[queue.i]) {
+        queue.i++;
+        saveQ();
+      }
+      store.del('ocrSaving');
+      ['question_image', 'answer_video'].forEach(n => { const el = form.elements[n]; if (el) el.value = ''; });
+      const ae = form.elements.answer_explanation;
+      if (ae) ae.value = '';
+      saveMeta();
+      showOCR(auto);
+      last = cur().i;
+      if (last > -1) tick(); else form.reset();
+      if (auto && inactive === false) {
+        setResult('SAVED AS ACTIVE: question #' + result.id + '. Check the list and turn it off.', true);
+        stopAuto = true;
+      } else if (auto && inactive === true) {
+        setResult('Saved as question #' + result.id + ' (inactive).', false);
+      } else if (auto) {
+        setResult('Saved as question #' + result.id + '. Could not verify inactive; check the list.', false);
+      } else {
+        setResult('Saved as question #' + result.id + '.', false);
+      }
+      return { kind: 'saved', id: result.id, inactive: inactive, entry: entry };
+    } catch (e) {
+      setResult('Unknown. It may have saved. Check the list.', true);
+      return { kind: 'ambiguous', message: 'Unknown. It may have saved. Check the list.' };
+    } finally {
+      if (timer) clearTimeout(timer);
+      saveInProgress = false;
+    }
+  }
   function renderOCR() {
     const q = queue.items[queue.i];
     const active = queue.items.length > 0;
@@ -103,22 +382,121 @@ function runOCRBookmarklet() {
     $('ocr_save_flag').hidden = !(q && q.flags.length);
     $('ocr_save_flag').textContent = q && q.flags.length ? `Check this one: ${q.flags.join(', ')}` : '';
     $('ocr_status').innerHTML = !active ? '' : !q ? `All ${queue.items.length} questions done.` : `Question ${queue.i + 1} of ${queue.items.length} (book number ${q.num ?? '?'})` + (q.flags.length ? `<div class="admin-alert admin-error">Check this one: ${q.flags.join(', ')}</div>` : '');
+    renderAuto();
   }
-  function showOCR() {
-    if (queue.items[queue.i]) fillForm(queue.items[queue.i]);
+  function showOCR(auto) {
+    if (queue.items[queue.i]) fillForm(queue.items[queue.i], auto);
     renderOCR();
   }
+  function copyText(text) {
+    const done = () => { autoStatus = 'Saved list copied.'; renderAuto(); };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      ta.remove();
+      done();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+  async function runDry() {
+    if (autoRunning) return;
+    autoRunning = true;
+    autoDry = true;
+    autoRunCount = 0;
+    stopAuto = false;
+    autoStatus = '';
+    lastBlocked = '';
+    const dq = { items: queue.items.slice(), i: queue.i, batchId: queue.batchId };
+    const lines = [];
+    renderAuto();
+    while (autoRunning) {
+      if (stopAuto) { lines.push('Stopped.'); break; }
+      const q = dq.items[dq.i];
+      if (!q) break;
+      const st = gateState(dq);
+      st.confirmed = true;
+      st.form = null;
+      st.savingMarker = null;
+      st.lock = null;
+      st.visible = true;
+      st.runCap = 9999;
+      st.saveInProgress = false;
+      st.stopRequested = false;
+      const k = st.key && st.key[q.num];
+      st.radioLetter = ['A', 'B', 'C', 'D'].includes(k) ? k : null;
+      const blockers = autosaveBlockers(st);
+      if (blockers.length) {
+        lines.push('Would stop at #' + q.num + ': ' + blockerText(blockers[0]));
+        break;
+      }
+      lines.push('Would save #' + q.num + ': ' + (st.meta.subjectText || '?') + ' / ' + (st.meta.categoryText || '?') + ' / ' + (st.meta.year || '?') + ', A to D, answer ' + k + '.');
+      dq.i++;
+      autoRunCount++;
+    }
+    if (!lines.length) lines.push('Nothing to dry-run.');
+    autoStatus = lines.join(' ');
+    autoRunning = false;
+    autoDry = false;
+    renderAuto();
+  }
+  async function runAuto() {
+    if (autoRunning) return;
+    stopAuto = false;
+    autoRunCount = 0;
+    autoDry = false;
+    autoStatus = '';
+    lastBlocked = '';
+    const initial = autosaveBlockers(gateState());
+    if (initial.length) { showBlocked(initial[0]); renderAuto(); return; }
+    if (!acquireLock()) { showBlocked({ code: 'lock', detail: 'Another tab is auto-saving.' }); renderAuto(); return; }
+    autoRunning = true;
+    renderAuto();
+    try {
+      while (autoRunning) {
+        if (stopAuto) { lastBlocked = 'Stopped.'; break; }
+        const blockers = autosaveBlockers(gateState());
+        if (blockers.length) { showBlocked(blockers[0]); break; }
+        const result = await saveCurrentQuestion({ auto: true });
+        if (result.kind !== 'saved') {
+          if (result.message) lastBlocked = result.message;
+          break;
+        }
+        autoRunCount++;
+        renderAuto();
+        if (stopAuto) break;
+        await sleep(1500);
+      }
+    } finally {
+      autoRunning = false;
+      releaseLock();
+      renderAuto();
+    }
+  }
   $('ocr_load').onclick = () => {
+    if (autoRunning) stopAuto = true;
+    resetConfirm();
     const raw = $('ocr_text').value;
     const parts = splitSections(raw);
     const text = FIXES.reduce((t, [re, fix]) => t.replace(re, fix), parts.questions);
     const items = flagNumberingGaps(splitQuestions(text).map(parseQuestion));
-    const newKey = parts.answers.trim() ? parseKey(parts.answers) : {};
+    const detailed = parts.answers.trim() ? parseKeyDetailed(parts.answers) : { key: {}, conflicts: [] };
+    const newKey = detailed.key;
     const hasKey = Object.keys(newKey).length > 0;
     if (!items.length) {
       if (hasKey) {
         key = newKey;
+        keyConflicts = detailed.conflicts;
         store.set('ansKey', key);
+        store.set('ansKeyConflicts', keyConflicts);
+        if (queue.batchId) store.set('ansKeyBatch', queue.batchId);
+        else store.del('ansKeyBatch');
         if (queue.items[queue.i]) fillForm(queue.items[queue.i]);
         if (applyHeaderInfo(parts.boundary, parts.answers)) saveMeta();
         tick(true);
@@ -132,9 +510,18 @@ function runOCRBookmarklet() {
     applyHeaderInfo(text, parts.boundary, parts.answers);
     saveMeta();
     key = hasKey ? newKey : {};
-    if (hasKey) store.set('ansKey', key);
-    else store.del('ansKey');
-    queue = { items, i: 0 };
+    keyConflicts = hasKey ? detailed.conflicts : [];
+    const batchId = newBatchId();
+    if (hasKey) {
+      store.set('ansKey', key);
+      store.set('ansKeyConflicts', keyConflicts);
+      store.set('ansKeyBatch', batchId);
+    } else {
+      store.del('ansKey');
+      store.del('ansKeyConflicts');
+      store.del('ansKeyBatch');
+    }
+    queue = { items, i: 0, batchId };
     saveQ();
     showOCR();
     if (hasKey) {
@@ -148,6 +535,7 @@ function runOCRBookmarklet() {
   };
   $('ocr_clear_text').onclick = () => { $('ocr_text').value = ''; };
   $('ocr_goto').onclick = () => {
+    if (autoRunning) stopAuto = true;
     const curQ = queue.items[queue.i];
     const ans = prompt('Go to book question number:', curQ && curQ.num != null ? String(curQ.num) : '');
     if (ans === null) return;
@@ -163,16 +551,47 @@ function runOCRBookmarklet() {
     saveQ();
     showOCR();
   };
-  $('ocr_skip').onclick = () => { queue.i++; saveQ(); showOCR(); };
+  $('ocr_skip').onclick = () => { if (autoRunning) stopAuto = true; queue.i++; saveQ(); showOCR(); };
   $('ocr_reset').onclick = () => {
+    if (autoRunning) stopAuto = true;
+    resetConfirm();
     queue = { items: [], i: 0 };
     saveQ();
+    key = {};
+    keyConflicts = [];
+    store.del('ansKey');
+    store.del('ansKeyBatch');
+    store.del('ansKeyConflicts');
+    $('ans_msg').textContent = 'Queue and key cleared.';
     $('ocr_input').hidden = false;
     renderOCR();
   };
   $('ocr_show').onclick = () => { $('ocr_input').hidden = false; $('ocr_text').focus(); };
+  $('ocr_auto_start').onclick = () => runAuto();
+  $('ocr_auto_stop').onclick = () => { stopAuto = true; autoStatus = 'Stopping after the current save.'; renderAuto(); };
+  $('ocr_auto_dry').onclick = () => runDry();
+  $('ocr_saved_copy').onclick = () => copyText(savedCopyText());
+  $('ocr_paused_clear').onclick = () => { store.del('ocrSaving'); lastBlocked = ''; renderAuto(); };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && autoRunning) {
+      stopAuto = true;
+      autoStatus = 'Paused because the tab was hidden. Start again when ready.';
+      renderAuto();
+    }
+  });
+  FIELDS.forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('change', () => {
+      if (autoRunning) stopAuto = true;
+      resetConfirm();
+      renderAuto();
+    });
+  });
   let key = {};
+  let keyConflicts = [];
   try { key = store.get('ansKey') || {}; } catch (e) {}
+  try { keyConflicts = store.get('ansKeyConflicts') || []; } catch (e) {}
+  if (!Array.isArray(keyConflicts)) keyConflicts = [];
   function cur() {
     try {
       const q = store.get('ocrQueue');
@@ -215,54 +634,25 @@ function runOCRBookmarklet() {
     m.textContent = 'Question ' + n + ': ticked Option ' + 'ABCD'[idx] + ' from the answer key' + note + '. Check it before saving.';
   }
   $('ans_clear').onclick = () => {
+    if (autoRunning) stopAuto = true;
+    resetConfirm();
     key = {};
+    keyConflicts = [];
     store.del('ansKey');
+    store.del('ansKeyBatch');
+    store.del('ansKeyConflicts');
     $('ans_msg').textContent = 'Key cleared.';
   };
-  let last = cur().i;
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     e.stopImmediatePropagation();
     if (!queue.items.length) saveMeta();
-    if (form.elements.is_active) form.elements.is_active.checked = true;
     const b = form.querySelector('button[type=submit]'), r = $('ans_res');
-    let s;
+    if (saveInProgress) return;
+    if (autoRunning) stopAuto = true;
     b.disabled = true;
-    r.textContent = 'Saving...';
-    fetch(location.href, { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
-      .then(x => { s = x.status; return x.text(); })
-      .then(t => {
-        const m = t.match(/Question saved successfully \(Question ID: (\d+)\)/);
-        if (m) {
-          r.textContent = 'Saved as question #' + m[1] + '.';
-          const q = cur();
-          if (q.i > -1) {
-            const meta = {};
-            FIELDS.forEach(n => meta[n] = form.elements[n].value);
-            store.set('ocrMeta', meta);
-          }
-          ['question_image', 'answer_video'].forEach(n => {
-            const el = form.elements[n];
-            if (el) el.value = '';
-          });
-          const ae = form.elements.answer_explanation;
-          if (ae) ae.value = '';
-          if (q.i > -1) {
-            $('ocr_skip').click();
-          }
-          last = cur().i;
-          if (last > -1) {
-            tick();
-          } else {
-            form.reset();
-          }
-        } else {
-          const d = new DOMParser().parseFromString(t, 'text/html'), er = d.querySelector('.admin-error');
-          r.textContent = 'NOT saved: ' + (t.indexOf('Administrator Login') > -1 ? 'you were logged out. Reload the page and log in.' : er ? er.textContent.trim() : 'unexpected reply from the server (code ' + s + ').');
-        }
-      })
-      .catch(() => { r.textContent = 'NOT saved: network problem. Try again.'; })
-      .then(() => { b.disabled = false; });
+    setResult('Saving...', false);
+    saveCurrentQuestion({ auto: false }).then(() => { b.disabled = false; renderAuto(); }).catch(() => { b.disabled = false; renderAuto(); });
   }, true);
   setInterval(() => {
     const c = cur().i;
@@ -271,7 +661,6 @@ function runOCRBookmarklet() {
       tick();
     }
   }, 600);
-  const failed = document.querySelector('.admin-error');
-  failed ? renderOCR() : showOCR();
+  hadServerError ? renderOCR() : showOCR();
   tick();
 }

@@ -89,7 +89,7 @@ this table during review.
 
 | ID | Short name | Trigger | Expected behavior | Status | Source |
 |---|---|---|---|---|---|
-| EC-45 | Reset Queue | Click after loading a queue | No error; queue `{items:[],i:0}`; key untouched | CONFIRMED | claude-migration §3 (case 23) |
+| EC-45 | Reset Queue | Click after loading a queue | No error; queue `{items:[],i:0}`; key, `ansKeyBatch`, `ansKeyConflicts`, and `batchId` are also cleared (D-30 supersedes D-26) | CONFIRMED | claude-migration §3 (case 23); user decision 2026-10-25; `src/ui/ui.js` |
 | EC-46 | Edit page | URL contains `edit=` | Alert; bookmarklet does not install | CONFIRMED | qwen-2-reconciled E20; claude-migration §3 (case 24) |
 | EC-47 | Page reload mid-queue | `ocrQueue` present in localStorage | Queue indexed restored; current item refilled | CONFIRMED | qwen-2-reconciled E24 |
 | EC-48 | Prior server error present | `.admin-error` on boot | Text fields are not refilled and the status is rendered; `tick()` still runs and may tick the correct-option radio from the saved key | CONFIRMED | qwen-2-reconciled E25; src/ui/ui.js |
@@ -107,11 +107,25 @@ this table during review.
 |---|---|---|---|---|---|
 | EC-55 | Logged out at submit | Response contains `Administrator Login` | Targeted re-login message | CONFIRMED | qwen-2-reconciled E21; claude-migration §3 (case 25) |
 | EC-56 | Server validation error | Response contains `.admin-error` | Error text surfaced in `#ans_res` | CONFIRMED | qwen-2-reconciled E22 |
-| EC-57 | Empty option hard rejection | An option is empty and user saves | PHP rejects: "Please fill in all four answer options." | CONFIRMED | qwen-2-gaps §3; `admin_questions.php` |
+| EC-57 | Empty option hard rejection | An option is empty and user saves | PHP rejects: "Please fill in all four answer options." The manual form's native `required` blocks submission first, and the auto-save gate blocks an empty option too; the PHP error is reachable only when native validation is bypassed (live 2026-10-25) | CONFIRMED | qwen-2-gaps §3; `admin_questions.php`; live finding 2026-10-25 |
 | EC-58 | Network failure | `fetch` rejects | `NOT saved: network problem. Try again.` | CONFIRMED | qwen-2-reconciled E23; claude-migration §3 (case 25) |
 | EC-59 | PRG success detection | POST returns redirected GET with session flash | Success regex matches the flash text | CONFIRMED | `admin_questions.php` stores the flash, redirects, and renders it; qwen-2-gaps §1 |
 | EC-60 | Category limit | More than 10 active categories | Dropdown only exposes `id <= 10`; matcher cannot select beyond | CONFIRMED | qwen-2-gaps §5; `admin_questions.php` query |
 | EC-63 | Live `questions` schema mismatch | PHP inserts into `questions`; only schema evidence is a `questions1` dump with required `practice_title` | Whether live `questions` has that required column is unknown; if it does, every save would fail | UNVERIFIED | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert |
+
+## G. Auto-Save
+
+| ID | Short name | Trigger | Expected behavior | Status | Source |
+|---|---|---|---|---|---|
+| EC-64 | Gap in the queue | Loaded numbers include a gap (`1,2,4`) | Auto stops at the first question with `The question numbers are not consecutive`; nothing is saved | CONFIRMED | D-33; mock check 2026-10-25 |
+| EC-65 | E/F key letter in the middle | Key letter for a middle question is E or F | Earlier questions save; the loop stops on that question with `the form has only four options`; a manual save can resume the run | CONFIRMED | D-33; mock check 2026-10-25 |
+| EC-66 | Legacy queue without `batchId` | Queue loaded by an older variant or key without `ansKeyBatch` | Manual use works; auto stops with `no batch identity` or `key belongs to a different batch` | CONFIRMED | D-32; mock check 2026-10-25 |
+| EC-67 | Ambiguous save | Timeout, network error, empty reply, or redirected page without a fresh success | Marker stays, Start stays disabled, no retry, warning asks the user to check the list | CONFIRMED | D-33; `tests/unit.js`; mock check 2026-10-25; live network loss 2026-10-25 (#1519 saved once, question 2 ambiguous, no retry) |
+| EC-68 | Stale success flash | Reply has a success ID not greater than the saved log | Classified Ambiguous, not Saved; nothing is logged or advanced | CONFIRMED | `tests/unit.js`; D-33 |
+| EC-69 | Saved as active | Auto save returns active on the `?edit=` verification | Red `SAVED AS ACTIVE` warning, run stops, but the save is logged and the queue advances so it is not repeated | CONFIRMED | D-31; mock check 2026-10-25; live saves verified inactive |
+| EC-70 | Duplicate question | Number already in this batch's log, or subject plus first 140 chars matches a loaded recent row | The run stops and shows the duplicate reason; it is not silently skipped | CONFIRMED | D-34; `tests/unit.js` |
+| EC-71 | Second tab lock | Another tab holds `autoLock` less than 15 seconds old | Start is refused with `Another tab is auto-saving`; a lock older than 15 seconds is ignored | CONFIRMED | D-33; `tests/unit.js`; mock check 2026-10-25. Live two-tab start paused tab 1 on hide before the lock could be observed (2026-10-25) |
+| EC-72 | Hidden tab during a run | Tab becomes hidden while a save is in flight | The current save finishes, the run pauses with the hidden-tab message, and nothing else starts; no auto-resume | CONFIRMED | D-33; mock check 2026-10-25; live two-tab test 2026-10-25 |
 
 ## Conflicts and open statuses
 
@@ -132,10 +146,14 @@ closed by the archived PHP/HTML sources:
 - EC-62 and EC-63 remain UNVERIFIED: both need live state, not another code
   reading. EC-62 needs an old queue sample; EC-63 needs the live `questions`
   schema.
+- EC-64…EC-72 are CONFIRMED by `tests/unit.js`, the 2026-10-25 mock-browser
+  checks, and the 2026-10-25 live 3-question test (inactive saves, real network
+  loss, server rejection with a stale success, and the hidden-tab pause). The
+  two-tab lock message could not be shown live on one phone browser; see EC-71.
 
 ## Counts
 
-- Total: 63
-- CONFIRMED: 57
+- Total: 72
+- CONFIRMED: 66
 - UNVERIFIED: 6
 - CONFLICTED: 0

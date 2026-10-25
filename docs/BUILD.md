@@ -24,23 +24,26 @@ node src/build/build.js
 
 1. Resolves the project root as the parent of `src/build/`.
 2. Reads `src/parser/parser.js` and `src/ui/ui.js` as UTF-8 strings.
-3. Concatenates, in this order:
+3. Drops full-line `//` comments from each module (lines whose first
+   non-whitespace characters are `//`).
+4. Concatenates, in this order:
    - parser module,
    - UI module,
    - the call `runOCRBookmarklet();`.
-4. Splits the result on line endings, trims each line, drops empty lines, and
+5. Splits the result on line endings, trims each line, drops empty lines, and
    joins the remainder with single spaces. This produces one physical line.
-5. Wraps it as:
+6. Wraps it as:
 
    ```js
    javascript:(function(){try{<body>}catch(e){alert('Bookmarklet Error: '+e.message);}})();
    ```
 
-6. Writes `src/bookmarklet.js` (with a trailing newline) and prints the
+7. Refuses to write if the result contains `%`.
+8. Writes `src/bookmarklet.js` (with a trailing newline) and prints the
    script-body length. The message says `bytes`, but the number is JavaScript
-   characters, not UTF-8 bytes: two dashes are multibyte, so the written file is
-   4 bytes larger than that count plus the trailing newline (currently 16540
-   bytes total).
+   characters, not UTF-8 bytes. The four non-ASCII characters (`–`, `—`, `…`)
+   add 8 bytes; the current file is 45607 bytes while the build prints 45598
+   characters, plus the trailing newline.
 
 The generated file is the only artifact to paste into a bookmark.
 
@@ -48,8 +51,13 @@ The generated file is the only artifact to paste into a bookmark.
 
 A bookmarklet runs from a `javascript:` URL and must be one line. The parser and
 UI are maintained as readable multi-line files, so the build squashes them.
-The docs require no `//` comments in the result, because the first `//` would
-truncate the URL (INV-05). The current sources contain no `//` comments.
+Full-line `//` comments are allowed in the sources and stripped before
+flattening; an inline `//` would still truncate the URL (INV-05). The build also
+fails if the finished bookmarklet contains `%`, which a bookmark manager may
+decode.
+
+The paste box no longer sets `width:100%` inline; the admin page CSS already
+sets it for `.admin-field textarea`.
 
 Do not add multi-line string/template literals whose meaning depends on leading
 or trailing whitespace: the build trims every line. The current template

@@ -90,13 +90,16 @@ NECO/GCE, or General Practice, or `-1`.
 
 ### 3.4 UI state
 
-- `localStorage.ocrQueue`: `{ items: [question...], i: number }`. There is no
-  version marker, so a queue written by an older variant can outlive a parser
-  update; reset and re-paste after updating (EC-62/INV-56).
+- `localStorage.ocrQueue`: `{ items: [question...], i: number, batchId?: string }`.
+  There is no version marker, so a queue written by an older variant can outlive
+  a parser update; reset and re-paste after updating (EC-62/INV-56).
 - `localStorage.ocrMeta`: `{ subject_id, exam_category_id, exam_year }`.
 - `localStorage.ansKey`: the parsed key map.
 - `localStorage.ocrSubmitted`: a legacy shared key. The bookmarklet no longer
   reads, writes, or deletes it (decision D-22).
+- Auto-Save additions (see §7): `ansKeyBatch`, `ansKeyConflicts`, `ocrSaving`,
+  `ocrSavedLog`, and `autoLock`. The existing key names and the `ansKey` shape
+  stay compatible (INV-36).
 
 ## 4. Parsing stages
 
@@ -186,8 +189,9 @@ the label is what prevents a blank `C.` from consuming `D.`.
 ### Stage 5 — Fill (`fillForm`)
 
 - Restore `ocrMeta`; set `question_text`; set `option_a`–`option_d`.
-- Force the `is_active` checkbox on, so every imported question is saved active
-  (decision D-24).
+- On the manual path, tick `is_active` so a hand-saved question stays active
+  (D-31, superseding D-24). Auto-save passes `auto=true` and never ticks it;
+  the save pipeline removes the field and verifies inactivity (§7).
 - Clear all `correct_option` radios first.
 - If the key has this question's number:
   - A–D → tick that radio (index 0–3).
@@ -204,15 +208,15 @@ the label is what prevents a blank `C.` from consuming `D.`.
   changes. With no queued item and `ask=true`, it prompts for a book number.
 - Key lifecycle: a paste with questions replaces the key; a paste with questions
   and no key clears it; a key-only paste replaces the key and keeps the queue;
-  Reset Queue clears the queue but not the key; "Clear saved key" clears it.
-  The key is read from `ansKey` at boot and therefore survives reloads (decision
-  D-14/D-13).
+  Reset Queue clears the queue, the key, `ansKeyBatch`, `ansKeyConflicts`, and
+  `batchId` (D-30, superseding D-14/D-26); "Clear saved key" clears the key.
+  The key is read from `ansKey` at boot and therefore survives reloads (D-13).
 - "Go to question" prompts for a printed book number (falling back to the
   1-based list position when no book number matches), sets the queue index, and
   refills the form.
 - Save: capture-phase `submit` listener, `preventDefault` +
-  `stopImmediatePropagation`, force `is_active` on, then `fetch(location.href, {
-  method:'POST', body:new FormData(form), credentials:'same-origin' })`.
+  `stopImmediatePropagation`, then the shared `saveCurrentQuestion({auto:false})`
+  described in §7. Manual saves tick `is_active`; auto saves remove it.
 - Success: the PHP writes `cbt_admin_flash`, redirects, and the redirected GET
   renders it as `.admin-success`; the fetched response matches
   `/Question saved successfully \(Question ID: (\d+)\)/`. On success: show the
@@ -221,7 +225,7 @@ the label is what prevents a blank `C.` from consuming `D.`.
   answer.
 - Failure: `.admin-error` text from a parsed reply, a logged-out message when
   the reply contains `Administrator Login`, an unexpected-reply message with the
-  status code, or `NOT saved: network problem. Try again.`
+  status code, or the ambiguous-save warning described in §7.
 
 ## 5. Flags and warnings
 
@@ -238,10 +242,11 @@ loading, queueing, or saving.
 | `option X over 500 characters` | any A–F option length > 500 |
 | `a letter appears twice (merged questions?)` | any option letter matched more than once (pre-dedup count) |
 | `question N missing (numbering gap)` | a kept marker jumps by more than 1 after a known question number; attached to the later question. A run of missing numbers uses `questions N-M missing (numbering gap)` |
+| `E/F options present` | `q.e` or `q.f` is non-empty (D-37); the auto-save gate also blocks this question |
 
 Not implemented: repeat/backwards/large-jump flags, empty/missing
-correct-answer flag, E/F-specific flag. (Source: `claude-migration.md` §2;
-numbering-gap flag added at user request.)
+correct-answer flag. (Source: `claude-migration.md` §2; numbering-gap and E/F
+flags added at user request.)
 
 ## 6. Server contract the UI depends on
 
@@ -262,5 +267,104 @@ The PHP inserts into `questions`. The only schema evidence supplied is a
 `questions1` dump with a required `practice_title`; whether live `questions` has
 that requirement is unverified (EC-63/INV-57). If it does, every save would
 fail even though the bookmarklet and PHP agree.
+
+## 7. Auto-Save (opt-in)
+
+Auto-Save is a separate, click-started loop over the existing queue. It never
+starts on page load, never auto-resumes after a reload, and does not change the
+manual path. The feature source of truth is `docs/Auto-Save-Spec.md`; this
+section records the contract as implemented.
+
+### 7.1 Storage
+
+| Key | Shape | Written when |
+|---|---|---|
+| `ocrQueue.batchId` | UUID string (random/Date fallback) | A questions paste |
+| `ansKeyBatch` | the matching `batchId` | Key loaded with the questions; a key-only paste attaches to the current queue |
+| `ansKeyConflicts` | `[{num, letters}]` | Key loaded; identical repeats are not conflicts |
+| `ocrSaving` | `{num, at}` crash marker | Immediately before a save request |
+| `ocrSavedLog` | `[{num, id, at, batchId}]`, capped at 200 | Only after a verified save |
+| `autoLock` | `{tabId, at}` heartbeat | While a run is active |
+
+A queue without `batchId`, or a key whose `ansKeyBatch` does not match it, is
+legacy: manual use is unchanged and auto-save is blocked. Reset Queue clears the
+queue, key, conflicts, and both batch ids (D-30).
+
+### 7.2 Confirmation and controls
+
+The panel adds Start, Stop, and a Dry run button, none of which is persisted.
+Before Start, a batch block shows Subject, Category, Year, question count, key
+count, and the first/last question numbers. Start stays disabled until
+`These are correct.` is ticked. The tick resets on a new paste, a key-only
+paste, Reset, Clear saved key, or a change to subject/category/year. Start is
+also disabled while `ocrSaving` exists or the queue is finished.
+
+### 7.3 Gate
+
+`autosaveBlockers(state)` returns every blocking reason; the loop shows the
+first one and stops. An empty list means safe. It checks:
+
+1. `queue.batchId` exists and `ansKeyBatch === queue.batchId`.
+2. Queue numbers are consecutive integers with no gap, repeat, null, or
+   out-of-order entry (checked over the whole queue).
+3. The key has an entry for every queue number and no extra numbers; only
+   letters A–F are accepted.
+4. The key has no recorded conflict.
+5. This question's key letter is A–D; E/F blocks only this question.
+6. The checked radio equals the key letter.
+7. Parser flags are empty; `q.e`/`q.f` are empty; `E/F options present` is
+   handled as a blocker rather than a generic flag.
+8. Detected option letters are exactly `ABCD`.
+9. Options A–D are non-empty, distinct after case/whitespace normalization, and
+   each ≤500 UTF-8 bytes; the stem is at least 10 characters.
+10. The stem/options do not match `NEEDS_PICTURE` (diagram, figure, graph,
+    picture, chart, table, passage, "read/use the following", "questions N to").
+11. Subject, category, and year are set and the confirmation is ticked.
+12. No file is selected in `question_image` or `answer_video`.
+13. No `ocrSaving` marker, no save in progress, Stop is off, the run cap is not
+    reached, and this tab holds `autoLock` (another tab is refused while its
+    lock is under 15 seconds old).
+14. The page is visible; a hidden tab finishes the current save and pauses.
+
+The form is also compared with the loaded question before each save; an edited
+form stops the run with `form no longer matches`.
+
+### 7.4 Save classification and marker
+
+The manual submit and the auto loop both call
+`saveCurrentQuestion({auto})`. It writes `ocrSaving`, posts
+`FormData(form)` with same-origin credentials and a 30-second abort timeout,
+then classifies the reply:
+
+- **Rejected** — `Administrator Login`, or `.admin-error` with no redirect.
+  Show the server text, clear the marker, do not advance.
+- **Saved** — the reply redirected, has no error, matches the success regex, and
+  its ID is greater than every ID in `ocrSavedLog`. A stale flash is not a save.
+- **Ambiguous** — anything else, including a timeout or network error. Keep the
+  marker, show `Unknown. It may have saved. Check the list.`, and never retry.
+
+On Saved: auto-only inactivity verification (`?edit=<id>`), append to
+`ocrSavedLog`, advance the queue directly, clear the marker, clear the media and
+explanation fields, refresh meta, and tick the next answer. Auto removes
+`is_active` from the form and sets `autosave=1`; manual keeps the active tick.
+If verification finds the question active, a red `SAVED AS ACTIVE` warning stops
+the run but the save is still logged and advanced so it cannot repeat.
+
+### 7.5 Lock, cap, dry run, duplicates
+
+- `autoLock` is refreshed every 5 seconds by a recursive `setTimeout`; a lock
+  older than 15 seconds is stale. Stop, pause, cap, blocker, and end release it.
+- The run cap is 10 (raised from 3 after the 2026-10-25 live sign-off). Start
+  again resets the count and continues.
+- Dry run copies the queue and uses the current form metadata. It logs
+  `Would save #n: subject/category/year, A to D, answer X.` and writes nothing
+  to the queue, marker, saved log, or lock.
+- Duplicate safeguards stop (not skip) the run when the number is already in
+  this batch's saved log, or a recent admin-table row has the same normalized
+  subject and first 140 characters of text. This covers this run/log and the
+  loaded 20 rows; it cannot see older saves.
+
+All server-derived text is rendered with `textContent` or created nodes, never
+`innerHTML`. Option sizes are compared in UTF-8 bytes.
 
 See `docs/INVARIANTS.md` for the full rule list and which items are unverified.
