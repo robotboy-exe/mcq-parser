@@ -2,7 +2,11 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const parser = require('../src/parser/parser.js');
+
+const INPUT_DIR = path.resolve(__dirname, '../fixtures/inputs');
 
 let passed = 0;
 let failed = 0;
@@ -629,6 +633,44 @@ test('newBatchId prefers randomUUID and falls back without one', () => {
   eq(parser.newBatchId({ randomUUID: () => 'uuid-1' }), 'uuid-1');
   const fallback = parser.newBatchId({ randomUUID: () => { throw new Error('nope'); } });
   assert(/^b[0-9a-z]+-[0-9a-z]+$/.test(fallback), 'unexpected fallback: ' + fallback);
+});
+
+test('salvageNormalize preserves dotted abbreviations', () => {
+  const phrase = parser.salvageNormalize('He earned a Ph.D. from the U.S.A.');
+  eq(phrase, { text: 'He earned a Ph.D. from the U.S.A.', inserts: 0 });
+  eq(parser.salvageNormalize('Ph.D.'), { text: 'Ph.D.', inserts: 0 });
+  eq(parser.salvageNormalize('U.S.A.'), { text: 'U.S.A.', inserts: 0 });
+});
+
+test('salvageNormalize repairs fused option labels', () => {
+  eq(parser.salvageNormalize('inA.Italy'), { text: 'in A.Italy', inserts: 1 });
+  eq(parser.salvageNormalize('naturalizationA. pays'), { text: 'naturalization A. pays', inserts: 1 });
+  eq(parser.salvageNormalize('disenfranchised.D.the'), { text: 'disenfranchised. D.the', inserts: 1 });
+});
+
+test('splitSectionsWithSalvage accepts anomaly-block2 with 50 inserts', () => {
+  const raw = fs.readFileSync(path.join(INPUT_DIR, 'anomaly-block2.txt'), 'utf8');
+  const repair = parser.splitSectionsWithSalvage(raw);
+  eq(repair.salvaged, true);
+  eq(repair.inserts, 50);
+  const items = parser.splitQuestionItems(repair.parts.questions);
+  eq(items.map(item => item.num), [null, 2, 3, 4, 7, 8, 9, 12, 13, 14, 15, 16]);
+});
+
+test('splitQuestionItems keeps anomaly-block1 bullets unnumbered', () => {
+  const raw = fs.readFileSync(path.join(INPUT_DIR, 'anomaly-block1.txt'), 'utf8');
+  const items = parser.splitQuestionItems(raw);
+  eq(items.length, 19);
+  assert(items.every(item => item.num === null), 'every bullet item must keep num: null');
+});
+
+test('salvageNormalize is a no-op on every bank input', () => {
+  for (const year of [2021, 2022, 2023, 2024, 2025]) {
+    const raw = fs.readFileSync(path.join(INPUT_DIR, `bank-${year}.txt`), 'utf8');
+    const result = parser.salvageNormalize(raw);
+    eq(result.inserts, 0, `bank-${year} inserts`);
+    eq(result.text, raw, `bank-${year} text changed`);
+  }
 });
 
 console.log('');

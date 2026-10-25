@@ -247,7 +247,11 @@ function salvageNormalize(raw) {
     inserts++;
     return pre + '\n' + n + '.' + (sp || ' ');
   });
-  text = text.replace(/([^A-Za-z\s]|[a-z])([A-F])\./g, (m, pre, letter) => {
+  text = text.replace(/([a-z])([A-F])\./g, (m, pre, letter) => {
+    inserts++;
+    return pre + ' ' + letter + '.';
+  });
+  text = text.replace(/([^A-Za-z\s])([A-F])\.(?![ \t\r\n]|$)/g, (m, pre, letter) => {
     inserts++;
     return pre + ' ' + letter + '.';
   });
