@@ -1,10 +1,17 @@
 # Workspace Setup
 
-Status: Phases 1–8 complete. Workspace setup is finished; the final report is
-below. The test harness runs (19 PASS, 0 FAIL, 0 PENDING). Phase 7 closed the
-human-decision gaps and archived the live PHP/HTML/helper sources supplied after
-Phase 6; parser behavior was unchanged, and the UI changes were the two decided
-ones (force `is_active` on, stop handling `ocrSubmitted`).
+Current status (2026-10-25): work packages P01–P09 are complete. The fixture
+runner is 30/30 PASS, 0 FAIL, 0 PENDING, 0 orphans; `tests/unit.js` is 59/59;
+`tools/extract-bank.js --check` is green. Current contracts are `README.md`,
+`AGENTS.md`, and `docs/SPEC.md`.
+
+Status of this report: Phases 1–8 setup record. Workspace setup was finished in
+Phase 8/9; the final setup report is below. At that time the harness ran 19
+PASS, 0 FAIL, 0 PENDING. Phase 7 closed the human-decision gaps and archived the
+live PHP/HTML/helper sources supplied after Phase 6; parser behavior was
+unchanged, and the UI changes were the two decided ones (force `is_active` on,
+stop handling `ocrSubmitted`). Counts and decisions below are historical where
+they conflict with the current status above.
 
 ## Directory Structure
 
@@ -346,7 +353,7 @@ No edge cases or invariants were invented; every entry cites a source doc.
 | `qwen1-sample3-five-options` | qwen1 §6/§7 Sample 3 | questions | CONFIRMED | all five options parse; E exposed |
 | `qwen1-sample4-dotless-option-a` | qwen1 §6/§7 Sample 4 | questions | CONFIRMED | `A 75 years` becomes Option A, not stem text |
 | `qwen1-sample5-question-starting-a` | qwen1 §6/§7 Sample 5 | questions | CONFIRMED | stem-leading `A good` is not Option A |
-| `qwen2-s1-crk-2021-full` | qwen2 §6/§7 S1 | questions | CONFIRMED | 40 items; 2021; Q20 inline options exact and flag-free; E on Q1/21/31-35; no duplicate-letter flags; quoted/underscore stems preserved |
+| `bank-2021` | archived OCR bank 2021 slice | questions | CONFIRMED | 40 items; 2021; Q20 inline options exact; E on Q1/21/31-35; Q1 is E; Q9/Q23/Q24/Q25/Q31/Q36/Q38 stem assertions; 40-key map; quoted/underscore stems preserved |
 | `qwen2-s2-article-vs-option` | qwen2 §6/§7 S2 | questions | CONFIRMED | leading `A 5` stays in stem; `A 75/105/85/99 years`; no flags |
 | `qwen2-s4-article-start` | qwen2 §6/§7 S4 (assistant micro-example) | question | CONFIRMED | chunk-leading `A 5` is not an option |
 | `qwen2-s4-dotted-start` | qwen2 §6/§7 S4 (assistant micro-example) | question | CONFIRMED | `A. 5 years` is Option A |
@@ -392,10 +399,10 @@ turned into fixtures.
 
 ### Discrepancies recorded in fixtures
 
-1. **CRK/CRS alias** — `qwen1-sample2-crk-header` and `qwen2-s1-crk-2021-full`
-   assert the documented CRS/CHRISTIAN RELIGIOUS match. The harness now uses
-   the current live subject list, which contains `CRS` (id 14), so the alias
-   selects it (EC-41). No fixture expectation was changed.
+1. **CRK/CRS alias** — `qwen1-sample2-crk-header` and `bank-2021` assert the
+   documented CRS/CHRISTIAN RELIGIOUS match. The harness now uses the current
+   live subject list, which contains `CRS` (id 14), so the alias selects it
+   (EC-41). No fixture expectation was changed.
 2. **E/F tick across variants** — E samples note that parse output should match
    A/B/C, but trusted-variant-B computes radio values 4/5 while baseline C maps
    E/F to D (EC-40).
@@ -405,8 +412,9 @@ turned into fixtures.
 4. **Blank-C repair mechanism** — `claude-s1` notes that B recovers the blank C
    with its post-processor while C uses the `[^\S\n]*` regex; both are documented
    to produce the same output.
-5. **Q11/Q12 continuation** — `qwen2-s1` records the documented quirk but makes
-   no assertion, because qwen2 calls it unresolved/unconfirmed as desirable.
+5. **Q11/Q12 continuation** — the source records the documented quirk, but no
+   retained fixture asserts it; `bank-2021` stops at Q40 and does not model the
+   continuation.
 6. **Numbering caveat for claude S2-S5** — those samples have no printed question
    number; the docs' "no flags" result assumes a numbered parse. The num used in
    the source test is not documented, so the fixture records the caveat rather
@@ -658,8 +666,9 @@ Version differences (A/B/V1 vs baseline C) remain documented in
 6. **Gaps status:** G1–G15 RESOLVED. G10 and G11 are now backed by the archived
    PHP and the recorded framing decision. No gap item is STILL_OPEN or
    NEEDS_INPUT.
-7. **Test harness status:** `node tests/runner.js` runs without harness errors;
-   19 PASS, 0 FAIL, 0 PENDING, 0 orphan inputs. The runner exits non-zero on a
+7. **Test harness status (at setup close; current is 30/30):**
+   `node tests/runner.js` ran without harness errors at that point. The runner
+   exits non-zero on a
    failing fixture, an unknown `expected` key or wrong-typed assertion value, an
    unknown fixture kind, a confirmed fixture with no executed assertions, a
    missing input, or an orphan input.
@@ -667,7 +676,8 @@ Version differences (A/B/V1 vs baseline C) remain documented in
    workflow. Live browser, stale-queue, and live-schema checks remain open; see
    Phase 9.
 9. **Verification gaps:** no live browser run; live `questions` schema unknown;
-   no real OCR paste beyond S1; stale `ocrQueue` has no version marker or test.
+   no new live OCR paste beyond the archived bank/anomaly blocks; stale
+   `ocrQueue` has no version marker or test.
 
 ### Verification checklist
 
@@ -739,7 +749,8 @@ distinguishing code, not by filename order.
 | B3 | `second.js` | `archive/legacy-bookmarklets/b3.js` | Only file with `splitCombinedText`; no key-only path |
 
 `b2.js` is the base of the merged `trusted-variant-C.js` baseline. All three
-archived files pass `node --check`; the fixture suite remains 19/19.
+archived files pass `node --check`; the fixture suite was 19/19 at that point
+(current: 30/30).
 
 ## Phase 9: claude-gaps.md Review
 
@@ -753,7 +764,7 @@ It reports gaps from the pre-workspace conversation, not new parser behavior.
 | 1. Chat copy not verified against file | CLOSED | The repo baseline is authoritative; `src/bookmarklet.js` passes `node --check`. |
 | 2. B1/B2/B3 and `ocr_helper.js` missing | CLOSED | Archived under `archive/legacy-bookmarklets/` and `archive/live-sources/`. |
 | 3. B1/B2/B3 claims not run | CLOSED (static/isolated) | B2 Reset bug and broken option-split regex confirmed; B1/B3 false-split risk confirmed by isolated parser runs. |
-| 4. Almost no fixtures | PARTIAL | 19 fixtures now; still no direct `splitSections` fixture and no real OCR paste beyond S1. |
+| 4. Almost no fixtures | PARTIAL | 19 fixtures at setup close (current: 30); still no direct `splitSections` fixture and no new live OCR paste beyond the archived bank/anomaly blocks. |
 | 5. Test harness not saved | CLOSED | `tests/runner.js`. |
 | 6. Stale stored data after update | OPEN | Tracked as EC-62/INV-56; reset and re-paste after updating. |
 | 7. PHP save rules/schema | PARTIAL | Four-option rule and PRG confirmed; `questions` vs `questions1` / `practice_title` tracked as EC-63/INV-57. |
@@ -778,11 +789,11 @@ Direct B1/B2/B3 checks (no baseline change):
   is also a real option label. The removal decision (D-07) still stands.
 
 Phase 9 added EC-62, EC-63, INV-56, and INV-57; no code or fixture changed.
-`node tests/runner.js` remains 19/19.
+`node tests/runner.js` was 19/19 at that point (current: 30/30; unit 59/59).
 
 ## Next Step
 
-Workspace setup is closed. Diff B2 → C, then begin parser work with the
-fixture-first workflow. The live browser run, live `questions` schema, and
-stale-queue behavior remain verification gaps. Do not change parser behavior
-without a failing fixture and a documented decision.
+Workspace setup and parser work packages P01–P09 are closed. The live browser
+run, live `questions` schema, and stale-queue behavior remain verification gaps.
+Do not change parser behavior without a failing fixture and a documented
+decision; see `docs/plan/README.md` for the current tracker.

@@ -264,7 +264,7 @@ saves set it, and both verify the result.
 **Risk.** A stale key remains until a questions paste replaces it or the user
 presses "Clear saved key".
 
-## D-26 — Reset Queue keeps the key
+## D-26 — Reset Queue kept the key (superseded by D-30)
 
 **Choice.** Reset clears only the queue; the key stays.
 **Why.** User decision: key clearing is the separate "Clear saved key" action.
@@ -424,6 +424,57 @@ storage key (the `ocrSavedLog` entry gains `mode`).
 a wrong-state check stops the run but cannot undo a save. Old saved-log entries
 have no `mode`; they are treated as manual when `inactive === false`, otherwise
 draft, so an old verified-active auto save shows as active/manual.
+
+## D-40 — Guarded boundary salvage before question split
+
+**Choice.** Add `salvageNormalize` and `splitSectionsWithSalvage`. The repair
+only inserts missing question and option boundaries (a mid-line `N.` before a
+capital/quote/paren, a spaced numbered start before a capitalized word, and a
+fused `A.`–`F.` label after lowercase text or punctuation). It runs on a copy,
+compares against the strict result, and is accepted only with at least 2
+inserts and strictly more question chunks. Accepted items get the advisory
+`OCR boundaries repaired; verify question and option split` flag.
+**Why.** The archived hostile block fused most question numbers into preceding
+prose, so the strict parser produced 2 chunks instead of 12. The user otherwise
+had to repair the paste by hand. A gated second pass recovers the boundaries
+without changing clean bank text; all five bank slices are byte-identical with
+zero inserts.
+**Risk.** The insert heuristics can split prose that merely looks like a
+numbered item or option label. The two-part gate and the visible flag limit the
+damage, but the split still needs human review; the flag is not a confirmation.
+Do not run salvage on bank text or remove the gate to force a repair.
+
+## D-41 — Bullet mode is a separate, numberless path
+
+**Choice.** `splitQuestionItems` uses numbered mode whenever a line-start `N.`
+marker exists. If none exists and at least 2 `*` bullets are present,
+`splitBulletQuestions` splits on the bullet markers, consumes them, keeps
+`num: null`, and injects `question number missing`. Bullet and numbered chunks
+are never mixed.
+**Why.** The archived block has 19 bullet questions and no numbers. Running the
+numbered splitter merged them into one chunk; inventing numbers would corrupt
+keys and queue positions. Keeping `num: null` preserves the source and makes
+the missing numbering explicit.
+**Risk.** A non-question bulleted list of 2+ items will be treated as questions
+and flagged. The queue can hold `num: null`, but the user must assign numbers
+before saving; the parser does not guess them.
+
+## D-42 — Bank extraction is external and fixtures are one year each
+
+**Choice.** Add `tools/extract-bank.js` and `tools/bank-slices.json` to verify
+the archived bank source by SHA-256, extract each year by anchors, and write
+`fixtures/inputs/bank-YYYY.txt` plus PENDING specs. One exam year per paste is
+the supported contract. Every expected fixture declares `input_origin`
+(`bank`, `anomaly`, `doc`, or `synthetic`), and expected values are transcribed
+from sources rather than generated from parser output.
+**Why.** A five-year paste mixes key years and makes year attribution
+ambiguous; the parser has no year-pairing model and the source contains fused
+headings. Deterministic extraction gives reproducible inputs and counts
+(40/40/40/40/39 keys) without adding a browser feature or changing the paste
+contract.
+**Risk.** The extractor is tied to the archived source hash; a changed or
+re-OCR'd source fails `--check` by design. Users still have to split multi-year
+text themselves; the UI does not detect or warn about a multi-year paste.
 
 ## Auto-Save verification notes
 

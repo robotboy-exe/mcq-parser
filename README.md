@@ -13,6 +13,13 @@ The parser is kept separate from the UI so it can be tested without a browser.
 # Rebuild the bookmarklet from the modules
 node src/build/build.js
 
+# Run the fixture harness and unit tests
+node tests/runner.js
+node tests/unit.js
+
+# Verify the archived bank slices and their hashes
+node tools/extract-bank.js --check
+
 # Run the parser directly
 node -e "const p=require('./src/parser/parser.js'); console.log(p.parseQuestion({num:1,text:'Who was the father of faith? A. Abraham B. Moses C. David D. Joseph'}))"
 ```
@@ -41,11 +48,12 @@ docs/
   DECISIONS.md         why the unusual heuristics exist
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
-  EDGE_CASES.md        63 documented edge cases
-  INVARIANTS.md        59 documented invariants
+  EDGE_CASES.md        75 documented edge cases
+  INVARIANTS.md        75 documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
+  plan/                work-package tracker and handoffs
 fixtures/
-  inputs/              raw samples copied from migration docs
+  inputs/              archived doc, bank, and anomaly samples
   expected/            documented expected outputs (CONFIRMED/PENDING)
 archive/
   migration-docs/      original migration documents and claude-gaps.md
@@ -53,6 +61,9 @@ archive/
   legacy-bookmarklets/ supplied B1/B2/B3 (matched from first/second/third.js)
   live-sources/        admin PHP/HTML, ocr_helper.js, OCR text bank
 tests/runner.js        pure-Node fixture harness (no browser)
+tests/unit.js          pure-Node unit tests for parser and auto-save helpers
+tools/extract-bank.js  deterministic bank slicer and verifier
+tools/bank-slices.json source hash, anchors, counts, and output hashes
 ```
 
 ## Behavior summary
@@ -63,6 +74,12 @@ tests/runner.js        pure-Node fixture harness (no browser)
   subject (including CRS/Christian Religious Studies), and exam category
   (JAMB/UTME, POST UTME, SSCE, and related names).
 - Splits off an answer key by divider, header, structure, or key-only paste.
+- One exam year per paste. Multi-year bank text is split with
+  `tools/extract-bank.js`, not pasted whole.
+- Recovers fused OCR question and option boundaries only when the repair adds
+  questions, and flags the result for review.
+- Parses an unnumbered `*` bullet block as questions with `num: null` and a
+  `question number missing` flag; it never invents numbers.
 - Collapses E/F answers into Option D, because the page has only four options
   and radios 0–3 (a hard server constraint).
 - Shows advisory flags such as `option C missing` in the OCR panel and again
@@ -72,7 +89,8 @@ tests/runner.js        pure-Node fixture harness (no browser)
 - Loaded queues can jump to a book question number with "Go to question".
 - Persists the queue, header metadata, and key in `localStorage` under
   `ocrQueue`, `ocrMeta`, and `ansKey`; the key survives reloads.
-- Forces `is_active` on, so imported questions are saved active.
+- Draft auto-save is the default and saves inactive; active mode is opt-in and
+  never persisted. Manual saves stay active.
 - Does not read, write, or delete the legacy `ocrSubmitted` key.
 - Never changes the PHP, the CSRF token, or the server field names.
 
@@ -86,16 +104,19 @@ and reports PASS, FAIL, or PENDING; run it for the current status.
 needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
 see `docs/BASELINE_COMPARISON.md` for why.
 
-Verification gaps still carried: no live browser run, no live `questions`
-schema, and no real OCR paste beyond the documented S1 sample. After updating
-the bookmarklet, press Reset Queue and re-paste rather than trusting an old
-`ocrQueue` (EC-62/INV-56).
+Current status (2026-10-25): 30/30 fixtures PASS, 59/59 unit tests PASS, and
+`tools/extract-bank.js --check` is green. Verification gaps still carried: no
+live browser run, no live `questions` schema check, and no new live OCR paste
+beyond the archived bank and anomaly blocks. After updating the bookmarklet,
+press Reset Queue and re-paste rather than trusting an old `ocrQueue`
+(EC-62/INV-56).
 
-Resolved decisions: Reset Queue keeps the key, the key survives reloads, saves
-are forced active, the PRG success text is confirmed from the archived PHP, the
-legacy `ocrSubmitted` flag is ignored, and CRK maps to the live `CRS` option
-(id 14). The current subject list is archived in `archive/live-sources/`;
-English (Oral) is separate from English Language.
+Resolved decisions: Reset Queue clears the queue, key, and batch identity; the
+key survives reloads; draft saves are inactive and active mode is opt-in; the
+PRG success text is confirmed from the archived PHP; the legacy `ocrSubmitted`
+flag is ignored; and CRK maps to the live `CRS` option (id 14). The current
+subject list is archived in `archive/live-sources/`; English (Oral) is separate
+from English Language.
 
 B1, B2, and B3 were matched to the supplied root files and archived under
 `archive/legacy-bookmarklets/`; the baseline remains `trusted-variant-C.js`.

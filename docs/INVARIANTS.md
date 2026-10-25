@@ -118,10 +118,19 @@ Status definitions:
 | INV-70 | While a save is in flight, Load, Go to, Skip, Reset, and Clear saved key refuse and stop the run instead of mutating the queue; a successful save advances only the batch/index/item it started with, and logs the batch it started with. A normal Stop or queue end is status text, not a red blocked reason. | VERIFIED | review fix 2026-10-25; `src/ui/ui.js` |
 | INV-71 | Active mode is opt-in and never persisted. Start requires the batch confirmation and the live-save confirmation, the mode is captured at Start, and a mid-run change is a blocker. Active auto saves set `is_active=1` and expect the edit page checked; draft auto saves delete it and expect it unchecked. Manual saves stay active. The AS-07 unverified list and two-consecutive-null stop apply in both modes. | VERIFIED | D-39; `tests/unit.js`; mock + live 2-question test 2026-10-25 |
 
+## Multi-year bank and hostile OCR
+
+| ID | Rule | Status | Source |
+|---|---|---|---|
+| INV-72 | `splitSectionsWithSalvage` is a gated pre-pass. All five bank slices produce zero inserts and byte-identical strict results; hostile anomaly inputs may trigger the repair. The repair is accepted only with at least 2 inserts and a strictly larger question-chunk count; otherwise the strict result is kept. Every item from an accepted repair carries `OCR boundaries repaired; verify question and option split`. | VERIFIED | P07; `anomaly-block2`; bank no-op check 2026-10-25 |
+| INV-73 | The bank fixtures cover five consecutive years with the archived question/key counts: 2021 40/40, 2022 40/40, 2023 40/40, 2024 24/40 (the partial Q17-Q40 slice), 2025 40/39. Each year is extracted from its documented source slice, and the extractor `--check` verifies source hash, anchors, counts, and output hashes. | VERIFIED | P02/P04/P05/P06; `tools/bank-slices.json`; `tools/extract-bank.js --check` 2026-10-25 |
+| INV-74 | Unnumbered bullet text is a separate mode: when no line-start `N.` marker exists and there are at least 2 `*` bullets, `splitBulletQuestions` returns chunks with `num: null`; each chunk is flagged `question number missing`, and no number is invented. The archived block contains 19 bullets. | VERIFIED | P08; `anomaly-block1` 2026-10-25 |
+| INV-75 | Every expected fixture declares an `input_origin` of `bank`, `anomaly`, `doc`, or `synthetic`. Expected values are transcribed from cited sources, never generated from parser output; the runner rejects missing/unknown origins and orphan inputs. | VERIFIED | P01/P09; `tests/runner.js`; fixture audit 2026-10-25 |
+
 ## Counts
 
-- Total: 71
-- VERIFIED: 61
+- Total: 75
+- VERIFIED: 65
 - AT_RISK: 10
 - CONFLICTED: 0
 
@@ -142,6 +151,6 @@ archived PHP/HTML sources and the recorded decisions:
    response the bookmarklet fetches.
 
 Remaining AT_RISK items are listed in the tables above; they are operational
-risks (repeated injection, numbering gaps, absorbed-label repair, E/F size,
+risks (repeated injection, numbering gaps, heuristic boundary salvage, E/F size,
 fuzzy subject matching, shared/stale storage, live schema), not unresolved
 source conflicts.

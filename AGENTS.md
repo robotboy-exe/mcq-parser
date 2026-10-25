@@ -9,7 +9,8 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 25/25 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 30/30 PASS; `node tests/unit.js` is 59 PASS.
+- Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
 - Build: `node src/build/build.js`. Then `wc -l src/bookmarklet.js` must print `1`, and the body (leading `javascript:` stripped) must pass `node --check`; exact snippet in `docs/BUILD.md`.
 - No root `package.json`, lint, typecheck, CI, or test framework. `.opencode/package.json` is only the OpenCode notification plugin; do not `npm install` for project work.
@@ -27,11 +28,11 @@
 ## Fixtures
 
 - `fixtures/expected/*.json` were transcribed from docs, never generated from the parser. Do not regenerate or weaken assertions to make a test pass; mark doc-unsupported fields/inputs `PENDING` instead.
-- Every `fixtures/inputs/*.txt` needs an expected spec or the runner fails it as `[ORPHAN]`. Schema is `schema_version: 1`; kinds are `questions`, `question`, `key`; statuses are `CONFIRMED`, `PENDING`. Unknown keys or wrong types fail.
+- Every expected spec needs `input_origin`: `bank`, `anomaly`, `doc`, or `synthetic`. Every `fixtures/inputs/*.txt` needs an expected spec or the runner fails it as `[ORPHAN]`. Schema is `schema_version: 1`; kinds are `questions`, `question`, `key`; statuses are `CONFIRMED`, `PENDING`. Unknown keys or wrong types fail.
 - The harness is parser-only: it does not exercise DOM, storage, `fillForm`, `tick`, or save behavior. No browser test suite exists.
 - Subject assertions use the archived live `<select>` at `archive/live-sources/subjects-select-2026-10-23.html`; category assertions use the `exam_category_id` select in `archive/live-sources/admin_questions.html`.
 
 ## Known gaps
 
-- No live browser run, no live `questions` schema check, and no real OCR paste beyond the documented S1 sample. Stale `ocrQueue` data has no version marker; reset and re-paste after parser/UI changes.
+- No live browser run and no live `questions` schema check. The bank and anomaly blocks are archived OCR, not a new live paste. Stale `ocrQueue` data has no version marker; reset and re-paste after parser/UI changes.
 - Do not promote `UNVERIFIED`/`AT_RISK`/`CONFLICTED` items to defects without reproduction; see `docs/EDGE_CASES.md` and `docs/INVARIANTS.md`.

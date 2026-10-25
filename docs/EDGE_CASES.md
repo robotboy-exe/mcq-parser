@@ -127,6 +127,16 @@ this table during review.
 | EC-71 | Second tab lock | Another tab holds `autoLock` less than 15 seconds old | Start is refused with `Another tab is auto-saving`; a lock older than 15 seconds is ignored | CONFIRMED | D-33; `tests/unit.js`; mock check 2026-10-25. Live two-tab start paused tab 1 on hide before the lock could be observed (2026-10-25) |
 | EC-72 | Hidden tab during a run | Tab becomes hidden while a save is in flight | The current save finishes, the run pauses with the hidden-tab message, and nothing else starts; no auto-resume | CONFIRMED | D-33; mock check 2026-10-25; live two-tab test 2026-10-25 |
 
+## H. Multi-year bank and hostile OCR
+
+| ID | Short name | Trigger | Expected behavior | Status | Source |
+|---|---|---|---|---|---|
+| EC-73 | Unnumbered bullet OCR | Questions use `*` bullets and no line-start `N.` marker exists | Bullet mode splits 19 items; each keeps `num: null`, gets `question number missing`, and the UI shows the flag; no number is invented | CONFIRMED | P08; `fixtures/inputs/anomaly-block1.txt`; `tests/runner.js` 2026-10-25 |
+| EC-74 | Fused question boundaries | A question number or option label is fused into surrounding OCR text | Guarded salvage repairs only boundary shapes when it adds at least 2 inserts and more question chunks; the repaired block yields 12 items with numbers `[null,2,3,4,7,8,9,12,13,14,15,16]` and 50 inserts, all flagged `OCR boundaries repaired; verify question and option split`; the strict result is kept otherwise | CONFIRMED | P07; `fixtures/inputs/anomaly-block2.txt`; `tests/runner.js` 2026-10-25 |
+| EC-75 | Multi-year bank paste | Two or more exam years are pasted as one block | Unsupported: one year per paste is the contract, because keys are matched to the current paste and cross-year text can merge or attach a key to the wrong year. Split with `node tools/extract-bank.js` into `bank-YYYY.txt`; the extractor verifies the source hash, anchors, counts, and output hashes | CONFIRMED | P02; SPEC §2; `tools/extract-bank.js --check` 2026-10-25 |
+
+Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
+
 ## Conflicts and open statuses
 
 No edge case remains CONFLICTED. The former conflicts and server-side gaps were
@@ -150,10 +160,13 @@ closed by the archived PHP/HTML sources:
   checks, and the 2026-10-25 live 3-question test (inactive saves, real network
   loss, server rejection with a stale success, and the hidden-tab pause). The
   two-tab lock message could not be shown live on one phone browser; see EC-71.
+- EC-73 and EC-74 are CONFIRMED by the archived hostile blocks and the fixture
+  runner. EC-75 is a contract limit, not a parser defect: the bank extractor is
+  the supported way to split years.
 
 ## Counts
 
-- Total: 72
-- CONFIRMED: 66
+- Total: 75
+- CONFIRMED: 69
 - UNVERIFIED: 6
 - CONFLICTED: 0

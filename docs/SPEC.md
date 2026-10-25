@@ -22,12 +22,20 @@ It never edits the PHP, the database, or the live `ocr_helper.js`.
 
 ## 2. Input format
 
+One exam year per paste. The parser does not pair one year's questions with
+another year's key, so multi-year bank text is unsupported. Split the bank with
+`node tools/extract-bank.js`; the five outputs are
+`fixtures/inputs/bank-YYYY.txt`.
+
 One plain-text paste containing any combination of:
 
 - Optional header: first 3 lines may carry a subject name and a `20\d\d` year.
   Example: `IMPROVISED C. R. K. QUESTIONS FOR 2021`.
 - Questions, each starting a line with `N.` (1–3 digits) followed by
   whitespace. The `N)` form is **not** a question marker.
+- Unnumbered OCR bullets: a block where every question starts with `*` and no
+  line-start `N.` marker exists. These are a separate mode; each item keeps
+  `num: null` and the `question number missing` flag.
 - Options A–F, dotted (`A.`, `A)`) or dotless only after a newline when followed
   by a digit (`\nA 75 years`). Options may be inline (`A. love B. mercy ...`).
 - Option text may be on the line after the label.
@@ -37,8 +45,9 @@ One plain-text paste containing any combination of:
   - a structural run of key-like lines after the last question;
   - or no separator at all (heuristics apply).
 - Key entries such as `1.B`, `2 C`, `3) A`, `4. (D)`, or several per line
-  (`1.A 2.B 3.C`). Placeholders such as `5. [missing]` are recognized but
-  produce no key entry.
+  (`1.A 2.B 3.C`). Inline multi-pair lines count as key lines when sections are
+  split. Placeholders such as `5. [missing]` are recognized but produce no key
+  entry.
 - A key-only paste (every non-empty line is a key line) is valid and keeps the
   existing queue.
 
@@ -126,7 +135,24 @@ The answer section starts at the boundary line if that line is key-like or has
 dropped). `splitSections` also returns the dropped `boundary` line so the UI can
 infer header metadata from it.
 
-### Stage 2 — Question split (`splitQuestions`)
+### Stage 1b — Guarded salvage (`splitSectionsWithSalvage`)
+
+Hostile OCR sometimes fuses a question number or option label into the previous
+word or option. The UI and the runner call `splitSectionsWithSalvage(raw)`:
+
+- `salvageNormalize` repairs only boundary shapes: a mid-line `N.` followed by
+  a capital/quote/paren or end of line, a spaced `N.` followed by a capitalized
+  word, and a fused `A.`–`F.` label preceded by lowercase text or punctuation.
+  It does not rewrite option text, apply `FIXES`, or normalize whitespace.
+- The repair is used only when it made at least 2 inserts **and** the repaired
+  text yields more question chunks than the strict result. Otherwise the strict
+  `splitSections` result is used byte-for-byte.
+- When the repair is accepted, every parsed item gets
+  `OCR boundaries repaired; verify question and option split` and the UI shows
+  `OCR boundaries repaired (N inserts); verify the split.`
+- Bank inputs must produce zero inserts (INV-72).
+
+### Stage 2 — Question split (`splitQuestions` / `splitQuestionItems`)
 
 - Marker regex: `/(?:^|\n)\s*(\d{1,3})\.\s+/g`.
 - Sequence guard: the first marker is always kept; later markers are kept only
@@ -137,6 +163,11 @@ infer header metadata from it.
   later question.
 - Text before the first marker becomes a `num: null` chunk only when it has ≥2
   option matches.
+- `splitQuestionItems` chooses the mode. A line-start `N.` marker anywhere in
+  the text selects numbered mode. With none, `splitBulletQuestions` splits on
+  `(?:^|\n)[^\S\n]*\*[^\S\n]+`; fewer than 2 bullets returns `null` and the
+  numbered splitter runs. Bullet markers are consumed, every chunk keeps
+  `num: null`, and bullet/numbered chunks are never mixed in one paste.
 
 ### Stage 3 — Option parse (`parseQuestion`)
 
