@@ -283,7 +283,7 @@ section records the contract as implemented.
 | `ansKeyBatch` | the matching `batchId` | Key loaded with the questions; a key-only paste attaches to the current queue |
 | `ansKeyConflicts` | `[{num, letters}]` | Key loaded; identical repeats are not conflicts |
 | `ocrSaving` | `{num, at}` crash marker | Immediately before a save request |
-| `ocrSavedLog` | `[{num, id, at, batchId}]`, capped at 200 | Only after a verified save |
+| `ocrSavedLog` | `[{num, id, at, batchId, inactive}]`, capped at 200 | Only after a verified save; `inactive` is `true`/`false`/`null` (confirmed, active/manual, or unverified) |
 | `autoLock` | `{tabId, at}` heartbeat | While a run is active |
 
 A queue without `batchId`, or a key whose `ansKeyBatch` does not match it, is
@@ -348,12 +348,21 @@ On Saved: auto-only inactivity verification (`?edit=<id>`), append to
 explanation fields, refresh meta, and tick the next answer. Auto removes
 `is_active` from the form and sets `autosave=1`; manual keeps the active tick.
 If verification finds the question active, a red `SAVED AS ACTIVE` warning stops
-the run but the save is still logged and advanced so it cannot repeat.
+the run but the save is still logged and advanced so it cannot repeat. The log
+records the verification result, and the saved-list suffix distinguishes
+`inactive`, `includes a question saved active`, and
+`inactive status not verified`.
+
+Queue-mutating controls (Load, Go to, Skip, Reset, Clear saved key) refuse while
+a save is in flight, and a successful save only advances the queue if it still
+points at the same batch/index/item it started with.
 
 ### 7.5 Lock, cap, dry run, duplicates
 
 - `autoLock` is refreshed every 5 seconds by a recursive `setTimeout`; a lock
   older than 15 seconds is stale. Stop, pause, cap, blocker, and end release it.
+- A normal Stop or the end of the queue is shown in the status line, not as a
+  red blocked reason; only an actual blocker makes the reason line red.
 - The run cap is 10 (raised from 3 after the 2026-10-25 live sign-off). Start
   again resets the count and continues.
 - Dry run copies the queue and uses the current form metadata. It logs

@@ -114,7 +114,7 @@ Live evidence: real admin page, Samuel watching.
 Cap: 10 (raised after sign-off; rebuilt to 45459 chars / 45468 bytes)
 Open questions: none blocking. The blocked-reason line now turns red and bold
   like #ans_res (fixed 2026-10-25). Native `required` still means a blank option
-  never reaches the server from the manual form. Delete the AUTO-SAVE TEST /
-  LOCK TEST drafts (#1516-#1519, #1520 active, #1528, and any later lock-test
-  rows) when convenient.
+   never reaches the server from the manual form. The AUTO-SAVE TEST / LOCK
+   TEST drafts (#1516-#1519, #1520, #1528, and later lock-test rows) were
+   deleted from the live site on 2026-10-25.
 ```

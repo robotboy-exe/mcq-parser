@@ -112,15 +112,31 @@ test('maxSavedId and savedForBatch filter the log', () => {
 });
 
 test('formatSavedRange handles contiguous, sparse, single, and empty', () => {
-  const range = n => [{ id: n }];
+  const range = n => [{ id: n, inactive: true }];
   eq(
-    parser.formatSavedRange([901, 902, 903, 904, 905, 906, 907, 908, 909, 910].map(n => ({ id: n }))),
+    parser.formatSavedRange([901, 902, 903, 904, 905, 906, 907, 908, 909, 910].map(n => ({ id: n, inactive: true }))),
     'Saved this batch: #901 to #910, inactive'
   );
-  eq(parser.formatSavedRange([905, 901, 903].map(n => ({ id: n }))), 'Saved this batch: #901, #903, #905, inactive');
+  eq(parser.formatSavedRange([905, 901, 903].map(n => ({ id: n, inactive: true }))), 'Saved this batch: #901, #903, #905, inactive');
   eq(parser.formatSavedRange(range(901)), 'Saved this batch: #901, inactive');
-  eq(parser.formatSavedRange([]), 'Saved this batch: none, inactive');
-  eq(parser.formatSavedRange(undefined), 'Saved this batch: none, inactive');
+  eq(parser.formatSavedRange([]), 'Saved this batch: none');
+  eq(parser.formatSavedRange(undefined), 'Saved this batch: none');
+});
+
+test('formatSavedRange reports active and unverified saves honestly', () => {
+  eq(parser.savedInactiveSuffix([{ inactive: true }]), ', inactive');
+  eq(parser.savedInactiveSuffix([{ inactive: true }, { inactive: false }]), ', includes a question saved active');
+  eq(parser.savedInactiveSuffix([{ inactive: true }, { inactive: null }]), ', inactive status not verified');
+  eq(parser.savedInactiveSuffix([{ inactive: false }, { inactive: null }]), ', includes a question saved active');
+  eq(parser.savedInactiveSuffix([{ id: 1 }]), ', inactive status not verified');
+  eq(
+    parser.formatSavedRange([{ id: 7, inactive: false }]),
+    'Saved this batch: #7, includes a question saved active'
+  );
+  eq(
+    parser.formatSavedRange([{ id: 7, inactive: null }]),
+    'Saved this batch: #7, inactive status not verified'
+  );
 });
 
 test('recentDuplicate matches normalized subject and the 140-char prefix', () => {

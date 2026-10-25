@@ -110,16 +110,17 @@ Status definitions:
 | INV-62 | The per-question gate blocks a non-consecutive queue, inexact key coverage, key conflicts, E/F key letters, a mismatched or absent radio, E/F options, non-ABCD letters, empty/duplicate/over-500-byte options, a short stem, a media/passage match, missing meta, an unticked confirmation, attached files, a marker/save/stop/cap/lock/visibility block, a saved-batch number, a recent duplicate, or an edited form. The first reason is shown. | VERIFIED | D-33, D-34; `tests/unit.js`; SPEC §7.3 |
 | INV-63 | Parser E/F detection is advisory (`E/F options present`) but auto-save consumes it as a blocker; an E/F key letter blocks only that question. | VERIFIED | D-37; `tests/unit.js`; mock check 2026-10-25 |
 | INV-64 | A reply is Saved only when it redirected, has no `.admin-error`, matches the success regex, and its ID exceeds every logged ID. A validation error or logged-out page is Rejected. Everything else is Ambiguous and is never retried. | VERIFIED | D-33; `tests/unit.js`; AS-04 handoff; live stale-success rejection 2026-10-25 |
-| INV-65 | `ocrSaving` is written before the request and cleared only on a definite Saved/Rejected result. An ambiguous result keeps it, disables Start, and shows the paused warning until the user clears it. | VERIFIED | D-33; mock check 2026-10-25; live network loss 2026-10-25 (no retry) |
-| INV-66 | `ocrSavedLog` is appended only after a verified save, stores `{num,id,at,batchId}`, and is capped at 200. The saved list is batch-scoped and supports a copy action. | VERIFIED | D-32, D-34; `tests/unit.js`; mock check 2026-10-25 |
+| INV-65 | `ocrSaving` is written before the request and cleared only on a definite Saved/Rejected result for the current attempt; a rejected retry restores any earlier unresolved marker. An ambiguous result keeps it, disables Start, and shows the paused warning until the user clears it. A storage failure before the POST aborts without sending and without stranding the in-progress flag. | VERIFIED | D-33; mock check 2026-10-25; live network loss 2026-10-25 (no retry); review fix 2026-10-25 |
+| INV-66 | `ocrSavedLog` is appended only after a verified save, stores `{num,id,at,batchId,inactive}`, and is capped at 200. `inactive` records the edit-page check (`true`/`false`/`null`); the saved list is batch-scoped, states active/unverified results honestly, and supports a copy action. | VERIFIED | D-32, D-34; `tests/unit.js`; mock check 2026-10-25 |
 | INV-67 | A run holds `autoLock` with a 5-second heartbeat and refuses another tab whose lock is under 15 seconds old. A hidden tab finishes the current save, pauses, and does not auto-resume. | VERIFIED | D-33; `tests/unit.js`; mock check 2026-10-25. Live two-tab test paused tab 1 on hide before the lock reason could be observed |
 | INV-68 | Dry run copies the queue, uses the current metadata, logs intended saves, performs no POST, and writes nothing to `ocrQueue`, `ocrSaving`, `ocrSavedLog`, or `autoLock`. | VERIFIED | AS-05; mock check 2026-10-25 (five scenarios) |
 | INV-69 | Duplicate safeguards stop the run when the number is in this batch's saved log or a recent admin-table row has the same subject and first 140 characters. They cannot detect saves older than the loaded 20-row page. | AT_RISK | D-34; `tests/unit.js`; documented limit in Auto-Save-Spec §9 |
+| INV-70 | While a save is in flight, Load, Go to, Skip, Reset, and Clear saved key refuse and stop the run instead of mutating the queue; a successful save advances only the batch/index/item it started with, and logs the batch it started with. A normal Stop or queue end is status text, not a red blocked reason. | VERIFIED | review fix 2026-10-25; `src/ui/ui.js` |
 
 ## Counts
 
-- Total: 67
-- VERIFIED: 57
+- Total: 68
+- VERIFIED: 58
 - AT_RISK: 10
 - CONFLICTED: 0
 

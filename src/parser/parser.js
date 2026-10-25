@@ -323,12 +323,19 @@ function savedForBatch(log, batchId) {
   return (Array.isArray(log) ? log : []).filter(entry => entry && entry.batchId === batchId);
 }
 
+function savedInactiveSuffix(entries) {
+  const states = (Array.isArray(entries) ? entries : []).map(entry => entry && entry.inactive);
+  if (states.some(state => state === false)) return ', includes a question saved active';
+  if (states.some(state => state !== true)) return ', inactive status not verified';
+  return ', inactive';
+}
+
 function formatSavedRange(entries) {
   const ids = (Array.isArray(entries) ? entries : [])
     .map(entry => Number(entry && entry.id))
     .filter(id => Number.isFinite(id) && id > 0);
   const unique = Array.from(new Set(ids)).sort((a, b) => a - b);
-  if (!unique.length) return 'Saved this batch: none, inactive';
+  if (!unique.length) return 'Saved this batch: none';
   let gap = false;
   for (let i = 1; i < unique.length; i++) {
     if (unique[i] !== unique[i - 1] + 1) gap = true;
@@ -336,7 +343,7 @@ function formatSavedRange(entries) {
   const range = unique.length === 1 || gap
     ? unique.map(id => '#' + id).join(', ')
     : '#' + unique[0] + ' to #' + unique[unique.length - 1];
-  return 'Saved this batch: ' + range + ', inactive';
+  return 'Saved this batch: ' + range + savedInactiveSuffix(entries);
 }
 
 function recentDuplicate(rows, subject, questionText) {
@@ -524,6 +531,7 @@ if (typeof module !== 'undefined' && module.exports) {
     appendSavedLog,
     maxSavedId,
     savedForBatch,
+    savedInactiveSuffix,
     formatSavedRange,
     recentDuplicate,
     savedLogHasNum,

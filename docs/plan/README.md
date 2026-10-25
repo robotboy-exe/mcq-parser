@@ -27,7 +27,7 @@ recorded in AS-01 and supersede the old rows:
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 34 PASS, 0 FAIL.
+  `node tests/unit.js` → 35 PASS, 0 FAIL.
 - Auto-Save AS-01 through AS-06 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
   the run cap is now 10. Two-tab live testing is limited by hide-pause on one
@@ -225,6 +225,15 @@ authoritative:
 
 ## Change log
 
+- 2026-10-25 — Auto-Save review fixes: queue-mutating controls refuse during an
+  in-flight save and a save only advances the queue it started with; normal Stop
+  and queue completion are status text, not red blockers; `ocrSavedLog` records
+  the inactivity check so the saved list cannot claim inactive for active or
+  unverified saves; a rejected retry preserves an earlier unresolved marker; a
+  storage failure aborts before the POST instead of stranding `saveInProgress`;
+  POST target restored to `location.href`; unit tests 35 PASS.
+- 2026-10-25 — live site cleaned: the AS test drafts (#1516-#1519, #1520,
+  #1528 and lock-test rows) were deleted.
 - 2026-10-25 — AS-06 done: docs close-out; five dry-run scenarios, hide-pause,
   mock lock, and the 3-question live test passed. Boot-fill regression fixed;
   cap raised to 10; blocked-reason color fixed. One-browser limit recorded for

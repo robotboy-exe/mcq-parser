@@ -109,6 +109,7 @@ function runOCRBookmarklet() {
   let confirmTicked = false;
   let lastBlocked = '';
   let autoStatus = '';
+  const busyNotice = 'A save is in progress. Wait for it to finish.';
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   function readLock() {
     try { return store.get('autoLock'); } catch (e) { return null; }
@@ -287,6 +288,16 @@ function runOCRBookmarklet() {
     r.textContent = text;
     r.style.color = danger ? '#b00020' : '#1769aa';
   }
+  function busySaving() {
+    if (!saveInProgress) return false;
+    if (autoRunning) stopAuto = true;
+    lastBlocked = busyNotice;
+    renderAuto();
+    return true;
+  }
+  function markStopped() {
+    if (!autoStatus || autoStatus.indexOf('Paused') !== 0) autoStatus = 'Stopped.';
+  }
   async function verifyInactive(id) {
     let ctl = null, timer = null;
     try {
@@ -305,15 +316,33 @@ function runOCRBookmarklet() {
       if (timer) clearTimeout(timer);
     }
   }
+  function restorePriorMarker(prior) {
+    if (prior) store.set('ocrSaving', prior);
+    else store.del('ocrSaving');
+  }
+  function clearSavedMarker(prior, num) {
+    if (prior && prior.num !== num) store.set('ocrSaving', prior);
+    else store.del('ocrSaving');
+  }
   async function saveCurrentQuestion(opts) {
     const auto = Boolean(opts && opts.auto);
     if (saveInProgress) return { kind: 'busy', message: 'A save is already running.' };
     saveInProgress = true;
     const q = queue.items[queue.i];
     const num = q ? q.num : null;
-    store.set('ocrSaving', { num: num, at: Date.now() });
+    const savedBatchId = queue.batchId || null;
+    const savedIndex = queue.i;
+    let priorSaving = null;
     let ctl = null, timer = null;
     try {
+      try { priorSaving = store.get('ocrSaving'); } catch (e) {}
+      try {
+        store.set('ocrSaving', { num: num, at: Date.now() });
+      } catch (e) {
+        setResult('NOT saved: browser storage is unavailable, so the save was not attempted.', true);
+        return { kind: 'rejected', reason: 'storage', message: 'browser storage is unavailable.' };
+      }
+      renderAuto();
       if (!auto && form.elements.is_active) form.elements.is_active.checked = true;
       const fd = new FormData(form);
       if (auto) {
@@ -322,13 +351,13 @@ function runOCRBookmarklet() {
       }
       ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
       if (ctl) timer = setTimeout(() => ctl.abort(), 30000);
-      const res = await fetch(location.pathname, { method: 'POST', body: fd, credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
+      const res = await fetch(location.href, { method: 'POST', body: fd, credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
       const txt = await res.text();
       const doc = new DOMParser().parseFromString(txt, 'text/html');
       const er = doc.querySelector('.admin-error');
       const result = classifySaveResponse({ redirected: res.redirected, text: txt, errorText: er ? er.textContent.trim() : '', lastId: maxSavedId(savedLog) });
       if (result.kind === 'rejected') {
-        store.del('ocrSaving');
+        restorePriorMarker(priorSaving);
         setResult('NOT saved: ' + result.message, true);
         return result;
       }
@@ -338,14 +367,15 @@ function runOCRBookmarklet() {
       }
       let inactive = null;
       if (auto) inactive = await verifyInactive(result.id);
-      const entry = { num: num, id: result.id, at: Date.now(), batchId: queue.batchId || null };
+      const entry = { num: num, id: result.id, at: Date.now(), batchId: savedBatchId, inactive: auto ? inactive : false };
       savedLog = appendSavedLog(savedLog, entry, 200);
       store.set('ocrSavedLog', savedLog);
-      if (queue.items[queue.i]) {
+      const sameQueue = queue.i === savedIndex && queue.items[savedIndex] === q && (queue.batchId || null) === savedBatchId;
+      if (sameQueue && q) {
         queue.i++;
         saveQ();
       }
-      store.del('ocrSaving');
+      clearSavedMarker(priorSaving, num);
       ['question_image', 'answer_video'].forEach(n => { const el = form.elements[n]; if (el) el.value = ''; });
       const ae = form.elements.answer_explanation;
       if (ae) ae.value = '';
@@ -370,6 +400,7 @@ function runOCRBookmarklet() {
     } finally {
       if (timer) clearTimeout(timer);
       saveInProgress = false;
+      if (lastBlocked === busyNotice) lastBlocked = '';
     }
   }
   function renderOCR() {
@@ -460,7 +491,8 @@ function runOCRBookmarklet() {
     renderAuto();
     try {
       while (autoRunning) {
-        if (stopAuto) { lastBlocked = 'Stopped.'; break; }
+        if (stopAuto) { markStopped(); break; }
+        if (!queue.items[queue.i]) { autoStatus = 'All questions in this batch are done.'; break; }
         const blockers = autosaveBlockers(gateState());
         if (blockers.length) { showBlocked(blockers[0]); break; }
         const result = await saveCurrentQuestion({ auto: true });
@@ -470,7 +502,7 @@ function runOCRBookmarklet() {
         }
         autoRunCount++;
         renderAuto();
-        if (stopAuto) break;
+        if (stopAuto) { markStopped(); break; }
         await sleep(1500);
       }
     } finally {
@@ -480,6 +512,7 @@ function runOCRBookmarklet() {
     }
   }
   $('ocr_load').onclick = () => {
+    if (busySaving()) return;
     if (autoRunning) stopAuto = true;
     resetConfirm();
     const raw = $('ocr_text').value;
@@ -535,6 +568,7 @@ function runOCRBookmarklet() {
   };
   $('ocr_clear_text').onclick = () => { $('ocr_text').value = ''; };
   $('ocr_goto').onclick = () => {
+    if (busySaving()) return;
     if (autoRunning) stopAuto = true;
     const curQ = queue.items[queue.i];
     const ans = prompt('Go to book question number:', curQ && curQ.num != null ? String(curQ.num) : '');
@@ -551,8 +585,9 @@ function runOCRBookmarklet() {
     saveQ();
     showOCR();
   };
-  $('ocr_skip').onclick = () => { if (autoRunning) stopAuto = true; queue.i++; saveQ(); showOCR(); };
+  $('ocr_skip').onclick = () => { if (busySaving()) return; if (autoRunning) stopAuto = true; queue.i++; saveQ(); showOCR(); };
   $('ocr_reset').onclick = () => {
+    if (busySaving()) return;
     if (autoRunning) stopAuto = true;
     resetConfirm();
     queue = { items: [], i: 0 };
@@ -634,6 +669,7 @@ function runOCRBookmarklet() {
     m.textContent = 'Question ' + n + ': ticked Option ' + 'ABCD'[idx] + ' from the answer key' + note + '. Check it before saving.';
   }
   $('ans_clear').onclick = () => {
+    if (busySaving()) return;
     if (autoRunning) stopAuto = true;
     resetConfirm();
     key = {};

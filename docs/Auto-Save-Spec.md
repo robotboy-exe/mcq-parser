@@ -19,7 +19,7 @@ Add an opt-in **Auto-save** mode to the existing merged bookmarklet (`bookmarkle
 - `ansKey`: **unchanged shape** (a plain `{num: letter}` map), so every existing reader keeps working.
 - `ansKeyBatch`: new. It is set to `queue.batchId` whenever a key is loaded together with questions. A key-only paste attaches to the current queue's `batchId`. Clearing the key, or loading questions with no key, deletes `ansKeyBatch`. **Reset Queue now also clears `ansKey`, `ansKeyBatch` and `queue.batchId`**, consistent with "key only relevant in the moment".
 - `ocrSaving`: crash marker `{num, at}`.
-- `ocrSavedLog`: array of `{num, id, at, batchId}`. Written only after a verified save; capped at 200 entries.
+- `ocrSavedLog`: array of `{num, id, at, batchId, inactive}`. Written only after a verified save; capped at 200 entries. `inactive` is `true` when the edit-page check confirmed inactive, `false` for a manual save or a save verified active, and `null` when the check was inconclusive.
 - `autoLock`: `{tab, at}` heartbeat.
 - A queue without `batchId`, or a key without a matching `ansKeyBatch`, is treated as legacy: manual use is unchanged, auto-save is blocked.
 
@@ -29,7 +29,7 @@ Add an opt-in **Auto-save** mode to the existing merged bookmarklet (`bookmarkle
 - A **batch confirmation** block shown before Start. It lists Subject, Category, Year, number of questions, number of key entries, and the first and last question numbers. It has one tick-box: "These are correct." Start is disabled until it is ticked. The tick resets on any new paste.
 - A status line showing counts such as "Saved 4 of 10 this run".
 - A **blocked reason** line in plain words whenever auto-save stops.
-- A **saved list** ("Saved this batch: #901 to #910, inactive") with a Copy button, built from `ocrSavedLog`.
+- A **saved list** ("Saved this batch: #901 to #910, inactive") with a Copy button, built from `ocrSavedLog`. The suffix is honest: `includes a question saved active` if any entry is verified active, or `inactive status not verified` if any check was inconclusive.
 - A paused-run message: "A previous save may have been interrupted. Check the question list before continuing", with a button "I checked. Clear warning."
 - Start is disabled while the `ocrSaving` marker exists.
 
