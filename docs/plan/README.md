@@ -24,6 +24,34 @@ recorded in AS-01 and supersede the old rows:
 - Full-line `//` comments are allowed in the modules and stripped by the build;
   the generated bookmarklet must still be one line and contain no `%`.
 
+## Auto-Save follow-up track (AS-07…AS-09)
+
+`docs/Active.md` is the merged review for the work after AS-06. Its phases map
+to three plan packages so the status table, acceptance gates, and handoff notes
+stay in one place. `docs/Active.md` remains the authoritative detailed spec;
+the package files add preconditions, acceptance, and handoff.
+
+The one sequencing change: **Fix 2 moves from Phase 3 into AS-07**. Active.md
+§2 forbids live active saves until Fix 1 and Fix 2 are both done, and AS-08
+contains the live active test. Shipping active mode before Fix 2 would put a
+hidden possible duplicate in front of students.
+
+Decisions recorded 2026-10-25:
+
+- Cross-category copies stay allowed; category remains part of the duplicate
+  identity.
+- `ocrSavedLog` is not cleared on Reset.
+- The key-letter preview is deferred.
+- The saved list must name each question whose active status is unverified,
+  and the run stops after two consecutive unverified saves. Both are in AS-07;
+  AS-08 must preserve them.
+- `NEEDS_PICTURE` is removed. The uploader decides whether a batch needs
+  images; text guessing is out of scope. `file-attached` stays. A future media
+  feature needs an explicit uploader signal, not a word list.
+
+`tests/build-check.js` exists only in `review-packet/` and is pinned to the
+packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
+
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING;
@@ -32,6 +60,10 @@ recorded in AS-01 and supersede the old rows:
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
   the run cap is now 10. Two-tab live testing is limited by hide-pause on one
   browser; the lock reason is covered by unit + mock.
+- The follow-up track AS-07…AS-09 is planned from `docs/Active.md` but not
+  started. AS-07 combines Fix 1, Fix 2, the two unverified-status changes, and
+  removal of `needs-media` so active mode cannot go live before the draft-only
+  barrier clears.
 - Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
@@ -110,6 +142,9 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | AS-04 | [as-04-save-pipeline.md](as-04-save-pipeline.md) | Shared `saveCurrentQuestion`, classification, marker/log | AS-03 | done (code; live smoke in AS-06) |
 | AS-05 | [as-05-ui-and-loop.md](as-05-ui-and-loop.md) | Opt-in UI, loop, lock, visibility, dry run | AS-04 | done (code + mock; hide-pause verified 2026-10-25) |
 | AS-06 | [as-06-verification-and-docs.md](as-06-verification-and-docs.md) | Docs close-out, dry-run/live acceptance, cap 3→10 | AS-05 | done |
+| AS-07 | [as-07-duplicate-scope-and-marker.md](as-07-duplicate-scope-and-marker.md) | Fix 1 scoped duplicate check, Fix 2 marker guard, unverified list + stop, remove media guess | AS-06 | not started |
+| AS-08 | [as-08-active-mode.md](as-08-active-mode.md) | Opt-in active save mode, mode gate/suffix, live 2-question test | AS-07 | not started |
+| AS-09 | [as-09-remaining-fixes-and-docs.md](as-09-remaining-fixes-and-docs.md) | Fixes 3–7, nit, Phase 3 doc corrections | AS-08 | not started |
 
 ## Dependency graph
 
@@ -128,10 +163,15 @@ The AS track is linear and independent of P01–P09:
 
 ```text
 AS-01 ──> AS-02 ──> AS-03 ──> AS-04 ──> AS-05 ──> AS-06
+                                                     │
+AS-07 <──────────────────────────────────────────────┘
+  │
+  └──> AS-08 ──> AS-09
 ```
 
 Do not start AS-02 until AS-01's build and harness checks pass. Do not deliver
-AS-06 without the 3-question live test.
+AS-06 without the 3-question live test. AS-07 must pass its live check before
+AS-08; AS-08's live active test must pass before AS-09.
 
 ## Session protocol
 
@@ -140,7 +180,9 @@ AS-06 without the 3-question live test.
 2. Read the package document completely before editing anything.
 3. Confirm its preconditions (status of dependencies, source hashes, test count).
 4. Execute the steps. Keep parser changes and fixture changes in separate
-   commits/diffs when possible, but do not commit unless asked.
+   commits/diffs when possible, but do not commit unless asked. The exception
+   is AS-07…AS-09: `docs/Active.md` §1 explicitly asks for one commit at each
+   phase boundary, so that is the only commit instruction for those packages.
 5. Run the package's acceptance commands. Do not mark the package done on a
    partial pass.
 6. Update the status row above and append a handoff note to the package file
@@ -225,6 +267,13 @@ authoritative:
 
 ## Change log
 
+- 2026-10-25 — Auto-Save follow-up planned as AS-07…AS-09 from
+  `docs/Active.md`; Fix 2 moved into AS-07 so the live active-mode test cannot
+  run before the draft-only barrier clears. Decisions: cross-category copies
+  allowed, saved log kept on Reset, key-letter preview deferred, per-question
+  unverified status list and a two-consecutive-unverified stop added to AS-07,
+  and `NEEDS_PICTURE` removed. `tests/build-check.js` is a
+  review-packet-only script, not a workspace test.
 - 2026-10-25 — Auto-Save review fixes: queue-mutating controls refuse during an
   in-flight save and a save only advances the queue it started with; normal Stop
   and queue completion are status text, not red blockers; `ocrSavedLog` records
