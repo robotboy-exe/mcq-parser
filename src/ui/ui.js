@@ -12,6 +12,7 @@ function runOCRBookmarklet() {
   }
   const hadServerError = Boolean(document.querySelector('.admin-error'));
   const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
+  const SALVAGE_FLAG = 'OCR boundaries repaired; verify question and option split';
   const $ = id => document.getElementById(id);
   const L = localStorage;
   const store = {
@@ -613,9 +614,11 @@ function runOCRBookmarklet() {
     if (autoRunning) stopAuto = true;
     resetConfirm();
     const raw = $('ocr_text').value;
-    const parts = splitSections(raw);
+    const salvage = splitSectionsWithSalvage(raw);
+    const parts = salvage.parts;
     const text = FIXES.reduce((t, [re, fix]) => t.replace(re, fix), parts.questions);
     const items = flagNumberingGaps(splitQuestions(text).map(parseQuestion));
+    if (salvage.salvaged) items.forEach(item => item.flags.push(SALVAGE_FLAG));
     const detailed = parts.answers.trim() ? parseKeyDetailed(parts.answers) : { key: {}, conflicts: [] };
     const newKey = detailed.key;
     const hasKey = Object.keys(newKey).length > 0;
@@ -655,6 +658,9 @@ function runOCRBookmarklet() {
     queue = { items, i: 0, batchId };
     saveQ();
     showOCR();
+    if (salvage.salvaged) {
+      $('ocr_status').innerHTML += '<div class="admin-note">OCR boundaries repaired (' + salvage.inserts + ' inserts); verify the split.</div>';
+    }
     if (hasKey) {
       tick();
       $('ans_msg').textContent += ' (' + Object.keys(key).length + ' answers in key.)';

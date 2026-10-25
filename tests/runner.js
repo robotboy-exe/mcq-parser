@@ -24,11 +24,12 @@ const CATEGORY_NAMES = CATEGORY_SELECT ? [...CATEGORY_SELECT[0]
   .filter(name => name && !name.startsWith('--')) : [];
 
 const INPUT_ORIGINS = new Set(['bank', 'anomaly', 'doc', 'synthetic']);
+const SALVAGE_FLAG = 'OCR boundaries repaired; verify question and option split';
 
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
 const ASSERTED_KEYS = {
-  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'key', 'forbidden_flags'],
+  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'forbidden_flags'],
   question: ['a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'forbidden_flags'],
   key: ['key']
 };
@@ -119,6 +120,11 @@ function validateExpected(spec) {
        !expected.questions_with_e.every(isInteger))) {
     return 'expected.questions_with_e must be an array of integers';
   }
+  if (has(expected, 'nums') &&
+      (!Array.isArray(expected.nums) ||
+       !expected.nums.every(n => n === null || isInteger(n)))) {
+    return 'expected.nums must be an array of integers or null';
+  }
   if (has(expected, 'key')) {
     const key = expected.key;
     if (!key || typeof key !== 'object' || Array.isArray(key)) {
@@ -201,12 +207,14 @@ function validateExpected(spec) {
 
 function parseFixture(spec, inputText) {
   if (spec.kind === 'questions') {
-    const sections = parser.splitSections(inputText);
+    const salvage = parser.splitSectionsWithSalvage(inputText);
+    const sections = salvage.parts;
     const fixed = parser.FIXES.reduce(
       (text, [pattern, replacement]) => text.replace(pattern, replacement),
       sections.questions
     );
     const items = parser.flagNumberingGaps(parser.splitQuestions(fixed).map(parser.parseQuestion));
+    if (salvage.salvaged) items.forEach(item => item.flags.push(SALVAGE_FLAG));
     return { items, sections, header: parser.parseHeader(fixed) };
   }
 
@@ -361,6 +369,11 @@ function runFixture(spec, inputText) {
     }
 
     if (expected.header) checkHeader(expected.header, actual.header, checks);
+
+    if (has(expected, 'nums')) {
+      const actualNums = actual.items.map(item => item.num === undefined ? null : item.num);
+      checks.push(makeCheck('nums', deepEqual(actualNums, expected.nums), expected.nums, actualNums));
+    }
 
     (expected.questions || []).forEach((expectedQuestion, position) => {
       const label = questionLabel(expectedQuestion, position);

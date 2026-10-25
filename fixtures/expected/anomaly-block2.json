@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "input_origin": "anomaly",
+  "id": "anomaly-block2",
+  "source": [
+    "archive/live-sources/ANOMALIES.txt lines 99-115"
+  ],
+  "provenance": "Verbatim hostile OCR block after the separator: 17 lines starting with the STURCTURED GOVERNMENT QUESTIONS 2025 header and ending at `202.`.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/anomaly-block2.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 12,
+    "nums": [
+      null,
+      2,
+      3,
+      4,
+      7,
+      8,
+      9,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "questions": [
+      {
+        "index": 0,
+        "question_contains": [
+          "STURCTURED GOVERNMENT QUESTIONS 2025"
+        ],
+        "a": "socialism",
+        "b": "totalitarianism",
+        "c": "capitalism",
+        "d": "feudalism"
+      },
+      {
+        "num": 2,
+        "question_contains": [
+          "Fascism as a system of government originated in"
+        ],
+        "a": "Italy",
+        "b": "Germany",
+        "c": "France",
+        "d": "Britain"
+      },
+      {
+        "num": 3,
+        "question_contains": [
+          "A country is said to be democratic if"
+        ],
+        "b": "there are free and fair elections"
+      },
+      {
+        "num": 4,
+        "question_contains": [
+          "Constitutionalism is synonymous with"
+        ]
+      },
+      {
+        "num": 7,
+        "question_contains": [
+          "An organization whose ultimate aim is to gain the"
+        ],
+        "a": "pressure group",
+        "b": "political",
+        "c": "trade union",
+        "d": "professional association"
+      },
+      {
+        "num": 9,
+        "question_contains": [
+          "Which of the following protect the rights of the individual in a State?"
+        ]
+      },
+      {
+        "num": 12,
+        "question_contains": [
+          "In a federal system of government, the center is"
+        ],
+        "a": "superior to the other components"
+      },
+      {
+        "num": 16,
+        "a": "parliamentary system 202.",
+        "b": "unitary system"
+      }
+    ],
+    "forbidden_flags": [
+      "question text missing or very short"
+    ]
+  }
+}

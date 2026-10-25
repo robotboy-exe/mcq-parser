@@ -1,6 +1,6 @@
 # P07 — Anomaly block 2 and guarded salvage
 
-Status: not started. Depends on: P06. Blocks: P08.
+Status: done (2026-10-25). Depends on: P06. Blocks: P08.
 
 ## Self-contained context
 
@@ -175,7 +175,7 @@ Integrate:
 
 | Command | Expected |
 |---|---|
-| `node tests/runner.js` | 25 PASS, 0 FAIL, 0 PENDING; exit 0 |
+| `node tests/runner.js` | 30 PASS, 0 FAIL, 0 PENDING; exit 0 |
 | block-2 probe | 12 items; nums `[null,2,3,4,7,8,9,12,13,14,15,16]` |
 | bank no-op probe | `inserts === 0` for all five bank inputs |
 | `git diff src/parser/parser.js` | only the two new functions/exports |
@@ -195,10 +195,16 @@ Integrate:
 ## Handoff note (append when done)
 
 ```text
-Date:
-Result: 25 PASS / 0 FAIL / 0 PENDING
-Block-2 nums:
-Inserts on block 2:
-Bank no-op result:
-Open questions:
+Date: 2026-10-25
+Result: 30 PASS / 0 FAIL / 0 PENDING; unit 59 PASS.
+Block-2 nums: [null, 2, 3, 4, 7, 8, 9, 12, 13, 14, 15, 16]
+Inserts on block 2: 50
+Bank no-op result: inserts 0 and text identical for all five bank inputs.
+Parser changes: added and exported `salvageNormalize` and
+  `splitSectionsWithSalvage`; added `nums` schema validation/comparison and the
+  salvage flag in the runner; UI `ocr_load` uses the guarded result and shows
+  `OCR boundaries repaired (N inserts); verify the split.` when salvaged.
+  Build: one line, no `%`, body parses.
+Open questions: none. The UI DOM path still has no browser test; the runner
+  and probe cover the parser and the same shared functions.
 ```

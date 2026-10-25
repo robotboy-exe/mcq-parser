@@ -222,6 +222,34 @@ function splitSections(raw) {
   return { questions: raw, answers: '', how: 'none', boundary: '' };
 }
 
+function salvageNormalize(raw) {
+  let inserts = 0;
+  let text = raw.replace(/([^\s\d])(\d{1,3})\.(\s*)(?=[A-Z"'(]|$)/gm, (m, pre, n, sp) => {
+    inserts++;
+    return pre + '\n' + n + '.' + (sp || ' ');
+  });
+  text = text.replace(/([^\r\n])([ \t]+)(\d{1,3})\.(\s*)(?=[A-Z][a-z])/g, (m, pre, ws, n, sp) => {
+    inserts++;
+    return pre + '\n' + n + '.' + (sp || ' ');
+  });
+  text = text.replace(/([^A-Za-z\s]|[a-z])([A-F])\./g, (m, pre, letter) => {
+    inserts++;
+    return pre + ' ' + letter + '.';
+  });
+  return { text, inserts };
+}
+
+function splitSectionsWithSalvage(raw) {
+  const strict = splitSections(raw);
+  const repair = salvageNormalize(raw);
+  if (repair.inserts < 2) return { parts: strict, salvaged: false, inserts: 0 };
+  const repaired = splitSections(repair.text);
+  const before = splitQuestions(strict.questions).length;
+  const after = splitQuestions(repaired.questions).length;
+  if (after <= before) return { parts: strict, salvaged: false, inserts: 0 };
+  return { parts: repaired, salvaged: true, inserts: repair.inserts };
+}
+
 function keyPairs(t) {
   const pairs = [];
   const r = /(\d{1,3})\s*[.\-:)]*\s*\(?([A-Fa-f])\)?(?![A-Za-z])/g;
@@ -670,6 +698,8 @@ if (typeof module !== 'undefined' && module.exports) {
     parseQuestion,
     flagNumberingGaps,
     splitSections,
+    salvageNormalize,
+    splitSectionsWithSalvage,
     keyPairs,
     parseKeyDetailed,
     parseKey,
