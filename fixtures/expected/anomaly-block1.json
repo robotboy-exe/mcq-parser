@@ -48,6 +48,9 @@
         ]
       }
     ],
+    "required_flags": [
+      "question number missing"
+    ],
     "forbidden_flags": [
       "a letter appears twice (merged questions?)",
       "question text missing or very short"

@@ -29,7 +29,7 @@ const SALVAGE_FLAG = 'OCR boundaries repaired; verify question and option split'
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
 const ASSERTED_KEYS = {
-  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'forbidden_flags'],
+  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'required_flags', 'forbidden_flags'],
   question: ['a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'forbidden_flags'],
   key: ['key']
 };
@@ -114,6 +114,9 @@ function validateExpected(spec) {
   }
   if (has(expected, 'forbidden_flags') && !isStringArray(expected.forbidden_flags)) {
     return 'expected.forbidden_flags must be an array of strings';
+  }
+  if (has(expected, 'required_flags') && !isStringArray(expected.required_flags)) {
+    return 'expected.required_flags must be an array of strings';
   }
   if (has(expected, 'questions_with_e') &&
       (!Array.isArray(expected.questions_with_e) ||
@@ -352,6 +355,22 @@ function checkForbiddenFlags(items, flags, checks) {
   }
 }
 
+function checkRequiredFlags(items, flags, checks) {
+  if (!Array.isArray(flags)) return;
+  for (const flag of flags) {
+    const missing = items
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => !item.flags.includes(flag))
+      .map(({ item, index }) => item.num === null || item.num === undefined ? `[${index}]` : item.num);
+    checks.push(makeCheck(
+      `required flag on every item: ${flag}`,
+      missing.length === 0,
+      'all items',
+      missing.length ? missing : 'all items'
+    ));
+  }
+}
+
 function runFixture(spec, inputText) {
   const checks = [];
   const expected = spec.expected || {};
@@ -399,6 +418,7 @@ function runFixture(spec, inputText) {
     }
 
     checkForbiddenFlags(actual.items, expected.forbidden_flags, checks);
+    checkRequiredFlags(actual.items, expected.required_flags, checks);
   } else if (spec.kind === 'question') {
     const actual = parseFixture(spec, inputText);
     checkQuestion(actual.items[0], expected, 'Q', checks);

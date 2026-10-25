@@ -88,6 +88,9 @@
         "b": "unitary system"
       }
     ],
+    "required_flags": [
+      "OCR boundaries repaired; verify question and option split"
+    ],
     "forbidden_flags": [
       "question text missing or very short"
     ]
