@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "input_origin": "bank",
+  "id": "bank-2025",
+  "source": [
+    "archive/live-sources/IMPROVISED C.docx.txt lines 1133-1456",
+    "2025 questions (lines 1133-1415) and answer block (lines 1416-1456)"
+  ],
+  "provenance": "Verbatim 2025 slice from the bank. The key has 39 entries because Q26 is marked missing in the source text.",
+  "status": "PENDING",
+  "input_file": "fixtures/inputs/bank-2025.txt",
+  "kind": "questions",
+  "expected": {}
+}

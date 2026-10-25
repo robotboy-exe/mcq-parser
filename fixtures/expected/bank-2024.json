@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "input_origin": "bank",
+  "id": "bank-2024",
+  "source": [
+    "archive/live-sources/IMPROVISED C.docx.txt lines 915-1127",
+    "2024 questions (lines 915-1086, starting at Q17) and answer block (lines 1087-1127)"
+  ],
+  "provenance": "Verbatim incomplete 2024 slice from the bank. It starts at Q17 and has no 2024 questions header, only an answers header.",
+  "status": "PENDING",
+  "input_file": "fixtures/inputs/bank-2024.txt",
+  "kind": "questions",
+  "expected": {}
+}

@@ -1,6 +1,6 @@
 # P02 — Deterministic per-year bank extraction
 
-Status: not started. Depends on: P01. Blocks: P03, P04, P05, P06.
+Status: done (2026-10-25). Depends on: P01. Blocks: P03, P04, P05, P06.
 
 ## Self-contained context
 
@@ -29,6 +29,11 @@ Source facts:
 Add a deterministic extractor and five verbatim per-year inputs. Add PENDING
 expected specs so the runner stays green and every input has a pair. Do not
 write confirmed expectations in this package; that is P03–P06.
+
+P03 ran first and created `bank-2021` as a confirmed fixture. Its input is
+byte-identical to the 2021 slice below (SHA-256 `8ae2657…bf0b83`), so this
+package regenerates that file without changing it and leaves its confirmed spec
+alone. Only 2022–2025 get new PENDING specs.
 
 ## Slice manifest
 
@@ -80,9 +85,10 @@ Notes:
      rewriting files.
 4. Run the extractor once (without `--check`) to create the five inputs, then
    fill the output hashes into `tools/bank-slices.json`.
-5. Create five PENDING specs:
-   `fixtures/expected/bank-2021.json` … `bank-2025.json`.
-   Each must have:
+5. Create four PENDING specs:
+   `fixtures/expected/bank-2022.json` … `bank-2025.json`.
+   Leave the existing confirmed `bank-2021.json` unchanged.
+   Each new spec must have:
    - `schema_version: 1`
    - `id` = `bank-YYYY`
    - `input_origin: "bank"`
@@ -99,11 +105,11 @@ Notes:
 | Command | Expected |
 |---|---|
 | `node tools/extract-bank.js --check` | exits 0, all five hashes/anchors/counts match |
-| `node tests/runner.js` | 19 PASS, 0 FAIL, 5 PENDING; exit 0; 0 orphan inputs |
+| `node tests/runner.js` | 25 PASS, 0 FAIL, 4 PENDING (29 fixtures); exit 0; 0 orphan inputs |
 | `sha256sum fixtures/inputs/bank-*.txt` | matches the manifest |
-| inspect `bank-2021.txt` bytes | starts with the BOM and 2021 header, preserves CRLF, includes lines 1–297 |
+| inspect `bank-2021.txt` bytes | unchanged, starts with the BOM and 2021 header, preserves CRLF, includes lines 1–297 |
 | inspect `bank-2024.txt` | starts at `17.` and includes the 2024 answer block |
-| `git status --short` | only new tool, manifest, five inputs, five PENDING specs |
+| `git status --short` | only new tool, manifest, four new inputs, four PENDING specs; `bank-2021` unchanged |
 
 ## Guardrails
 
@@ -116,9 +122,22 @@ Notes:
 ## Handoff note (append when done)
 
 ```text
-Date:
-Result: 19 PASS / 0 FAIL / 5 PENDING
-Output hashes:
-Files changed:
-Open questions:
+Date: 2026-10-25
+Result: 25 PASS / 0 FAIL / 4 PENDING (29 fixtures, 0 orphan); unit 59 PASS.
+Output hashes (also in tools/bank-slices.json):
+  2021 8ae265713214c41625f637e1ee92b126dcf51b037d1ec82dd9a4239e54bf0b83
+  2022 bfa5f9b71f4d7c41d9dac19229c83c39efc1c4ab0b9d6c2d9ed7a77825a99ca8
+  2023 c416a7edc8aaf13886feacf2c603059b15811b7b7931ee632731183fcc8b52ab
+  2024 a575fbbd134b5208b6e8da658bffc939b2eae1e61e9d1f3599ca0a2e5e5fdc4c
+  2025 6391299f4c5052fa0bcc025791ebb77b448067979cc518c680e23c43664f310b
+Files changed: tools/extract-bank.js, tools/bank-slices.json,
+  fixtures/inputs/bank-2022.txt..bank-2025.txt, and
+  fixtures/expected/bank-2022.json..bank-2025.json. bank-2021.txt was
+  rewritten identically by the extractor and is not in the diff.
+Open questions: this package was written when there were 19 fixtures and no
+  bank-2021. P03 added bank-2021 first; its input matches the extractor slice
+  byte-for-byte, so the confirmed spec was preserved instead of replaced by a
+  PENDING one. The 2024 slice still starts at Q17 (no Q1-16), and the 2024 key
+  has 40 entries for 24 questions. 2025 still has 39 key entries because Q26 is
+  missing from the source text. P04-P06 can now confirm the four PENDING specs.
 ```

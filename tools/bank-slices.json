@@ -1,0 +1,62 @@
+{
+  "source": "archive/live-sources/IMPROVISED C.docx.txt",
+  "source_sha256": "96ed3af8fb53e3ba3f2bf355a5f8094db54587996f1c8112e088dae5347c5a5c",
+  "line_count": 1456,
+  "slices": [
+    {
+      "year": 2021,
+      "start": 1,
+      "end": 297,
+      "answer_header": 291,
+      "first": "IMPROVISED C. R. K. QUESTIONS FOR 2021 (P.M. Onoriode, Unilag)",
+      "last": "36. D  37. B  38. B  39. D  40. A",
+      "questions": 40,
+      "key_entries": 40,
+      "sha256": "8ae265713214c41625f637e1ee92b126dcf51b037d1ec82dd9a4239e54bf0b83"
+    },
+    {
+      "year": 2022,
+      "start": 303,
+      "end": 606,
+      "answer_header": 600,
+      "first": "IMPROVISED C. R. K. QUESTIONS FOR 2022",
+      "last": "36. D  37. E  38. D  39. C  40. A",
+      "questions": 40,
+      "key_entries": 40,
+      "sha256": "bfa5f9b71f4d7c41d9dac19229c83c39efc1c4ab0b9d6c2d9ed7a77825a99ca8"
+    },
+    {
+      "year": 2023,
+      "start": 612,
+      "end": 909,
+      "answer_header": 903,
+      "first": "STRUCTURED C. R. K QUESTIONS 2023",
+      "last": "36. B  37. A  38. A  39. A  40. C",
+      "questions": 40,
+      "key_entries": 40,
+      "sha256": "c416a7edc8aaf13886feacf2c603059b15811b7b7931ee632731183fcc8b52ab"
+    },
+    {
+      "year": 2024,
+      "start": 915,
+      "end": 1127,
+      "answer_header": 1087,
+      "first": "17. Daniel could not be harmed by the lions because",
+      "last": "40. B",
+      "questions": 24,
+      "key_entries": 40,
+      "sha256": "a575fbbd134b5208b6e8da658bffc939b2eae1e61e9d1f3599ca0a2e5e5fdc4c"
+    },
+    {
+      "year": 2025,
+      "start": 1133,
+      "end": 1456,
+      "answer_header": 1416,
+      "first": "STRUCTURED C. R. K. 2025 OBJECTIVE QUESTIONS",
+      "last": "40. D",
+      "questions": 40,
+      "key_entries": 39,
+      "sha256": "6391299f4c5052fa0bcc025791ebb77b448067979cc518c680e23c43664f310b"
+    }
+  ]
+}

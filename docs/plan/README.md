@@ -54,7 +54,7 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 
 ## Current snapshot
 
-- Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING;
+- Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 4 PENDING;
   `node tests/unit.js` → 59 PASS, 0 FAIL.
 - Auto-Save AS-01 through AS-09 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
@@ -91,6 +91,12 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   and gap fixtures were classified too. `gap-q10-missing` is a real user paste
   marked synthetic because the taxonomy has no user-paste value. Runner 25
   PASS; negative missing/unknown checks reproduced and restored.
+- P02 closed on 2026-10-25: `tools/extract-bank.js` and `tools/bank-slices.json`
+  produce the five year slices, verify the source hash, anchors, question and
+  key counts, and output hashes (`--check`). 2022-2025 inputs and PENDING specs
+  were added; `bank-2021` already existed from P03 and matches the slice
+  byte-for-byte. Runner 25 PASS / 4 PENDING; unit 59 PASS. P04-P06 can confirm
+  the four PENDING bank specs.
 - Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
 - `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
 - `ANOMALIES.txt` and the duplicate-file removals are committed.
@@ -155,8 +161,8 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | ID | Document | Goal | Depends on | Status |
 |---|---|---|---|---|
 | P01 | [01-origin-taxonomy.md](01-origin-taxonomy.md) | Add and enforce `input_origin`; label the 25 current fixtures | — | done (2026-10-25) |
-| P02 | [02-bank-extraction.md](02-bank-extraction.md) | Deterministic per-year extractor + 5 bank inputs + PENDING specs | P01 | not started; needed before P04–P06 |
-| P03 | [03-bank-2021-inline-key.md](03-bank-2021-inline-key.md) | 2021 fixture + first parser fix: detect inline keys | P02 (deferred) | done |
+| P02 | [02-bank-extraction.md](02-bank-extraction.md) | Deterministic per-year extractor + 5 bank inputs + PENDING specs | P01 | done (2026-10-25) |
+| P03 | [03-bank-2021-inline-key.md](03-bank-2021-inline-key.md) | 2021 fixture + first parser fix: detect inline keys | P02 (done) | done |
 | P04 | [04-bank-2022.md](04-bank-2022.md) | 2022 fixture: inline key, real dotless option, 13 E-option questions | P03 | not started |
 | P05 | [05-bank-2023.md](05-bank-2023.md) | 2023 fixture: inline key + 8 E-option questions | P03 | not started |
 | P06 | [06-bank-2024-2025.md](06-bank-2024-2025.md) | 2024 partial-year fixture + 2025 fixture with missing key entry | P03 | not started |
@@ -254,19 +260,18 @@ node -e "const fs=require('fs');const s=fs.readFileSync('src/bookmarklet.js','ut
 
 | After package | PASS | PENDING | Notes |
 |---|---|---|---|
-| baseline | 19 | 0 | before P03 |
-| P03 (done) | 20 | 0 | inline-key fix + bank-2021; P02 extractor deferred |
-| P04 | 21 | 0 | bank-2022 confirmed |
-| P05 | 22 | 0 | bank-2023 confirmed |
-| P06 | 24 | 0 | bank-2024 and bank-2025 confirmed |
-| P07 | 25 | 0 | anomaly block 2 added |
-| P08 | 26 | 0 | anomaly block 1 added |
-| P09 | 25 | 0 | `qwen2-s1` retired; bank-2021 covers it |
+| baseline (after P01/P02) | 25 | 4 | P03's bank-2021 already confirmed; 2022-2025 PENDING |
+| P04 | 26 | 3 | bank-2022 confirmed |
+| P05 | 27 | 2 | bank-2023 confirmed |
+| P06 | 29 | 0 | bank-2024 and bank-2025 confirmed |
+| P07 | 30 | 0 | anomaly block 2 added |
+| P08 | 31 | 0 | anomaly block 1 added |
+| P09 | 30 | 0 | `qwen2-s1` retired; bank-2021 covers it |
 
-P01/P02 are not reflected above. If P02 is executed later, it adds five PENDING
-specs; the 2021 one is already confirmed.
+P01/P02 are reflected in the baseline. P03 ran before P02, so the 2021 slice is
+already confirmed and P02 adds PENDING specs only for 2022-2025.
 
-AS packages normally leave the fixture count at 25. AS-02 updates the existing
+AS packages do not add or delete fixtures. AS-02 updates the existing
 E/F fixtures to expect the new `E/F options present` flag; it does not add or
 delete a fixture. AS unit tests live in `tests/unit.js` and are not part of the
 runner summary.
@@ -323,6 +328,11 @@ authoritative:
 - 2026-10-25 — P01 done: `input_origin` is required and limited to
   bank/anomaly/doc/synthetic; all 25 fixtures labelled; missing and unknown
   values fail the runner. Runner 25 PASS.
+- 2026-10-25 — P02 done: added `tools/extract-bank.js` and
+  `tools/bank-slices.json`; the extractor verifies the bank hash, slice
+  anchors, question/key counts, and output hashes. Added 2022-2025 inputs and
+  PENDING specs; P03's bank-2021 input matches the slice byte-for-byte and
+  stays confirmed. Runner 25 PASS / 4 PENDING; unit 59 PASS.
 - 2026-10-25 — AS-09 done: confirmed-save log/advance faults keep the marker and
   stop without retry; saved log is re-read and merged by id with mode kept and
   capped at 200; `has-explanation` and `meta-changed` join the gate; the

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "input_origin": "bank",
+  "id": "bank-2022",
+  "source": [
+    "archive/live-sources/IMPROVISED C.docx.txt lines 303-606",
+    "2022 questions (lines 303-599) and inline answer key (lines 600-606)"
+  ],
+  "provenance": "Verbatim 2022 slice from the bank, including the inline multi-pair answer key.",
+  "status": "PENDING",
+  "input_file": "fixtures/inputs/bank-2022.txt",
+  "kind": "questions",
+  "expected": {}
+}

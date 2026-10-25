@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "input_origin": "bank",
+  "id": "bank-2023",
+  "source": [
+    "archive/live-sources/IMPROVISED C.docx.txt lines 612-909",
+    "2023 questions (lines 612-902) and inline answer key (lines 903-909)"
+  ],
+  "provenance": "Verbatim 2023 slice from the bank, including the inline multi-pair answer key.",
+  "status": "PENDING",
+  "input_file": "fixtures/inputs/bank-2023.txt",
+  "kind": "questions",
+  "expected": {}
+}
