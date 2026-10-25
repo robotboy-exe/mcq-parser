@@ -55,7 +55,7 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 30 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 59 PASS, 0 FAIL; `node tools/extract-bank.js --check`
+  `node tests/unit.js` → 64 PASS, 0 FAIL; `node tools/extract-bank.js --check`
   exits 0.
 - Auto-Save AS-01 through AS-09 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
@@ -135,7 +135,8 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 - The former `merged_bookmarklet.txt` duplicate has been deleted. The canonical
   archived copy is `archive/trusted-variants/trusted-variant-C.js`.
 - P03 is done: inline multi-pair keys are detected, and `bank-2021` is confirmed.
-  P01/P02 are still pending; the 2021 input was sliced manually.
+  P01 and P02 are done; historically, the 2021 input was sliced manually before
+  the extractor existed.
 
 ## Source hierarchy and priority
 
@@ -200,6 +201,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | P07 | [07-anomaly-block2-salvage.md](07-anomaly-block2-salvage.md) | Guarded salvage normalizer + block-2 fixture | P06 | done (2026-10-25) |
 | P08 | [08-anomaly-block1-bullets.md](08-anomaly-block1-bullets.md) | Unnumbered `*` question mode | P07 | done (2026-10-25) |
 | P09 | [09-docs-cleanup.md](09-docs-cleanup.md) | Docs updates, retire superseded fixtures, final audit | all | done (2026-10-25) |
+| P10 | [10-post-p09-audit.md](10-post-p09-audit.md) | Fix post-P09 audit findings: salvage abbreviations, stale docs, flag/insert coverage | P09 | done (2026-10-25) |
 | AS-01 | [as-01-contract-and-harness.md](as-01-contract-and-harness.md) | Contract changes, build comment/`%` guard, unit harness | — | done |
 | AS-02 | [as-02-primitives-and-batch.md](as-02-primitives-and-batch.md) | `parseKeyDetailed`, E/F flag, batch/storage primitives | AS-01 | done |
 | AS-03 | [as-03-gate-and-dedup.md](as-03-gate-and-dedup.md) | `autosaveBlockers`, duplicate safeguards, scenario tests | AS-02 | done |
@@ -384,6 +386,11 @@ authoritative:
   mode, `input_origin`, and the current counts; `qwen2-s1` assertions were ported
   to `bank-2021` before deleting the pair. Runner 30 PASS; unit 59 PASS;
   extractor `--check` green. No source change, no new live evidence.
+- 2026-10-25 — P10 done: salvage preserves `Ph.D.`/`U.S.A.` while still
+  repairing fused labels; block-2 stays at 12 chunks/50 inserts. Unit suite is
+  64 PASS; runner adds `required_flags` and asserts it on every item. Stale
+  docs corrected. Runner 30 PASS; extractor `--check` green; build one line,
+  no `%`, body parses.
 - 2026-10-25 — AS-09 done: confirmed-save log/advance faults keep the marker and
   stop without retry; saved log is re-read and merged by id with mode kept and
   capped at 200; `has-explanation` and `meta-changed` join the gate; the

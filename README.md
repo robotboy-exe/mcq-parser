@@ -104,9 +104,10 @@ and reports PASS, FAIL, or PENDING; run it for the current status.
 needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
 see `docs/BASELINE_COMPARISON.md` for why.
 
-Current status (2026-10-25): 30/30 fixtures PASS, 59/59 unit tests PASS, and
+Current status (2026-10-25): 30/30 fixtures PASS, 64/64 unit tests PASS, and
 `tools/extract-bank.js --check` is green. Verification gaps still carried: no
-live browser run, no live `questions` schema check, and no new live OCR paste
+live browser run for the parser/OCR/bank changes (Auto-Save live checks are
+recorded separately), no live `questions` schema check, and no new live OCR paste
 beyond the archived bank and anomaly blocks. After updating the bookmarklet,
 press Reset Queue and re-paste rather than trusting an old `ocrQueue`
 (EC-62/INV-56).

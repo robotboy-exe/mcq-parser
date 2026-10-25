@@ -167,7 +167,8 @@ word or option. The UI and the runner call `splitSectionsWithSalvage(raw)`:
   the text selects numbered mode. With none, `splitBulletQuestions` splits on
   `(?:^|\n)[^\S\n]*\*[^\S\n]+`; fewer than 2 bullets returns `null` and the
   numbered splitter runs. Bullet markers are consumed, every chunk keeps
-  `num: null`, and bullet/numbered chunks are never mixed in one paste.
+  `num: null`, and mixing bullet and numbered questions in one paste is
+  unsupported: numbered markers take precedence and may absorb bullet text.
 
 ### Stage 3 — Option parse (`parseQuestion`)
 

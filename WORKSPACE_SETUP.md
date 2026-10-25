@@ -1,7 +1,7 @@
 # Workspace Setup
 
-Current status (2026-10-25): work packages P01–P09 are complete. The fixture
-runner is 30/30 PASS, 0 FAIL, 0 PENDING, 0 orphans; `tests/unit.js` is 59/59;
+Current status (2026-10-25): work packages P01–P10 are complete. The fixture
+runner is 30/30 PASS, 0 FAIL, 0 PENDING, 0 orphans; `tests/unit.js` is 64/64;
 `tools/extract-bank.js --check` is green. Current contracts are `README.md`,
 `AGENTS.md`, and `docs/SPEC.md`.
 
@@ -789,11 +789,11 @@ Direct B1/B2/B3 checks (no baseline change):
   is also a real option label. The removal decision (D-07) still stands.
 
 Phase 9 added EC-62, EC-63, INV-56, and INV-57; no code or fixture changed.
-`node tests/runner.js` was 19/19 at that point (current: 30/30; unit 59/59).
+`node tests/runner.js` was 19/19 at that point (current: 30/30; unit 64/64).
 
 ## Next Step
 
-Workspace setup and parser work packages P01–P09 are closed. The live browser
+Workspace setup and parser work packages P01–P10 are closed. The live browser
 run, live `questions` schema, and stale-queue behavior remain verification gaps.
 Do not change parser behavior without a failing fixture and a documented
 decision; see `docs/plan/README.md` for the current tracker.
