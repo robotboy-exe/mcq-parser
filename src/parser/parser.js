@@ -646,7 +646,6 @@ function autosaveBlockers(state) {
   if (s.savingMarker) add('saving-marker', 'An earlier save is unconfirmed. Check the list before starting.');
   if (s.saveInProgress) add('save-in-progress', 'A save is already running.');
   if (s.stopRequested) add('stopped', 'Auto-save is stopping.');
-  if (Number.isInteger(s.runCap) && Number(s.runCount || 0) >= s.runCap) add('run-cap', 'This run reached its limit of ' + s.runCap + ' saves.');
   if (s.lock && s.lock.tabId !== s.tabId) {
     const age = Number(s.now == null ? Date.now() : s.now) - Number(s.lock.at || 0);
     if (!(age >= 15000)) add('lock', 'Another tab is auto-saving.');
@@ -688,7 +687,6 @@ function blockerText(blocker) {
     case 'saving-marker': return 'Cannot auto-save:' + detail;
     case 'save-in-progress': return 'Cannot auto-save:' + detail;
     case 'stopped': return 'Cannot auto-save:' + detail;
-    case 'run-cap': return 'Cannot auto-save:' + detail;
     case 'lock': return 'Cannot auto-save:' + detail;
     case 'hidden': return 'Cannot auto-save:' + detail;
     case 'saved-log': return 'Cannot auto-save:' + detail;

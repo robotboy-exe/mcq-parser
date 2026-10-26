@@ -476,6 +476,18 @@ contract.
 re-OCR'd source fails `--check` by design. Users still have to split multi-year
 text themselves; the UI does not detect or warn about a multi-year paste.
 
+## D-43 — Auto-save has no run cap
+
+**Choice.** Remove the 10-save cap from the Auto-Save loop. A run continues
+until Stop, a blocker, or the end of the queue. Dry run still previews the whole
+queue.
+**Why.** The user reviewed the paste and accepted the dry-run preview plus the
+per-question gate as sufficient; the cap interrupted legitimate batches.
+**Risk.** A misconfigured batch or an undetected duplicate can save more rows
+before stopping. The per-question gate, confirmations, duplicate checks, lock,
+visibility pause, and two-unverified stop remain; do not reintroduce a cap
+without a new decision.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

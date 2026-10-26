@@ -105,7 +105,6 @@ function runOCRBookmarklet() {
   let autoDry = false;
   let autoRunCount = 0;
   let unverifiedStreak = 0;
-  let autoCap = 10;
   let autoTabId = newBatchId();
   let autoHeartbeat = null;
   let confirmTicked = false;
@@ -196,8 +195,6 @@ function runOCRBookmarklet() {
       savingMarker: (() => { try { return store.get('ocrSaving'); } catch (err) { return null; } })(),
       saveInProgress: saveInProgress,
       stopRequested: stopAuto,
-      runCount: autoRunCount,
-      runCap: autoCap,
       lock: readLock(),
       tabId: autoTabId,
       now: Date.now(),
@@ -319,7 +316,7 @@ function runOCRBookmarklet() {
     $('ocr_auto_dry').disabled = autoRunning;
     const status = $('ocr_auto_status');
     if (autoRunning) {
-      status.textContent = autoDry ? 'Dry run: ' + autoRunCount + ' would-save so far.' : 'Auto-save (' + (runMode === 'active' ? 'ACTIVE' : 'draft') + ') running: ' + autoRunCount + ' of ' + autoCap + ' saved this run.';
+      status.textContent = autoDry ? 'Dry run: ' + autoRunCount + ' would-save so far.' : 'Auto-save (' + (runMode === 'active' ? 'ACTIVE' : 'draft') + ') running: ' + autoRunCount + ' saved this run.';
     } else if (autoStatus) {
       status.textContent = autoStatus;
     } else {
@@ -553,7 +550,6 @@ function runOCRBookmarklet() {
       st.savingMarker = null;
       st.lock = null;
       st.visible = true;
-      st.runCap = 9999;
       st.saveInProgress = false;
       st.stopRequested = false;
       const k = st.key && st.key[q.num];

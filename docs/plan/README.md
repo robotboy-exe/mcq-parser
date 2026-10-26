@@ -59,8 +59,9 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   exits 0.
 - Auto-Save AS-01 through AS-09 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
-  the run cap is now 10. Two-tab live testing is limited by hide-pause on one
-  browser; the lock reason is covered by unit + mock.
+  the cap was raised to 10 at that point and later removed (D-43). Two-tab live
+  testing is limited by hide-pause on one browser; the lock reason is covered
+  by unit + mock.
 - AS-07 closed on 2026-10-25: Fix 1 (scoped duplicate check), Fix 2 (manual
   marker refusal), the per-question unverified list, the two-consecutive stop,
   and removal of `needs-media`. Runner 25 PASS; unit 49 PASS; build one line,
@@ -332,6 +333,9 @@ authoritative:
 
 ## Change log
 
+- 2026-10-26 — Removed the 10-save auto-save cap (D-43); a run continues until
+  Stop, a blocker, or the end of the queue. Dry run and the remaining gates are
+  unchanged.
 - 2026-10-25 — Auto-Save follow-up planned as AS-07…AS-09 from
   `docs/Active.md`; Fix 2 moved into AS-07 so the live active-mode test cannot
   run before the draft-only barrier clears. Decisions: cross-category copies

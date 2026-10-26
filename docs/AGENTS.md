@@ -97,11 +97,12 @@ features.
   product decision; D-30 now fixes Reset to clear the key and batch ids.
 - Clearing `ocrSaving` on an ambiguous result, retrying an ambiguous save,
   writing `ocrSavedLog` before a verified save, or silently skipping a duplicate.
-- Raising the auto-save run cap beyond 10 or removing it without an explicit
-  decision. It was raised from 3 after the 2026-10-25 live sign-off. Two-tab
-  lock evidence is limited on one phone browser because hide-pause releases the
-  lock when tab 1 becomes hidden; use the unit/mock evidence for the lock
-  reason.
+- Reintroducing an auto-save run cap without an explicit decision. The
+  10-save cap was removed on 2026-10-26 (D-43); the per-question gate,
+  confirmations, Stop, lock, hidden-tab pause, duplicate checks, and the
+  two-unverified stop remain. Two-tab lock evidence is limited on one phone
+  browser because hide-pause releases the lock when tab 1 becomes hidden; use
+  the unit/mock evidence for the lock reason.
 - Treating this bookmarklet as part of the PHP Bulk Import plan; no link
   between them was decided (claude §8 issue 10).
 - Reading, writing, deleting, or relying on `ocrSubmitted`; the bookmarklet is

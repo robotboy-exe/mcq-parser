@@ -361,9 +361,8 @@ first one and stops. An empty list means safe. It checks:
 12. No file is selected in `question_image` or `answer_video`. Diagram/table
     words do not block; the uploader decides whether a batch needs images
     (D-38).
-13. No `ocrSaving` marker, no save in progress, Stop is off, the run cap is not
-    reached, and this tab holds `autoLock` (another tab is refused while its
-    lock is under 15 seconds old).
+13. No `ocrSaving` marker, no save in progress, Stop is off, and this tab holds
+    `autoLock` (another tab is refused while its lock is under 15 seconds old).
 14. The page is visible; a hidden tab finishes the current save and pauses.
 
 The form is also compared with the loaded question before each save; an edited
@@ -409,14 +408,14 @@ and shows `An earlier save is unconfirmed. Check the list, then tap 'I checked.
 Clear warning.'`. After the marker is cleared, the same manual save proceeds
 normally (Fix 2).
 
-### 7.5 Lock, cap, dry run, duplicates
+### 7.5 Lock, dry run, duplicates
 
 - `autoLock` is refreshed every 5 seconds by a recursive `setTimeout`; a lock
-  older than 15 seconds is stale. Stop, pause, cap, blocker, and end release it.
+  older than 15 seconds is stale. Stop, pause, blocker, and end release it.
 - A normal Stop or the end of the queue is shown in the status line, not as a
   red blocked reason; only an actual blocker makes the reason line red.
-- The run cap is 10 (raised from 3 after the 2026-10-25 live sign-off). Start
-  again resets the count and continues.
+- There is no save-count cap. A run continues until Stop, a blocker, or the end
+  of the queue (D-43).
 - Dry run copies the queue and uses the current form metadata. It logs
   `Would save #n as draft: subject/category/year, A to D, answer X.` or
   `Would save #n as ACTIVE: ...` and writes nothing to the queue, marker, saved

@@ -377,8 +377,6 @@ function cleanState() {
     savingMarker: null,
     saveInProgress: false,
     stopRequested: false,
-    runCount: 0,
-    runCap: 3,
     lock: null,
     tabId: 't1',
     now: 1000,
@@ -536,7 +534,7 @@ test('blockerText maps every known code to a plain sentence', () => {
     'option-empty', 'option-duplicate', 'option-long', 'question-short',
     'meta-missing', 'not-confirmed', 'mode-unconfirmed', 'mode-changed',
     'meta-changed', 'file-attached', 'has-explanation', 'saving-marker', 'save-in-progress',
-    'stopped', 'run-cap', 'lock', 'hidden', 'saved-log', 'duplicate', 'form-edited'];
+    'stopped', 'lock', 'hidden', 'saved-log', 'duplicate', 'form-edited'];
   for (const code of codes) {
     const text = parser.blockerText({ code, detail: 'detail' });
     assert(text.indexOf('Cannot auto-save:') === 0, code + ': ' + text);
@@ -593,7 +591,7 @@ test('classifySaveResponse treats an empty reply as ambiguous', () => {
 });
 
 
-test('autosaveBlockers reports lock, hidden, marker, save, stop, and cap', () => {
+test('autosaveBlockers reports lock, hidden, marker, save, and stop', () => {
   const lock = cleanState();
   lock.lock = { tabId: 'other', at: 900 };
   lock.now = 1000;
@@ -610,9 +608,6 @@ test('autosaveBlockers reports lock, hidden, marker, save, stop, and cap', () =>
   const stopped = cleanState();
   stopped.stopRequested = true;
   eq(parser.autosaveBlockers(stopped)[0].code, 'stopped');
-  const cap = cleanState();
-  cap.runCount = 3;
-  eq(parser.autosaveBlockers(cap)[0].code, 'run-cap');
 });
 
 test('autosaveBlockers ignores another tab lock older than 15 seconds', () => {

@@ -49,7 +49,7 @@ It returns a list of reasons, and an empty list means safe. The loop stops on th
 10. Subject, category and year are set, and the confirmation box is ticked. In active mode the live-save confirmation is also ticked.
 11. The selected mode did not change since Start.
 12. No file is chosen in `question_image` or `answer_video`. Diagram/table words do not block; the uploader decides whether a batch needs images (D-38).
-13. No `ocrSaving` marker, no save in progress, the Stop flag is off, the run cap is not reached, and this tab holds the lock.
+13. No `ocrSaving` marker, no save in progress, the Stop flag is off, and this tab holds the lock.
 14. The page is visible (`!document.hidden`). On hide, finish the current save and pause. Never start a save while hidden.
 
 ## 6. One save function: `saveCurrentQuestion({auto, active})`
@@ -77,9 +77,8 @@ The manual submit handler is rewritten to call this same function. It returns `'
 ## 7. The loop
 
 - Start is a user click. It re-checks every gate, then loops: `autosaveBlockers → saveCurrentQuestion → 1500 ms sleep`.
-- It stops on: Stop, any blocker, any non-`'saved'` result, the run cap (3 for
-  the first test, raised to 10 after the 2026-10-25 sign-off; Start again to
-  continue), or the end of the queue.
+- It stops on: Stop, any blocker, any non-`'saved'` result, or the end of the
+  queue. There is no save-count cap (D-43).
 - It holds `autoLock` with a heartbeat every 5 seconds and refuses to start if another tab's lock is under 15 seconds old.
 - **Dry run:** the whole loop runs, but the fetch is replaced by a stub that logs "Would save #n as draft: subject/category/year, A to D, answer X" or "as ACTIVE". It saves nothing and writes nothing to `ocrSavedLog`. A clean batch in either mode uses the selected wording; the tick gates do not block a dry run.
 - Never use `setInterval` as the engine, a `MutationObserver` for success detection, or `button.click()` or `requestSubmit()`.
