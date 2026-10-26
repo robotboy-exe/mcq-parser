@@ -104,13 +104,16 @@ and reports PASS, FAIL, or PENDING; run it for the current status.
 needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
 see `docs/BASELINE_COMPARISON.md` for why.
 
-Current status (2026-10-25): 30/30 fixtures PASS, 64/64 unit tests PASS, and
-`tools/extract-bank.js --check` is green. Verification gaps still carried: no
-live browser run for the parser/OCR/bank changes (Auto-Save live checks are
-recorded separately), no live `questions` schema check, and no new live OCR paste
-beyond the archived bank and anomaly blocks. After updating the bookmarklet,
-press Reset Queue and re-paste rather than trusting an old `ocrQueue`
-(EC-62/INV-56).
+Current status (2026-10-26): 30/30 fixtures PASS, 65/65 unit tests PASS, and
+`tools/extract-bank.js --check` is green. Live verification on the real admin
+page parsed `bank-2021` (40 questions) and `anomaly-block2` (12 chunks with the
+salvage flag), accepted a controlled manual save (then deleted it), and showed
+that a stale queue without a batch identity loads but auto-save is blocked.
+Remaining gap: no new live OCR paste beyond the archived bank and anomaly blocks.
+The unfiltered admin list did not show the new rows while a filtered list did;
+the site owner confirmed this is intended list behavior, so it is not a defect.
+After updating the bookmarklet, press Reset Queue and re-paste rather than
+trusting an old `ocrQueue` (EC-62/INV-56).
 
 Resolved decisions: Reset Queue clears the queue, key, and batch identity; the
 key survives reloads; draft saves are inactive and active mode is opt-in; the

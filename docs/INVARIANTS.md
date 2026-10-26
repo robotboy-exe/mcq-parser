@@ -74,7 +74,7 @@ Status definitions:
 | INV-40 | `ocrSubmitted` is not read, written, or deleted by the bookmarklet (D-27). | VERIFIED | user decision; `src/ui/ui.js` |
 | INV-41 | Reset Queue must not throw; it uses `{items:[],i:0}` and deletes the key/batch additions (INV-34). | VERIFIED | claude-migration §4; `src/ui/ui.js` |
 | INV-55 | `localStorage` is origin-wide and shared with the live `ocr_helper.js`; the key names and shapes are a de-facto contract, so changing them can affect both tools. | AT_RISK | qwen-2-reconciled R15, §2.9 |
-| INV-56 | A stale `ocrQueue` from an older variant must not be trusted; reset and re-paste after updating until the queue has a version marker or migration check. | AT_RISK | `archive/migration-docs/claude-gaps.md` item 6; EC-62 |
+| INV-56 | A stale `ocrQueue` from an older variant must not be trusted; reset and re-paste after updating until the queue has a version marker or migration check. The batch-missing blocker stops auto-save, but manual use of a stale item is still possible. | AT_RISK | `archive/migration-docs/claude-gaps.md` item 6; EC-62; live V3 2026-10-25 |
 
 ## Header metadata
 
@@ -99,7 +99,7 @@ Status definitions:
 | INV-52 | Media uploads are out of scope: the bookmarklet has no file-selection UI and clears image/video inputs. | VERIFIED | qwen-2-gaps §4 |
 | INV-53 | Saving must not scroll the page to the top. | VERIFIED | qwen-1-migration §3, §9 |
 | INV-54 | Appended E/F newlines in Option D are stripped because `option_d` is a single-line input. | VERIFIED | claude-migration §8 (issue 3); `admin_questions.html`, `admin_questions.php` |
-| INV-57 | The live `questions` table must accept the archived PHP's INSERT columns; the `practice_title` requirement seen in `questions1` is unverified for `questions`. | AT_RISK | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert; EC-63 |
+| INV-57 | The live `questions` table must accept the archived PHP's INSERT columns; the `practice_title` requirement seen in `questions1` is unverified for `questions`. | VERIFIED | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert; EC-63; live controlled save 2026-10-25 |
 
 ## Auto-Save
 

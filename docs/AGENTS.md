@@ -176,6 +176,10 @@ Items marked UNVERIFIED, AT_RISK, or CONFLICTED in `docs/EDGE_CASES.md` and
 `docs/INVARIANTS.md` were inferred from code or docs and were not observed in a
 live session. Do not promote them to confirmed defects without reproduction
 (qwen-2 H09). The save/PRG flow is now confirmed from the archived PHP, and the
-current live subject list confirms CRK → CRS. The remaining live checks are the
-full current page markup, the live `questions` schema (EC-63/INV-57), stale
-queue behavior (EC-62/INV-56), and any remaining UNVERIFIED/AT_RISK behaviors.
+current live subject list confirms CRK → CRS. On 2026-10-25 the live parser run
+(V1), the live `questions` save/schema check (V2; EC-63/INV-57), and stale queue
+behavior (V3; EC-62/INV-56) were exercised; see
+`docs/plan/11-remaining-verification.md`. Remaining: no fresh live OCR paste
+and any other UNVERIFIED/AT_RISK behaviors. The unfiltered admin list not
+showing new rows is intended site behavior (confirmed by the site owner); the
+filtered list does show them.

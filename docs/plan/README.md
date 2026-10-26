@@ -55,8 +55,14 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 30 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 64 PASS, 0 FAIL; `node tools/extract-bank.js --check`
+  `node tests/unit.js` → 65 PASS, 0 FAIL; `node tools/extract-bank.js --check`
   exits 0.
+- V1-V3 of the remaining verification queue closed on 2026-10-25: live
+  `bank-2021`/`anomaly-block2` matched their fixtures; controlled save #1785
+  was accepted (filtered list + edit page) and deleted; a stale no-batch queue
+  loaded with auto-save blocked and Reset + re-paste worked. V4 remains open.
+  The unfiltered admin list did not show the new rows while the filtered list
+  did; the site owner confirmed this is intended list behavior, not a defect.
 - Auto-Save AS-01 through AS-09 are done. AS-06 closed on 2026-10-25 with the
   five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
   the cap was raised to 10 at that point and later removed (D-43). Two-tab live
@@ -240,6 +246,19 @@ Do not start AS-02 until AS-01's build and harness checks pass. Do not deliver
 AS-06 without the 3-question live test. AS-07 must pass its live check before
 AS-08; AS-08's live active test must pass before AS-09.
 
+## Remaining verification queue
+
+All work packages are done. The remaining agenda is live/evidence-only and is
+outlined in [11-remaining-verification.md](11-remaining-verification.md):
+live parser/OCR/bank run, live `questions` schema check, stale `ocrQueue`
+behavior, and optional evidence gaps. It is not a work package and proposes no
+parser/UI changes.
+
+V1-V3 were recorded on 2026-10-25: the live admin page parsed `bank-2021` and
+`anomaly-block2` against the fixtures, a controlled save was accepted as #1785
+and deleted, and a stale queue without a batch identity loaded but auto-save
+blocked. V4 stays open by decision (optional).
+
 ## Session protocol
 
 1. Run `node tests/runner.js`; for AS-01 onward also run `node tests/unit.js`.
@@ -336,6 +355,13 @@ authoritative:
 - 2026-10-26 — Removed the 10-save auto-save cap (D-43); a run continues until
   Stop, a blocker, or the end of the queue. Dry run and the remaining gates are
   unchanged.
+- 2026-10-25 — V1-V3 of the remaining verification queue closed on the live
+  admin page: `bank-2021` and `anomaly-block2` matched their fixtures, a
+  controlled save was accepted and deleted (no `practice_title` error), and a
+  stale no-batch queue loaded with auto-save blocked. No code change; test rows
+  cleaned up. V4 stays open. The unfiltered admin list did not show the new rows
+  while a filtered list did; the site owner confirmed this is the site's intended
+  list behavior, not a defect.
 - 2026-10-25 — Auto-Save follow-up planned as AS-07…AS-09 from
   `docs/Active.md`; Fix 2 moved into AS-07 so the live active-mode test cannot
   run before the draft-only barrier clears. Decisions: cross-category copies

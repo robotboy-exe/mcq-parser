@@ -9,7 +9,8 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 30/30 PASS; `node tests/unit.js` is 64 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 30/30 PASS; `node tests/unit.js` is 65 PASS.
+- Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
 - Build: `node src/build/build.js`. Then `wc -l src/bookmarklet.js` must print `1`, and the body (leading `javascript:` stripped) must pass `node --check`; exact snippet in `docs/BUILD.md`.
@@ -34,5 +35,5 @@
 
 ## Known gaps
 
-- No live browser run for the parser/OCR/bank changes; Auto-Save live checks are recorded separately. No live `questions` schema check. The bank and anomaly blocks are archived OCR, not a new live paste. Stale `ocrQueue` data has no version marker; reset and re-paste after parser/UI changes.
+- Live V1-V3 checks ran on 2026-10-25: the current bookmarklet parsed `bank-2021` and `anomaly-block2` on the admin page, a controlled manual save was accepted and deleted (no `practice_title` schema error), and a stale queue without a batch identity loaded but auto-save was blocked. There is still no new live OCR paste beyond the archived bank/anomaly blocks. The unfiltered admin list did not show the new rows while a filtered list did; the site owner confirmed this is intended list behavior. `ocrQueue` still has no version marker; reset and re-paste after parser/UI changes.
 - Do not promote `UNVERIFIED`/`AT_RISK`/`CONFLICTED` items to defects without reproduction; see `docs/EDGE_CASES.md` and `docs/INVARIANTS.md`.
