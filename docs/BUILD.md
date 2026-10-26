@@ -42,8 +42,8 @@ node src/build/build.js
 8. Writes `src/bookmarklet.js` (with a trailing newline) and prints the
    script-body length. The message says `bytes`, but the number is JavaScript
    characters, not UTF-8 bytes. The five non-ASCII characters (two `—`, two
-   `…`, one `–`) add 10 bytes; the current file is 61701 bytes while the build
-   prints 61690 characters, plus the trailing newline.
+   `…`, one `–`) add 10 bytes; the current file is 63055 bytes while the build
+   prints 63042 characters, plus the trailing newline.
 
 The generated file is the only artifact to paste into a bookmark.
 

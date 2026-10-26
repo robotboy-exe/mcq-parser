@@ -1,6 +1,6 @@
 ## 1. Goal and scope
 
-Add an opt-in **Auto-save** mode to the existing merged bookmarklet (`bookmarklet.js`). By default it saves questions that are provably clean and matched to an answer key as **inactive** drafts. An optional active mode saves them live. Everything else stays manual.
+Add a click-started **Auto-save** mode to the existing merged bookmarklet (`bookmarklet.js`). Active is the default for a new batch, so clean questions matched to an answer key save live unless the user unticks `Save as active` for inactive drafts. Everything else stays manual.
 
 - Client-side only. No server access. The site is `admin_questions.php`, which inserts into the table `questions`.
 - **Non-goals:** media, passages, E/F questions, auto-retry, bulk activation of existing drafts (§10 is active mode, not bulk activation), any server change.
@@ -25,11 +25,11 @@ Add an opt-in **Auto-save** mode to the existing merged bookmarklet (`bookmarkle
 
 ## 4. UI (add to the existing panel, phone-first)
 
-- A **Start auto-save** button, a **Stop** button, and a **Dry run** checkbox. These are never remembered across reloads, and auto-save **never starts on page load**.
-- A **batch confirmation** block shown before Start. It lists Subject, Category, Year, number of questions, number of key entries, the first and last question numbers, and the mode. It has one tick-box: "These are correct." Active mode adds `Save as active (live immediately)`, a red bold `Mode: ACTIVE` line, and a second tick-box: "I understand these go live to students now." Start is disabled until the required ticks are set. The ticks reset on any new paste or metadata change.
-- A status line showing counts such as "Saved 4 of 10 this run".
+- A **Start auto-save** button, a **Stop** button, a **Dry run** button, and a `Save as active (live immediately)` checkbox. These are never remembered across reloads, and auto-save **never starts on page load**.
+- A **batch confirmation** block shown before Start. It lists Subject, Category, Year, number of questions, number of key entries, the first and last question numbers, and the mode. It has one tick-box, labelled `I checked the batch and understand these save live.` in active mode and `I checked the batch details.` in draft. Active is the default; both the active box and confirmation start ticked on a new batch. Metadata, key, or mode changes clear the confirmation but keep the active choice. New paste and Reset restore both defaults. Start is disabled until the confirmation is ticked.
+- A concise status line such as `Auto-save ACTIVE: 12/40 done · 12 saved this run`, with a progress bar showing queue position. Dry run shows one summary line, not one line per question.
 - A **blocked reason** line in plain words whenever auto-save stops.
-- A **saved list** ("Saved this batch: #901 to #910, inactive") with a Copy button, built from `ocrSavedLog`. The suffix is honest: `active` or `inactive` for a uniform batch, `N active, M inactive` for a mix, `MISMATCH: N saved in the wrong state` first, or `status not verified` when any check was inconclusive.
+- A **saved list** summary ("Saved this batch: #901 to #910, inactive") with a Copy button, built from `ocrSavedLog`. The suffix is honest: `active` or `inactive` for a uniform batch, `N active, M inactive` for a mix, `MISMATCH: N saved in the wrong state` first, or `status not verified` when any check was inconclusive. Per-question details stay behind Copy.
 - A paused-run message: "A previous save may have been interrupted. Check the question list before continuing", with a button "I checked. Clear warning."
 - Start is disabled while the `ocrSaving` marker exists.
 
@@ -46,7 +46,7 @@ It returns a list of reasons, and an empty list means safe. The loop stops on th
 7. `q.flags` is empty. `q.e` and `q.f` are empty, and the parser pushes `'E/F options present'`.
 8. Detected option letters are **exactly** `ABCD`.
 9. Options A to D are non-empty, case- and whitespace-normalised distinct, and each is ≤ 500 **bytes**. The question text is ≥ 10 characters.
-10. Subject, category and year are set, and the confirmation box is ticked. In active mode the live-save confirmation is also ticked.
+10. Subject, category and year are set, and the single batch confirmation is ticked.
 11. The selected mode did not change since Start.
 12. No file is chosen in `question_image` or `answer_video`. Diagram/table words do not block; the uploader decides whether a batch needs images (D-38).
 13. No `ocrSaving` marker, no save in progress, the Stop flag is off, and this tab holds the lock.
@@ -119,8 +119,8 @@ Known limit: this catches repeats from the same run or the last 20 saves. It doe
 
 ## 10. Phase 2: active mode (AS-08)
 
-An opt-in in-memory checkbox saves the batch live instead of as drafts. Draft
-stays the default. Active Start needs both the batch tick and the live-save
-tick, the mode is fixed for the run, and active saves set `is_active=1` and
+An in-memory checkbox selects active or draft; active is the default for a new
+batch, and unticking it produces drafts. One mode-aware batch confirmation is
+required. The mode is fixed for the run, and active saves set `is_active=1` and
 verify that the edit page is active. A bulk "Activate this batch" button is
 not part of this package and has no spec.

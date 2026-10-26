@@ -354,16 +354,18 @@ queue, key, conflicts, and both batch ids (D-30).
 ### 7.2 Confirmation and controls
 
 The panel adds Start, Stop, a Dry run button, and a `Save as active (live
-immediately)` checkbox, none of which is persisted. Draft is the default.
-Before Start, a batch block shows Subject, Category, Year, question count, key
-count, the first/last question numbers, and the selected mode. It shows
-`Mode: ACTIVE. Saved questions go live immediately.` in red bold, or
-`Mode: draft (inactive).` Start stays disabled until `These are correct.` is
-ticked and, in active mode, `I understand these go live to students now.` is
-also ticked. The ticks reset on a new paste, a key-only paste, Reset, Clear
-saved key, or a change to subject/category/year. Start is also disabled while
-`ocrSaving` exists or the queue is finished, and the mode box is disabled while
-a run is active.
+immediately)` checkbox, none of which is persisted. Active is the default for a
+new batch; unticking it selects draft. Before Start, a batch block shows
+Subject, Category, Year, question count, key count, the first/last question
+numbers, and the selected mode. It shows `Mode: ACTIVE. Saved questions go live
+immediately.` in red bold, or `Mode: draft (inactive).` One confirmation tick is
+required; its label is `I checked the batch and understand these save live.` in
+active mode and `I checked the batch details.` in draft. Both the active box and
+the confirmation start ticked on a new paste; metadata, key, or mode changes
+clear the confirmation but keep the active choice. New paste and Reset restore
+both defaults. Start is also disabled while `ocrSaving` exists or the queue is
+finished, and the mode box is disabled while a run is active. The Start button
+is visibly dimmed whenever it is disabled.
 
 ### 7.3 Gate
 
@@ -383,8 +385,7 @@ first one and stops. An empty list means safe. It checks:
 8. Detected option letters are exactly `ABCD`.
 9. Options A–D are non-empty, distinct after case/whitespace normalization, and
    each ≤500 UTF-8 bytes; the stem is at least 10 characters.
-10. Subject, category, and year are set and the confirmation is ticked. In
-    active mode the live-save confirmation is also ticked.
+10. Subject, category, and year are set and the single confirmation is ticked.
 11. The selected mode did not change since Start.
 12. No file is selected in `question_image` or `answer_video`. Diagram/table
     words do not block; the uploader decides whether a batch needs images
@@ -444,10 +445,16 @@ normally (Fix 2).
   red blocked reason; only an actual blocker makes the reason line red.
 - There is no save-count cap. A run continues until Stop, a blocker, or the end
   of the queue (D-43).
-- Dry run copies the queue and uses the current form metadata. It logs
-  `Would save #n as draft: subject/category/year, A to D, answer X.` or
-  `Would save #n as ACTIVE: ...` and writes nothing to the queue, marker, saved
-  log, or lock.
+- Dry run copies the queue and uses the current form metadata. It writes
+  nothing to the queue, marker, saved log, or lock. It shows one summary line,
+  such as `Dry run: all 40 would save as ACTIVE.` or
+  `Dry run: 12 of 40 checked; stops at #13: Option C is empty.` It never prints
+  a line per question. A progress bar shows checked / remaining.
+- Auto-save shows one status line, such as
+  `Auto-save ACTIVE: 12/40 done · 12 saved this run.` A progress bar shows the
+  queue position. The green saved box shows only a summary such as
+  `Saved this batch: #901 to #912, inactive`; full per-question details remain
+  behind `Copy saved list`.
 - Duplicate safeguards stop (not skip) the run when the number is already in
   this batch's saved log, or a recent admin-table row has the same normalized
   subject, exam year, category and question text. A long row is the server's

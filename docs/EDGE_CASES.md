@@ -100,6 +100,8 @@ this table during review.
 | EC-53 | Media-required question | Diagram/video needed | Cannot be created via bookmarklet; attach later in native Edit UI | CONFIRMED | qwen-2-gaps §4 |
 | EC-54 | Newlines in Option D | E/F appended to D | `option_d` is `<input type=text>`; the browser strips `\n\n` | CONFIRMED | claude-migration §8 (issue 3); `admin_questions.html`, `admin_questions.php` |
 | EC-62 | Old-format queue after update | `ocrQueue` written by an older variant | Shape is shared, but old items may lack `e`/`f` or contain old misparses; no version marker exists. A queue without `batchId` still loads and fills the form, but auto-save blocks with `This queue has no batch identity`; manual use remains possible. Reset and re-paste after updating until a migration/version check exists | CONFIRMED | `archive/migration-docs/claude-gaps.md` item 6; live V3 2026-10-25 |
+| EC-82 | Active is the default | A new paste loads a batch | `Save as active` and the single batch confirmation start ticked; Start is enabled when the rest of the gate is clean. A metadata, key, or mode change clears only the confirmation and keeps the active choice. New paste or Reset restores both defaults | CONFIRMED | D-51; INV-71; browser check 2026-10-26 |
+| EC-83 | Compact status and progress | Auto-save, dry run, or a saved batch | Status is one line, dry run prints one summary instead of one line per question, a progress bar shows the position, and the green saved box shows only the saved-range summary; details remain behind Copy saved list. Start is visibly dimmed when disabled | CONFIRMED | D-52; INV-84; browser check 2026-10-26 |
 
 ## F. Saving and server
 
@@ -174,10 +176,13 @@ closed by the archived PHP/HTML sources:
 - EC-79, EC-80, and EC-81 are CONFIRMED by the new-edge fixtures for a dotless
   C, `B.C.`/`A.D.` year abbreviations, and slash labels; these previously
   produced flags that blocked Auto-Save.
+- EC-82 and EC-83 are CONFIRMED by the 2026-10-26 browser check of the injected
+  panel: default ticks, metadata clearing only the confirmation, the dimmed
+  Start button, and the dry-run summary/progress.
 
 ## Counts
 
-- Total: 81
-- CONFIRMED: 77
+- Total: 83
+- CONFIRMED: 79
 - UNVERIFIED: 4
 - CONFLICTED: 0

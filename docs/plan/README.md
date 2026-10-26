@@ -366,6 +366,11 @@ authoritative:
 
 ## Change log
 
+- 2026-10-26 — Consolidated Auto-Save UI: active is the default with one
+  mode-labelled confirmation, Start is visibly dimmed when disabled, status is
+  one line plus a progress bar, dry run is summary-only, and the green saved box
+  is summary-only (D-51/D-52, EC-82/EC-83, INV-71/INV-84). Runner 37 PASS; unit
+  65 PASS; browser check and build verified.
 - 2026-10-26 — Added a "Paste clipboard" button that reads the clipboard into
   the paste box on click (D-50/INV-83). Runner 37 PASS; unit 65 PASS; browser
   check passed; build verified.

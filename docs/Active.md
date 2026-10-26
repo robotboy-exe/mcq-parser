@@ -2,6 +2,10 @@
 
 Replaces `Active-Mode-Spec.md`, `Review-Fixes.md` and `duplicate-check.md`. Work from this file only.
 
+**Historical UI note (2026-10-26):** D-51 and D-52 supersede the opt-in active
+default, the two-confirmation flow, and the per-question dry-run list below.
+`docs/SPEC.md` and `docs/DECISIONS.md` are authoritative for current behavior.
+
 **Plan mapping (2026-10-25):** this file is the detailed spec for the
 AS-07…AS-09 track in `docs/plan/README.md`. Phase 1 Fix 1, Fix 2, the
 per-question unverified-status list and the two-consecutive-unverified stop are

@@ -405,21 +405,23 @@ explicit uploader signal, not text guessing.
 if the uploader does not attach it. The explicit file check still refuses when
 a file is already chosen.
 
-## D-39 — Active mode is opt-in, confirmed twice, and fixed per run
+## D-39 — Active mode is fixed per run
 
-**Choice.** Draft stays the default. Active mode is an in-memory checkbox that
-is never persisted. Starting an active run needs both `These are correct.` and
-`I understand these go live to students now.`; the selected mode is captured in
-`runMode` at Start and a change during a run is a blocker. Active auto saves set
-`is_active=1` and `autosave=1` and verify that the edit page is active; draft
-auto saves keep deleting `is_active` and verify that it is inactive. Manual
-saves are unchanged and remain active. The saved log records `mode`, and the
-saved-list suffix names active, inactive, mixed, wrong-state, and unverified
-results. The AS-07 two-consecutive-unverified stop still applies in both modes.
-**Why.** Canonical replication needs some batches live immediately, but a
-live save must be a deliberate second confirmation and must not change under a
-running loop. The mode is client-side only; it adds no server change and no new
-storage key (the `ocrSavedLog` entry gains `mode`).
+**Superseded in part by D-51.** The default is now active and the two
+confirmations have collapsed to one mode-aware tick. The rest of this decision
+stands.
+
+**Choice.** The active choice is an in-memory checkbox that is never persisted.
+The selected mode is captured in `runMode` at Start and a change during a run is
+a blocker. Active auto saves set `is_active=1` and `autosave=1` and verify that
+the edit page is active; draft auto saves keep deleting `is_active` and verify
+that it is inactive. Manual saves are unchanged and remain active. The saved log
+records `mode`, and the saved-list suffix names active, inactive, mixed,
+wrong-state, and unverified results. The AS-07 two-consecutive-unverified stop
+still applies in both modes.
+**Why.** Canonical replication needs batches live immediately, but the mode must
+not change under a running loop. The mode is client-side only; it adds no server
+change and no new storage key (the `ocrSavedLog` entry gains `mode`).
 **Risk.** Active questions are visible to students as soon as each save lands;
 a wrong-state check stops the run but cannot undo a save. Old saved-log entries
 have no `mode`; they are treated as manual when `inactive === false`, otherwise
@@ -627,6 +629,38 @@ way to do it without changing the paste/load contract.
 **Risk.** Clipboard access requires a secure context and may ask for permission;
 there is no reliable silent fallback. The button replaces any text already in
 the box rather than appending, so a second click cannot duplicate a paste.
+
+## D-51 — Active is the default; one batch confirmation
+
+**Choice.** The `Save as active` box starts ticked for each new batch; unticking
+it selects draft. Replace `These are correct.` and `I understand these go live to
+students now.` with one confirmation tick whose label depends on the mode:
+`I checked the batch and understand these save live.` or
+`I checked the batch details.` Both boxes start ticked on a new paste. A change
+to subject/category/year, the key, or the mode clears the confirmation but
+leaves the active choice as it was. New paste and Reset restore both defaults.
+The confirmation snapshots the metadata; a mismatch still blocks the run.
+**Why.** The user wants live saves to be opt-out, and two warnings plus a wall of
+batch text was too much friction. One mode-labelled confirmation keeps an
+explicit live-save checkpoint without a second box.
+**Risk.** A valid batch can be started immediately after load. The active state
+is visible in red, the confirmation clears on any change, and the existing key,
+flag, duplicate, marker, and option gates still apply. The checkbox state is
+still not persisted.
+
+## D-52 — Compact status, progress, and saved summary
+
+**Choice.** Show one status line plus a progress bar for auto-save and dry run.
+Dry run reports only a summary such as `Dry run: all 40 would save as ACTIVE.`
+or `Dry run: 12 of 40 checked; stops at #13: Option C is empty.` Auto-save
+reports `Auto-save ACTIVE: 12/40 done · 12 saved this run.` The green saved box
+shows only `Saved this batch: ...`; per-question detail stays behind `Copy saved
+list`. Add no separate dry-run report or copy control.
+**Why.** The per-question dry-run lines and appended saved details were a wall of
+text on a phone. The user asked for a summary and a visual progress cue.
+**Risk.** The dry run no longer lists every passing question; after fixing the
+first blocker, run it again to see the next. The detailed saved data is still
+available through the existing Copy button.
 
 ## Auto-Save verification notes
 

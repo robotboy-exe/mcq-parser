@@ -49,8 +49,8 @@ docs/
   DECISIONS.md         why the unusual heuristics exist
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
-  EDGE_CASES.md        81 documented edge cases
-  INVARIANTS.md        83 documented invariants
+  EDGE_CASES.md        83 documented edge cases
+  INVARIANTS.md        84 documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
   plan/                work-package tracker and handoffs
 fixtures/

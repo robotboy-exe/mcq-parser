@@ -2,6 +2,9 @@
 
 Status: done (2026-10-25). Depends on: AS-07. Blocks: AS-09.
 
+**Superseded in part by D-51/D-52 (2026-10-26):** active is now the default and
+the two confirmations are one mode-aware tick. This package is kept as history.
+
 ## Source and scope
 
 `docs/Active.md` Part A (A1–A7) is the authoritative change-and-test list. This
