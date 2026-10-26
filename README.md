@@ -25,8 +25,9 @@ node -e "const p=require('./src/parser/parser.js'); console.log(p.parseQuestion(
 ```
 
 To use it: open the admin Add-a-New-Question page, create a bookmark whose URL
-is the full contents of `src/bookmarklet.js`, then click it. Paste the questions
-and (optionally) the key into the injected box and press **Load questions + key**.
+is the full contents of `src/bookmarklet.js`, then click it. Press **Paste
+clipboard** to fill the box from the clipboard, or paste manually, then press
+**Load questions + key**.
 
 Recommended key divider on its own line:
 
@@ -49,7 +50,7 @@ docs/
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
   EDGE_CASES.md        81 documented edge cases
-  INVARIANTS.md        82 documented invariants
+  INVARIANTS.md        83 documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
   plan/                work-package tracker and handoffs
 fixtures/

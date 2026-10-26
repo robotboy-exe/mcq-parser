@@ -612,6 +612,22 @@ indistinguishable from a slash label. Requiring whitespace after the slash keeps
 `A/B`, `and/or`, fractions, and dates out. A slash label without a following
 space remains unsupported.
 
+## D-50 — Add a clipboard paste button
+
+**Choice.** Add a "Paste clipboard" button next to the load box. On click it
+calls `navigator.clipboard.readText()` and replaces the box with the clipboard
+text, then focuses the box. It does not load or parse automatically. If the API
+is unavailable, denied, or the clipboard is empty, it focuses the box and shows
+a short alert telling the user to long-press and paste.
+
+**Why.** The user works on a phone and wants to avoid the long-press paste step.
+The browser clipboard read needs a user gesture, so a button is the narrowest
+way to do it without changing the paste/load contract.
+
+**Risk.** Clipboard access requires a secure context and may ask for permission;
+there is no reliable silent fallback. The button replaces any text already in
+the box rather than appending, so a second click cannot duplicate a paste.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

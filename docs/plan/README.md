@@ -366,6 +366,9 @@ authoritative:
 
 ## Change log
 
+- 2026-10-26 — Added a "Paste clipboard" button that reads the clipboard into
+  the paste box on click (D-50/INV-83). Runner 37 PASS; unit 65 PASS; browser
+  check passed; build verified.
 - 2026-10-26 — Promoted new-edge anomalies: D-47 extends the missing-dot repair
   to B/C (EC-79/INV-80), D-48 ignores `B.`/`A.` in year abbreviations
   (EC-80/INV-81), and D-49 normalizes spaced slash labels for all options

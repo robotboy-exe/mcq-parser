@@ -133,11 +133,12 @@ Status definitions:
 | INV-80 | A missing A, B, or C is repaired from a line beginning with that letter, whitespace, and a lowercase word, provided the line is after the chunk start and between the nearest existing option labels. C requires D; B requires C and D; A keeps the stricter B–D requirement from INV-78. D is not repaired. | VERIFIED | D-47; `fixtures/inputs/new-edge-dotless-c.txt`; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
 | INV-81 | A dotted abbreviation in the stem, such as `B.C.`, is not an option label. A label with no whitespace after its dot and an uppercase letter followed by `.`, whitespace, or end is skipped, so it does not create a duplicate-letter count or flag. | VERIFIED | D-48; `fixtures/inputs/new-edge-year-abbreviation.txt`; `fixtures/inputs/new-edge-year-abbreviation-ad.txt`; `tests/runner.js` 2026-10-26 |
 | INV-82 | A slash after an A–F label is treated as an option separator when the label is preceded by start, newline, or whitespace and the slash is followed by whitespace. The slash is normalized to a dot for scanning while character offsets remain unchanged. This supports all labels A–F, inline or at line start. | VERIFIED | D-49; `fixtures/inputs/new-edge-slash-option-a.txt`; `fixtures/inputs/new-edge-slash-all-options.txt`; `tests/runner.js` 2026-10-26 |
+| INV-83 | "Paste clipboard" reads the clipboard only on click, replaces the paste box contents, and does not load or parse. Unavailable, denied, or empty clipboard access focuses the box and shows an alert. | VERIFIED | D-50; `src/ui/ui.js`; browser success-path check 2026-10-26; build check 2026-10-26 |
 
 ## Counts
 
-- Total: 82
-- VERIFIED: 73
+- Total: 83
+- VERIFIED: 74
 - AT_RISK: 9
 - CONFLICTED: 0
 

@@ -13,8 +13,9 @@ The bookmarklet is injected into the existing "Add a New Question" admin page
    `#ocr_input` panel, `#ans_panel`).
 2. Refuses to run unless the `save_question` form and a `correct_option` radio
    exist and the URL does not contain `edit=`.
-3. Injects one paste box for questions + answer key, queue controls, and a
-   result area after the submit button.
+3. Injects one paste box for questions + answer key, a button that reads the
+   clipboard into that box on click, queue controls, and a result area after
+   the submit button.
 4. Parses the paste, fills the form one question at a time, ticks the answer
    from the key, and saves through the existing form POST (CSRF token intact).
 
