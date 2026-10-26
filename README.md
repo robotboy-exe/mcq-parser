@@ -48,8 +48,8 @@ docs/
   DECISIONS.md         why the unusual heuristics exist
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
-  EDGE_CASES.md        75 documented edge cases
-  INVARIANTS.md        75 documented invariants
+  EDGE_CASES.md        81 documented edge cases
+  INVARIANTS.md        82 documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
   plan/                work-package tracker and handoffs
 fixtures/
@@ -104,11 +104,13 @@ and reports PASS, FAIL, or PENDING; run it for the current status.
 needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
 see `docs/BASELINE_COMPARISON.md` for why.
 
-Current status (2026-10-26): 32/32 fixtures PASS, 65/65 unit tests PASS, and
+Current status (2026-10-26): 37/37 fixtures PASS, 65/65 unit tests PASS, and
 `tools/extract-bank.js --check` is green for seven slices. The bank now includes
 the 2026 WASSCE section; its two-line answer heading no longer leaks into Q48's
 options. The unheaded 29 section above it is its own divider-delimited section
-(`bank-pre-2026`), not a stray part of 2025 or 2026.
+(`bank-pre-2026`), not a stray part of 2025 or 2026. New anomalies are promoted
+from `docs/NEW_EDGE_CASES.txt`; dotless C, slash separators on all options, and
+the `B.C.`/`A.D.` year abbreviations now have fixtures.
 Live verification on the real admin page parsed `bank-2021` (40 questions) and
 `anomaly-block2` (12 chunks with the salvage flag), accepted a controlled manual
 save (then deleted it), and showed

@@ -539,6 +539,8 @@ cannot share the 2025 or 2026 queue.
 `B`–`D` already exist, to a lowercase word, and to a line that is not the chunk
 start, which preserves the `A 5 ...` / `A good ...` article cases. Do not widen
 it to other letters or to the start of the chunk without a failing fixture.
+D-47 extends this repair to B and C using the new-edge fixtures; D-49 handles
+slash labels.
 
 ## D-46 — Divider-only lines are section separators
 
@@ -558,6 +560,57 @@ equals-only so stem punctuation remains question text (EC-19).
 the predicate to equals-only lines; do not expand it to arbitrary punctuation.
 Do not interpret stripping as section splitting: extraction remains external,
 and one-section-per-paste remains the contract.
+
+## D-47 — Extend the missing-dot repair to B and C
+
+**Choice.** After the normal option scan, repair a missing A, B, or C from a
+line beginning with that letter, whitespace, and a lowercase word. The line must
+be after the start of the chunk and between the nearest existing option labels.
+A still requires B, C, and D; B requires C and D; C requires D. D is not
+repaired because it has no following option marker to bound the candidate.
+
+**Why.** The new 2020 edge case has `C spoke to him.` between dotted B and D.
+The A-only repair did not run, so B absorbed the line, C stayed empty, and the
+`option C missing` flag stopped Auto-Save. The shape is the same OCR defect as
+the pre-2026 Q29 dotless A, just on another letter.
+
+**Risk.** A continuation line beginning `B ` or `C ` could still be absorbed.
+The between-neighbor, lowercase, and not-at-chunk-start conditions keep the
+repair narrow. Any further widening needs a failing fixture.
+
+## D-48 — Ignore dotted abbreviations when matching options
+
+**Choice.** Skip an option-like match when the label dot has no trailing
+whitespace and the next text begins with an uppercase letter followed by `.`,
+whitespace, or the end of the chunk. For example, the `B.` in `597 B.C.` is not
+an option label.
+
+**Why.** The Q18 edge case contains a year in the stem. The `B.` in `B.C.`
+incremented the option-B match count before the real B was found. The later B
+overwrote the position, but the count stayed at two, producing the false
+`a letter appears twice (merged questions?)` flag and stopping Auto-Save.
+
+**Risk.** A genuine option whose text starts immediately with an uppercase
+dotted abbreviation and no space after the label could be skipped. Normal option
+text has whitespace after the label; keep the no-space condition narrow.
+
+## D-49 — Normalize spaced slash option labels before matching
+
+**Choice.** Before the main `OPTION` scan, replace a slash with a dot when an
+A–F label is preceded by start, newline, or whitespace and the slash is followed
+by whitespace. The replacement preserves character offsets, so the normal option
+scan and all later text slicing still use the original raw text. This works for
+any label A–F, inline or at line start.
+
+**Why.** Q17 has `A/ books of the prophets` between dotted labels. Slash labels
+appeared only on A in the observed text, but the user asked for full slash
+support across all options. Normalizing only the separator keeps the option
+regex and duplicate-letter logic unchanged.
+
+**Risk.** A prose `A/ B` shape would be treated as an option because it is
+indistinguishable from a slash label. Requiring whitespace after the slash keeps
+`A/B`, `and/or`, fractions, and dates out. A slash label without a following
+space remains unsupported.
 
 ## Auto-Save verification notes
 

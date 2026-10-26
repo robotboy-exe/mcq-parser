@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "input_origin": "anomaly",
+  "id": "new-edge-slash-option-a",
+  "source": [
+    "docs/NEW_EDGE_CASES.txt lines 62-64"
+  ],
+  "provenance": "Minimal extraction of the 2020 CRS Q17 slash-separated option-A case from the user-supplied new edge-case paste.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-slash-option-a.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "nums": [17],
+    "questions": [
+      {
+        "num": 17,
+        "question": "The content of the Ark of the Covenant was the",
+        "a": "books of the prophets",
+        "b": "two tables of stone",
+        "c": "book of the law",
+        "d": "bread offered to the Lord",
+        "flags": []
+      }
+    ],
+    "forbidden_flags": [
+      "option A missing",
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "Option A is left empty",
+    "A/ is treated as part of the stem"
+  ],
+  "notes": [
+    "The label separator is a slash, not a dot or parenthesis."
+  ],
+  "discrepancies": []
+}

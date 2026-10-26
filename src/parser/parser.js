@@ -140,14 +140,21 @@ function splitQuestionItems(text) {
   return bullets || splitQuestions(text);
 }
 
+function isOptionAbbreviation(raw, match) {
+  if (/\s$/.test(match[0])) return false;
+  return /^[A-Z](?:\.|\s|$)/.test(raw.slice(match.index + match[0].length));
+}
+
 function parseQuestion({ num, text }) {
   const raw = text.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
   const clean = s => s.replace(/\s+/g, ' ').trim();
+  const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
   const pos = {};
   const count = {};
-  for (const m of raw.matchAll(OPTION)) {
+  for (const m of scanRaw.matchAll(OPTION)) {
     const letter = m[1] || m[2];
     if (!letter) continue;
+    if (isOptionAbbreviation(raw, m)) continue;
     pos[letter] = { start: m.index, end: m.index + m[0].length };
     count[letter] = (count[letter] || 0) + 1;
   }
@@ -160,11 +167,22 @@ function parseQuestion({ num, text }) {
       pos[X] = { start: s, end: s + lm[0].length };
     }
   }
-  if (!pos.A && pos.B && pos.C && pos.D) {
-    const lm = /\n[^\S\n]*A[^\S\n]+(?=[a-z])/.exec(raw);
-    if (lm && lm.index < pos.B.start && raw.slice(0, lm.index).trim()) {
-      pos.A = { start: lm.index, end: lm.index + lm[0].length };
-      count.A = (count.A || 0) + 1;
+  const requiredLater = { A: ['B', 'C', 'D'], B: ['C', 'D'], C: ['D'] };
+  for (const X of 'ABC') {
+    if (pos[X] || !requiredLater[X].every(letter => pos[letter])) continue;
+    const prevLetter = 'ABC'.slice(0, 'ABC'.indexOf(X)).split('').reverse().find(letter => pos[letter]);
+    const nextLetter = 'ABCD'.slice('ABCD'.indexOf(X) + 1).split('').find(letter => pos[letter]);
+    const prev = prevLetter ? pos[prevLetter] : null;
+    const next = pos[nextLetter];
+    const lm = new RegExp('\\n[^\\S\\n]*' + X + '[^\\S\\n]+(?=[a-z])', 'g');
+    let match;
+    while ((match = lm.exec(raw))) {
+      if (match.index >= next.start) break;
+      if (prev && match.index <= prev.end) continue;
+      if (!raw.slice(0, match.index).trim()) continue;
+      pos[X] = { start: match.index, end: match.index + match[0].length };
+      count[X] = (count[X] || 0) + 1;
+      break;
     }
   }
   const marks = Object.entries(pos).sort((a, b) => a[1].start - b[1].start);

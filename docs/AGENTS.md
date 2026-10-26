@@ -48,7 +48,7 @@ features.
 
 | Area | Why it is dangerous |
 |---|---|
-| `OPTION` regex | Tightly coupled to inline options, dotless-newline options, and leading prose articles. Three separate regressions already occurred here. Never add `^` to the dotless branch; never remove the whitespace-prefixed dotted branch; never pre-collapse newlines (qwen-2 H05; R01–R04). |
+| `OPTION` regex | Tightly coupled to inline options, dotless-newline options, and leading prose articles. Three separate regressions already occurred here. Never add `^` to the dotless branch; never remove the whitespace-prefixed dotted branch; never pre-collapse newlines (qwen-2 H05; R01–R04). Keep the `B.C.` abbreviation skip (D-48), the spaced-slash normalization (D-49), and the bounded missing-label repair (D-47) separate from the main regex. |
 | Blank `C.` / `[^\S\n]*` | The horizontal-whitespace class is what keeps a blank option from consuming the next label. Changing it can resurrect the "option D missing" bug (INV-23). |
 | Loose E/F (`LOOSE`) | Can mistake a continuation line such as `F = ma` for Option F. Do not broaden it (claude §5.3). |
 | `splitSections` | Rule order (divider → key-only → header → structure) is fragile. A false positive splits a question; a miss leaves key lines in the question stream (claude §5.9). Divider-only runs of three or more equals signs (`========`) are section separators and are blanked before line slicing. Keep that predicate narrow (D-46). |

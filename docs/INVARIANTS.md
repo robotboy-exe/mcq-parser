@@ -31,7 +31,7 @@ Status definitions:
 |---|---|---|---|
 | INV-09 | Newlines must survive normalization until option matching; a blanket `text.replace(/\s+/g,' ')` before matching is forbidden. | VERIFIED | qwen-2-reconciled inv 11 |
 | INV-10 | Dual capture handling `const letter = m[1] \|\| m[2]` must remain. | VERIFIED | qwen-2-reconciled inv 12 |
-| INV-11 | The `OPTION` regex may accept a dotless letter only after a newline and only when followed by a digit; the digit-only branch must never be re-extended to `^`. The separate missing-`A` repair is INV-78. | VERIFIED | qwen-2-reconciled inv 9 |
+| INV-11 | The `OPTION` regex may accept a dotless letter only after a newline and only when followed by a digit; the digit-only branch must never be re-extended to `^`. The separate missing-label repairs are INV-78 and INV-80. | VERIFIED | qwen-2-reconciled inv 9 |
 | INV-12 | Inline options (`... A. x B. y ...`) must remain supported. | VERIFIED | qwen-2-reconciled inv 10 |
 | INV-13 | A leading article at the start of a chunk (`A 5 ...`, `A good ...`) must never be an option unless it has `.` or `)`. | VERIFIED | qwen-2-reconciled inv 8 |
 | INV-14 | The main option regex recognizes uppercase A–F only; the page itself accepts only four options. | VERIFIED | qwen-2-reconciled inv 6 |
@@ -130,11 +130,14 @@ Status definitions:
 | INV-77 | When a pure answer heading is directly preceded by a standalone title block containing a `20\d\d` year and an exam/subject word, the title block is dropped from the question part and kept in `boundary` header metadata. It must not leak into the last question's options. | VERIFIED | D-44; `fixtures/inputs/bank-2026.txt`; `tests/runner.js` 2026-10-26 |
 | INV-78 | If option `A` is absent but `B`, `C`, and `D` are present, a line starting `A ` followed by a lowercase word, after the start of the chunk and before `B`, is parsed as option A. The repair is never applied at the start of the chunk, so `A 5 ...` and `A good ...` remain stem text. | VERIFIED | D-45; `fixtures/inputs/bank-pre-2026.txt`; `fixtures/inputs/qwen2-s2-article-vs-option.txt`; `tests/runner.js` 2026-10-26 |
 | INV-79 | A line containing only equals signs (three or more) is a section divider. `splitSections` blanks it before slicing, so a leading or trailing divider cannot become question or option text. Stem punctuation such as `-----` stays in question text (EC-19). Stripping does not make a multi-section paste supported. | VERIFIED | D-46; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
+| INV-80 | A missing A, B, or C is repaired from a line beginning with that letter, whitespace, and a lowercase word, provided the line is after the chunk start and between the nearest existing option labels. C requires D; B requires C and D; A keeps the stricter B–D requirement from INV-78. D is not repaired. | VERIFIED | D-47; `fixtures/inputs/new-edge-dotless-c.txt`; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
+| INV-81 | A dotted abbreviation in the stem, such as `B.C.`, is not an option label. A label with no whitespace after its dot and an uppercase letter followed by `.`, whitespace, or end is skipped, so it does not create a duplicate-letter count or flag. | VERIFIED | D-48; `fixtures/inputs/new-edge-year-abbreviation.txt`; `fixtures/inputs/new-edge-year-abbreviation-ad.txt`; `tests/runner.js` 2026-10-26 |
+| INV-82 | A slash after an A–F label is treated as an option separator when the label is preceded by start, newline, or whitespace and the slash is followed by whitespace. The slash is normalized to a dot for scanning while character offsets remain unchanged. This supports all labels A–F, inline or at line start. | VERIFIED | D-49; `fixtures/inputs/new-edge-slash-option-a.txt`; `fixtures/inputs/new-edge-slash-all-options.txt`; `tests/runner.js` 2026-10-26 |
 
 ## Counts
 
-- Total: 79
-- VERIFIED: 70
+- Total: 82
+- VERIFIED: 73
 - AT_RISK: 9
 - CONFLICTED: 0
 

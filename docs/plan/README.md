@@ -54,7 +54,7 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 
 ## Current snapshot
 
-- Current test status: `node tests/runner.js` → 32 PASS, 0 FAIL, 0 PENDING;
+- Current test status: `node tests/runner.js` → 37 PASS, 0 FAIL, 0 PENDING;
   `node tests/unit.js` → 65 PASS, 0 FAIL; `node tools/extract-bank.js --check`
   exits 0 for seven slices.
 - 2026-10-26: the bank source gained the WASSCE 2026 section and a 2026 slice
@@ -161,7 +161,7 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 1. **`archive/live-sources/IMPROVISED C.docx.txt`** — priority 1, canonical OCR
    bank. Contains six exam-year sections (2021–2026) plus one unheaded
    single-question section between 2025 and 2026. SHA-256:
-   `1395c66b75b544f7313b47bab3f08b5d702ca7878e54c0929446c4cf2debbd7b`.
+   `270878b7980372c893f9396afa8fb128de23d37c65f4bfceb8429c85f0e8f809`.
 2. **`archive/live-sources/ANOMALIES.txt`** — priority 2. SHA-256:
    `718ca1e70f84fcdc84280710394cdeb73e5ff62183e7b09d14e8ffc7d22e8321`.
    Block 2 (`STURCTURED GOVERNMENT QUESTIONS 2025`) is the original block that
@@ -366,6 +366,11 @@ authoritative:
 
 ## Change log
 
+- 2026-10-26 — Promoted new-edge anomalies: D-47 extends the missing-dot repair
+  to B/C (EC-79/INV-80), D-48 ignores `B.`/`A.` in year abbreviations
+  (EC-80/INV-81), and D-49 normalizes spaced slash labels for all options
+  (EC-81/INV-82). These had blocked Auto-Save. Runner 37 PASS; unit 65 PASS;
+  extractor seven slices green; build verified.
 - 2026-10-26 — Added the 2026 bank slice and fixed the two-line answer heading
   (D-44/EC-76/INV-77); `bank-2026` covers Q1–Q48 and the 48-entry key. Also
   added the unheaded pre-2026 section as its own slice/fixture (`bank-pre-2026`,

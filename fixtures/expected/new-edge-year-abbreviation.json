@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "input_origin": "anomaly",
+  "id": "new-edge-year-abbreviation",
+  "source": [
+    "docs/NEW_EDGE_CASES.txt lines 250-254"
+  ],
+  "provenance": "Minimal extraction of the Q18 year-abbreviation case from the user-supplied new edge-case paste.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-year-abbreviation.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "nums": [18],
+    "questions": [
+      {
+        "num": 18,
+        "question": "Johoiachin surrendered to Babylon in 597 B.C. in order to",
+        "a": "save Jerusalem from destruction",
+        "b": "become a servant of Nebuchadnezzar",
+        "c": "fulfill God's prophecies through Nehemiah",
+        "d": "have jews exiled into Babylon",
+        "flags": []
+      }
+    ],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "The B in B.C. is treated as a second option B",
+    "The year abbreviation creates a duplicate-letter flag"
+  ],
+  "notes": [
+    "The label-like B in 597 B.C. is part of the question stem, not an option."
+  ],
+  "discrepancies": []
+}

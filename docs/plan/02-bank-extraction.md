@@ -15,8 +15,8 @@ therefore an explicit pre-parse step, not parser behavior.
 Source facts:
 
 - File: `archive/live-sources/IMPROVISED C.docx.txt`
-- SHA-256: `1395c66b75b544f7313b47bab3f08b5d702ca7878e54c0929446c4cf2debbd7b`
-- 47,157 bytes; UTF-8 with BOM; the 2021–2025 block uses CRLF and the appended
+- SHA-256: `270878b7980372c893f9396afa8fb128de23d37c65f4bfceb8429c85f0e8f809`
+- 47,183 bytes; UTF-8 with BOM; the 2021–2025 block uses CRLF and the appended
   2026 block uses LF. Split on `/\r\n|\n|\r/` to get 1,766 logical lines.
 - The seven extracted sections contain 233 question numbers
   (40/40/40/24/40/1/48). Only the six headed years have keys. Do not use a
@@ -164,4 +164,7 @@ slices. The 2025 output hash changed only because a trailing newline was added
 when 2025 stopped being the end of the file. `bank-2026` is confirmed, and D-44
 fixes its two-line answer heading. `bank-pre-2026` is its own divider-delimited
 section; D-45 repairs its dotless A and D-46 strips the surrounding dividers.
-Runner 32 PASS; unit 65 PASS; extractor `--check` green for seven slices.
+D-47 extends the same missing-dot repair to B/C, D-48 ignores year
+abbreviations such as `B.C.`/`A.D.`, and D-49 normalizes spaced slash labels.
+Runner 37 PASS; unit 65
+PASS; extractor `--check` green for seven slices.

@@ -137,6 +137,9 @@ this table during review.
 | EC-76 | Two-line answer heading | A title line such as `WASSCE C. R. K. 2026` sits directly above the pure heading `OBJECTIVE ANSWERS` | The title block is dropped from the question part and kept in `boundary` metadata. Q48 parses as `care for one another / desire the word of God / live a godly life / pray and fast more often` with no duplicate-letter flag; the key still has 48 entries | CONFIRMED | D-44; new bank source 2026-10-26; `fixtures/inputs/bank-2026.txt`; `tests/runner.js` 2026-10-26 |
 | EC-77 | Dotless `A` before dotted B–D | The unheaded single-question section has `A stay with them` with no dot, followed by `B.`, `C.`, and `D.` | The line is parsed as option A; the stem ends at `... begged Jesus to`. Leading articles such as `A 5 ...` and `A good ...` are not affected because the repair is not used at the start of the chunk | CONFIRMED | D-45; new bank source 2026-10-26; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
 | EC-78 | Divider-only section line | A paste includes its surrounding `========` separators, including a trailing one | The dividers are blanked before slicing; Q29's D is `heal their sick.` with no `========`. The unheaded section stays separate from 2025 and 2026; multi-section paste is still unsupported | CONFIRMED | D-46; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
+| EC-79 | Dotless B or C between dotted options | Q2 has `C spoke to him.` without a dot, between dotted B and D | The line is parsed as option C; B is not extended and no `option C missing` or duplicate-letter flag is raised, so Auto-Save is not blocked by this question | CONFIRMED | D-47; new edge cases 2020 Q2; `fixtures/inputs/new-edge-dotless-c.txt`; `tests/runner.js` 2026-10-26 |
+| EC-80 | Year abbreviation looks like an option | The stem contains `597 B.C.` or `A.D. 70` | The `B.` or `A.` inside the abbreviation is ignored; the real options remain A–D and no duplicate-letter flag is raised, so Auto-Save is not blocked by this question | CONFIRMED | D-48; new edge cases Q18; `fixtures/inputs/new-edge-year-abbreviation.txt`; `fixtures/inputs/new-edge-year-abbreviation-ad.txt`; `tests/runner.js` 2026-10-26 |
+| EC-81 | Slash option separator on any letter | Q17 has `A/ books of the prophets`; an all-slash block uses `A/ ... B/ ... C/ ... D/ ...` | A spaced slash after an A–F label is normalized to a dot before scanning, so A–D parse correctly inline or at line start; `A/B`, `and/or`, fractions, and dates are not matched | CONFIRMED | D-49; new edge cases Q17; `fixtures/inputs/new-edge-slash-option-a.txt`; `fixtures/inputs/new-edge-slash-all-options.txt`; `tests/runner.js` 2026-10-26 |
 
 Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
 
@@ -168,10 +171,13 @@ closed by the archived PHP/HTML sources:
   the supported way to split sections. EC-77 and EC-78 are CONFIRMED by the
   unheaded single-question section between 2025 and 2026. It is its own
   divider-delimited section, not a stray part of either year, and has no key.
+- EC-79, EC-80, and EC-81 are CONFIRMED by the new-edge fixtures for a dotless
+  C, `B.C.`/`A.D.` year abbreviations, and slash labels; these previously
+  produced flags that blocked Auto-Save.
 
 ## Counts
 
-- Total: 78
-- CONFIRMED: 74
+- Total: 81
+- CONFIRMED: 77
 - UNVERIFIED: 4
 - CONFLICTED: 0

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "input_origin": "anomaly",
+  "id": "new-edge-dotless-c",
+  "source": [
+    "docs/NEW_EDGE_CASES.txt lines 6-8"
+  ],
+  "provenance": "Minimal extraction of the 2020 CRS Q2 dotless-C case from the user-supplied new edge-case paste.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-dotless-c.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "nums": [2],
+    "questions": [
+      {
+        "num": 2,
+        "question": "Man became a living being when God",
+        "a": "formed him from dust",
+        "b": "gave him breath",
+        "c": "spoke to him.",
+        "d": "gave him a helpmate",
+        "flags": []
+      }
+    ],
+    "forbidden_flags": [
+      "option C missing",
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "Option C is left empty",
+    "The dotless C line is absorbed into Option B"
+  ],
+  "notes": [
+    "The missing dot is on C, not A, in an otherwise dotted A/B/D question."
+  ],
+  "discrepancies": []
+}

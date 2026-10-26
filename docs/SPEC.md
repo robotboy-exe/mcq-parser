@@ -188,20 +188,33 @@ word or option. The UI and the runner call `splitSectionsWithSalvage(raw)`:
 
 1. Normalize: `\r\n?` → `\n`; runs of spaces/tabs → one space; 3+ newlines → 2.
    Newlines are preserved for option matching.
-2. Match `OPTION`:
+2. Normalize spaced slash labels: if an A–F label is preceded by start,
+   newline, or whitespace and followed by `/` plus whitespace, replace the
+   slash with a dot for scanning. Character offsets are unchanged, and the raw
+   text is still used for slicing. This covers any letter, inline or at line
+   start.
+3. Match `OPTION`:
    - Branch 1 (group 1): A–F preceded by start, newline, or any whitespace,
      then `.`/`)`; horizontal whitespace (not newlines) is consumed between the
      letter and the punctuation and after it.
    - Branch 2 (group 2): A–F after a newline, whitespace, then a digit
      lookahead; no dot required. This branch is newline-only.
    - Letter = `m[1] || m[2]`.
-3. Position map is last-write-wins for a repeated letter; match counts still
-   record every occurrence.
-4. Loose E/F fallback: if E is missing and D exists, a line after D starting
+4. Ignore a match as an abbreviation when the label dot has no trailing
+   whitespace and the next text begins with an uppercase letter followed by
+   `.`, whitespace, or the end. For example, the `B.` in `597 B.C.` is not an
+   option.
+5. Position map is last-write-wins for a repeated letter; match counts record
+   every accepted occurrence.
+6. Loose E/F fallback: if E is missing and D exists, a line after D starting
    with lone `E` + whitespace + text is accepted; F similarly after E.
-5. Stem = text before the first mark. Each option = text from its mark to the
+7. Missing-label repair: if A, B, or C is absent, accept a line beginning with
+   that letter, whitespace, and a lowercase word. The line must be after the
+   chunk start and between the nearest existing labels. A requires B–D; B
+   requires C and D; C requires D. D is not repaired.
+8. Stem = text before the first mark. Each option = text from its mark to the
    next mark (last runs to end).
-6. Compute flags (below).
+9. Compute flags (below).
 
 The baseline has **no** absorbed-option post-processor. The `[^\S\n]*` after
 the label is what prevents a blank `C.` from consuming `D.`.
@@ -287,7 +300,7 @@ loading, queueing, or saving.
 | `question text missing or very short` | stem length < 10 |
 | `option A/B/C/D missing` | that option is empty (E/F are never flagged missing) |
 | `option X over 500 characters` | any A–F option length > 500 |
-| `a letter appears twice (merged questions?)` | any option letter matched more than once (pre-dedup count) |
+| `a letter appears twice (merged questions?)` | any option letter matched more than once (pre-dedup count, excluding dotted abbreviations such as `B.C.`) |
 | `question N missing (numbering gap)` | a kept marker jumps by more than 1 after a known question number; attached to the later question. A run of missing numbers uses `questions N-M missing (numbering gap)` |
 | `E/F options present` | `q.e` or `q.f` is non-empty (D-37); the auto-save gate also blocks this question |
 

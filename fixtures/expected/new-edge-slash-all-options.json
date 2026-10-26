@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "new-edge-slash-all-options",
+  "source": [
+    "D-49; full slash-support request 2026-10-26"
+  ],
+  "provenance": "Synthetic all-slash test input for the D-49 separator normalization.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-slash-all-options.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "nums": [1],
+    "questions": [
+      {
+        "num": 1,
+        "question": "Which of these is a test question?",
+        "a": "alpha",
+        "b": "beta",
+        "c": "gamma",
+        "d": "delta",
+        "flags": []
+      }
+    ],
+    "forbidden_flags": [
+      "option A missing",
+      "option B missing",
+      "option C missing",
+      "option D missing",
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "A slash label is left in the stem",
+    "Any option is left empty"
+  ],
+  "notes": [
+    "All four labels use a spaced slash separator."
+  ],
+  "discrepancies": []
+}

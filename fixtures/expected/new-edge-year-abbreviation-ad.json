@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "new-edge-year-abbreviation-ad",
+  "source": [
+    "D-48; A.D. companion to the B.C. anomaly, 2026-10-26"
+  ],
+  "provenance": "Synthetic A.D. test input for the D-48 dotted-abbreviation guard.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-year-abbreviation-ad.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "nums": [20],
+    "questions": [
+      {
+        "num": 20,
+        "question": "The second temple was destroyed in A.D. 70 by",
+        "a": "the Persians",
+        "b": "the Greeks",
+        "c": "the Romans",
+        "d": "the Egyptians",
+        "flags": []
+      }
+    ],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)",
+      "option A missing"
+    ]
+  },
+  "must_not": [
+    "The A in A.D. is treated as an option A",
+    "The year abbreviation creates a duplicate-letter flag"
+  ],
+  "notes": [
+    "The label-like A in A.D. is part of the question stem, not an option."
+  ],
+  "discrepancies": []
+}
