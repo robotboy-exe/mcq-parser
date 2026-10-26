@@ -1,0 +1,37 @@
+NEW EDGE CASES
+Inbox for parser anomalies that are not yet fixtures.
+
+Context:
+IMPROVISED C.docx.txt now parses cleanly and is frozen as the historical
+regression signal. If it fails again, that is a regression. New OCR/parser
+failures belong here until they are reproduced and promoted to
+fixtures/inputs/ plus fixtures/expected/.
+
+Rules:
+- Add one case per block.
+- Keep raw OCR text verbatim.
+- Record expected vs actual behavior, flags, source, date, and status.
+- Do not place this file in fixtures/inputs/ without an expected spec; the
+  runner will report it as an orphan.
+
+Case template:
+Case ID: EC-NEW-000
+Date: YYYY-MM-DD
+Source: dummy/synthetic
+Status: PLACEHOLDER
+
+Raw text:
+1. Dummy question with a placeholder stem?
+A. dummy option A
+B. dummy option B
+C. dummy option C
+D. dummy option D
+
+Expected:
+One question with four options and no flags.
+
+Actual:
+Not run; dummy text only.
+
+Notes:
+Replace this block with the first real edge case.
