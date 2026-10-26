@@ -287,7 +287,18 @@ function runOCRBookmarklet() {
     const list = $('ocr_saved_list');
     if (!box || !list) return;
     const entries = savedForBatch(savedLog, queue.batchId);
+    const warned = entries.length > 0 && unverifiedSaves(entries).length > 0;
     box.hidden = !entries.length;
+    if (entries.length) {
+      box.style.color = warned ? '#8a4b00' : '#0d6b3f';
+      box.style.background = warned ? '#fff4e5' : '#eef8f1';
+      box.style.border = '1px solid ' + (warned ? '#d97706' : '#2e9e63');
+      box.style.borderLeft = '4px solid ' + (warned ? '#d97706' : '#2e9e63');
+      box.style.borderRadius = '6px';
+      box.style.padding = '8px 10px';
+      box.style.marginTop = '10px';
+      list.style.fontWeight = 'bold';
+    }
     list.textContent = entries.length ? formatSavedRange(entries) + ' ' + savedCopyText().split('\n').join('; ') : '';
   }
   function renderPaused() {
