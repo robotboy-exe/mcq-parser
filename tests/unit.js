@@ -610,6 +610,13 @@ test('autosaveBlockers reports lock, hidden, marker, save, and stop', () => {
   eq(parser.autosaveBlockers(stopped)[0].code, 'stopped');
 });
 
+test('autosaveBlockers does not impose a save-count cap', () => {
+  const s = cleanState();
+  s.runCount = 999;
+  s.runCap = 10;
+  eq(parser.autosaveBlockers(s), []);
+});
+
 test('autosaveBlockers ignores another tab lock older than 15 seconds', () => {
   const s = cleanState();
   s.lock = { tabId: 'other', at: 1000 };
