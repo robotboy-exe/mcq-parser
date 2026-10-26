@@ -53,7 +53,7 @@ preserve it. Preserve blank lines and leading spaces.
 | 2023 | 612 | 909 | 903 | `STRUCTURED C. R. K QUESTIONS 2023` | `36. B  37. A  38. A  39. A  40. C` | 40 | 40 |
 | 2024 | 915 | 1127 | 1087 | `17. Daniel could not be harmed by the lions because` | `40. B` | 24 | 40 |
 | 2025 | 1133 | 1456 | 1416 | `STRUCTURED C. R. K. 2025 OBJECTIVE QUESTIONS` | `40. D` | 40 | 39 |
-| pre-2026 | 1458 | 1466 | none | `-----` | `---` | 1 | 0 |
+| pre-2026 | 1458 | 1466 | none | `========` | `========` | 1 | 0 |
 | 2026 | 1468 | 1766 | 1717 | `WASSCE C. R. K. 2026` | `48. B` | 48 | 48 |
 
 Notes:
@@ -69,11 +69,14 @@ Notes:
 - 2024 starts at Q17. Do not invent Q1–16 and do not add a synthetic 2024
   header. The slice has no year in its first three lines; its fixture must not
   assert `header.year`.
-- Leave out the `---`/`—` separators before the year headers. The pre-2026
+- Leave out the `========` separators before the year headers. The pre-2026
   slice is the exception: its two dividers are its only boundaries, so include
   them and let `splitSections` strip them (D-46).
 - The pre-2026 slice is keyless: the manifest uses `answer_header: null`; the
   extractor counts question markers through the end and expects 0 key entries.
+- The pre-2026 first/last anchors are divider-aware: any run of three or more
+  equals signs matches, so changing the divider width does not break the anchor
+  check.
 
 ## Steps
 

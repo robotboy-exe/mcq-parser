@@ -5,7 +5,7 @@ const FIXES = [
   [/resposible/gi, 'responsible']
 ];
 const OPTION = /(?:^|\n|\s)([A-F])[^\S\n]*[.)][^\S\n]*|\n\s*([A-F])\s+(?=\d)/g;
-const SECTION_DIVIDER = /^[^\S\r\n]*(?:[-–—]{3,}|[–—])[^\S\r\n]*(?=\r?\n|$)/gm;
+const SECTION_DIVIDER = /^[^\S\r\n]*={3,}[^\S\r\n]*(?=\r?\n|$)/gm;
 const KEY_LINE = /^\s*\(?\d{1,3}\)?\s*[.)\-:]?\s*\(?([A-F])\)?\s*(?:[.)]\s*)?(?:$|[-–—/|:,;=]\s|\(|\[)/i;
 const PLACEHOLDER = /^\s*\(?\d{1,3}\)?\s*[.)\-:]?\s*[\[(]?\s*(?:missing|not\s+given|not\s+available|n\s*[/\\]\s*a|unavailable|no\s+answer)/i;
 const STEM_LINE = /^\s*\d{1,3}[.)]\s+\S.{11,}/;

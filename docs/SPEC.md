@@ -33,10 +33,9 @@ One plain-text paste containing any combination of:
 
 - Optional header: first 3 lines may carry a subject name and a `20\d\d` year.
   Example: `IMPROVISED C. R. K. QUESTIONS FOR 2021`.
-- Divider-only lines of dashes (`---`, `-----`, `—--`, or a single `—`) separate
-  sections. They are stripped before question parsing, so a trailing divider is
-  not absorbed into the last option. They do not make a multi-section paste
-  supported.
+- Divider-only lines of equals signs (`========`) separate sections. They are
+  stripped before question parsing, so a trailing divider is not absorbed into
+  the last option. They do not make a multi-section paste supported.
 - Questions, each starting a line with `N.` (1–3 digits) followed by
   whitespace. The `N)` form is **not** a question marker.
 - Unnumbered OCR bullets: a block where every question starts with `*` and no

@@ -24,7 +24,7 @@
 - Do not modify the PHP, database, `ocr_helper.js`, or server contract: CSRF, PRG flow, field names, four-option rule, and success flash text are fixed.
 - Do not change `localStorage` key names/shapes: `ocrQueue`, `ocrMeta`, `ansKey`. Do not read/write `ocrSubmitted`.
 - Preserve deliberate quirks: E/F→D collapse, `splitQuestions` numbering guard, advisory-only flags, blank options, `FIXES` order. Do not refactor for style.
-- Treat divider-only dash lines (`----`, `---`, `—`) as section separators (D-46). A partial section, even one question, is its own paste; do not attach an unheaded section to the previous or next year.
+- Treat divider-only runs of three or more equals signs (`========`) as section separators (D-46). A partial section, even one question, is its own paste; do not attach an unheaded section to the previous or next year.
 - Highest-risk code: `OPTION`, the blank-option whitespace class, `LOOSE` E/F, `splitSections`, `splitQuestions`, and the paired `fillForm`/`tick` logic. See `docs/AGENTS.md` before changing these.
 
 ## Fixtures

@@ -542,21 +542,22 @@ it to other letters or to the start of the chunk without a failing fixture.
 
 ## D-46 — Divider-only lines are section separators
 
-**Choice.** `splitSections` blanks a line that contains only dashes: three or
-more hyphens/half-width dashes, or a single en/em dash. This happens before line
-slicing, so a section paste may include its surrounding dividers without the
-divider becoming question or option text. The parser still expects one section
-per paste; stripping does not make a multi-section paste supported.
+**Choice.** `splitSections` blanks a line that contains only equals signs (three
+or more). This happens before line slicing, so a section paste may include its
+surrounding `========` dividers without the divider becoming question or option
+text. The parser still expects one section per paste; stripping does not make a
+multi-section paste supported.
 
-**Why.** The bank uses `---`, `-----`, `—--`, and single em-dash lines between
-sections. The unheaded pre-2026 section is followed by `---`; without stripping,
-Q29's option D became `heal their sick. ---`. The divider is a boundary, not
-content. The same rule keeps a leading divider out of the question head.
+**Why.** The bank now uses `========` between sections. The unheaded pre-2026
+section is followed by `========`; without stripping, Q29's option D became
+`heal their sick. ========`. The divider is a boundary, not content. The same
+rule keeps a leading divider out of the question head. The predicate is
+equals-only so stem punctuation remains question text (EC-19).
 
-**Risk.** A prose line consisting only of dashes would be dropped. Keep the
-predicate to dash-only lines; do not expand it to arbitrary punctuation. Do not
-interpret stripping as section splitting: extraction remains external, and
-one-section-per-paste remains the contract.
+**Risk.** A prose line consisting only of equals signs would be dropped. Keep
+the predicate to equals-only lines; do not expand it to arbitrary punctuation.
+Do not interpret stripping as section splitting: extraction remains external,
+and one-section-per-paste remains the contract.
 
 ## Auto-Save verification notes
 

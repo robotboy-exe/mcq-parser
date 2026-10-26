@@ -17,6 +17,15 @@ function sha256(value) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
+function isDivider(value) {
+  return /^={3,}$/.test(String(value).trim());
+}
+
+function sameAnchor(actual, expected) {
+  if (isDivider(expected)) return isDivider(actual);
+  return actual === expected;
+}
+
 function splitRecords(text) {
   const records = [];
   const separator = /\r\n|\n|\r/g;
@@ -84,10 +93,10 @@ function main() {
 
     const first = records[start - 1].text.replace(/^\uFEFF/, '').trim();
     const last = records[end - 1].text.trim();
-    if (first !== slice.first) {
+    if (!sameAnchor(first, slice.first)) {
       fail(year + ': first-line anchor mismatch: ' + JSON.stringify(first));
     }
-    if (last !== slice.last) {
+    if (!sameAnchor(last, slice.last)) {
       fail(year + ': last-line anchor mismatch: ' + JSON.stringify(last));
     }
 

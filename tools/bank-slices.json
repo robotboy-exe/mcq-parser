@@ -1,6 +1,6 @@
 {
   "source": "archive/live-sources/IMPROVISED C.docx.txt",
-  "source_sha256": "1395c66b75b544f7313b47bab3f08b5d702ca7878e54c0929446c4cf2debbd7b",
+  "source_sha256": "270878b7980372c893f9396afa8fb128de23d37c65f4bfceb8429c85f0e8f809",
   "line_count": 1766,
   "slices": [
     {
@@ -63,11 +63,11 @@
       "start": 1458,
       "end": 1466,
       "answer_header": null,
-      "first": "-----",
-      "last": "---",
+      "first": "========",
+      "last": "========",
       "questions": 1,
       "key_entries": 0,
-      "sha256": "d9ef77e88de9b2615dbdbb8841c2c9b23267b1685445ae6d4796adec12e0493c"
+      "sha256": "298fcb0a5b81fa5630d784bb26f94d2d451262f49cddd8946dd54b7769683e42"
     },
     {
       "year": 2026,
