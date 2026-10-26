@@ -4,29 +4,33 @@ Status: done (2026-10-25). Depends on: P01. Blocks: P03, P04, P05, P06.
 
 ## Self-contained context
 
-The parser is designed for **one exam year per paste**. The bank
-`archive/live-sources/IMPROVISED C.docx.txt` contains five exam-year sections:
-2021–2025. The bank must never be pasted whole: the section splitter and
-numbering guard would pair one year's questions with another year's key.
-Extraction is therefore an explicit pre-parse step, not parser behavior.
+The parser is designed for **one exam year per paste**. A paste can also be a
+divider-delimited partial section, even a single question. The bank
+`archive/live-sources/IMPROVISED C.docx.txt` contains six exam-year sections
+(2021–2026) plus one unheaded single-question section between 2025 and 2026.
+The bank must never be pasted whole: the section splitter and numbering guard
+would pair one section's questions with another section's key. Extraction is
+therefore an explicit pre-parse step, not parser behavior.
 
 Source facts:
 
 - File: `archive/live-sources/IMPROVISED C.docx.txt`
-- SHA-256: `96ed3af8fb53e3ba3f2bf355a5f8094db54587996f1c8112e088dae5347c5a5c`
-- 35,546 bytes; UTF-8 with BOM; CRLF line endings. Split on `/\r\n|\n|\r/` to
-  get 1,456 logical lines.
-- The five extracted years contain 184 question numbers (40/40/40/24/40). Do not
-  use a global marker count: inline options and key lines also match the marker
-  regex.
+- SHA-256: `1395c66b75b544f7313b47bab3f08b5d702ca7878e54c0929446c4cf2debbd7b`
+- 47,157 bytes; UTF-8 with BOM; the 2021–2025 block uses CRLF and the appended
+  2026 block uses LF. Split on `/\r\n|\n|\r/` to get 1,766 logical lines.
+- The seven extracted sections contain 233 question numbers
+  (40/40/40/24/40/1/48). Only the six headed years have keys. Do not use a
+  global marker count: inline options and key lines also match the marker regex.
 - The 2024 section is incomplete: it starts at Q17 and has no 2024 **questions**
   header (only a 2024 answers header).
+- The pre-2026 section has no year header and no key. It is its own
+  divider-delimited section, not a stray part of 2025 or 2026.
 - The bank is a modified working-tree file. If its hash differs from the one
   above, stop and re-derive this manifest; do not reuse these line numbers.
 
 ## Goal
 
-Add a deterministic extractor and five verbatim per-year inputs. Add PENDING
+Add a deterministic extractor and verbatim per-section inputs. Add PENDING
 expected specs so the runner stays green and every input has a pair. Do not
 write confirmed expectations in this package; that is P03–P06.
 
@@ -49,11 +53,15 @@ preserve it. Preserve blank lines and leading spaces.
 | 2023 | 612 | 909 | 903 | `STRUCTURED C. R. K QUESTIONS 2023` | `36. B  37. A  38. A  39. A  40. C` | 40 | 40 |
 | 2024 | 915 | 1127 | 1087 | `17. Daniel could not be harmed by the lions because` | `40. B` | 24 | 40 |
 | 2025 | 1133 | 1456 | 1416 | `STRUCTURED C. R. K. 2025 OBJECTIVE QUESTIONS` | `40. D` | 40 | 39 |
+| pre-2026 | 1458 | 1466 | none | `-----` | `---` | 1 | 0 |
+| 2026 | 1468 | 1766 | 1717 | `WASSCE C. R. K. 2026` | `48. B` | 48 | 48 |
 
 Notes:
 
-- 2021–2023 keys are inline, multiple entries per line. 2024–2025 keys are one
-  entry per line.
+- 2021–2023 keys are inline, multiple entries per line. 2024–2026 keys are one
+  entry per line; pre-2026 has no key.
+- 2026's answer heading is two lines (`WASSCE C. R. K. 2026` then
+  `OBJECTIVE ANSWERS`); `splitSections` must keep the title out of Q48's options.
 - Count question markers only in `start .. answer_header-1`; otherwise inline
   key lines also match `^\s*\d{1,3}\.\s` and inflate the count to 46.
 - 2025 line 1442 is `26. [Missing from source text]`; `parseKey` must produce
@@ -61,7 +69,11 @@ Notes:
 - 2024 starts at Q17. Do not invent Q1–16 and do not add a synthetic 2024
   header. The slice has no year in its first three lines; its fixture must not
   assert `header.year`.
-- Leave out the `---`/`—` separators before the headers.
+- Leave out the `---`/`—` separators before the year headers. The pre-2026
+  slice is the exception: its two dividers are its only boundaries, so include
+  them and let `splitSections` strip them (D-46).
+- The pre-2026 slice is keyless: the manifest uses `answer_header: null`; the
+  extractor counts question markers through the end and expects 0 key entries.
 
 ## Steps
 
@@ -83,7 +95,7 @@ Notes:
    - support `--check`, which verifies the manifest, source hash, first/last and
      answer-header anchors, counts, and every existing output's hash without
      rewriting files.
-4. Run the extractor once (without `--check`) to create the five inputs, then
+4. Run the extractor once (without `--check`) to create all inputs, then
    fill the output hashes into `tools/bank-slices.json`.
 5. Create four PENDING specs:
    `fixtures/expected/bank-2022.json` … `bank-2025.json`.
@@ -104,7 +116,7 @@ Notes:
 
 | Command | Expected |
 |---|---|
-| `node tools/extract-bank.js --check` | exits 0, all five hashes/anchors/counts match |
+| `node tools/extract-bank.js --check` | exits 0, all manifest hashes/anchors/counts match |
 | `node tests/runner.js` | 25 PASS, 0 FAIL, 4 PENDING (29 fixtures); exit 0; 0 orphan inputs |
 | `sha256sum fixtures/inputs/bank-*.txt` | matches the manifest |
 | inspect `bank-2021.txt` bytes | unchanged, starts with the BOM and 2021 header, preserves CRLF, includes lines 1–297 |
@@ -141,3 +153,12 @@ Open questions: this package was written when there were 19 fixtures and no
   has 40 entries for 24 questions. 2025 still has 39 key entries because Q26 is
   missing from the source text. P04-P06 can now confirm the four PENDING specs.
 ```
+
+Addendum 2026-10-26: the source gained the 2026 section (lines 1468–1766, 48
+questions/48 key entries) and an unheaded single-question section between 2025
+and 2026 (lines 1458–1466, 1 question/0 key entries). The manifest now has seven
+slices. The 2025 output hash changed only because a trailing newline was added
+when 2025 stopped being the end of the file. `bank-2026` is confirmed, and D-44
+fixes its two-line answer heading. `bank-pre-2026` is its own divider-delimited
+section; D-45 repairs its dotless A and D-46 strips the surrounding dividers.
+Runner 32 PASS; unit 65 PASS; extractor `--check` green for seven slices.

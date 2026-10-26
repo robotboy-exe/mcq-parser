@@ -31,7 +31,7 @@ Status definitions:
 |---|---|---|---|
 | INV-09 | Newlines must survive normalization until option matching; a blanket `text.replace(/\s+/g,' ')` before matching is forbidden. | VERIFIED | qwen-2-reconciled inv 11 |
 | INV-10 | Dual capture handling `const letter = m[1] \|\| m[2]` must remain. | VERIFIED | qwen-2-reconciled inv 12 |
-| INV-11 | The dotless-letter exception is allowed only after a newline and only when followed by a digit; it must never be re-extended to `^`. | VERIFIED | qwen-2-reconciled inv 9 |
+| INV-11 | The `OPTION` regex may accept a dotless letter only after a newline and only when followed by a digit; the digit-only branch must never be re-extended to `^`. The separate missing-`A` repair is INV-78. | VERIFIED | qwen-2-reconciled inv 9 |
 | INV-12 | Inline options (`... A. x B. y ...`) must remain supported. | VERIFIED | qwen-2-reconciled inv 10 |
 | INV-13 | A leading article at the start of a chunk (`A 5 ...`, `A good ...`) must never be an option unless it has `.` or `)`. | VERIFIED | qwen-2-reconciled inv 8 |
 | INV-14 | The main option regex recognizes uppercase A–F only; the page itself accepts only four options. | VERIFIED | qwen-2-reconciled inv 6 |
@@ -122,17 +122,20 @@ Status definitions:
 
 | ID | Rule | Status | Source |
 |---|---|---|---|
-| INV-72 | `splitSectionsWithSalvage` is a gated pre-pass. All five bank slices produce zero inserts and byte-identical strict results; hostile anomaly inputs may trigger the repair. The repair is accepted only with at least 2 inserts and a strictly larger question-chunk count; otherwise the strict result is kept. Every item from an accepted repair carries `OCR boundaries repaired; verify question and option split`. | VERIFIED | P07; `anomaly-block2`; bank no-op check 2026-10-25; `tests/unit.js` |
-| INV-73 | The bank fixtures cover five consecutive years with the archived question/key counts: 2021 40/40, 2022 40/40, 2023 40/40, 2024 24/40 (the partial Q17-Q40 slice), 2025 40/39. Each year is extracted from its documented source slice, and the extractor `--check` verifies source hash, anchors, counts, and output hashes. | VERIFIED | P02/P04/P05/P06; `tools/bank-slices.json`; `tools/extract-bank.js --check` 2026-10-25 |
+| INV-72 | `splitSectionsWithSalvage` is a gated pre-pass. All seven bank slices produce zero inserts and byte-identical strict results; hostile anomaly inputs may trigger the repair. The repair is accepted only with at least 2 inserts and a strictly larger question-chunk count; otherwise the strict result is kept. Every item from an accepted repair carries `OCR boundaries repaired; verify question and option split`. | VERIFIED | P07; `anomaly-block2`; bank no-op check 2026-10-26; `tests/unit.js` |
+| INV-73 | The bank fixtures cover six years plus one unheaded section with the archived question/key counts: 2021 40/40, 2022 40/40, 2023 40/40, 2024 24/40 (the partial Q17-Q40 slice), 2025 40/39, pre-2026 1/0, 2026 48/48. Each section is extracted from its documented source slice, and the extractor `--check` verifies source hash, anchors, counts, and output hashes. | VERIFIED | P02/P04/P05/P06; `tools/bank-slices.json`; `tools/extract-bank.js --check` 2026-10-26 |
 | INV-74 | Unnumbered bullet text is a separate mode: when no line-start `N.` marker exists and there are at least 2 `*` bullets, `splitBulletQuestions` returns chunks with `num: null`; each chunk is flagged `question number missing`, and no number is invented. The archived block contains 19 bullets. | VERIFIED | P08; `anomaly-block1` 2026-10-25; `tests/unit.js` |
 | INV-75 | Every expected fixture declares an `input_origin` of `bank`, `anomaly`, `doc`, or `synthetic`. Expected values are transcribed from cited sources, never generated from parser output; the runner rejects missing/unknown origins and orphan inputs. | VERIFIED | P01/P09; `tests/runner.js`; fixture audit 2026-10-25 |
 | INV-76 | Auto-save has no save-count cap. A run continues until Stop, a blocker, or the end of the queue; dry run previews the whole queue. | VERIFIED | D-43; `src/ui/ui.js`; `src/parser/parser.js`; `tests/unit.js` |
+| INV-77 | When a pure answer heading is directly preceded by a standalone title block containing a `20\d\d` year and an exam/subject word, the title block is dropped from the question part and kept in `boundary` header metadata. It must not leak into the last question's options. | VERIFIED | D-44; `fixtures/inputs/bank-2026.txt`; `tests/runner.js` 2026-10-26 |
+| INV-78 | If option `A` is absent but `B`, `C`, and `D` are present, a line starting `A ` followed by a lowercase word, after the start of the chunk and before `B`, is parsed as option A. The repair is never applied at the start of the chunk, so `A 5 ...` and `A good ...` remain stem text. | VERIFIED | D-45; `fixtures/inputs/bank-pre-2026.txt`; `fixtures/inputs/qwen2-s2-article-vs-option.txt`; `tests/runner.js` 2026-10-26 |
+| INV-79 | A line containing only dashes (three or more hyphens/half-width dashes, or a single en/em dash) is a section divider. `splitSections` blanks it before slicing, so a leading or trailing divider cannot become question or option text. Stripping does not make a multi-section paste supported. | VERIFIED | D-46; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
 
 ## Counts
 
-- Total: 75
-- VERIFIED: 65
-- AT_RISK: 10
+- Total: 79
+- VERIFIED: 70
+- AT_RISK: 9
 - CONFLICTED: 0
 
 ## Conflict summary

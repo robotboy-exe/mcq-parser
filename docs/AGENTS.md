@@ -51,7 +51,7 @@ features.
 | `OPTION` regex | Tightly coupled to inline options, dotless-newline options, and leading prose articles. Three separate regressions already occurred here. Never add `^` to the dotless branch; never remove the whitespace-prefixed dotted branch; never pre-collapse newlines (qwen-2 H05; R01–R04). |
 | Blank `C.` / `[^\S\n]*` | The horizontal-whitespace class is what keeps a blank option from consuming the next label. Changing it can resurrect the "option D missing" bug (INV-23). |
 | Loose E/F (`LOOSE`) | Can mistake a continuation line such as `F = ma` for Option F. Do not broaden it (claude §5.3). |
-| `splitSections` | Rule order (divider → key-only → header → structure) is fragile. A false positive splits a question; a miss leaves key lines in the question stream (claude §5.9). |
+| `splitSections` | Rule order (divider → key-only → header → structure) is fragile. A false positive splits a question; a miss leaves key lines in the question stream (claude §5.9). Divider-only dash lines are section separators and are blanked before line slicing; keep that predicate narrow (D-46). |
 | `splitQuestions` numbering guard | `n <= last || n > last + 5` drops repeats and large jumps. It can merge real questions after a restart or OCR digit error (INV-21, INV-24). |
 | `salvageNormalize` / `splitSectionsWithSalvage` | The repair must stay a no-op on bank text. The `inserts >= 2` trigger and the `after > before` chunk gate are mandatory; a repair that does not add questions must be discarded and the strict result kept byte-for-byte (INV-72). |
 | `splitBulletQuestions` / `splitQuestionItems` | Bullet mode is only for text with no line-start `N.` marker. Never invent numbers: bullet chunks keep `num: null` and the `question number missing` flag. Do not mix bullet and numbered chunks in one paste (INV-74). |
@@ -139,10 +139,12 @@ The mandatory regression set is the three documented cases (qwen-2 H04):
 
 Fixtures live in `fixtures/inputs/` and `fixtures/expected/`. Every expected
 spec has an `input_origin` of `bank`, `anomaly`, `doc`, or `synthetic`. The
-`bank-*` fixtures are verbatim year slices and include their answer keys; the
-`anomaly-*` fixtures are the hostile OCR blocks. One exam year per paste is the
-contract: multi-year bank text must be split with `tools/extract-bank.js`, not
-pasted whole. Expected outputs were transcribed from docs, never generated from
+`bank-*` fixtures are verbatim section slices; full years include their answer
+keys, and `bank-pre-2026` is the unheaded single-question section with no key.
+The `anomaly-*` fixtures are the hostile OCR blocks. One exam year (or one
+divider-delimited section, even a partial one) per paste is the contract:
+multi-section bank text must be split with `tools/extract-bank.js`, not pasted
+whole. Expected outputs were transcribed from docs, never generated from
 the parser. Do not regenerate
 them just to make a test pass. If a field is not doc-backed, omit it (or mark
 the fixture PENDING). Do not delete a doc-backed assertion to make a fixture

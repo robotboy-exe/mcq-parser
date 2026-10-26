@@ -54,9 +54,19 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 
 ## Current snapshot
 
-- Current test status: `node tests/runner.js` → 30 PASS, 0 FAIL, 0 PENDING;
+- Current test status: `node tests/runner.js` → 32 PASS, 0 FAIL, 0 PENDING;
   `node tests/unit.js` → 65 PASS, 0 FAIL; `node tools/extract-bank.js --check`
-  exits 0.
+  exits 0 for seven slices.
+- 2026-10-26: the bank source gained the WASSCE 2026 section and a 2026 slice
+  (`bank-2026`, 48 questions/48 key entries). Its two-line answer heading left
+  `WASSCE C. R. K. 2026` inside Q48 and produced the duplicate-letter flag;
+  `splitSections` now drops a title block above a pure answer heading (D-44,
+  EC-76, INV-77). The unheaded 29 section between 2025 and 2026 is its own
+  divider-delimited section, not a stray part of either year; it is extracted as
+  `bank-pre-2026` (1 question/0 key entries). D-45 repairs its dotless A and
+  D-46 strips the surrounding dividers (EC-77/EC-78, INV-78/INV-79). The 2025
+  slice hash changed only by gaining a trailing newline because 2025 is no
+  longer the end of the source file.
 - V1-V3 of the remaining verification queue closed on 2026-10-25: live
   `bank-2021`/`anomaly-block2` matched their fixtures; controlled save #1785
   was accepted (filtered list + edit page) and deleted; a stale no-batch queue
@@ -100,11 +110,12 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   marked synthetic because the taxonomy has no user-paste value. Runner 25
   PASS; negative missing/unknown checks reproduced and restored.
 - P02 closed on 2026-10-25: `tools/extract-bank.js` and `tools/bank-slices.json`
-  produce the five year slices, verify the source hash, anchors, question and
-  key counts, and output hashes (`--check`). 2022-2025 inputs and PENDING specs
+  produce the year slices, verify the source hash, anchors, question and key
+  counts, and output hashes (`--check`). 2022-2025 inputs and PENDING specs
   were added; `bank-2021` already existed from P03 and matches the slice
   byte-for-byte. Runner 25 PASS / 4 PENDING; unit 59 PASS. P04-P06 can confirm
-  the four PENDING bank specs.
+  the four PENDING bank specs. The manifest was extended with 2026 on
+  2026-10-26.
 - P04 closed on 2026-10-25: `bank-2022` is confirmed with the 40-entry inline
   key, 13 E-option questions, the bank Q3 `C. punish them`, and the real
   dotless Q35 (`A 75 years` parsed as option A with no flags). No parser change
@@ -148,8 +159,9 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 ## Source hierarchy and priority
 
 1. **`archive/live-sources/IMPROVISED C.docx.txt`** — priority 1, canonical OCR
-   bank. Contains five exam-year sections: 2021–2025. SHA-256:
-   `96ed3af8fb53e3ba3f2bf355a5f8094db54587996f1c8112e088dae5347c5a5c`.
+   bank. Contains six exam-year sections (2021–2026) plus one unheaded
+   single-question section between 2025 and 2026. SHA-256:
+   `1395c66b75b544f7313b47bab3f08b5d702ca7878e54c0929446c4cf2debbd7b`.
 2. **`archive/live-sources/ANOMALIES.txt`** — priority 2. SHA-256:
    `718ca1e70f84fcdc84280710394cdeb73e5ff62183e7b09d14e8ffc7d22e8321`.
    Block 2 (`STURCTURED GOVERNMENT QUESTIONS 2025`) is the original block that
@@ -160,8 +172,10 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 
 ## Non-negotiable rules
 
-- The parser receives **one exam year per paste**. Extracting a year from the
-  bank is an external, deterministic step; multi-year parsing is out of scope.
+- The parser receives **one exam year per paste**. A paste can be a partial
+  divider-delimited section, even a single question. Extracting a section from
+  the bank is an external, deterministic step; multi-section parsing is out of
+  scope.
 - Add or change behavior only with a failing fixture first. Never regenerate an
   expected fixture from parser output.
 - Do not weaken the strict `OPTION`, `splitSections`, or `splitQuestions` rules
@@ -352,6 +366,12 @@ authoritative:
 
 ## Change log
 
+- 2026-10-26 — Added the 2026 bank slice and fixed the two-line answer heading
+  (D-44/EC-76/INV-77); `bank-2026` covers Q1–Q48 and the 48-entry key. Also
+  added the unheaded pre-2026 section as its own slice/fixture (`bank-pre-2026`,
+  1/0), not a stray: D-45 repairs its missing A dot, D-46 strips divider-only
+  lines (EC-77/EC-78, INV-78/INV-79). Runner 32 PASS; unit 65 PASS; extractor
+  seven slices green; build verified.
 - 2026-10-26 — Removed the 10-save auto-save cap (D-43); a run continues until
   Stop, a blocker, or the end of the queue. Dry run and the remaining gates are
   unchanged.

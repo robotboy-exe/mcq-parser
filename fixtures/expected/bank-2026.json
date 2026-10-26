@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "input_origin": "bank",
+  "id": "bank-2026",
+  "source": [
+    "archive/live-sources/IMPROVISED C.docx.txt lines 1468-1766",
+    "2026 questions (lines 1468-1715) and answer block (lines 1716-1766)"
+  ],
+  "provenance": "Verbatim 2026 section following the divider at line 1466. The unheaded Q29 section before that divider is separate (bank-pre-2026). The answer heading is split over two lines, with the subject/year title directly above OBJECTIVE ANSWERS. Q48 must not absorb that title into its options.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/bank-2026.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 48,
+    "header": {
+      "year": 2026,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ],
+      "category_contains_any": [
+        "WASCE / NECO / GCE"
+      ]
+    },
+    "questions": [
+      {
+        "num": 1,
+        "question": "What was the purpose of the creation of the firmament as mentioned in the Priestly account? To separate the waters from the",
+        "a": "heavens",
+        "b": "Land",
+        "c": "light",
+        "d": "waters"
+      },
+      {
+        "num": 48,
+        "question": "Peter's call on Christians to long for a pure spiritual milk implies that they should",
+        "a": "care for one another",
+        "b": "desire the word of God",
+        "c": "live a godly life",
+        "d": "pray and fast more often",
+        "flags": []
+      }
+    ],
+    "key": {
+      "1": "A",
+      "2": "C",
+      "3": "C",
+      "4": "B",
+      "5": "A",
+      "6": "C",
+      "7": "B",
+      "8": "D",
+      "9": "B",
+      "10": "A",
+      "11": "A",
+      "12": "B",
+      "13": "B",
+      "14": "B",
+      "15": "D",
+      "16": "C",
+      "17": "C",
+      "18": "D",
+      "19": "D",
+      "20": "C",
+      "21": "A",
+      "22": "D",
+      "23": "B",
+      "24": "B",
+      "25": "C",
+      "26": "D",
+      "27": "C",
+      "28": "D",
+      "29": "D",
+      "30": "C",
+      "31": "A",
+      "32": "C",
+      "33": "B",
+      "34": "C",
+      "35": "B",
+      "36": "C",
+      "37": "B",
+      "38": "B",
+      "39": "A",
+      "40": "A",
+      "41": "C",
+      "42": "C",
+      "43": "D",
+      "44": "C",
+      "45": "B",
+      "46": "A",
+      "47": "D",
+      "48": "B"
+    },
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  }
+}

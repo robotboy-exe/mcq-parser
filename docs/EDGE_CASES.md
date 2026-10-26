@@ -134,6 +134,9 @@ this table during review.
 | EC-73 | Unnumbered bullet OCR | Questions use `*` bullets and no line-start `N.` marker exists | Bullet mode splits 19 items; each keeps `num: null`, gets `question number missing`, and the UI shows the flag; no number is invented | CONFIRMED | P08; `fixtures/inputs/anomaly-block1.txt`; `tests/runner.js` 2026-10-25; `tests/unit.js` |
 | EC-74 | Fused question boundaries | A question number or option label is fused into surrounding OCR text | Guarded salvage repairs only boundary shapes when it adds at least 2 inserts and more question chunks; the repaired block yields 12 items with numbers `[null,2,3,4,7,8,9,12,13,14,15,16]` and 50 inserts, all flagged `OCR boundaries repaired; verify question and option split`; the strict result is kept otherwise | CONFIRMED | P07; `fixtures/inputs/anomaly-block2.txt`; `tests/runner.js` 2026-10-25; `tests/unit.js` |
 | EC-75 | Multi-year bank paste | Two or more exam years are pasted as one block | Unsupported: one year per paste is the contract, because keys are matched to the current paste and cross-year text can merge or attach a key to the wrong year. Split with `node tools/extract-bank.js` into `bank-YYYY.txt`; the extractor verifies the source hash, anchors, counts, and output hashes | CONFIRMED | P02; SPEC §2; `tools/extract-bank.js --check` 2026-10-25 |
+| EC-76 | Two-line answer heading | A title line such as `WASSCE C. R. K. 2026` sits directly above the pure heading `OBJECTIVE ANSWERS` | The title block is dropped from the question part and kept in `boundary` metadata. Q48 parses as `care for one another / desire the word of God / live a godly life / pray and fast more often` with no duplicate-letter flag; the key still has 48 entries | CONFIRMED | D-44; new bank source 2026-10-26; `fixtures/inputs/bank-2026.txt`; `tests/runner.js` 2026-10-26 |
+| EC-77 | Dotless `A` before dotted B–D | The unheaded single-question section has `A stay with them` with no dot, followed by `B.`, `C.`, and `D.` | The line is parsed as option A; the stem ends at `... begged Jesus to`. Leading articles such as `A 5 ...` and `A good ...` are not affected because the repair is not used at the start of the chunk | CONFIRMED | D-45; new bank source 2026-10-26; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
+| EC-78 | Divider-only section line | A paste includes its surrounding `-----`/`---` separators, including a trailing one | The dividers are blanked before slicing; Q29's D is `heal their sick.` with no `---`. The unheaded section stays separate from 2025 and 2026; multi-section paste is still unsupported | CONFIRMED | D-46; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
 
 Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
 
@@ -162,11 +165,13 @@ closed by the archived PHP/HTML sources:
   two-tab lock message could not be shown live on one phone browser; see EC-71.
 - EC-73 and EC-74 are CONFIRMED by the archived hostile blocks and the fixture
   runner. EC-75 is a contract limit, not a parser defect: the bank extractor is
-  the supported way to split years.
+  the supported way to split sections. EC-77 and EC-78 are CONFIRMED by the
+  unheaded single-question section between 2025 and 2026. It is its own
+  divider-delimited section, not a stray part of either year, and has no key.
 
 ## Counts
 
-- Total: 75
-- CONFIRMED: 69
-- UNVERIFIED: 6
+- Total: 78
+- CONFIRMED: 74
+- UNVERIFIED: 4
 - CONFLICTED: 0

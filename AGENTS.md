@@ -9,7 +9,7 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 30/30 PASS; `node tests/unit.js` is 65 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 32/32 PASS; `node tests/unit.js` is 65 PASS.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
@@ -24,6 +24,7 @@
 - Do not modify the PHP, database, `ocr_helper.js`, or server contract: CSRF, PRG flow, field names, four-option rule, and success flash text are fixed.
 - Do not change `localStorage` key names/shapes: `ocrQueue`, `ocrMeta`, `ansKey`. Do not read/write `ocrSubmitted`.
 - Preserve deliberate quirks: E/F→D collapse, `splitQuestions` numbering guard, advisory-only flags, blank options, `FIXES` order. Do not refactor for style.
+- Treat divider-only dash lines (`----`, `---`, `—`) as section separators (D-46). A partial section, even one question, is its own paste; do not attach an unheaded section to the previous or next year.
 - Highest-risk code: `OPTION`, the blank-option whitespace class, `LOOSE` E/F, `splitSections`, `splitQuestions`, and the paired `fillForm`/`tick` logic. See `docs/AGENTS.md` before changing these.
 
 ## Fixtures

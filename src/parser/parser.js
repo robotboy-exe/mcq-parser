@@ -5,6 +5,7 @@ const FIXES = [
   [/resposible/gi, 'responsible']
 ];
 const OPTION = /(?:^|\n|\s)([A-F])[^\S\n]*[.)][^\S\n]*|\n\s*([A-F])\s+(?=\d)/g;
+const SECTION_DIVIDER = /^[^\S\r\n]*(?:[-–—]{3,}|[–—])[^\S\r\n]*(?=\r?\n|$)/gm;
 const KEY_LINE = /^\s*\(?\d{1,3}\)?\s*[.)\-:]?\s*\(?([A-F])\)?\s*(?:[.)]\s*)?(?:$|[-–—/|:,;=]\s|\(|\[)/i;
 const PLACEHOLDER = /^\s*\(?\d{1,3}\)?\s*[.)\-:]?\s*[\[(]?\s*(?:missing|not\s+given|not\s+available|n\s*[/\\]\s*a|unavailable|no\s+answer)/i;
 const STEM_LINE = /^\s*\d{1,3}[.)]\s+\S.{11,}/;
@@ -159,6 +160,13 @@ function parseQuestion({ num, text }) {
       pos[X] = { start: s, end: s + lm[0].length };
     }
   }
+  if (!pos.A && pos.B && pos.C && pos.D) {
+    const lm = /\n[^\S\n]*A[^\S\n]+(?=[a-z])/.exec(raw);
+    if (lm && lm.index < pos.B.start && raw.slice(0, lm.index).trim()) {
+      pos.A = { start: lm.index, end: lm.index + lm[0].length };
+      count.A = (count.A || 0) + 1;
+    }
+  }
   const marks = Object.entries(pos).sort((a, b) => a[1].start - b[1].start);
   const q = {
     num,
@@ -190,7 +198,18 @@ function flagNumberingGaps(items) {
   return items;
 }
 
+function sectionTitleLine(t) {
+  const h = (t || '').trim();
+  if (!h || h.length > 120) return false;
+  if (/^\s*\d{1,3}\s*[.)]\s/.test(h)) return false;
+  if (/^\s*[A-F]\s*[.)]\s/i.test(h)) return false;
+  if (/\?/.test(h)) return false;
+  if (!/\b20\d{2}\b/.test(h)) return false;
+  return /\b(?:WASSCE|WASCE|WAEC|SSCE|NECO|GCE|JAMB|UTME|POST\s*UTME|STRUCTURED|IMPROVISED|OBJECTIVE|QUESTIONS?|ANSWERS?|PAPER|SECTION|C\s*\.?\s*R\s*\.?\s*[SK]|CHRISTIAN\s+RELIGIOUS)\b/i.test(h);
+}
+
 function splitSections(raw) {
+  raw = raw.replace(SECTION_DIVIDER, m => ' '.repeat(m.length));
   const lines = [], starts = [];
   let prev = 0;
   const nl = /\r\n|\n|\r/g;
@@ -208,8 +227,21 @@ function splitSections(raw) {
   const isStem = t => !isKey(t) && STEM_LINE.test(t);
   function boundary(k, how) {
     const line = lines[k] || '';
+    let qEnd = k;
+    const dropped = [];
+    while (qEnd > 0) {
+      const t = lines[qEnd - 1];
+      if (!t.trim() || !sectionTitleLine(t)) break;
+      dropped.unshift(t.trim());
+      qEnd--;
+    }
+    if (dropped.length && qEnd > 0 && lines[qEnd - 1].trim()) {
+      dropped.length = 0;
+      qEnd = k;
+    }
     const include = isKey(line) || pairs(line) >= 2;
-    return { questions: raw.slice(0, starts[k]), answers: raw.slice(include ? starts[k] : (starts[k + 1] ?? raw.length)), how, boundary: line };
+    const boundaryText = dropped.length ? dropped.join('\n') + '\n' + line : line;
+    return { questions: raw.slice(0, starts[qEnd]), answers: raw.slice(include ? starts[k] : (starts[k + 1] ?? raw.length)), how, boundary: boundaryText };
   }
   for (const { t, i } of ne) {
     if (/[=\-*_~#>+@|]{3,}/.test(t) && KEY_WORD.test(t) && t.trim().length <= 120 && !/\?/.test(t) && !/^\s*\d{1,3}[.)]/.test(t)) return boundary(i, 'divider');

@@ -5,9 +5,9 @@ complete through P10 and AS-09. This document lists only the checks that still
 need live state or an explicit decision; it does not propose parser or UI
 changes.
 
-Current baseline (2026-10-26): `node tests/runner.js` 30 PASS / 0 FAIL / 0
+Current baseline (2026-10-26): `node tests/runner.js` 32 PASS / 0 FAIL / 0
 PENDING; `node tests/unit.js` 65 PASS; `node tools/extract-bank.js --check`
-green; build one line, no `%`, body parses.
+green for seven slices; build one line, no `%`, body parses.
 
 ## Why this exists
 

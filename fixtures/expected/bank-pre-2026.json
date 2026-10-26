@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "input_origin": "bank",
+  "id": "bank-pre-2026",
+  "source": [
+    "archive/live-sources/IMPROVISED C.docx.txt lines 1458-1466",
+    "Divider-delimited single-question section between the 2025 answer block and the 2026 section."
+  ],
+  "provenance": "Verbatim section including its surrounding dividers. It has no year header or answer key, so it is extracted and parsed as its own section, not as a stray part of 2025 or 2026.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/bank-pre-2026.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "nums": [29],
+    "questions": [
+      {
+        "num": 29,
+        "question": "After the healing of the demoniac in the country of the Gerasenes, the people begged Jesus to",
+        "a": "stay with them",
+        "b": "visit them always",
+        "c": "go away from them (Mark 5:15-19)",
+        "d": "heal their sick.",
+        "flags": []
+      }
+    ],
+    "forbidden_flags": [
+      "option A missing",
+      "question number missing",
+      "a letter appears twice (merged questions?)"
+    ]
+  }
+}

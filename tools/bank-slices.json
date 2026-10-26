@@ -1,7 +1,7 @@
 {
   "source": "archive/live-sources/IMPROVISED C.docx.txt",
-  "source_sha256": "96ed3af8fb53e3ba3f2bf355a5f8094db54587996f1c8112e088dae5347c5a5c",
-  "line_count": 1456,
+  "source_sha256": "1395c66b75b544f7313b47bab3f08b5d702ca7878e54c0929446c4cf2debbd7b",
+  "line_count": 1766,
   "slices": [
     {
       "year": 2021,
@@ -56,7 +56,29 @@
       "last": "40. D",
       "questions": 40,
       "key_entries": 39,
-      "sha256": "6391299f4c5052fa0bcc025791ebb77b448067979cc518c680e23c43664f310b"
+      "sha256": "7f6aa87b2364ed940832d88ea0f2910bedb80ab9d3e387680e9cbc3c19f6aac0"
+    },
+    {
+      "year": "pre-2026",
+      "start": 1458,
+      "end": 1466,
+      "answer_header": null,
+      "first": "-----",
+      "last": "---",
+      "questions": 1,
+      "key_entries": 0,
+      "sha256": "d9ef77e88de9b2615dbdbb8841c2c9b23267b1685445ae6d4796adec12e0493c"
+    },
+    {
+      "year": 2026,
+      "start": 1468,
+      "end": 1766,
+      "answer_header": 1717,
+      "first": "WASSCE C. R. K. 2026",
+      "last": "48. B",
+      "questions": 48,
+      "key_entries": 48,
+      "sha256": "e61a9281a88c4d925326a995a6e791e7c770f688a02d0dda1f372aba7f0752a7"
     }
   ]
 }

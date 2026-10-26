@@ -488,6 +488,76 @@ before stopping. The per-question gate, confirmations, duplicate checks, lock,
 visibility pause, and two-unverified stop remain; do not reintroduce a cap
 without a new decision.
 
+## D-44 — Drop a title block above a pure answer heading
+
+**Choice.** When `splitSections` picks a pure answer heading (for example
+`OBJECTIVE ANSWERS`), it also drops the immediately preceding non-empty title
+block from the question part. The block must contain a `20\d\d` year and an
+exam/subject word, must not start with a question or option marker, and must be
+bounded by a blank line (or the start of the paste). The dropped block is
+prepended to the returned `boundary` text so header metadata still sees the
+year.
+
+**Why.** The 2026 section uses a two-line answer heading, repeating the section
+title above the pure heading:
+
+```
+WASSCE C. R. K. 2026
+OBJECTIVE ANSWERS
+```
+
+The boundary line (`OBJECTIVE ANSWERS`) has no year, so `splitSections` dropped
+only that line. The title above it stayed in Q48. Its `C.` matched the option
+regex, so Q48 became `A / B+C / R. K. 2026 / D+WASSCE` and gained
+`a letter appears twice (merged questions?)`. Q48 is the evidence; the key
+itself was correct (48 entries).
+
+**Risk.** This adds a narrow title-shaped exception to the fragile section
+splitter. A final option line that contains a year plus an exam word and sits
+directly above an answer heading, with only a blank line between it and the
+previous question content, could be dropped. The title must also be a
+standalone block, so ordinary option lines are not affected. Re-run the bank
+fixtures and the 2026 fixture when touching `splitSections`.
+
+## D-45 — Repair a missing dot on option A before dotted B–D
+
+**Choice.** If the option parser finds `B`, `C`, and `D` but no `A`, it looks
+for a line after the start of the question text that begins `A ` followed by a
+lowercase word (for example `A stay with them`). If that line lies before `B`,
+it becomes option A. The repair is not applied at the start of the chunk, and it
+does not change the main `OPTION` regex or its newline-plus-digit exception.
+
+**Why.** The unheaded single-question section between 2025 and 2026 has
+`A stay with them` with no dot. The main regex correctly refuses dotless labels
+unless a digit follows (`A 75 years`), so Q29 lost option A and the stem
+absorbed the line: `... begged Jesus to A stay with them`. The source has dotted
+`B.`/`C.`/`D.` labels, so the case is unambiguous. It stays a separate fixture
+because it is its own divider-delimited section with no answer-key entry and
+cannot share the 2025 or 2026 queue.
+
+**Risk.** This adds a second, narrower dotless path. It is limited to `A` when
+`B`–`D` already exist, to a lowercase word, and to a line that is not the chunk
+start, which preserves the `A 5 ...` / `A good ...` article cases. Do not widen
+it to other letters or to the start of the chunk without a failing fixture.
+
+## D-46 — Divider-only lines are section separators
+
+**Choice.** `splitSections` blanks a line that contains only dashes: three or
+more hyphens/half-width dashes, or a single en/em dash. This happens before line
+slicing, so a section paste may include its surrounding dividers without the
+divider becoming question or option text. The parser still expects one section
+per paste; stripping does not make a multi-section paste supported.
+
+**Why.** The bank uses `---`, `-----`, `—--`, and single em-dash lines between
+sections. The unheaded pre-2026 section is followed by `---`; without stripping,
+Q29's option D became `heal their sick. ---`. The divider is a boundary, not
+content. The same rule keeps a leading divider out of the question head.
+
+**Risk.** A prose line consisting only of dashes would be dropped. Keep the
+predicate to dash-only lines; do not expand it to arbitrary punctuation. Do not
+interpret stripping as section splitting: extraction remains external, and
+one-section-per-paste remains the contract.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

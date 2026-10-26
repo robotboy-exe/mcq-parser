@@ -104,10 +104,14 @@ and reports PASS, FAIL, or PENDING; run it for the current status.
 needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
 see `docs/BASELINE_COMPARISON.md` for why.
 
-Current status (2026-10-26): 30/30 fixtures PASS, 65/65 unit tests PASS, and
-`tools/extract-bank.js --check` is green. Live verification on the real admin
-page parsed `bank-2021` (40 questions) and `anomaly-block2` (12 chunks with the
-salvage flag), accepted a controlled manual save (then deleted it), and showed
+Current status (2026-10-26): 32/32 fixtures PASS, 65/65 unit tests PASS, and
+`tools/extract-bank.js --check` is green for seven slices. The bank now includes
+the 2026 WASSCE section; its two-line answer heading no longer leaks into Q48's
+options. The unheaded 29 section above it is its own divider-delimited section
+(`bank-pre-2026`), not a stray part of 2025 or 2026.
+Live verification on the real admin page parsed `bank-2021` (40 questions) and
+`anomaly-block2` (12 chunks with the salvage flag), accepted a controlled manual
+save (then deleted it), and showed
 that a stale queue without a batch identity loads but auto-save is blocked.
 Remaining gap: no new live OCR paste beyond the archived bank and anomaly blocks.
 The unfiltered admin list did not show the new rows while a filtered list did;

@@ -22,15 +22,21 @@ It never edits the PHP, the database, or the live `ocr_helper.js`.
 
 ## 2. Input format
 
-One exam year per paste. The parser does not pair one year's questions with
-another year's key, so multi-year bank text is unsupported. Split the bank with
-`node tools/extract-bank.js`; the five outputs are
-`fixtures/inputs/bank-YYYY.txt`.
+One exam year per paste. A section can be partial or even a single question; it
+is still its own paste. The parser does not pair one section's questions with
+another section's key, so multi-section bank text is unsupported. Split the bank
+with `node tools/extract-bank.js`; the outputs are
+`fixtures/inputs/bank-YYYY.txt` plus `bank-pre-2026.txt` for the unheaded
+single-question section.
 
 One plain-text paste containing any combination of:
 
 - Optional header: first 3 lines may carry a subject name and a `20\d\d` year.
   Example: `IMPROVISED C. R. K. QUESTIONS FOR 2021`.
+- Divider-only lines of dashes (`---`, `-----`, `—--`, or a single `—`) separate
+  sections. They are stripped before question parsing, so a trailing divider is
+  not absorbed into the last option. They do not make a multi-section paste
+  supported.
 - Questions, each starting a line with `N.` (1–3 digits) followed by
   whitespace. The `N)` form is **not** a question marker.
 - Unnumbered OCR bullets: a block where every question starts with `*` and no
@@ -38,6 +44,10 @@ One plain-text paste containing any combination of:
   `num: null` and the `question number missing` flag.
 - Options A–F, dotted (`A.`, `A)`) or dotless only after a newline when followed
   by a digit (`\nA 75 years`). Options may be inline (`A. love B. mercy ...`).
+- A missing `A` label after a newline is also repaired when followed by a
+  lowercase word and `B`, `C`, and `D` are present (`A stay with them`). The
+  repair is not used at the start of the chunk, preserving leading articles
+  such as `A 5 ...` and `A good ...`.
 - Option text may be on the line after the label.
 - Optional answer-key section, introduced by:
   - a divider line such as `=== ANSWER KEY ===`;
@@ -132,8 +142,13 @@ Rules are checked in this order; the first match wins:
 
 The answer section starts at the boundary line if that line is key-like or has
 ≥2 inline pairs; otherwise it starts on the next line (a pure heading is
-dropped). `splitSections` also returns the dropped `boundary` line so the UI can
-infer header metadata from it.
+dropped). If that pure heading is directly preceded by a title block (a
+non-empty run containing a `20\d\d` year and an exam/subject word, bounded by a
+blank line), the title block is dropped from the question part too. For example,
+`WASSCE C. R. K. 2026` above `OBJECTIVE ANSWERS` must not become part of the
+last question's options. `splitSections` also returns the dropped `boundary`
+text, including any dropped title lines, so the UI can infer header metadata
+from it.
 
 ### Stage 1b — Guarded salvage (`splitSectionsWithSalvage`)
 

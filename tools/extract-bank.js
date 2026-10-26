@@ -74,9 +74,12 @@ function main() {
     const start = slice.start;
     const end = slice.end;
     const answerHeader = slice.answer_header;
-    if (!(start >= 1 && end <= records.length && start <= end &&
-          answerHeader >= start && answerHeader <= end)) {
+    const keyless = answerHeader == null;
+    if (!(start >= 1 && end <= records.length && start <= end)) {
       fail(year + ': invalid line range');
+    }
+    if (!keyless && !(answerHeader >= start && answerHeader <= end)) {
+      fail(year + ': invalid answer header');
     }
 
     const first = records[start - 1].text.replace(/^\uFEFF/, '').trim();
@@ -88,12 +91,12 @@ function main() {
       fail(year + ': last-line anchor mismatch: ' + JSON.stringify(last));
     }
 
-    const questions = countQuestionMarkers(records, start, answerHeader);
+    const questions = countQuestionMarkers(records, start, keyless ? end + 1 : answerHeader);
     if (questions !== slice.questions) {
       fail(year + ': question count ' + questions + ' != ' + slice.questions);
     }
 
-    const keyEntries = countKeyEntries(records, answerHeader, end);
+    const keyEntries = keyless ? 0 : countKeyEntries(records, answerHeader, end);
     if (keyEntries !== slice.key_entries) {
       fail(year + ': key entry count ' + keyEntries + ' != ' + slice.key_entries);
     }
