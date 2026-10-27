@@ -121,9 +121,9 @@ Do this before editing the current phase.
   its handoff `Review:` line from the review record or Gate 1 light check. If
   the record says `after user accepts findings` and the user accepted in this
   chat, record that acceptance in the row and handoff; do not edit the review
-  record. If the README current snapshot still calls the settled phase's review
-  pending, update it to the result. Leave the handoff's `Commit:` line as
-  deferred; the commit is recorded in git.
+  record. If the history snapshot in `docs/plan/history.md` still calls the
+  settled phase's review pending, update it to the result. Leave the handoff's
+  `Commit:` line as deferred; the commit is recorded in git.
 - If multiple settled phases are uncommitted, follow the approved catch-up plan
   in `docs/plan/README.md`: make each listed commit in order, staging only the
   files named for that commit. The plan overrides the per-handoff staging rule.
@@ -147,8 +147,8 @@ and Definition of done, plus the package's own acceptance table.
   archiving the cycle.
 - Do not archive the cycle or create a new map. The cycle stays active until the
   user confirms it is complete or asks to shelve it.
-- Rebuild only `src/bookmarklet.js`. Do not rebuild
-  `src/bookmarklet.min.js` unless the user explicitly asks.
+- Rebuild only `src/bookmarklet.js`. Do not rebuild `src/bookmarklet.min.js`;
+  it is untracked and outside the workspace contract.
 - If acceptance fails, stop and report. Do not mark the package done.
 - If the implementation must deviate from the package wording, stop and ask.
   Do not silently mark the package done.

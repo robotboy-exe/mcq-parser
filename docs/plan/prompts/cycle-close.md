@@ -51,8 +51,8 @@ final phase. Read `docs/LIVE-SAFETY.md` before any live/browser check.
      build output changed.
 6. If parser/UI changed, verify the build rather than rebuilding blindly:
    `wc -l src/bookmarklet.js` must print `1`, the body must parse, and the file
-   must contain no `%`. Do not rebuild `src/bookmarklet.min.js` unless the user
-   explicitly asks.
+   must contain no `%`. Do not rebuild `src/bookmarklet.min.js`; it is untracked
+   and outside the workspace contract.
 7. Check the worktree for changes outside the final phase's handoff file list,
    its review record(s), and any explicitly approved safety-doc commit. List
    them. Do not attribute unrelated changes to the package.
@@ -97,7 +97,8 @@ WAITING FOR GO. No files changed.
   - the final README status row, adding the review result and commit status;
   - the cycle-end review checkpoint row;
   - the final handoff `Review:` line and `Commit:` line;
-  - the README current snapshot if it still calls the review or commit pending.
+  - the history snapshot in `docs/plan/history.md` if it still calls the review
+    or commit pending.
 - Do not edit the review record.
 - Run `git diff --check`.
 - Stage only the files for the approved commit scope. For a separate safety-doc

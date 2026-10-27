@@ -1,6 +1,12 @@
 # Auto-Save Follow-up Work (merged)
 
-Replaces `Active-Mode-Spec.md`, `Review-Fixes.md` and `duplicate-check.md`. Work from this file only.
+> **Historical, superseded (2026-10-27).** This is the merged AS-07–AS-09
+> review spec. Current behavior is in `docs/SPEC.md` and `docs/DECISIONS.md`;
+> current status is in `docs/STATUS.md`. The file is kept in place so old
+> package links still resolve.
+
+Replaces `Active-Mode-Spec.md`, `Review-Fixes.md` and `duplicate-check.md`. It
+was the working spec for that track; do not use it for new work.
 
 **Historical UI note (2026-10-26):** D-51 and D-52 supersede the opt-in active
 default, the two-confirmation flow, and the per-question dry-run list below.
@@ -10,13 +16,13 @@ default, the two-confirmation flow, and the per-question dry-run list below.
 AS-07…AS-09 track in `docs/plan/README.md`. Phase 1 Fix 1, Fix 2, the
 per-question unverified-status list and the two-consecutive-unverified stop are
 AS-07; Part A is AS-08; Fixes 3–7, the nit, and Phase 3 docs are AS-09. Fix 2 moves forward because §2 forbids live
-active saves until both safety fixes are done. `tests/build-check.js` exists only in `review-packet/`; use the BUILD.md
+active saves until both safety fixes are done. `tests/build-check.js` existed only in the now-removed `review-packet/`; use the BUILD.md
 check in this workspace.
 
 ## 1. Rules for the agent
 - Same rules as the original Auto-Save spec: one-line build, no `%`, no inline `//`, `textContent` only, pure functions at top level and exported with Node tests.
 - Don't refactor for style. Don't change the deliberate quirks listed in the review brief.
-- Do one phase at a time. After each phase, rebuild, run `tests/runner.js`, `tests/unit.js` and `tests/build-check.js`, and commit before starting the next.
+- Do one phase at a time. After each phase, rebuild, run `tests/runner.js` and `tests/unit.js`, and commit before starting the next.
 - Every item gets the tests listed under it.
 
 ## 2. Order of work

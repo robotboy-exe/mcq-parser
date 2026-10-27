@@ -87,13 +87,13 @@ WAITING FOR GO. No files changed.
 - If a finding cannot be repaired without changing behavior, stop and ask.
 - If source or UI changed: rebuild only `src/bookmarklet.js`; `wc -l` must print
   `1`, the body must parse, and it must contain no `%`. Do not rebuild
-  `src/bookmarklet.min.js` unless the user explicitly asks.
+  `src/bookmarklet.min.js`; it is untracked and outside the workspace contract.
 - Re-run the package acceptance commands and the baseline. Do not mark the fix
   complete on a partial pass.
 - Append a fix note to the package handoff: date, result, findings addressed,
   files, relevant hashes, tests, behavior-change decision, review status, and
   `Commit: deferred to phase N+1 start`.
-- Update the README status row, review checkpoint, and current snapshot only
+- Update the README status row, review checkpoint, and history snapshot only
   where the fix changes them. Do not rewrite unrelated rows.
 - Do not commit. Do not start the next phase. Do not archive the cycle.
 - Stop after the handoff.
