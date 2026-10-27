@@ -5,6 +5,11 @@ Read this file, then read the one work-package file you are executing. Each
 package document is self-contained; you should not need any other package
 document to finish it.
 
+For P11–P12/AS-10–AS-12, the user's intent is in
+[`INTENT.md`](../../INTENT.md) at the project root. Read it before those
+packages. Package prose owns implementation detail; `INTENT.md` is the
+tie-breaker for behavior.
+
 Last updated: 2026-10-27.
 
 ## Auto-Save track (AS-01…AS-06)
@@ -52,11 +57,159 @@ Decisions recorded 2026-10-25:
 `tests/build-check.js` exists only in `review-packet/` and is pinned to the
 packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 
+## Post-AS follow-up track (P11–P12, AS-10–AS-12)
+
+User request 2026-10-27. The intent is recorded in
+[`INTENT.md`](../../INTENT.md); the five packages below continue the same track
+style and add implementation detail:
+
+- **P11** normalizes period-separated exam acronyms for category inference
+  (D-54).
+- **P12** selects one ordered A–D option sequence, keeps inner initials in
+  option text, and warns on a second A–D set only when no visible question
+  number separates it (D-55). It does not split inline questions.
+- **AS-10** adds prior-batch duplicate fingerprints from the retained saved log
+  (D-56; `13-duplicate-fingerprint-spec.md` is authoritative).
+- **AS-11** adds the additive `ocrBatchHistory` key with 15 one-line batch
+  summaries (D-57).
+- **AS-12** starts a dry run after Load/key-only Load and separates dry/live
+  state, progress, and blockers; live completion beats Stop, and reload shows
+  incomplete or complete from the queue and saved log (D-58).
+
+P0 is a one-off inbox cleanup, done 2026-10-27. It has no package row:
+`docs/NEW_EDGE_CASES.txt` regained its original header/rules, the agent-written
+`Promoted 2026-10-26` block was removed, and the raw Q46 case was kept for P12.
+
+The sequence is linear: P10 → P11 → P12 → AS-10 → AS-11 → AS-12, with AS-10
+also depending on AS-09. For this track, rebuild only `src/bookmarklet.js`; do
+not rebuild `src/bookmarklet.min.js` unless the user explicitly asks for the
+minified release artifact. Commits follow the phase-boundary rule below.
+
+## Build cycles and phase sessions
+
+Phases are local to a build cycle. [`prompts/phase-map.md`](prompts/phase-map.md)
+is the only active map; `phase N` means that map's phase N. Package statuses
+stay in the work-package table above, not in the map.
+
+One session executes one phase. Attach
+[`prompts/phase-session.md`](prompts/phase-session.md) once and pass
+`phase N`. Its first reply is read-only: resolve the phase, verify dependencies
+and their probes, run baseline tests, state review and commit readiness, and
+wait for `go`. After `go`, it first commits the previous settled work (using the
+approved catch-up plan when more than one phase is settled), then executes only
+the current package, updates the status row and handoff, and stops. The current
+phase is never committed by its own session.
+
+### Reviews
+
+Every phase gets light dependency verification in Gate 1: actual probes, file
+list, build claims, fixture origins, docs claims, and guardrails. A rigorous
+independent review is a separate session using
+[`prompts/review-session.md`](prompts/review-session.md). It may write only its
+review record(s) in [`reviews/`](reviews/README.md), never product files or
+commits. It is required at these checkpoints, not after every phase:
+
+| Checkpoint | Scope | Level |
+|---|---|---|
+| phase 2 close | P12 | rigorous |
+| phase 3 close | AS-10 | rigorous |
+| cycle end | AS-12 | rigorous |
+| every other phase | previous package | light |
+
+A pending rigorous review or unresolved finding blocks both commit and the next
+phase. Review sessions never edit product files or commit. `BLOCK` prevents
+commit; accepted findings are recorded in the review record, handoff, and
+checkpoint table.
+
+For `PASS WITH ACCEPTED FINDINGS`, the user chooses:
+
+| Decision | Action |
+|---|---|
+| `accept` | Commit as-is; start the next phase. |
+| `accept and fix` | Run a fix session for the findings, update the handoff, then start the next phase. No re-review if behavior is unchanged. |
+| `reject` | Run a fix session, then `re-review`; the original record stays. |
+
+For `BLOCK` or a rejected `FIX`, the fix session and `re-review` are mandatory.
+A fix session updates the package handoff files/tests and appends a fix note. It
+does not commit or start the next phase.
+
+### Commits
+
+Commits happen only at a phase boundary. Do not commit during a phase. At the
+start of the next phase, after the previous phase's review settles, commit the
+previous phase's files before editing the new phase. At cycle end, commit the
+final phase before archiving. For a catch-up, make each plan commit in order and
+stage only the files named for that commit; for a single phase, stage the
+handoff plus review record. Stop on unrelated changes. Use the repository's
+message style.
+
+Do not amend, rebase, force-push, or create an empty commit.
+
+At cycle end, a separate cycle-close session commits the final phase. It verifies
+the final phase is done and its latest review is `PASS` or accepted, updates the
+final status row, checkpoint row, handoff `Review:` and `Commit:` lines, and
+current snapshot. Then it stages the handoff plus review record(s), runs the
+checks, and commits. It executes no package and does not archive. Do not use a
+normal phase session for this, because the final package is already `done`.
+
+Do not archive automatically when the last phase stops. Archive only when the
+user confirms the cycle is complete or satisfied, or explicitly asks to shelve
+it. Then copy the active map to `prompts/cycles/<old-cycle-id>.md`, replace
+`phase-map.md` with the new cycle, and leave `phase-session.md` unchanged. The
+new-cycle checklist and map template are in
+[`prompts/cycles/README.md`](prompts/cycles/README.md). Use
+`cycle <id> phase N` only for an archived map.
+
+### Current review checkpoints
+
+| Checkpoint | Scope | Level | Review | Commit |
+|---|---|---|---|---|
+| phase 2 close | P12 | rigorous | independent-pass-with-accepted-findings; fixes applied | deferred to phase 3 |
+| phase 3 close | AS-10 | rigorous | planned | deferred to phase 4 |
+| phase 4 close | AS-11 | light | planned | deferred to phase 5 |
+| cycle end | AS-12 | rigorous | planned | before archive |
+| phase 3 Gate 1 | P11 | light | light-verified (2026-10-27) | in catch-up |
+
+Rigorous review records live in [`reviews/`](reviews/README.md), named
+`<cycle-id>-phase-<N>.md`, with an optional `<...>-re-review.md` after a fix.
+The latest re-review is authoritative for the current verdict; earlier findings
+it does not explicitly close still block. P12's record is
+`reviews/post-as-2026-10-phase-2.md`; a missing record blocks phase 3.
+
+Current catch-up plan, approved 2026-10-27: after the P12 review settles, the
+phase 3 session commits
+
+1. `docs: add phase review workflow and post-AS plans` — `AGENTS.md`,
+   `INTENT.md`, `docs/NEW_EDGE_CASES.txt`, `docs/plan/README.md`,
+   `docs/plan/prompts/`, `docs/plan/reviews/README.md`, the P12 review
+   record(s), and `docs/plan/13`–`18`.
+2. `feat: add P11-P12 parser fixes and fixtures` — parser, tests, fixtures,
+   rebuilt bookmarklet, implementation docs, and `docs/AGENTS.md`.
+
 ## Current snapshot
 
-- Current test status: `node tests/runner.js` → 37 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 66 PASS, 0 FAIL; `node tools/extract-bank.js --check`
+- Current test status: `node tests/runner.js` → 41 PASS, 0 FAIL, 0 PENDING;
+  `node tests/unit.js` → 70 PASS, 0 FAIL; `node tools/extract-bank.js --check`
   exits 0 for seven slices.
+- 2026-10-27: P12 done. Option parsing selects the earliest occurrence of each
+  required letter A–D, then E/F only after D, and sorts the marks by position;
+  inner initials stay in option text and out-of-order hostile labels still map
+  correctly (D-55). The duplicate warning now fires only for a second complete
+  A–D set with no visible question-number boundary. Added Q46, single-initial,
+  duplicate-label fixtures, plus an inline-number parse test. Runner 41
+  PASS; unit 70 PASS; extractor green; build one line, no `%`, body parses.
+  The rigorous P12 review passed with accepted findings; FIX-1/FIX-2 are fixed
+  (wording only). AS-10 starts after the catch-up commits land.
+- 2026-10-27: P11 done. `compactExamAcronyms` normalizes period-separated exam
+  acronyms on a local header copy inside `pickCategoryIndex` (D-54); the
+  stored header and subject inference are unchanged. Added
+  `header-crs-ssce-periods` and unit coverage. Runner 38 PASS; unit 67 PASS;
+  build one line, no `%`, body parses. P12 is next.
+- 2026-10-27: post-AS follow-up planned as P11–P12/AS-10–AS-12 (D-54–D-58);
+  `13-duplicate-fingerprint-spec.md` references were corrected to D-56 and the
+  current runner context. P0 inbox cleanup restored the original header/rules,
+  removed the agent-written Promoted block, and retained the raw Q46 case for
+  P12. Docs-only; runner 37 PASS and unit 66 PASS are unchanged.
 - 2026-10-27: the paused warning gained `Open filtered list`, built from the
   `ocrSaving` marker's subject/category/year snapshot (or `ocrMeta` for old
   markers). It targets the filtered Recently Added list so the user can check
@@ -198,7 +351,8 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 - Do not change PHP, `ocr_helper.js`, existing storage keys/shapes, or the
   server contract. Auto-Save may add the new keys named in its spec; the
   existing `ocrQueue`, `ocrMeta`, and `ansKey` shapes stay compatible.
-- Do not commit unless the user explicitly asks.
+- Commit only at a phase boundary, after the previous phase's review settles.
+  Do not commit current-phase work; commit the final phase before archiving.
 - Keep the deliberate quirks: E/F → D collapse, advisory-only flags, blank
   options, `FIXES` order, the `+5` numbering guard, no absorbed-option
   post-processor.
@@ -242,6 +396,11 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | AS-07 | [as-07-duplicate-scope-and-marker.md](as-07-duplicate-scope-and-marker.md) | Fix 1 scoped duplicate check, Fix 2 marker guard, unverified list + stop, remove media guess | AS-06 | done (live checks passed 2026-10-25) |
 | AS-08 | [as-08-active-mode.md](as-08-active-mode.md) | Opt-in active save mode, mode gate/suffix, live 2-question test | AS-07 | done (live 2-question test 2026-10-25) |
 | AS-09 | [as-09-remaining-fixes-and-docs.md](as-09-remaining-fixes-and-docs.md) | Fixes 3–7, nit, Phase 3 doc corrections | AS-08 | done (2026-10-25) |
+| P11 | [14-exam-category-period-acronyms.md](14-exam-category-period-acronyms.md) | Map `S.S.C.E.`/`W.A.S.S.C.E.` and period exam acronyms to the live category | P10 | done (2026-10-27); light-verified |
+| P12 | [15-option-boundary-selection.md](15-option-boundary-selection.md) | Select one ordered A–D sequence; warn on a boundary-less second set | P11 | done (2026-10-27); reviewed, fixes applied |
+| AS-10 | [16-duplicate-fingerprints.md](16-duplicate-fingerprints.md) | Prior-batch duplicate fingerprints in the retained saved log | P12; AS-09 | not started |
+| AS-11 | [17-batch-history.md](17-batch-history.md) | Additive 15-batch one-line history that survives Reset | AS-10 | not started |
+| AS-12 | [18-auto-dry-run-and-status.md](18-auto-dry-run-and-status.md) | Auto dry run after Load; separate dry/live status and reload states | AS-11 | not started |
 
 ## Dependency graph
 
@@ -270,10 +429,21 @@ Do not start AS-02 until AS-01's build and harness checks pass. Do not deliver
 AS-06 without the 3-question live test. AS-07 must pass its live check before
 AS-08; AS-08's live active test must pass before AS-09.
 
+The post-AS follow-up track is linear and joins the completed AS track at
+AS-10:
+
+```text
+P10 ──> P11 ──> P12 ──┐
+                       ├──> AS-10 ──> AS-11 ──> AS-12
+AS-09 ─────────────────┘
+```
+
 ## Remaining verification queue
 
-All work packages are done. The remaining agenda is live/evidence-only and is
-outlined in [11-remaining-verification.md](11-remaining-verification.md):
+All historical work packages through P12/AS-09 are done. AS-10–AS-12 are
+planned, not part of V1–V4. The remaining verification agenda is
+live/evidence-only and is outlined in
+[11-remaining-verification.md](11-remaining-verification.md):
 live parser/OCR/bank run, live `questions` schema check, stale `ocrQueue`
 behavior, and optional evidence gaps. It is not a work package and proposes no
 parser/UI changes.
@@ -285,34 +455,59 @@ blocked. V4 stays open by decision (optional).
 
 ## Session protocol
 
-1. Run `node tests/runner.js`; for AS-01 onward also run `node tests/unit.js`.
-   Record the starting result.
-2. Read the package document completely before editing anything.
-3. Confirm its preconditions (status of dependencies, source hashes, test count).
-4. Execute the steps. Keep parser changes and fixture changes in separate
-   commits/diffs when possible, but do not commit unless asked. The exception
-   is AS-07…AS-09: `docs/Active.md` §1 explicitly asks for one commit at each
-   phase boundary, so that is the only commit instruction for those packages.
-5. Run the package's acceptance commands. Do not mark the package done on a
-   partial pass.
-6. Update the status row above and append a handoff note to the package file
-   (date, result, files changed, open questions, new hashes).
-7. Leave the working tree in a resumable state: no orphan inputs, no failing
-   fixtures, and a note explaining anything left for the next session.
+1. Start one package per session. Attach
+   [`prompts/phase-session.md`](prompts/phase-session.md) and pass `phase N`;
+   the prompt resolves [`prompts/phase-map.md`](prompts/phase-map.md). Do not
+   attach the package plan; attach only the phase prompt.
+2. Verify the package, the README status row, every dependency's status,
+   handoff, and actual probes, plus any earlier uncommitted settled phase in the
+   catch-up plan. Stop if one is not done, has no handoff, has open questions,
+   or fails verification.
+3. Run `node tests/runner.js` and `node tests/unit.js`; record both counts.
+   Docs-only packages follow the repository's docs-only test rule.
+4. Report the read-only scope, dependency verification, review status, and
+   commit readiness, then wait for an explicit `go`. Do not edit or commit in
+   this gate.
+5. After `go`, commit the previous settled work first, using the approved
+   catch-up plan when more than one phase is settled. Stop if a required review
+   is pending or findings are unresolved, or if unrelated changes are present.
+   Update each phase's review checkpoint row and handoff `Review:` line from the
+   record or light check; update the status-row review suffix too, and if the
+   record is conditional on acceptance, record the user's acceptance there.
+   Update the current snapshot if it still calls that review pending. Then make
+   each approved catch-up commit in order, staging only that commit's named
+   files; for a single phase, stage the handoff plus review record.
+6. Execute only the current package. Keep parser and fixture changes separate
+   where practical. Do not commit the current phase; its handoff defers commit
+   to the next phase start.
+7. Run the package's acceptance commands. Do not mark the package done on a
+   partial pass. If a required browser or live check cannot be done, stop and
+   ask.
+8. Update the status row above and append a handoff note to the package file
+   (date, result, files changed, open questions, hashes, review status, and
+   `Commit: deferred`).
+9. Stop after the handoff. Do not start the next phase. Leave the working tree
+   resumable: no orphan inputs, no failing fixtures, and a note explaining
+   anything left for the next session.
 
 ## Definition of done (every package)
 
 - `node tests/runner.js` exits 0 with the expected PASS/PENDING counts.
-- For AS packages, `node tests/unit.js` exits 0.
+- `node tests/unit.js` exits 0 for any package that touches parser, UI, storage,
+  or tests; record both counts.
 - No orphan inputs.
 - New expectations were transcribed from the cited source and spot-checked; they
   were not copied from parser output.
-- The package's own acceptance table is fully satisfied.
-- Status and handoff notes are updated.
+- The package's own acceptance table is fully satisfied, with each row mapped to
+  a test, probe, or explicit gap.
+- Status and handoff notes are updated, including file hashes, review status,
+  and `Commit: deferred`.
+- No commit was made during the phase.
 - If parser or UI changed: `node src/build/build.js` ran, `wc -l
-  src/bookmarklet.js src/bookmarklet.min.js` prints `1` for each, both bodies
-  pass `node --check`, neither contains `%`, and the minified file is at or
-  below 65536 bytes.
+  src/bookmarklet.js` prints `1`, its body passes `node --check`, and it
+  contains no `%`. Do not rebuild `src/bookmarklet.min.js` unless the user
+  explicitly asks for the minified release artifact; if it is rebuilt, it must
+  meet the same checks and stay at or below 65536 bytes.
 - Auto-Save packages also record their dry-run or live evidence in the package
   handoff. A partial dry run does not mark the package done.
 
@@ -324,15 +519,18 @@ node tests/unit.js
 node tools/extract-bank.js --check
 node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello'))"
 node src/build/build.js
-wc -l src/bookmarklet.js src/bookmarklet.min.js
-rg -n '%' src/bookmarklet.js src/bookmarklet.min.js
+wc -l src/bookmarklet.js
+rg -n '%' src/bookmarklet.js
 ```
 
 Build syntax check (same rule as `docs/BUILD.md`):
 
 ```sh
-node -e "const fs=require('fs');for(const f of ['src/bookmarklet.js','src/bookmarklet.min.js']){new Function(fs.readFileSync(f,'utf8').replace(/^javascript:/,''));}console.log('OK')"
+node -e "const fs=require('fs');new Function(fs.readFileSync('src/bookmarklet.js','utf8').replace(/^javascript:/,''));console.log('OK')"
 ```
+
+For a minified build explicitly requested by the user, run the same checks on
+`src/bookmarklet.min.js`.
 
 ## Current expected fixture counts
 
@@ -345,6 +543,11 @@ node -e "const fs=require('fs');for(const f of ['src/bookmarklet.js','src/bookma
 | P07 (done) | 30 | 0 | anomaly block 2 added |
 | P08 (done) | 31 | 0 | anomaly block 1 added |
 | P09 (done) | 30 | 0 | `qwen2-s1` retired after porting its assertions to bank-2021 |
+| P11 (done) | 38 | 0 | + `header-crs-ssce-periods` |
+| P12 (done) | 41 | 0 | + Q46, single initials, duplicate labels |
+| AS-10–AS-12 (planned) | 41 | 0 | no new runner fixtures |
+
+Planned rows are acceptance targets, not current results.
 
 P01/P02 are reflected in the baseline. P03 ran before P02, so the 2021 slice is
 already confirmed and P02 adds PENDING specs only for 2022-2025.
@@ -377,6 +580,44 @@ authoritative:
 
 ## Change log
 
+- 2026-10-27 — Added independent review checkpoints and a phase-boundary commit
+  rule. Every phase verifies dependencies with probes, not just handoffs;
+  rigorous reviews write one record under `reviews/` at P12 close, AS-10 close,
+  and cycle end. Previous settled work is committed at the start of the next
+  phase; current-phase work is deferred. P12 review is pending. Docs-only.
+- 2026-10-27 — Cycle shelving is manual: archive only when the user confirms
+  the cycle is complete/satisfied or explicitly asks. Added a new-cycle
+  checklist and phase-map template in `prompts/cycles/README.md`; the last phase
+  leaves the cycle active. Docs-only.
+- 2026-10-27 — Replaced the two-step prompt files with one
+  `phase-session.md` and a current-cycle `phase-map.md`. `phase N` is local to
+  the active cycle; dependency status and handoffs are reviewed before editing;
+  the README now owns the one-package-per-session workflow and stop rule. P11
+  is done, so the next session starts at `phase 2`. Docs-only.
+- 2026-10-27 — P12 done: option marks now use the earliest occurrence of each
+  required A–D letter, then E/F only after D, sorted by text position (D-55).
+  Q46 and single initials stay inside option text, out-of-order `anomaly-block2`
+  labels still map correctly, and the duplicate warning is limited to a second
+  complete A–D set with no visible `N.` boundary. Added Q46, single-initial,
+  duplicate-label fixtures, plus an inline-number parse test. Runner 41
+  PASS; unit 70 PASS; extractor green; build one line, no `%`, body parses.
+  AS-10 is next.
+- 2026-10-27 — P11 done: `compactExamAcronyms` maps period-separated exam
+  acronyms (`S.S.C.E.`, `W.A.S.S.C.E.`, `W.A.E.C.`, `N.E.C.O.`, `G.C.E.`,
+  `J.A.M.B.`, `U.T.M.E.`, `P.O.S.T. U.T.M.E.`) to the existing live categories
+  on a local header copy (D-54, INV-45, EC-84). Header text and subject
+  inference are unchanged. Added `header-crs-ssce-periods` and unit coverage.
+  Runner 38 PASS; unit 67 PASS; extractor green; build one line, no `%`, body
+  parses. P12 is next.
+- 2026-10-27 — Planned post-AS follow-up P11–P12/AS-10–AS-12 from the user
+  request: category period acronyms (D-54), option boundary selection (D-55),
+  prior-batch duplicate fingerprints (D-56), 15-batch history (D-57), and
+  automatic dry run plus separate dry/live status (D-58). P0 inbox cleanup is
+  done separately: header/rules restored, agent Promoted block removed, raw Q46
+  kept for P12. Spec 13 references corrected to D-56 and the current runner
+  context. Added root `INTENT.md` as the behavior tie-breaker and linked it
+  from this coordinator and the five packages. Docs-only; runner 37 PASS and
+  unit 66 PASS unchanged.
 - 2026-10-26 — Consolidated Auto-Save UI: active is the default with one
   mode-labelled confirmation, Start is visibly dimmed when disabled, status is
   one line plus a progress bar, dry run is summary-only, and the green saved box

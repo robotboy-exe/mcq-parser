@@ -7,9 +7,16 @@
 - Work tracker and session protocol: `docs/plan/README.md`. Read it before starting a work package; update its status row and the package handoff when done.
 - The archived migration docs and live PHP/HTML are the source of truth (not prose guesses): `archive/migration-docs/`, `archive/live-sources/`.
 
+## Session scope
+
+- Execute one `docs/plan/` package per session unless the user explicitly asks to continue. Stop after the package handoff.
+- Do not archive the active phase map when the last phase stops; archive only when the user confirms the cycle is complete or asks to shelve it.
+- Commit only at a phase boundary: at the start of a new phase, after the previous phase's review settles. Do not commit current-phase work; commit the final phase before archiving the cycle.
+- Rigorous reviews are separate sessions using `docs/plan/prompts/review-session.md`; they may write only `docs/plan/reviews/` and never commit.
+
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 37/37 PASS; `node tests/unit.js` is 66 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 41/41 PASS; `node tests/unit.js` is 70 PASS.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.

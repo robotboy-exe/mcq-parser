@@ -1,3 +1,19 @@
+NEW EDGE CASES
+Inbox for parser anomalies that are not yet fixtures.
+
+Context:
+IMPROVISED C.docx.txt now parses cleanly and is frozen as the historical
+regression signal. If it fails again, that is a regression. New OCR/parser
+failures belong here until they are reproduced and promoted to
+fixtures/inputs/ plus fixtures/expected/.
+
+Rules:
+- Add one case per block.
+- Keep raw OCR text verbatim.
+- Record expected vs actual behavior, flags, source, date, and status.
+- Do not place this file in fixtures/inputs/ without an expected spec; the
+  runner will report it as an orphan.
+
 2020 WASSCE C. R. S
 OBJECTIVE QUESTION
 
@@ -253,13 +269,8 @@ B. become a servant of Nebuchadnezzar
 C. fulfill God's prophecies through Nehemiah
 D. have jews exiled into Babylon
 
-Promoted 2026-10-26:
-- 2020 Q2 dotless C -> fixtures/inputs/new-edge-dotless-c.txt and
-  fixtures/expected/new-edge-dotless-c.json (D-47, EC-79, INV-80).
-- 2020 Q17 slash option A -> fixtures/inputs/new-edge-slash-option-a.txt and
-  fixtures/expected/new-edge-slash-option-a.json (D-49, EC-81, INV-82).
-- Q18 year abbreviation B.C. -> fixtures/inputs/new-edge-year-abbreviation.txt
-  and fixtures/expected/new-edge-year-abbreviation.json (D-48, EC-80, INV-81).
-- A.D. companion and all-slash options -> fixtures/inputs/
-  new-edge-year-abbreviation-ad.txt and new-edge-slash-all-options.txt
-  (D-48/D-49, EC-80/EC-81, INV-81/INV-82).
+====
+
+46. The West African Students Union (WASU) was formed by
+A. Siaka Stevens B. K. A. Gbedemah
+C. E. F. Small D. Oladipo Solanke
