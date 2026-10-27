@@ -34,8 +34,10 @@ features.
    (INV-36, INV-55; D-22). Auto-Save adds `batchId`, `ansKeyBatch`,
    `ansKeyConflicts`, `ocrSaving`, `ocrSavedLog`, and `autoLock`; additions are
    allowed, existing shapes must stay compatible (D-30, D-32, D-36).
-5. **Edit modules, not the build output.** `src/bookmarklet.js` is generated.
-   Change `src/parser/parser.js` or `src/ui/ui.js`, then rebuild.
+5. **Edit modules, not the build output.** `src/bookmarklet.js` and
+   `src/bookmarklet.min.js` are generated. Change `src/parser/parser.js` or
+   `src/ui/ui.js`, then rebuild `src/bookmarklet.js`. Do not rebuild
+   `src/bookmarklet.min.js` unless the user explicitly requests it.
 6. **The bookmarklet is a single line with no comments and no `%`.** Full-line
    `//` comments are allowed in the modules and stripped by `build.js`; inline
    `//` comments remain forbidden (INV-05). The build fails if the output
@@ -166,8 +168,13 @@ node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions
 node src/build/build.js
 ```
 
-This reads `src/parser/parser.js` and `src/ui/ui.js`, wraps them in a single
-`javascript:` IIFE, and writes `src/bookmarklet.js`. See `docs/BUILD.md`.
+This reads `src/parser/parser.js` and `src/ui/ui.js`, wraps the flattened body
+in a single `javascript:` IIFE, and writes `src/bookmarklet.js` (unminified
+reference). Add `--min` only when the user explicitly asks for the standalone
+minified mobile build, `src/bookmarklet.min.js`. The minified build drops
+comments and whitespace only; no identifiers are renamed. It refuses `%` and any
+minified output over 65536 UTF-8 bytes, the practical mobile limit. See
+`docs/BUILD.md`.
 
 Verification used during development: strip the leading `javascript:` and run
 `node --check` on the remainder. The bookmarklet must stay on one line.
