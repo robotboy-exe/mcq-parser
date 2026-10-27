@@ -77,6 +77,11 @@ Report findings with severity:
 - `NOTE` — documentation, wording, or residual risk that does not invalidate
   the package.
 
+Number every finding as `BLOCK-1`, `FIX-1`, `NOTE-1`, and so on, in the order
+reported. Use those exact IDs in the review record, the output, and the
+next-action recommendation. A fix session addresses findings by ID and stops if
+the findings are unlabeled instead of inventing IDs.
+
 Use one verdict:
 
 - `PASS` — no BLOCK or FIX findings; acceptance is covered by evidence.
@@ -121,6 +126,7 @@ Scope:
 Evidence:
 Acceptance coverage:
 Findings:
+  # Number each as BLOCK-1, FIX-1, NOTE-1, ... with file:line and reproduction.
 Findings closed (re-review only):
 Recommended next action:
 Next action required:
@@ -140,7 +146,7 @@ Reply with:
 - Scope:
 - Packages reviewed:
 - Commands and evidence:
-- Findings (BLOCK/FIX/NOTE, with file:line and reproduction):
+- Findings (numbered BLOCK-1/FIX-1/NOTE-1, with file:line and reproduction):
 - Acceptance coverage:
 - Verdict:
 - Commit readiness:

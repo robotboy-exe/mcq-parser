@@ -126,12 +126,14 @@ For `PASS WITH ACCEPTED FINDINGS`, the user chooses:
 | Decision | Action |
 |---|---|
 | `accept` | Commit as-is; start the next phase. |
-| `accept and fix` | Run a fix session for the findings, update the handoff, then start the next phase. No re-review if behavior is unchanged. |
-| `reject` | Run a fix session, then `re-review`; the original record stays. |
+| `accept and fix` | Attach `prompts/fix-session.md` and pass the phase or record (IDs optional); update the handoff, then start the next phase. No re-review if behavior is unchanged. |
+| `reject` | Attach `prompts/fix-session.md` and pass the phase or record (IDs optional), then `re-review`; the original record stays. |
 
 For `BLOCK` or a rejected `FIX`, the fix session and `re-review` are mandatory.
-A fix session updates the package handoff files/tests and appends a fix note. It
-does not commit or start the next phase.
+With no IDs, a fix session addresses every open finding in the record; `NOTE`
+findings are limited to documentation, wording, or test-only changes. A fix
+session updates the package handoff files/tests and appends a fix note. It has a
+read-only Gate 1, waits for `go`, and does not commit or start the next phase.
 
 ### Commits
 
@@ -164,11 +166,11 @@ new-cycle checklist and map template are in
 
 | Checkpoint | Scope | Level | Review | Commit |
 |---|---|---|---|---|
-| phase 2 close | P12 | rigorous | independent-pass-with-accepted-findings; fixes applied | deferred to phase 3 |
-| phase 3 close | AS-10 | rigorous | planned | deferred to phase 4 |
+| phase 2 close | P12 | rigorous | independent-pass-with-accepted-findings; fixes applied | committed 2ad3fa9 |
+| phase 3 close | AS-10 | rigorous | independent-pass-with-accepted-findings; user accepted 2026-10-27; FIX-1/NOTE-1/NOTE-2 fixed | deferred to phase 4 |
 | phase 4 close | AS-11 | light | planned | deferred to phase 5 |
 | cycle end | AS-12 | rigorous | planned | before archive |
-| phase 3 Gate 1 | P11 | light | light-verified (2026-10-27) | in catch-up |
+| phase 3 Gate 1 | P11 | light | light-verified (2026-10-27) | committed in catch-up |
 
 Rigorous review records live in [`reviews/`](reviews/README.md), named
 `<cycle-id>-phase-<N>.md`, with an optional `<...>-re-review.md` after a fix.
@@ -189,8 +191,19 @@ phase 3 session commits
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 41 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 70 PASS, 0 FAIL; `node tools/extract-bank.js --check`
+  `node tests/unit.js` → 89 PASS, 0 FAIL; `node tools/extract-bank.js --check`
   exits 0 for seven slices.
+- 2026-10-27: AS-10 done. Verified saves may now store an additive `fp`
+  fingerprint taken from the posted form at request time; `autosaveBlockers`
+  checks the current-batch number first, then a prior-batch fingerprint, then
+  the recent table (D-56). Legacy, partial, unknown-version, same-batch,
+  label-only and over-4,000-character cases do not match; the newest match is
+  reported with its saved ID, year and category. No new key or network request.
+  Runner 41 PASS; unit 89 PASS; extractor green; build one line, no `%`, body
+  parses. The rigorous review passed with accepted findings; FIX-1 added the
+  UI save-path harness, NOTE-1 corrected the test count, and NOTE-2 made the
+  prior-match detail use the matched entry's stored labels. Commit is deferred
+  to phase 4 start.
 - 2026-10-27: P12 done. Option parsing selects the earliest occurrence of each
   required letter A–D, then E/F only after D, and sorts the marks by position;
   inner initials stay in option text and out-of-order hostile labels still map
@@ -199,7 +212,7 @@ phase 3 session commits
   duplicate-label fixtures, plus an inline-number parse test. Runner 41
   PASS; unit 70 PASS; extractor green; build one line, no `%`, body parses.
   The rigorous P12 review passed with accepted findings; FIX-1/FIX-2 are fixed
-  (wording only). AS-10 starts after the catch-up commits land.
+  (wording only). AS-10 followed after the catch-up commits landed.
 - 2026-10-27: P11 done. `compactExamAcronyms` normalizes period-separated exam
   acronyms on a local header copy inside `pickCategoryIndex` (D-54); the
   stored header and subject inference are unchanged. Added
@@ -398,7 +411,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | AS-09 | [as-09-remaining-fixes-and-docs.md](as-09-remaining-fixes-and-docs.md) | Fixes 3–7, nit, Phase 3 doc corrections | AS-08 | done (2026-10-25) |
 | P11 | [14-exam-category-period-acronyms.md](14-exam-category-period-acronyms.md) | Map `S.S.C.E.`/`W.A.S.S.C.E.` and period exam acronyms to the live category | P10 | done (2026-10-27); light-verified |
 | P12 | [15-option-boundary-selection.md](15-option-boundary-selection.md) | Select one ordered A–D sequence; warn on a boundary-less second set | P11 | done (2026-10-27); reviewed, fixes applied |
-| AS-10 | [16-duplicate-fingerprints.md](16-duplicate-fingerprints.md) | Prior-batch duplicate fingerprints in the retained saved log | P12; AS-09 | not started |
+| AS-10 | [16-duplicate-fingerprints.md](16-duplicate-fingerprints.md) | Prior-batch duplicate fingerprints in the retained saved log | P12; AS-09 | done (2026-10-27); reviewed, fixes applied, accepted |
 | AS-11 | [17-batch-history.md](17-batch-history.md) | Additive 15-batch one-line history that survives Reset | AS-10 | not started |
 | AS-12 | [18-auto-dry-run-and-status.md](18-auto-dry-run-and-status.md) | Auto dry run after Load; separate dry/live status and reload states | AS-11 | not started |
 
@@ -440,8 +453,8 @@ AS-09 ─────────────────┘
 
 ## Remaining verification queue
 
-All historical work packages through P12/AS-09 are done. AS-10–AS-12 are
-planned, not part of V1–V4. The remaining verification agenda is
+All historical work packages through AS-10 are done. AS-11–AS-12 are planned,
+not part of V1–V4. The remaining verification agenda is
 live/evidence-only and is outlined in
 [11-remaining-verification.md](11-remaining-verification.md):
 live parser/OCR/bank run, live `questions` schema check, stale `ocrQueue`
@@ -545,7 +558,8 @@ For a minified build explicitly requested by the user, run the same checks on
 | P09 (done) | 30 | 0 | `qwen2-s1` retired after porting its assertions to bank-2021 |
 | P11 (done) | 38 | 0 | + `header-crs-ssce-periods` |
 | P12 (done) | 41 | 0 | + Q46, single initials, duplicate labels |
-| AS-10–AS-12 (planned) | 41 | 0 | no new runner fixtures |
+| AS-10 (done) | 41 | 0 | no new runner fixtures; +19 unit tests (14 AS-10, 4 FIX-1 UI, 1 NOTE-2) |
+| AS-11–AS-12 (planned) | 41 | 0 | no new runner fixtures |
 
 Planned rows are acceptance targets, not current results.
 
@@ -580,6 +594,29 @@ authoritative:
 
 ## Change log
 
+- 2026-10-27 — AS-10 NOTE-2 fix: the prior-batch duplicate detail now uses the
+  matched entry's stored `fp.year`/`fp.category` when present, falling back to
+  the current metadata labels. Matching is unchanged. Added one unit test
+  (unit 89 PASS); runner 41 PASS; extractor green; build one line, no `%`, body
+  parses. Display-only; no re-review required.
+- 2026-10-27 — AS-10 fix session: closed the review's FIX-1 and NOTE-1.
+  `tests/ui-harness.js` runs the real `src/ui/ui.js` save path against a small
+  deterministic DOM/storage/fetch shim; new tests cover a manual save writing
+  the request-time `fp`, rejected and ambiguous saves writing none, and
+  Reset/re-paste dry run and Start stopping before POST. The fixture table
+  counted 18 AS-10 unit tests (14 original, 4 FIX-1) instead of 13 at that
+  point. Unit 88 PASS;
+  runner 41 PASS; extractor green; build one line, no `%`, body parses. No
+  save/gate behavior changed; `src/bookmarklet.min.js` was not rebuilt. Also
+  added `docs/plan/prompts/fix-session.md`, made `fix phase N` default to every
+  open finding, and required numbered review finding IDs (`BLOCK-1`, `FIX-1`,
+  `NOTE-1`) in the review contract; docs-only.
+- 2026-10-27 — AS-10 done: verified saves can store a D-56 fingerprint in the
+  existing `ocrSavedLog` entry; the gate checks prior-batch fingerprints after
+  the current-batch number and before the recent table. Legacy/partial/same-
+  batch/label-only/over-4,000 cases are skipped; the newest match is reported.
+  No new key, request, or override. Unit 84 PASS; runner 41 PASS; extractor
+  green; build one line, no `%`, body parses. Rigorous review pending.
 - 2026-10-27 — Added independent review checkpoints and a phase-boundary commit
   rule. Every phase verifies dependencies with probes, not just handoffs;
   rigorous reviews write one record under `reviews/` at P12 close, AS-10 close,

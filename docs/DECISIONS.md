@@ -724,6 +724,36 @@ initials inside option text, not a label-like title before the options. The
 warning is advisory only; the parser never splits inline, so a genuine merged
 paste still needs manual attention.
 
+## D-56 — Prior-batch duplicates use a saved-log fingerprint
+
+**Choice.** A verified save may store an additive `fp` object on its
+`ocrSavedLog` entry: `v: 1`, the posted subject/category IDs and year as
+strings, the selected labels for display, and `normalizeAnswer(question_text)`
+from the form at request time. `makeSavedFingerprint` omits `fp` (making the
+entry legacy) when a required value is empty or the canonical question is over
+4,000 characters. Before auto-save, `autosaveBlockers` checks the log in this
+order: current-batch saved number (`saved-log`), then the prior-batch
+fingerprint (`duplicate`), then the loaded 20-row table (`duplicate`). A prior
+match needs a complete `fp.v === 1`, a different `batchId`, equal subject,
+category and year IDs, and equal normalized question text. Labels never decide a
+match. The newest match by `at`, then numeric `id`, is reported with the saved
+ID, year and category. Legacy, partial and unknown-version entries are skipped;
+there is no backfill, new key, server lookup, override, or intra-batch check.
+Dry run and Start call the same gate.
+
+**Why.** After Reset and a re-paste, a new `batchId` made every earlier saved
+entry invisible to the number check, while the 20-row table saw only the
+currently rendered rows. Re-saving the same question was possible. The retained
+log already survives Reset, so an additive fingerprint closes the gap without a
+server or storage-schema change.
+
+**Risk.** The check sees only the retained 200 log entries; once an entry is
+dropped by the cap it can be saved again. Old entries have no fingerprint and
+are never matched. A question over 4,000 characters is stored as legacy, so a
+later re-paste is not caught. Matching depends on the IDs and year being stable;
+a label-only change does not affect it. The UI hook that writes `fp` has unit
+coverage for the helper and storage path, but no DOM harness.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

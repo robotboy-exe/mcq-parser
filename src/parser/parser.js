@@ -455,6 +455,36 @@ function normalizeAnswer(s) {
   return String(s == null ? '' : s).trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+function makeSavedFingerprint(posted, labels) {
+  const p = posted || {};
+  const l = labels || {};
+  const subjectId = String(p.subject_id == null ? '' : p.subject_id).trim();
+  const categoryId = String(p.exam_category_id == null ? '' : p.exam_category_id).trim();
+  const year = String(p.exam_year == null ? '' : p.exam_year).trim();
+  const question = normalizeAnswer(p.question_text);
+  if (!subjectId || !categoryId || !year || !question) return null;
+  if (question.length > 4000) return null;
+  return {
+    v: 1,
+    subjectId: subjectId,
+    categoryId: categoryId,
+    year: year,
+    subject: String(l.subject == null ? '' : l.subject),
+    category: String(l.category == null ? '' : l.category),
+    question: question
+  };
+}
+
+function completeFingerprint(fp) {
+  if (!fp || fp.v !== 1) return null;
+  const subjectId = String(fp.subjectId == null ? '' : fp.subjectId).trim();
+  const categoryId = String(fp.categoryId == null ? '' : fp.categoryId).trim();
+  const year = String(fp.year == null ? '' : fp.year).trim();
+  const question = normalizeAnswer(fp.question);
+  if (!subjectId || !categoryId || !year || !question) return null;
+  return { subjectId: subjectId, categoryId: categoryId, year: year, question: question };
+}
+
 function optionLetters(q) {
   return ['a', 'b', 'c', 'd', 'e', 'f'].filter(l => (q[l] || '').trim()).map(l => l.toUpperCase());
 }
@@ -689,6 +719,35 @@ function savedLogHasNum(log, batchId, num) {
   return savedForBatch(log, batchId).some(entry => entry && entry.num === num);
 }
 
+function savedLogPriorDuplicate(log, currentBatchId, fingerprint) {
+  if (currentBatchId == null || currentBatchId === '') return null;
+  const want = completeFingerprint(fingerprint);
+  if (!want) return null;
+  let best = null;
+  let bestAt = -Infinity;
+  let bestId = -Infinity;
+  for (const entry of Array.isArray(log) ? log : []) {
+    if (!entry) continue;
+    if (String(entry.batchId == null ? '' : entry.batchId) === String(currentBatchId)) continue;
+    const fp = completeFingerprint(entry.fp);
+    if (!fp) continue;
+    if (fp.subjectId !== want.subjectId) continue;
+    if (fp.categoryId !== want.categoryId) continue;
+    if (fp.year !== want.year) continue;
+    if (normalizeAnswer(fp.question) !== want.question) continue;
+    const at = Number(entry.at);
+    const id = Number(entry.id);
+    const eAt = Number.isFinite(at) ? at : 0;
+    const eId = Number.isFinite(id) ? id : -1;
+    if (!best || eAt > bestAt || (eAt === bestAt && eId > bestId)) {
+      best = entry;
+      bestAt = eAt;
+      bestId = eId;
+    }
+  }
+  return best;
+}
+
 function formMatchesQuestion(form, q) {
   if (!form || !q) return false;
   if (normalizeAnswer(form.question) !== normalizeAnswer(q.question)) return false;
@@ -800,6 +859,17 @@ function autosaveBlockers(state) {
   }
   if (s.visible === false) add('hidden', 'This tab is hidden; auto-save is paused.');
   if (savedLogHasNum(s.savedLog, queue.batchId, q.num)) add('saved-log', 'Question ' + q.num + ' was already saved in this batch.');
+  const fp = makeSavedFingerprint({
+    subject_id: meta.subject,
+    exam_category_id: meta.category,
+    exam_year: meta.year,
+    question_text: q.question
+  }, { subject: meta.subjectText, category: meta.categoryText });
+  const prior = savedLogPriorDuplicate(s.savedLog, queue.batchId, fp);
+  if (prior) {
+    const priorFp = prior.fp || {};
+    add('duplicate', 'This looks like question #' + (prior.id == null ? '?' : prior.id) + ' saved in an earlier batch (' + (priorFp.year || meta.year || '?') + ', ' + (priorFp.category || meta.categoryText || meta.category || '?') + ').');
+  }
   const dup = recentDuplicate(s.recentRows, meta.subjectText || meta.subject, q.question, meta.categoryText || meta.category, meta.year);
   if (dup) add('duplicate', 'This looks like question #' + (dup.id == null ? '?' : dup.id) + ' (' + (meta.year || '?') + ', ' + (meta.categoryText || meta.category || '?') + ') already in the recent list.');
   if (s.form && !formMatchesQuestion(s.form, q)) add('form-edited', 'The form no longer matches the loaded question. Save it by hand or reload the queue item.');
@@ -884,6 +954,8 @@ if (typeof module !== 'undefined' && module.exports) {
     sameMeta,
     maxSavedId,
     savedForBatch,
+    makeSavedFingerprint,
+    savedLogPriorDuplicate,
     unverifiedSaves,
     trackUnverified,
     savedModeSuffix,

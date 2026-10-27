@@ -5,6 +5,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const parser = require('../src/parser/parser.js');
+const uiHarness = require('./ui-harness.js');
 
 const INPUT_DIR = path.resolve(__dirname, '../fixtures/inputs');
 const ADMIN_HTML_FILE = path.resolve(__dirname, '../archive/live-sources/admin_questions.html');
@@ -17,18 +18,31 @@ const CATEGORY_NAMES = CATEGORY_SELECT ? [...CATEGORY_SELECT[0]
 
 let passed = 0;
 let failed = 0;
+const asyncTests = [];
+
+function report(name, error) {
+  if (!error) {
+    passed++;
+    console.log('[PASS] ' + name);
+    return;
+  }
+  failed++;
+  console.log('[FAIL] ' + name);
+  const message = String(error && error.message ? error.message : error).split('\n').join('\n  ');
+  console.log('  ' + message);
+}
 
 function test(name, fn) {
   try {
     fn();
-    passed++;
-    console.log('[PASS] ' + name);
+    report(name, null);
   } catch (error) {
-    failed++;
-    console.log('[FAIL] ' + name);
-    const message = String(error && error.message ? error.message : error).split('\n').join('\n  ');
-    console.log('  ' + message);
+    report(name, error);
   }
+}
+
+function testAsync(name, fn) {
+  asyncTests.push({ name, fn });
 }
 
 function eq(actual, expected, label) {
@@ -569,6 +583,287 @@ test('autosaveBlockers stops on saved-log and scoped recent duplicates', () => {
   assert(text.indexOf('UTME') > -1, 'missing category: ' + text);
 });
 
+function priorFp(overrides) {
+  const fp = parser.makeSavedFingerprint({
+    subject_id: 'CRS',
+    exam_category_id: 'UTME',
+    exam_year: '2021',
+    question_text: 'Who was the father of faith?'
+  }, { subject: 'CRS', category: 'JAMB / UTME' });
+  return Object.assign({}, fp, overrides || {});
+}
+
+function priorEntry(id, at, batchId, fp) {
+  return { num: 1, id: id, at: at, batchId: batchId, inactive: false, mode: 'manual', fp: fp };
+}
+
+test('makeSavedFingerprint builds a complete v1 fingerprint', () => {
+  eq(parser.makeSavedFingerprint({
+    subject_id: '1',
+    exam_category_id: '2',
+    exam_year: '2021',
+    question_text: '  Who  WAS the father of faith? '
+  }, { subject: 'CRS', category: 'JAMB / UTME' }), {
+    v: 1,
+    subjectId: '1',
+    categoryId: '2',
+    year: '2021',
+    subject: 'CRS',
+    category: 'JAMB / UTME',
+    question: 'who was the father of faith?'
+  });
+  eq(parser.makeSavedFingerprint({ subject_id: '', exam_category_id: '2', exam_year: '2021', question_text: 'x' }), null);
+  eq(parser.makeSavedFingerprint({ subject_id: '1', exam_category_id: '2', exam_year: '', question_text: 'x' }), null);
+  eq(parser.makeSavedFingerprint({ subject_id: '1', exam_category_id: '2', exam_year: '2021', question_text: '   ' }), null);
+  eq(parser.makeSavedFingerprint({ subject_id: '1', exam_category_id: '2', exam_year: '2021', question_text: 'x'.repeat(4001) }), null);
+  eq(parser.makeSavedFingerprint({ subject_id: '1', exam_category_id: '2', exam_year: '2021', question_text: 'x'.repeat(4000) }).question.length, 4000);
+});
+
+test('makeSavedFingerprint uses the posted text, not a queue item', () => {
+  const fp = parser.makeSavedFingerprint({
+    subject_id: '1', exam_category_id: '2', exam_year: '2021',
+    question_text: 'Edited in the form before submit'
+  }, { subject: 'CRS', category: 'JAMB / UTME' });
+  eq(fp.question, 'edited in the form before submit');
+});
+
+testAsync('UI manual save writes a complete request-time fingerprint', async () => {
+  const ui = uiHarness.createUI({ storage: uiHarness.sampleStorage('batch-manual') });
+  ui.setField('question_text', 'Edited in the form before submit');
+  await ui.submit();
+  eq(ui.posts.length, 1);
+  const body = ui.posts[0].body;
+  eq(body.get('question_text'), 'Edited in the form before submit');
+  const log = ui.storage.get('ocrSavedLog');
+  eq(log.length, 1);
+  eq(log[0].fp, {
+    v: 1,
+    subjectId: '1',
+    categoryId: '2',
+    year: '2021',
+    subject: 'CRS',
+    category: 'JAMB / UTME',
+    question: 'edited in the form before submit'
+  });
+  eq(log[0].fp.question, parser.normalizeAnswer(body.get('question_text')));
+});
+
+testAsync('UI rejected save writes no fingerprint', async () => {
+  const storage = uiHarness.sampleStorage('batch-rejected');
+  storage.ocrSavedLog = [{ id: 41, num: 1, at: 1, batchId: 'older' }];
+  const ui = uiHarness.createUI({
+    storage,
+    replies: [{
+      redirected: false,
+      text: '<div class="admin-error">Exam year 1800 is invalid.</div>',
+      errorText: 'Exam year 1800 is invalid.'
+    }]
+  });
+  await ui.submit();
+  eq(ui.posts.length, 1);
+  eq(ui.storage.get('ocrSavedLog'), storage.ocrSavedLog);
+  eq(ui.storage.get('ocrSaving'), null);
+  assert(ui.doc.getElementById('ans_res').textContent.indexOf('NOT saved') === 0);
+});
+
+testAsync('UI ambiguous save writes no fingerprint', async () => {
+  const storage = uiHarness.sampleStorage('batch-ambiguous');
+  const ui = uiHarness.createUI({
+    storage,
+    replies: [{ redirected: false, text: '<html><body>No confirmation.</body></html>' }]
+  });
+  await ui.submit();
+  eq(ui.posts.length, 1);
+  eq(ui.storage.get('ocrSavedLog'), []);
+  assert(ui.storage.get('ocrSaving'), 'ambiguous saves keep the uncertain-save marker');
+  eq(ui.doc.getElementById('ans_res').textContent, 'Unknown. It may have saved. Check the list.');
+});
+
+testAsync('UI reset and re-paste stop dry run and Start before POST', async () => {
+  const ui = uiHarness.createUI({ storage: uiHarness.sampleStorage('first-batch') });
+  await ui.submit();
+  eq(ui.posts.length, 1);
+  const saved = ui.storage.get('ocrSavedLog');
+  eq(saved.length, 1);
+  eq(saved[0].fp.v, 1);
+  eq(saved[0].id, 500);
+
+  ui.click('ocr_reset');
+  eq(ui.storage.get('ocrQueue'), { items: [], i: 0 });
+  eq(ui.storage.get('ocrSavedLog').length, 1);
+
+  ui.setPaste(uiHarness.SAMPLE_TEXT);
+  ui.click('ocr_load');
+  const repasted = ui.storage.get('ocrQueue');
+  eq(repasted.batchId === saved[0].batchId, false);
+  eq(ui.posts.length, 1);
+
+  await ui.click('ocr_auto_dry');
+  eq(ui.posts.length, 1);
+  const dryStatus = ui.doc.getElementById('ocr_auto_status').textContent;
+  assert(dryStatus.indexOf('earlier batch') > -1, 'dry run did not report the earlier batch: ' + dryStatus);
+  assert(dryStatus.indexOf('#500') > -1, 'dry run did not report the saved id: ' + dryStatus);
+  eq(ui.doc.getElementById('ocr_auto_blocked').textContent, '');
+
+  ui.setField('exam_year', '2022');
+  ui.form.elements.exam_year.dispatch('change');
+  await ui.click('ocr_auto_dry');
+  eq(ui.posts.length, 1);
+  const changedStatus = ui.doc.getElementById('ocr_auto_status').textContent;
+  assert(changedStatus.indexOf('earlier batch') < 0, 'changed year still hit the fingerprint: ' + changedStatus);
+  eq(changedStatus, 'Dry run: all 1 would save as ACTIVE.');
+
+  ui.click('ocr_reset');
+  ui.setField('exam_year', '2021');
+  ui.setPaste(uiHarness.SAMPLE_TEXT);
+  ui.click('ocr_load');
+  await ui.click('ocr_auto_start');
+  eq(ui.posts.length, 1);
+  const blocked = ui.doc.getElementById('ocr_auto_blocked').textContent;
+  assert(blocked.indexOf('earlier batch') > -1, 'Start did not block: ' + blocked);
+  assert(blocked.indexOf('#500') > -1, 'Start did not report the saved id: ' + blocked);
+
+  eq(ui.storage.keys(), ['ansKey', 'ansKeyBatch', 'ansKeyConflicts', 'ocrMeta', 'ocrQueue', 'ocrSavedLog']);
+});
+
+test('savedLogPriorDuplicate returns a matching prior-batch entry', () => {
+  const fp = priorFp();
+  const entry = priorEntry(1785, 100, 'b1', fp);
+  eq(parser.savedLogPriorDuplicate([entry], 'b2', fp), entry);
+});
+
+test('savedLogPriorDuplicate ignores a different year, category or subject', () => {
+  const fp = priorFp();
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b1', priorFp({ year: '2022' }))], 'b2', fp), null);
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b1', priorFp({ categoryId: '3' }))], 'b2', fp), null);
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b1', priorFp({ subjectId: '9' }))], 'b2', fp), null);
+});
+
+test('savedLogPriorDuplicate ignores different text under the same triple', () => {
+  const fp = priorFp();
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b1', priorFp({ question: 'another question' }))], 'b2', fp), null);
+});
+
+test('savedLogPriorDuplicate ignores legacy, partial and unknown fingerprints', () => {
+  const fp = priorFp();
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b1', undefined)], 'b2', fp), null);
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b1', priorFp({ year: '' }))], 'b2', fp), null);
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b1', priorFp({ v: 2 }))], 'b2', fp), null);
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b1', fp)], '', fp), null);
+});
+
+test('savedLogPriorDuplicate excludes the current batch', () => {
+  const fp = priorFp();
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b2', fp)], 'b2', fp), null);
+  eq(parser.savedLogPriorDuplicate([priorEntry(1, 100, 'b2', fp), priorEntry(2, 200, 'b2', fp)], 'b2', fp), null);
+});
+
+test('savedLogPriorDuplicate reports the newest match by at, then id', () => {
+  const fp = priorFp();
+  const older = priorEntry(1, 100, 'b1', fp);
+  const sameAtLow = priorEntry(2, 200, 'b1', fp);
+  const sameAtHigh = priorEntry(3, 200, 'b1', fp);
+  eq(parser.savedLogPriorDuplicate([older, sameAtLow, sameAtHigh], 'b2', fp), sameAtHigh);
+});
+
+test('savedLogPriorDuplicate matches on IDs and normalized text, not labels', () => {
+  const fp = priorFp();
+  const entry = priorEntry(1785, 100, 'b1', priorFp({ subject: 'Other label', category: 'Other label', question: '  WHO   was the father of faith? ' }));
+  eq(parser.savedLogPriorDuplicate([entry], 'b2', fp), entry);
+});
+
+test('commitSave keeps a complete fingerprint on the saved entry', () => {
+  let written = null;
+  const fp = priorFp();
+  const result = parser.commitSave({
+    read: () => [],
+    current: [],
+    entry: priorEntry(1785, 100, 'b1', fp),
+    write: log => { written = log; }
+  });
+  eq(result.ok, true);
+  eq(written[0].fp, fp);
+});
+
+test('saved-log merge and cap keep fingerprints', () => {
+  const fp = priorFp();
+  const stored = [];
+  for (let i = 1; i <= 200; i++) stored.push({ id: i, batchId: 'b1' });
+  const merged = parser.mergeSavedLog(stored, [], priorEntry(201, 300, 'b2', fp), 200);
+  eq(merged.length, 200);
+  eq(merged[199].id, 201);
+  eq(merged[199].fp, fp);
+});
+
+test('autosaveBlockers keeps the current-batch number check first', () => {
+  const fp = priorFp();
+  const s = cleanState();
+  s.queue.batchId = 'b2';
+  s.keyBatch = 'b2';
+  s.savedLog = [
+    { num: 1, id: 9, at: 300, batchId: 'b2' },
+    priorEntry(1785, 100, 'b1', fp)
+  ];
+  eq(parser.autosaveBlockers(s)[0].code, 'saved-log');
+});
+
+test('autosaveBlockers stops on a prior-batch fingerprint after Reset and re-paste', () => {
+  const fp = priorFp();
+  let written = null;
+  const committed = parser.commitSave({
+    read: () => [],
+    current: [],
+    entry: priorEntry(1785, 100, 'old', fp),
+    write: log => { written = log; }
+  });
+  eq(committed.ok, true);
+  const s = cleanState();
+  s.queue = { items: [cleanQuestion(1)], i: 0, batchId: 'new' };
+  s.key = { 1: 'A' };
+  s.keyBatch = 'new';
+  s.savedLog = written;
+  s.meta = { subject: 'CRS', category: 'UTME', year: '2021', subjectText: 'CRS', categoryText: 'JAMB / UTME' };
+  const blockers = parser.autosaveBlockers(s);
+  eq(blockers[0].code, 'duplicate');
+  const text = parser.blockerText(blockers[0]);
+  assert(text.indexOf('#1785') > -1, 'missing saved id: ' + text);
+  assert(text.indexOf('earlier batch') > -1, 'missing earlier-batch wording: ' + text);
+  const changedYear = Object.assign({}, s, { meta: Object.assign({}, s.meta, { year: '2022' }) });
+  eq(parser.autosaveBlockers(changedYear), []);
+  const changedCategory = Object.assign({}, s, { meta: Object.assign({}, s.meta, { category: 'JAMB', categoryText: 'JAMB' }) });
+  eq(parser.autosaveBlockers(changedCategory), []);
+  const changedSubject = Object.assign({}, s, { meta: Object.assign({}, s.meta, { subject: 'CRK', subjectText: 'CRK' }) });
+  eq(parser.autosaveBlockers(changedSubject), []);
+});
+
+test('autosaveBlockers reports the matched entry labels for a prior duplicate', () => {
+  const s = cleanState();
+  s.queue = { items: [cleanQuestion(1)], i: 0, batchId: 'new' };
+  s.key = { 1: 'A' };
+  s.keyBatch = 'new';
+  s.savedLog = [priorEntry(1785, 100, 'old', priorFp({ category: 'JAMB/UTME' }))];
+  s.meta = { subject: 'CRS', category: 'UTME', year: '2021', subjectText: 'CRS', categoryText: 'JAMB / UTME' };
+  const blocker = parser.autosaveBlockers(s)[0];
+  eq(blocker.code, 'duplicate');
+  const text = parser.blockerText(blocker);
+  assert(text.indexOf('(2021, JAMB/UTME)') > -1, 'did not use the saved label: ' + text);
+  assert(text.indexOf('JAMB / UTME') < 0, 'used the current label: ' + text);
+  s.savedLog = [priorEntry(1785, 100, 'old', priorFp({ category: '' }))];
+  const fallback = parser.blockerText(parser.autosaveBlockers(s)[0]);
+  assert(fallback.indexOf('(2021, JAMB / UTME)') > -1, 'missing current-label fallback: ' + fallback);
+});
+
+test('autosaveBlockers still runs the recent-table check without a prior match', () => {
+  const s = cleanState();
+  s.queue.batchId = 'b2';
+  s.keyBatch = 'b2';
+  s.savedLog = [priorEntry(1785, 100, 'b1', priorFp({ question: 'another question' }))];
+  s.recentRows = [{ id: 77, subject: 'CRS', category: 'UTME', year: '2021', question: s.queue.items[0].question }];
+  const blocker = parser.autosaveBlockers(s)[0];
+  eq(blocker.code, 'duplicate');
+  assert(parser.blockerText(blocker).indexOf('#77') > -1, 'recent row did not report: ' + parser.blockerText(blocker));
+});
+
 test('autosaveBlockers stops when the form was edited', () => {
   const s = cleanState();
   s.form.question = 'A completely different question.';
@@ -738,8 +1033,18 @@ test('salvageNormalize is a no-op on every bank input', () => {
   }
 });
 
-console.log('');
-console.log('Summary');
-console.log('  PASS: ' + passed);
-console.log('  FAIL: ' + failed);
-process.exitCode = failed ? 1 : 0;
+(async () => {
+  for (const item of asyncTests) {
+    try {
+      await item.fn();
+      report(item.name, null);
+    } catch (error) {
+      report(item.name, error);
+    }
+  }
+  console.log('');
+  console.log('Summary');
+  console.log('  PASS: ' + passed);
+  console.log('  FAIL: ' + failed);
+  process.exitCode = failed ? 1 : 0;
+})();

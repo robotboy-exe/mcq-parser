@@ -493,6 +493,12 @@ function runOCRBookmarklet() {
         else fd.delete('is_active');
         fd.set('autosave', '1');
       }
+      const fingerprint = makeSavedFingerprint({
+        subject_id: fd.get('subject_id'),
+        exam_category_id: fd.get('exam_category_id'),
+        exam_year: fd.get('exam_year'),
+        question_text: fd.get('question_text')
+      }, { subject: selectedText('subject_id'), category: selectedText('exam_category_id') });
       ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
       if (ctl) timer = setTimeout(() => ctl.abort(), 30000);
       const res = await fetch(location.href, { method: 'POST', body: fd, credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
@@ -512,6 +518,7 @@ function runOCRBookmarklet() {
       let inactive = null;
       if (auto) inactive = await verifyInactive(result.id);
       const entry = { num: num, id: result.id, at: Date.now(), batchId: savedBatchId, inactive: auto ? inactive : false, mode: auto ? (active ? 'active' : 'draft') : 'manual' };
+      if (fingerprint) entry.fp = fingerprint;
       const sameQueue = queue.i === savedIndex && queue.items[savedIndex] === q && (queue.batchId || null) === savedBatchId;
       const committed = commitSave({
         read: () => store.get('ocrSavedLog') || [],

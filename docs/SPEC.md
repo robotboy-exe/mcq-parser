@@ -474,13 +474,19 @@ cleared, the same manual save proceeds normally (Fix 2).
   per-question details remain behind `Copy saved list`. When the run reaches the
   end, the status line says `Batch complete: Subject / Category / Year — N
   questions (#first to #last) · N saved.`
-- Duplicate safeguards stop (not skip) the run when the number is already in
-  this batch's saved log, or a recent admin-table row has the same normalized
-  subject, exam year, category and question text. A long row is the server's
-  first 139 characters plus `…`; a truncated row of at least 40 characters
-  matches by prefix, and an untruncated row matches only the full text. A row
-  whose year or category cannot be read falls back to subject and text. This
-  covers this run/log and the loaded 20 rows; it cannot see older saves.
+- Duplicate safeguards stop (not skip) the run in this order: the number is
+  already in this batch's saved log; a retained entry from an earlier batch has
+  a complete fingerprint with the same subject, category and year IDs and the
+  same normalized question text (D-56); or a recent admin-table row has the same
+  normalized subject, exam year, category and question text. A long row is the
+  server's first 139 characters plus `…`; a truncated row of at least 40
+  characters matches by prefix, and an untruncated row matches only the full
+  text. A row whose year or category cannot be read falls back to subject and
+  text. The fingerprint check reports the newest saved ID, year and category and
+  never matches the current batch, a legacy entry, a partial fingerprint, or a
+  label-only difference. The table check covers only the loaded 20 rows; the log
+  check covers the retained 200 entries. Older saves and dropped entries are not
+  visible.
 
 All server-derived text is rendered with `textContent` or created nodes, never
 `innerHTML`. Option sizes are compared in UTF-8 bytes.

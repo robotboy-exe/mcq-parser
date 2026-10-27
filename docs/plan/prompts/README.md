@@ -33,12 +33,29 @@ next phase; fix findings in a separate session, then request `re-review`.
 
 ## Fix sessions
 
-If a review returns `BLOCK` or you reject a `FIX`, start a separate fix
-session, then request `re-review`. If you accept a `FIX` and want it fixed,
-the same fix session updates the handoff; no re-review is needed when behavior
-is unchanged. A fix session re-runs the package acceptance and baseline tests,
-updates the handoff, and stops without committing. If you accept findings
-as-is, skip the fix and go to the next phase.
+Attach `fix-session.md` and pass the phase or record. Finding IDs are optional:
+
+```text
+fix phase 4
+fix docs/plan/reviews/post-as-2026-10-phase-3.md
+fix phase 4 FIX-1
+fix all
+```
+
+With no IDs, the session addresses every open finding in that record. `BLOCK`
+and `FIX` findings are repaired; `NOTE` findings are limited to documentation,
+wording, or test-only changes and are skipped if they are residual-risk notes or
+would need a behavior change. Name IDs to narrow the scope. `fix all` uses the
+latest review record in the active cycle. The review must label every finding
+(`BLOCK-1`, `FIX-1`, `NOTE-1`, ...); the fix session stops and asks if IDs are
+missing.
+
+The first reply is read-only and waits for `go`. If a review returns `BLOCK` or
+you reject a `FIX`, run the fix session, then request `re-review`. If you accept
+a `FIX` and have it fixed, the same fix session updates the handoff; no re-review
+is needed when behavior is unchanged. A fix session re-runs the package
+acceptance and baseline tests, updates the handoff, and stops without
+committing. If you accept findings as-is, skip the fix and go to the next phase.
 
 ## Cycle close
 

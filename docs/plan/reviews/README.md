@@ -23,6 +23,7 @@ Scope:
 Evidence:
 Acceptance coverage:
 Findings:
+  # Number each as BLOCK-1, FIX-1, NOTE-1, ... with file:line and reproduction.
 Findings closed (re-review only):
 Recommended next action:
 Next action required:
@@ -31,8 +32,10 @@ Next action required:
 - After decision: <exact command or session>
 ```
 
-The next phase reads this record before committing the reviewed work. A missing
-record, a `BLOCK` verdict, or unresolved findings stops the phase. If a
-re-review is needed, write a second record with `-re-review` in the name. The
+Every finding must carry a stable ID (`BLOCK-1`, `FIX-1`, `NOTE-1`, ...), because
+the fix session takes those IDs as its arguments. The next phase reads this
+record before committing the reviewed work. A missing record, a `BLOCK` verdict,
+or unresolved findings stops the phase. If a re-review is needed, write a second
+record with `-re-review` in the name. The
 re-review is authoritative for the current verdict; it does not erase the
 original, and any earlier finding it does not explicitly close still blocks.
