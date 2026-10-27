@@ -10,9 +10,9 @@ reads it. Use `cycle <id> phase N` only for an archived map.
   explicitly asks to shelve it.
 - Before archiving, the final phase's rigorous review record must exist and be
   settled, and the final phase plus that record must be committed.
-- If the final phase is not committed yet, run the separate cycle-close session
-  described in `docs/plan/README.md`; do not use a phase session, because the
-  final package is already `done`.
+- If the final phase is not committed yet, attach [`../cycle-close.md`](../cycle-close.md)
+  and send `cycle close`; do not use a phase session, because the final package
+  is already `done`.
 - If the user starts new work before confirming, ask whether to archive the old
   cycle first or keep it active.
 - Keep statuses in `docs/plan/README.md`. A phase map only maps phase numbers to
@@ -21,7 +21,8 @@ reads it. Use `cycle <id> phase N` only for an archived map.
 ## Shelve the old cycle
 
 1. Confirm the final review is settled and the final phase is committed; if
-   not, run the cycle-close session first.
+   not, attach [`../cycle-close.md`](../cycle-close.md) and run `cycle close`
+   first.
 2. Confirm the user is satisfied or explicitly asked to archive.
 3. Copy the active map to `cycles/<old-cycle-id>.md`; never overwrite it first.
 4. Do not edit an archived map later.

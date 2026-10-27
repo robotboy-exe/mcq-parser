@@ -24,7 +24,8 @@ Gate 1 first and wait for a separate `go` before writing.
    - If the argument is missing, unknown, or ambiguous, stop and ask.
 2. Resolve the package file from the map. If it does not exist, stop and ask.
 3. Read `AGENTS.md`, `docs/AGENTS.md`, `docs/plan/README.md`, `INTENT.md`, the
-   map, and the package file.
+   map, and the package file. Read `docs/LIVE-SAFETY.md` before any package
+   with a browser or live acceptance check.
 4. Read the package's README status row. If it is `done`, stop and report the
    next not-started phase. If it is `blocked`, stop and report the blocker. If
    it is `in progress`, stop and ask before resuming.
@@ -88,6 +89,7 @@ Reply with:
 - Scope:
 - Non-goals:
 - Acceptance:
+- Live actions: `<none/read-only/write; exact IDs; cleanup owner-only>`
 - Stop condition: after acceptance, README status update, package handoff, and
   `Commit: deferred`.
 - Next phase I will not start: `<phase N+1 or none>`
@@ -140,8 +142,9 @@ and Definition of done, plus the package's own acceptance table.
 
 - Do not start, preview, or update the next phase.
 - Do not commit the current phase. Its handoff must say
-  `Commit: deferred to phase N+1 start`; at cycle end, a separate cycle-close
-  session commits it before archiving the cycle.
+  `Commit: deferred to phase N+1 start`; at cycle end, attach
+  [`cycle-close.md`](cycle-close.md) and send `cycle close` to commit it before
+  archiving the cycle.
 - Do not archive the cycle or create a new map. The cycle stays active until the
   user confirms it is complete or asks to shelve it.
 - Rebuild only `src/bookmarklet.js`. Do not rebuild
@@ -151,6 +154,12 @@ and Definition of done, plus the package's own acceptance table.
   Do not silently mark the package done.
 - If a required browser or live check cannot be done, stop and ask; do not
   substitute a claim.
+- Read `docs/LIVE-SAFETY.md` before any live/browser check. Do not delete or
+  clean up live records. If a package requires a destructive live write, stop
+  and ask for a staging environment or owner-run cleanup.
+- Live writes need per-action approval naming the exact IDs and fields. A
+  successful test or an acceptance row does not authorize cleanup. Leave any
+  live-created test rows for the owner and record their exact IDs.
 - Use `INTENT.md` as the behavior tie-breaker. If the package conflicts with it,
   stop and ask.
 - Record acceptance coverage: every acceptance row maps to a test, probe, or
@@ -170,6 +179,7 @@ End with:
 - Files:
 - Build:
 - Docs:
+- Live writes/cleanup:
 - Review status:
 - Commit (current phase): deferred
 - Next phase (not started):

@@ -2,6 +2,7 @@
 
 ## Read first
 
+- **Live site safety:** read `docs/LIVE-SAFETY.md` before any live/browser check. By default, the agent does not delete or clean up live records; cleanup is owner-only.
 - `docs/AGENTS.md` is the detailed contract: dangerous regexes, behavior to preserve, evidence policy. Read it before editing `src/parser/parser.js` or `src/ui/ui.js`.
 - Behavior spec: `docs/SPEC.md`; rationale: `docs/DECISIONS.md`; test status: `docs/INVARIANTS.md`, `docs/EDGE_CASES.md`.
 - Work tracker and session protocol: `docs/plan/README.md`. Read it before starting a work package; update its status row and the package handoff when done.
@@ -14,9 +15,17 @@
 - Commit only at a phase boundary: at the start of a new phase, after the previous phase's review settles. Do not commit current-phase work; commit the final phase before archiving the cycle.
 - Rigorous reviews are separate sessions using `docs/plan/prompts/review-session.md`; they may write only `docs/plan/reviews/` and never commit.
 
+## Live site safety
+
+- By default, the agent does not delete or clean up live questions, media, or users. Live test cleanup is owner-only; use a staging environment when possible.
+- A live write requires per-action user approval naming the exact records and fields. A package acceptance row, a successful test, or "run the live check" does not authorize a destructive live write.
+- If a live delete is ever explicitly authorized: preflight the exact ID list, match exactly one `action=delete_question` form whose `question_id` is that ID, click that row's Delete button (never `.submit()` or `.requestSubmit()`), assert the confirmation names the exact ID, and require the exact success flash. Stop on the first mismatch.
+- Live-created test rows need a unique marker and a local manifest of exact IDs; leave them for the owner.
+- No staging copy or verified backup means no destructive live test. Full rules: `docs/LIVE-SAFETY.md`.
+
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 41/41 PASS; `node tests/unit.js` is 100 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 41/41 PASS; `node tests/unit.js` is 115 PASS.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
@@ -44,5 +53,6 @@
 
 ## Known gaps
 
+- 2026-10-27 incident: a live AS-12 test cleanup deleted six Active Accounting questions (#3795-#3800). A first-match delete selector submitted the Recent Questions form instead of the edited row and bypassed the confirm dialog. Only truncated stems were recovered from a Playwright snapshot; options and answers were not. Test rows #3841-#3846 remain. See `docs/LIVE-SAFETY.md`; do not attempt live deletion.
 - Live V1-V3 checks ran on 2026-10-25: the current bookmarklet parsed `bank-2021` and `anomaly-block2` on the admin page, a controlled manual save was accepted and deleted (no `practice_title` schema error), and a stale queue without a batch identity loaded but auto-save was blocked. There is still no new live OCR paste beyond the archived bank/anomaly blocks. The unfiltered admin list did not show the new rows while a filtered list did; the site owner confirmed this is intended list behavior. `ocrQueue` still has no version marker; reset and re-paste after parser/UI changes.
 - Do not promote `UNVERIFIED`/`AT_RISK`/`CONFLICTED` items to defects without reproduction; see `docs/EDGE_CASES.md` and `docs/INVARIANTS.md`.

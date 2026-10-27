@@ -55,12 +55,18 @@ you reject a `FIX`, run the fix session, then request `re-review`. If you accept
 a `FIX` and have it fixed, the same fix session updates the handoff; no re-review
 is needed when behavior is unchanged. A fix session re-runs the package
 acceptance and baseline tests, updates the handoff, and stops without
-committing. If you accept findings as-is, skip the fix and go to the next phase.
+committing. If you accept findings as-is, skip the fix and go to the next phase, or to
+cycle close when this is the final phase.
 
 ## Cycle close
 
-After the final rigorous review settles, start a separate cycle-close session
-and follow `docs/plan/README.md`. It commits the final phase and review
+After the final rigorous review settles, attach `cycle-close.md` and send:
+
+```text
+cycle close
+```
+
+It has a read-only Gate 1, waits for `go`, commits the final phase and review
 record(s), executes no package, and does not archive. Archive only after the
 user confirms completion or asks to shelve the cycle.
 
