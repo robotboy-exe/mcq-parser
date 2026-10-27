@@ -1,8 +1,9 @@
 # Build
 
-The mobile deliverable is `src/bookmarklet.min.js`, a single self-contained
-`javascript:` URL (bookmarklet). `src/bookmarklet.js` is the same build without
-minification, kept as the readable reference copy. There is no package.json,
+The tracked build output is `src/bookmarklet.js`, a single self-contained
+`javascript:` URL (bookmarklet). It is generated from the two modules and
+committed. `src/bookmarklet.min.js` is not tracked; it may exist locally from an
+older build and is outside the workspace contract. There is no package.json,
 bundler, transpiler, or external dependency in this workspace.
 
 ## Requirements
@@ -21,13 +22,6 @@ Run from the project root:
 node src/build/build.js
 ```
 
-By default this writes only `src/bookmarklet.js`. Add `--min` only when the user
-explicitly requests the standalone minified mobile build:
-
-```sh
-node src/build/build.js --min
-```
-
 `src/build/build.js`:
 
 1. Resolves the project root as the parent of `src/build/`.
@@ -40,32 +34,21 @@ node src/build/build.js --min
    - the call `runOCRBookmarklet();`.
 5. Splits the result on line endings, trims each line, drops empty lines, and
    joins the remainder with single spaces. This produces one physical line.
-6. With `--min`, minifies that line without renaming anything: it tokenizes
-   strings, template literals, regex literals, identifiers, numbers, and
-   punctuators, drops comments, and removes whitespace unless two adjacent
-   tokens would otherwise merge. Literal contents are preserved byte-for-byte.
-7. Syntax-checks the body (and the minified body when requested) with
-   `new Function(body)` before wrapping.
-8. Wraps it as:
+6. Syntax-checks the body with `new Function(body)` before wrapping.
+7. Wraps it as:
 
    ```js
    javascript:(function(){try{<body>}catch(e){alert('Bookmarklet Error: '+e.message);}})();
    ```
 
-9. Refuses to write if the result contains `%`.
-10. With `--min`, refuses to write if the minified result is larger than 65536
-    UTF-8 bytes, the practical mobile bookmarklet limit (Firefox stops at 65536;
-    Safari accepts the bookmark but does nothing above it).
-11. Writes `src/bookmarklet.js`, and with `--min` also
-    `src/bookmarklet.min.js`, each with a trailing newline, and prints their
-    lengths in characters and UTF-8 bytes:
-    - `src/bookmarklet.js` — unminified, 64773 characters and 64786 bytes.
-    - `src/bookmarklet.min.js` — minified standalone, 57866 characters and
-      57879 bytes (only with `--min`).
+8. Refuses to write if the result contains `%`.
+9. Writes `src/bookmarklet.js` with a trailing newline and prints its character
+   and UTF-8 byte counts.
 
-For mobile, paste `src/bookmarklet.min.js`. The eight non-ASCII characters in
-each file (two `—`, two `…`, one `–`, three `·`) add 13 bytes over the character
-count.
+The script still accepts `--min` for local experiments, but the minified output
+is untracked and is not part of the workspace contract. Do not use it for
+releases, do not commit it, and do not rely on an existing local copy. The
+current sources exceed the script's 65536-byte mobile guard when minified.
 
 ## Why the line rewriting exists
 
@@ -76,23 +59,16 @@ flattening; an inline `//` would still truncate the URL (INV-05). The build also
 fails if the finished bookmarklet contains `%`, which a bookmark manager may
 decode.
 
-Minification exists because mobile browsers cap bookmarklet URLs. The
-whitespace-only pass cuts the standalone minified build from about 63 KB to
-about 56 KB, leaving headroom under the 65536-byte limit without renaming
-functions or rewriting literals. It does not touch the source modules, so the
-test harness still exercises the readable parser. The unminified
-`src/bookmarklet.js` is written from the same body for reference.
-
-The paste box no longer sets `width:100%` inline; the admin page CSS already
-sets it for `.admin-field textarea`.
-
 Do not add multi-line string/template literals whose meaning depends on leading
 or trailing whitespace: the build trims every line. The current template
 literals are single-line HTML strings.
 
+The paste box no longer sets `width:100%` inline; the admin page CSS already
+sets it for `.admin-field textarea`.
+
 ## Verify the build
 
-1. Check the default output is a single line:
+1. Check the output is a single line:
 
    ```sh
    wc -l src/bookmarklet.js
@@ -100,9 +76,8 @@ literals are single-line HTML strings.
 
    It should report `1` (the file ends with one newline).
 
-2. Syntax-check the script body. The development workflow documented in the
-   migration notes was to strip the leading `javascript:` and run `node
-   --check`:
+2. Syntax-check the script body. Strip the leading `javascript:` and run
+   `node --check` on the remainder:
 
    ```sh
    node -e "const fs=require('fs');const f='src/bookmarklet.js';fs.writeFileSync(process.env.HOME+'/tmp/bookmarklet.js.check.js',fs.readFileSync(f,'utf8').replace(/^javascript:/,''))" \
@@ -111,39 +86,27 @@ literals are single-line HTML strings.
 
    Termux note: `$HOME/tmp` is used because Termux has no `/tmp`.
 
-3. Only when `--min` was requested, repeat steps 1-2 for
-   `src/bookmarklet.min.js` and check its UTF-8 size against the mobile limit:
-
-   ```sh
-   node -e "const s=require('fs').readFileSync('src/bookmarklet.min.js','utf8').trim(); console.log(Buffer.byteLength(s,'utf8'))"
-   ```
-
-   It should print a number at or below 65536. The build refuses to write the
-   minified file if it is larger.
-
-4. Install the mobile bookmarklet by creating a bookmark whose URL is the
-   entire contents of `src/bookmarklet.min.js`, or paste the contents into the
-   browser console on the admin page for a one-off run. Use
-   `src/bookmarklet.js` only when you need the unminified reference.
+3. Install the bookmarklet by creating a bookmark whose URL is the entire
+   contents of `src/bookmarklet.js`. The unminified build may exceed mobile
+   browser limits; no tracked minified artifact is provided.
 
 ## Source of truth
 
 - `src/parser/parser.js` — pure parsing functions and regexes.
 - `src/ui/ui.js` — DOM, form fill, queue, storage, submit.
-- `src/build/build.js` — assembler and minifier.
-- `src/bookmarklet.js` — generated unminified build; do not edit by hand.
-- `src/bookmarklet.min.js` — generated standalone minified build; do not edit
-  by hand. Rebuild only on explicit request (`node src/build/build.js --min`).
+- `src/build/build.js` — assembler and legacy local minifier.
+- `src/bookmarklet.js` — generated build; do not edit by hand.
+- `src/bookmarklet.min.js` — untracked local artifact; do not edit, rely on, or
+  rebuild it.
 
 ## What the build does not do
 
-- It does not rename identifiers or rewrite expressions. Minification is
-  comments and whitespace only, and it applies to `src/bookmarklet.min.js`.
-  `src/bookmarklet.js` gets the line flattening but not the token pass.
-- Its regex/division detection assumes a regex literal never appears directly
-  after `)` or `}`. Those are the ambiguous cases; the current sources do not
-  use them. If that changes, extend the minifier or keep the regex on the next
-  line with an operator before it.
+- It does not rename identifiers or rewrite expressions in the tracked build.
+  The legacy `--min` path only drops comments and whitespace.
+- The legacy minifier's regex/division detection assumes a regex literal never
+  appears directly after `)` or `}`. Those are the ambiguous cases; the current
+  sources do not use them. If that changes, extend the minifier or keep the
+  regex on the next line with an operator before it.
 - It does not URL-encode. If a browser or bookmark manager requires encoding,
   encode the full generated string at install time; do not change the build
   output format.

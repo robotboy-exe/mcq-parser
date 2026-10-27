@@ -1,6 +1,6 @@
 # Current Phase Map
 
-Current cycle: `post-as-2026-10`
+Current cycle: `housekeeping-2026-10`
 Updated: 2026-10-27
 
 `phase N` means phase N of this cycle. Status lives in
@@ -8,19 +8,12 @@ Updated: 2026-10-27
 
 | Phase | Package |
 |---|---|
-| 1 | P11 — 14-exam-category-period-acronyms.md |
-| 2 | P12 — 15-option-boundary-selection.md |
-| 3 | AS-10 — 16-duplicate-fingerprints.md |
-| 4 | AS-11 — 17-batch-history.md |
-| 5 | AS-12 — 18-auto-dry-run-and-status.md |
+| 1 | H1 — [`01-untrack-min.md`](../housekeeping/01-untrack-min.md) |
+| 2 | H2 — [`02-truth-reset.md`](../housekeeping/02-truth-reset.md) |
+| 3 | H3 — [`03-archive-and-split.md`](../housekeeping/03-archive-and-split.md) |
+| 4 | H4 — [`04-local-cleanup.md`](../housekeeping/04-local-cleanup.md) |
+| 5 | H5 — [`05-inbox-triage.md`](../housekeeping/05-inbox-triage.md) |
 
 ## Starting a new cycle
 
-Do not archive automatically when the last phase stops. Archive only when the
-user confirms the cycle is complete or satisfied, or explicitly asks to shelve
-it. Follow the checklist in [`cycles/README.md`](cycles/README.md), then replace
-this file with the new cycle and its phase 1..N mapping. Leave
-`phase-session.md` unchanged.
-
-Use `cycle <id> phase N` only when you need an archived cycle. The active cycle
-does not need the prefix.
+See `cycles/README.md`.

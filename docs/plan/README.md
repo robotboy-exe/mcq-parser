@@ -1,6 +1,7 @@
 # OCR Parser Work Plan — Coordinator
 
-This is the entry point for all remaining parser, fixture, and Auto-Save work.
+This is the entry point for all remaining parser, fixture, Auto-Save, and
+housekeeping work.
 Read this file, then read the one work-package file you are executing. Each
 package document is self-contained; you should not need any other package
 document to finish it.
@@ -11,6 +12,24 @@ packages. Package prose owns implementation detail; `INTENT.md` is the
 tie-breaker for behavior.
 
 Last updated: 2026-10-27.
+
+Dated snapshots, archived checkpoints, and the change log are in
+[`history.md`](history.md).
+
+## Housekeeping cycle (housekeeping-2026-10)
+
+The active map is [`prompts/phase-map.md`](prompts/phase-map.md). These phases
+clean up docs, ignored artifacts, and the tracker; they do not change parser or
+UI behavior and do not add fixtures. The archived `post-as-2026-10` review
+checkpoints are in [`history.md`](history.md).
+
+| Phase | Package | Status |
+|---|---|---|
+| 1 | [01-untrack-min.md](housekeeping/01-untrack-min.md) | done (2026-10-27); docs/index-only; reviewed PASS; committed in cycle-close catch-up |
+| 2 | [02-truth-reset.md](housekeeping/02-truth-reset.md) | done (2026-10-27); docs-only; reviewed PASS; committed in cycle-close catch-up |
+| 3 | [03-archive-and-split.md](housekeeping/03-archive-and-split.md) | done (2026-10-27); docs-only; reviewed PASS; committed in cycle-close catch-up |
+| 4 | [04-local-cleanup.md](housekeeping/04-local-cleanup.md) | done (2026-10-27); local cleanup; reviewed PASS; committed in cycle-close catch-up |
+| 5 | [05-inbox-triage.md](housekeeping/05-inbox-triage.md) | done (2026-10-27); docs/inbox-only; reviewed PASS; NOTE-1/3/4/5 fixed; NOTE-6 catch-up approved; committed at cycle close |
 
 ## Auto-Save track (AS-01…AS-06)
 
@@ -31,10 +50,10 @@ recorded in AS-01 and supersede the old rows:
 
 ## Auto-Save follow-up track (AS-07…AS-09)
 
-`docs/Active.md` is the merged review for the work after AS-06. Its phases map
-to three plan packages so the status table, acceptance gates, and handoff notes
-stay in one place. `docs/Active.md` remains the authoritative detailed spec;
-the package files add preconditions, acceptance, and handoff.
+`docs/Active.md` is the historical merged review for the work after AS-06. Its
+phases map to three plan packages so the status table, acceptance gates, and
+handoff notes stay in one place. It was the authoritative detailed spec for
+that track; the package files added preconditions, acceptance, and handoff.
 
 The one sequencing change: **Fix 2 moves from Phase 3 into AS-07**. Active.md
 §2 forbids live active saves until Fix 1 and Fix 2 are both done, and AS-08
@@ -54,8 +73,8 @@ Decisions recorded 2026-10-25:
   images; text guessing is out of scope. `file-attached` stays. A future media
   feature needs an explicit uploader signal, not a word list.
 
-`tests/build-check.js` exists only in `review-packet/` and is pinned to the
-packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
+The old `tests/build-check.js` lived only in the removed review packet and is
+not a workspace test; use the BUILD.md checks.
 
 ## Post-AS follow-up track (P11–P12, AS-10–AS-12)
 
@@ -81,9 +100,9 @@ P0 is a one-off inbox cleanup, done 2026-10-27. It has no package row:
 `Promoted 2026-10-26` block was removed, and the raw Q46 case was kept for P12.
 
 The sequence is linear: P10 → P11 → P12 → AS-10 → AS-11 → AS-12, with AS-10
-also depending on AS-09. For this track, rebuild only `src/bookmarklet.js`; do
-not rebuild `src/bookmarklet.min.js` unless the user explicitly asks for the
-minified release artifact. Commits follow the phase-boundary rule below.
+also depending on AS-09. For this track, rebuild only `src/bookmarklet.js`.
+`src/bookmarklet.min.js` is untracked and outside the workspace contract; do
+not rebuild it. Commits follow the phase-boundary rule below.
 
 ## Build cycles and phase sessions
 
@@ -150,7 +169,7 @@ Do not amend, rebase, force-push, or create an empty commit.
 At cycle end, attach [`prompts/cycle-close.md`](prompts/cycle-close.md) and
 send `cycle close`. It has a read-only Gate 1, then verifies the final phase is
 done and its latest review is `PASS` or accepted, updates the final status row,
-checkpoint row, handoff `Review:` and `Commit:` lines, and current snapshot.
+checkpoint row, handoff `Review:` and `Commit:` lines, and the history snapshot.
 Then it stages the handoff plus review record(s), runs the checks, and commits.
 It executes no package and does not archive. Do not use a normal phase session
 for this, because the final package is already `done`.
@@ -163,204 +182,10 @@ new-cycle checklist and map template are in
 [`prompts/cycles/README.md`](prompts/cycles/README.md). Use
 `cycle <id> phase N` only for an archived map.
 
-### Current review checkpoints
+### Historical checkpoints
 
-| Checkpoint | Scope | Level | Review | Commit |
-|---|---|---|---|---|
-| phase 2 close | P12 | rigorous | independent-pass-with-accepted-findings; fixes applied | committed 2ad3fa9 |
-| phase 3 close | AS-10 | rigorous | independent-pass-with-accepted-findings; user accepted 2026-10-27; FIX-1/NOTE-1/NOTE-2 fixed | committed ef0883f |
-| phase 4 close | AS-11 | light | light-verified (2026-10-27) | committed f3454af |
-| cycle end | AS-12 | rigorous | independent-pass-with-accepted-findings; FIX-1/NOTE-1/NOTE-2 fixed; re-review passed; NOTE-3 docs fixed; NOTE-4 accepted (separate docs commit) | committed at cycle close |
-| phase 3 Gate 1 | P11 | light | light-verified (2026-10-27) | committed in catch-up |
-
-Rigorous review records live in [`reviews/`](reviews/README.md), named
-`<cycle-id>-phase-<N>.md`, with an optional `<...>-re-review.md` after a fix.
-The latest re-review is authoritative for the current verdict; earlier findings
-it does not explicitly close still block. P12's record is
-`reviews/post-as-2026-10-phase-2.md`; a missing record blocks phase 3.
-
-Current catch-up plan, approved 2026-10-27: after the P12 review settles, the
-phase 3 session commits
-
-1. `docs: add phase review workflow and post-AS plans` — `AGENTS.md`,
-   `INTENT.md`, `docs/NEW_EDGE_CASES.txt`, `docs/plan/README.md`,
-   `docs/plan/prompts/`, `docs/plan/reviews/README.md`, the P12 review
-   record(s), and `docs/plan/13`–`18`.
-2. `feat: add P11-P12 parser fixes and fixtures` — parser, tests, fixtures,
-   rebuilt bookmarklet, implementation docs, and `docs/AGENTS.md`.
-
-## Current snapshot
-
-- Current test status: `node tests/runner.js` → 41 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 115 PASS, 0 FAIL; `node tools/extract-bank.js --check`
-  exits 0 for seven slices.
-- 2026-10-27: AS-12 done. Dry and live have separate state, panels, progress,
-  and blockers; a full Load or key-only Load schedules one dry run, a load token
-  cancels an older run, and metadata/key/mode/queue/Reset changes mark the result
-  `STALE`. `deriveLiveState(queue, savedLog)` drives reload `INCOMPLETE` or
-  `COMPLETE`, live completion beats Stop, and there is no run-state key (D-58;
-  INV-90, INV-91). Runner 41 PASS; unit 115 PASS; extractor green; build one
-  line, no `%`, body parses. The review's FIX-1 added live-loop and `STALE`
-  harness tests, NOTE-1 added a live run token, and NOTE-2 ends an escaped live
-  loop `BLOCKED`; the re-review passed, and NOTE-3 now documents event-driven
-  invalidation (the `dryStamp` snapshot is not read). NOTE-4 was accepted with a
-  separate safety/process docs commit; owner-only live rows remain. Live browser smoke
-  passed steps 1-8; test rows #3841-#3846 remain for owner-only cleanup.
-  `src/bookmarklet.min.js` was not rebuilt.
-- 2026-10-27: live-safety guard added after an AS-12 cleanup deleted six live
-  Active Accounting questions (#3795-#3800). A first-match delete form bypassed
-  the confirm dialog; only truncated stems were recovered. Live deletes/cleanup
-  are owner-only; exact-ID, confirm-text, and success-flash checks are mandatory
-  if the owner authorizes one. Test rows #3841-#3846
-  remain. See [`docs/LIVE-SAFETY.md`](../LIVE-SAFETY.md). Docs-only; no tests
-  run.
-- 2026-10-27: AS-11 done. `ocrBatchHistory` stores up to 15 newest-first batch
-  summaries built from the current batch's saved entries after a verified save;
-  `makeBatchHistoryEntry` and `upsertBatchHistory` are pure helpers, the Recent
-  batches box renders one `textContent` line per batch, and Reset Queue keeps
-  the key (D-57, INV-89). Rejected/ambiguous saves write nothing, and a history
-  read/write failure cannot block or change a save. Runner 41 PASS; unit 100
-  PASS; extractor green; build one line, no `%`, body parses. `src/bookmarklet.min.js`
-  was not rebuilt. Review light-verified at phase 5 Gate 1 (2026-10-27); committed
-  at phase 5 start.
-- 2026-10-27: AS-10 done. Verified saves may now store an additive `fp`
-  fingerprint taken from the posted form at request time; `autosaveBlockers`
-  checks the current-batch number first, then a prior-batch fingerprint, then
-  the recent table (D-56). Legacy, partial, unknown-version, same-batch,
-  label-only and over-4,000-character cases do not match; the newest match is
-  reported with its saved ID, year and category. No new key or network request.
-  Runner 41 PASS; unit 89 PASS; extractor green; build one line, no `%`, body
-  parses. The rigorous review passed with accepted findings; FIX-1 added the
-  UI save-path harness, NOTE-1 corrected the test count, and NOTE-2 made the
-  prior-match detail use the matched entry's stored labels. Committed as
-  ef0883f at phase 4 start.
-- 2026-10-27: P12 done. Option parsing selects the earliest occurrence of each
-  required letter A–D, then E/F only after D, and sorts the marks by position;
-  inner initials stay in option text and out-of-order hostile labels still map
-  correctly (D-55). The duplicate warning now fires only for a second complete
-  A–D set with no visible question-number boundary. Added Q46, single-initial,
-  duplicate-label fixtures, plus an inline-number parse test. Runner 41
-  PASS; unit 70 PASS; extractor green; build one line, no `%`, body parses.
-  The rigorous P12 review passed with accepted findings; FIX-1/FIX-2 are fixed
-  (wording only). AS-10 followed after the catch-up commits landed.
-- 2026-10-27: P11 done. `compactExamAcronyms` normalizes period-separated exam
-  acronyms on a local header copy inside `pickCategoryIndex` (D-54); the
-  stored header and subject inference are unchanged. Added
-  `header-crs-ssce-periods` and unit coverage. Runner 38 PASS; unit 67 PASS;
-  build one line, no `%`, body parses. P12 is next.
-- 2026-10-27: post-AS follow-up planned as P11–P12/AS-10–AS-12 (D-54–D-58);
-  `13-duplicate-fingerprint-spec.md` references were corrected to D-56 and the
-  current runner context. P0 inbox cleanup restored the original header/rules,
-  removed the agent-written Promoted block, and retained the raw Q46 case for
-  P12. Docs-only; runner 37 PASS and unit 66 PASS are unchanged.
-- 2026-10-27: the paused warning gained `Open filtered list`, built from the
-  `ocrSaving` marker's subject/category/year snapshot (or `ocrMeta` for old
-  markers). It targets the filtered Recently Added list so the user can check
-  an ambiguous save directly (D-53, INV-85). Runner 37 PASS; unit 66 PASS;
-  `src/bookmarklet.js` rebuilt, one line, no `%`, body parses.
-- 2026-10-26: the build now writes both `src/bookmarklet.js` (unminified,
-  63054 bytes) and the standalone `src/bookmarklet.min.js` (minified, 56340
-  bytes). The minifier drops comments and whitespace only; no renaming. The
-  build refuses minified output over 65536 UTF-8 bytes. Parser fixtures and
-  unit tests are unchanged, and both built bodies parse.
-- 2026-10-26: the bank source gained the WASSCE 2026 section and a 2026 slice
-  (`bank-2026`, 48 questions/48 key entries). Its two-line answer heading left
-  `WASSCE C. R. K. 2026` inside Q48 and produced the duplicate-letter flag;
-  `splitSections` now drops a title block above a pure answer heading (D-44,
-  EC-76, INV-77). The unheaded 29 section between 2025 and 2026 is its own
-  divider-delimited section, not a stray part of either year; it is extracted as
-  `bank-pre-2026` (1 question/0 key entries). D-45 repairs its dotless A and
-  D-46 strips the surrounding dividers (EC-77/EC-78, INV-78/INV-79). The 2025
-  slice hash changed only by gaining a trailing newline because 2025 is no
-  longer the end of the source file.
-- V1-V3 of the remaining verification queue closed on 2026-10-25: live
-  `bank-2021`/`anomaly-block2` matched their fixtures; controlled save #1785
-  was accepted (filtered list + edit page) and deleted; a stale no-batch queue
-  loaded with auto-save blocked and Reset + re-paste worked. V4 remains open.
-  The unfiltered admin list did not show the new rows while the filtered list
-  did; the site owner confirmed this is intended list behavior, not a defect.
-- Auto-Save AS-01 through AS-09 are done. AS-06 closed on 2026-10-25 with the
-  five dry-run scenarios, hide-pause, mock lock, and the live 3-question test;
-  the cap was raised to 10 at that point and later removed (D-43). Two-tab live
-  testing is limited by hide-pause on one browser; the lock reason is covered
-  by unit + mock.
-- AS-07 closed on 2026-10-25: Fix 1 (scoped duplicate check), Fix 2 (manual
-  marker refusal), the per-question unverified list, the two-consecutive stop,
-  and removal of `needs-media`. Runner 25 PASS; unit 49 PASS; build one line,
-  no `%`, body parses. Live checks on the real admin page passed: #1754 was
-  139 + `…`; Start stopped a same-year/category repeat with 0 POST; a 2022
-  repeat and a different long question dry-ran as saves; the manual-marker
-  refusal made 0 POST and the cleared marker let one POST reach the server
-  (rejected with exam year 1800, so no row was inserted). Mock checks cover the
-  unverified list/stop and media/file-attached. AS-08 may start.
-- AS-08 closed on 2026-10-25: opt-in active mode, mode gate/suffix, and the
-  mode-aware save path are implemented. Runner 25 PASS; unit 52 PASS; build one
-  line, no `%`, body parses. Mock active/draft runs and the AS-07 draft
-  regression pass. Live (Accounting / JAMB / UTME / 2024, Samuel watching):
-  #1766 and #1767 saved Active with list `, active`; draft regression #1768
-  saved Inactive with list `, inactive`; #1766-#1768 were deleted and no test
-  rows remained. Logged out; cookies and the temporary credentials file were
-  removed. AS-09 is next.
-- AS-09 closed on 2026-10-25: Fix 3 (confirmed-save log/advance faults keep the
-  marker and stop), Fix 4 (saved log re-read/merged by id, mode kept, cap 200),
-  Fix 5 (`has-explanation`), Fix 6 (confirmed metadata snapshot +
-  `meta-changed`), Fix 7 (heartbeat write failure stops and releases the lock),
-  the `out`/`add` order nit, and the Phase 3 doc corrections. Runner 25 PASS;
-  unit 59 PASS; build one line, no `%`, body parses. The UI paths for Fixes 3
-  and 7 are covered by injected pure helpers (`commitSave`, `heartbeatTick`);
-  the DOM wiring itself has no browser test.
-- P01 closed on 2026-10-25: `input_origin` is required and validated by the
-  runner, and all 25 current fixtures carry it (7 bank, 1 doc, 17 synthetic).
-  The package was written for 19; P03's `bank-2021` and the 2026-10-24 header
-  and gap fixtures were classified too. `gap-q10-missing` is a real user paste
-  marked synthetic because the taxonomy has no user-paste value. Runner 25
-  PASS; negative missing/unknown checks reproduced and restored.
-- P02 closed on 2026-10-25: `tools/extract-bank.js` and `tools/bank-slices.json`
-  produce the year slices, verify the source hash, anchors, question and key
-  counts, and output hashes (`--check`). 2022-2025 inputs and PENDING specs
-  were added; `bank-2021` already existed from P03 and matches the slice
-  byte-for-byte. Runner 25 PASS / 4 PENDING; unit 59 PASS. P04-P06 can confirm
-  the four PENDING bank specs. The manifest was extended with 2026 on
-  2026-10-26.
-- P04 closed on 2026-10-25: `bank-2022` is confirmed with the 40-entry inline
-  key, 13 E-option questions, the bank Q3 `C. punish them`, and the real
-  dotless Q35 (`A 75 years` parsed as option A with no flags). No parser change
-  was needed. Runner 26 PASS / 3 PENDING; unit 59 PASS.
-- P05 closed on 2026-10-25: `bank-2023` is confirmed with the 40-entry inline
-  key, eight E-option questions (Q33-Q40), Q1 option boundaries, and Q33/Q40
-  option text. No parser change was needed. Runner 27 PASS / 2 PENDING; unit
-  59 PASS.
-- P06 closed on 2026-10-25: `bank-2024` is confirmed as the partial Q17-Q40
-  slice with its 40-entry key and no asserted header; `bank-2025` is confirmed
-  with 40 questions and 39 key entries (26 absent). No parser change was
-  needed. Runner 29 PASS / 0 PENDING; unit 59 PASS. P07 is next.
-- P07 closed on 2026-10-25: guarded `salvageNormalize` pre-pass repairs fused
-  OCR boundaries only when it yields more questions; block 2 parses as 12
-  chunks `[null,2,3,4,7,8,9,12,13,14,15,16]` with 50 inserts. The UI and runner
-  use the shared result and add `OCR boundaries repaired; verify question and
-  option split`; the runner also asserts the `nums` sequence. All five bank
-  inputs are byte-identical no-ops (0 inserts). Runner 30 PASS; unit 59 PASS;
-  build one line, no `%`, body parses. P08 is next.
-- P08 closed on 2026-10-25: unnumbered `*` blocks parse in bullet mode only when
-  there are no line-start `N.` markers. Block 1 yields 19 items, all
-  `num: null`, with `question number missing`; block 2 stays at 12 and the bank
-  stays unchanged. Runner 31 PASS; unit 59 PASS; build one line, no `%`, body
-  parses.
-- P09 closed on 2026-10-25: docs now match the P01–P08 code and fixtures. The
-  retirement premise was stale: `bank-2021` did not initially assert all of
-  `qwen2-s1`'s coverage, so the missing Q1/Q9/Q23/Q24/Q25/Q31/Q36/Q38 and
-  `questions_with_e` assertions were ported first, then the pair was deleted.
-  Runner 30 PASS; unit 59 PASS; extractor check green. No source or build
-  change; no live checks added.
-- Parser/UI commands are unchanged; AS phases add `node tests/unit.js`.
-- `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
-- `ANOMALIES.txt` and the duplicate-file removals are committed.
-- P02 pins the current bank hash; re-audit the manifest if the source changes.
-- The former `merged_bookmarklet.txt` duplicate has been deleted. The canonical
-  archived copy is `archive/trusted-variants/trusted-variant-C.js`.
-- P03 is done: inline multi-pair keys are detected, and `bank-2021` is confirmed.
-  P01 and P02 are done; historically, the 2021 input was sliced manually before
-  the extractor existed.
+The archived `post-as-2026-10` review checkpoints, catch-up commits, and dated
+snapshots are in [`history.md`](history.md).
 
 ## Source hierarchy and priority
 
@@ -386,11 +211,13 @@ phase 3 session commits
   expected fixture from parser output.
 - Do not weaken the strict `OPTION`, `splitSections`, or `splitQuestions` rules
   globally to accommodate anomalies. The bank fixtures are the regression wall.
-- Do not edit `src/bookmarklet.js` or `src/bookmarklet.min.js`. Edit
+- Do not edit `src/bookmarklet.js`; it is generated. Edit
   `src/parser/parser.js` or `src/ui/ui.js`, then run `node src/build/build.js`.
+  `src/bookmarklet.min.js` is untracked; do not edit, rely on, or rebuild it.
 - Full-line `//` comments are allowed in parser/UI modules; `build.js` strips
-  them before flattening. Inline `//` comments remain forbidden. Both generated
-  bookmarklets must be one line and contain no `%`; the build fails on `%`.
+  them before flattening. Inline `//` comments remain forbidden. The generated
+  `src/bookmarklet.js` must be one line and contain no `%`; the build fails on
+  `%`.
 - Do not change PHP, `ocr_helper.js`, existing storage keys/shapes, or the
   server contract. Auto-Save may add the new keys named in its spec; the
   existing `ocrQueue`, `ocrMeta`, and `ansKey` shapes stay compatible.
@@ -521,7 +348,7 @@ blocked. V4 stays open by decision (optional).
    Update each phase's review checkpoint row and handoff `Review:` line from the
    record or light check; update the status-row review suffix too, and if the
    record is conditional on acceptance, record the user's acceptance there.
-   Update the current snapshot if it still calls that review pending. Then make
+   Update the history snapshot if it still calls that review pending. Then make
    each approved catch-up commit in order, staging only that commit's named
    files; for a single phase, stage the handoff plus review record.
 6. Execute only the current package. Keep parser and fixture changes separate
@@ -555,9 +382,7 @@ blocked. V4 stays open by decision (optional).
 - No commit was made during the phase.
 - If parser or UI changed: `node src/build/build.js` ran, `wc -l
   src/bookmarklet.js` prints `1`, its body passes `node --check`, and it
-  contains no `%`. Do not rebuild `src/bookmarklet.min.js` unless the user
-  explicitly asks for the minified release artifact; if it is rebuilt, it must
-  meet the same checks and stay at or below 65536 bytes.
+  contains no `%`. Do not rebuild `src/bookmarklet.min.js`; it is untracked.
 - Auto-Save packages also record their dry-run or live evidence in the package
   handoff. A partial dry run does not mark the package done.
 - Any live write is recorded with its exact IDs and fields. The agent performed
@@ -582,8 +407,8 @@ Build syntax check (same rule as `docs/BUILD.md`):
 node -e "const fs=require('fs');new Function(fs.readFileSync('src/bookmarklet.js','utf8').replace(/^javascript:/,''));console.log('OK')"
 ```
 
-For a minified build explicitly requested by the user, run the same checks on
-`src/bookmarklet.min.js`.
+For a minified build, do not use the legacy `--min` path; `src/bookmarklet.min.js`
+is untracked and outside the workspace contract.
 
 ## Current expected fixture counts
 
@@ -616,223 +441,3 @@ AS-06 raised the auto-save run cap from 3 to 10 after the live sign-off and
 rebuilt. The two-tab lock reason could not be shown live on one phone browser
 because hide-pause releases the lock when tab 1 becomes hidden; the lock itself
 is covered by `tests/unit.js` and the mock-browser check.
-
-## Removed duplicates (for the audit trail)
-
-The following 10 byte-identical duplicates were removed; the `archive/` copy is
-authoritative:
-
-- `docs/claude-migration.md`
-- `docs/qwen-1-gaps.md`
-- `docs/qwen-1-gaps2.md`
-- `docs/qwen-1-migration.md`
-- `docs/qwen-2-gaps.md`
-- `docs/qwen-2-reconciled.md`
-- `trusted-variant-A.js`
-- `trusted-variant-B.js`
-- `trusted-variant-C.js`
-- `archive/live-sources/admin_questions-live-2026-10-23.html`
-
-## Change log
-
-- 2026-10-27 — AS-12 NOTE-3 docs fix: D-58, SPEC, Auto-Save-Spec, INVARIANTS,
-  and AGENTS now state that dry-result invalidation is event-driven through
-  `invalidateDry`; the `dryStamp` snapshot is recorded but never read back.
-  NOTE-2 was already closed by the earlier fix. No source, test, fixture, or
-  build change; runner 41 PASS, unit 115 PASS, extractor green. NOTE-4 (commit
-  scope and owner-only live rows) remains for cycle close. Commit deferred.
-- 2026-10-27 — AS-12 review fix: FIX-1 now schedules the shortened live-loop
-  sleep and adds a 2-save Stop test plus key/mode/Skip/Reset `STALE` tests;
-  NOTE-1 adds a live run token so a full Load or Reset cannot be overwritten by
-  a finishing loop; NOTE-2 ends an escaped loop `BLOCKED` instead of leaving
-  `RUNNING`. Runner 41 PASS; unit 115 PASS; extractor green; rebuilt
-  `src/bookmarklet.js`; re-review required before cycle close. Commit deferred.
-- 2026-10-27 — Added a live-safety stop rule after an AS-12 cleanup deleted six
-  live Active Accounting questions (#3795-#3800). The cleanup selected the
-  first `delete_question` form on the edit page and called `.submit()`, which
-  bypassed the per-row confirm; only truncated stems survived in a Playwright
-  snapshot. `docs/LIVE-SAFETY.md` now makes live cleanup owner-only and requires
-  exact-ID scoping, confirm-text assertion, and success-flash verification for
-  any owner-authorized delete. Test rows #3841-#3846 remain. Docs-only; no
-  tests run.
-- 2026-10-27 — AS-12 done: automatic dry run after a full or key-only Load,
-  separate dry/live panels and state, stale invalidation, completion-before-
-  Stop, and reload `INCOMPLETE`/`COMPLETE` from `deriveLiveState` with no
-  run-state key (D-58; INV-90, INV-91). Added 8 unit tests (1 helper, 7 UI
-  dry/live). Runner 41 PASS; unit 108 PASS; extractor green; build one line,
-  80,927 bytes, no `%`, body parses; `src/bookmarklet.min.js` was not rebuilt.
-  Live browser smoke passed steps 1-8 and left test rows #3841-#3846 for
-  owner-only cleanup. Rigorous review is pending at cycle end; commit deferred
-  to cycle close.
-- 2026-10-27 — AS-11 done: added the additive `ocrBatchHistory` key (15
-  newest-first batch summaries), `makeBatchHistoryEntry` and
-  `upsertBatchHistory`, and the Recent batches box. History is written only
-  after a verified save, survives Reset Queue, contains no per-question detail,
-  and ignores storage failures. The line format uses explicit month
-  abbreviations, `–` for contiguous ranges, and a comma list for gaps (D-57,
-  INV-89). Also corrected the stale INVARIANTS total (88→89 including the new
-  invariant) and a stale D-56 sentence about the DOM harness. Runner 41 PASS;
-  unit 100 PASS; extractor green; build one line, no `%`, body parses.
-  `src/bookmarklet.min.js` was not rebuilt. Review is pending at phase 5 Gate 1;
-  commit is deferred to phase 5 start.
-- 2026-10-27 — AS-10 NOTE-2 fix: the prior-batch duplicate detail now uses the
-  matched entry's stored `fp.year`/`fp.category` when present, falling back to
-  the current metadata labels. Matching is unchanged. Added one unit test
-  (unit 89 PASS); runner 41 PASS; extractor green; build one line, no `%`, body
-  parses. Display-only; no re-review required.
-- 2026-10-27 — AS-10 fix session: closed the review's FIX-1 and NOTE-1.
-  `tests/ui-harness.js` runs the real `src/ui/ui.js` save path against a small
-  deterministic DOM/storage/fetch shim; new tests cover a manual save writing
-  the request-time `fp`, rejected and ambiguous saves writing none, and
-  Reset/re-paste dry run and Start stopping before POST. The fixture table
-  counted 18 AS-10 unit tests (14 original, 4 FIX-1) instead of 13 at that
-  point. Unit 88 PASS;
-  runner 41 PASS; extractor green; build one line, no `%`, body parses. No
-  save/gate behavior changed; `src/bookmarklet.min.js` was not rebuilt. Also
-  added `docs/plan/prompts/fix-session.md`, made `fix phase N` default to every
-  open finding, and required numbered review finding IDs (`BLOCK-1`, `FIX-1`,
-  `NOTE-1`) in the review contract; docs-only.
-- 2026-10-27 — AS-10 done: verified saves can store a D-56 fingerprint in the
-  existing `ocrSavedLog` entry; the gate checks prior-batch fingerprints after
-  the current-batch number and before the recent table. Legacy/partial/same-
-  batch/label-only/over-4,000 cases are skipped; the newest match is reported.
-  No new key, request, or override. Unit 84 PASS; runner 41 PASS; extractor
-  green; build one line, no `%`, body parses. Rigorous review pending.
-- 2026-10-27 — Added independent review checkpoints and a phase-boundary commit
-  rule. Every phase verifies dependencies with probes, not just handoffs;
-  rigorous reviews write one record under `reviews/` at P12 close, AS-10 close,
-  and cycle end. Previous settled work is committed at the start of the next
-  phase; current-phase work is deferred. P12 review is pending. Docs-only.
-- 2026-10-27 — Cycle shelving is manual: archive only when the user confirms
-  the cycle is complete/satisfied or explicitly asks. Added a new-cycle
-  checklist and phase-map template in `prompts/cycles/README.md`; the last phase
-  leaves the cycle active. Docs-only.
-- 2026-10-27 — Replaced the two-step prompt files with one
-  `phase-session.md` and a current-cycle `phase-map.md`. `phase N` is local to
-  the active cycle; dependency status and handoffs are reviewed before editing;
-  the README now owns the one-package-per-session workflow and stop rule. P11
-  is done, so the next session starts at `phase 2`. Docs-only.
-- 2026-10-27 — P12 done: option marks now use the earliest occurrence of each
-  required A–D letter, then E/F only after D, sorted by text position (D-55).
-  Q46 and single initials stay inside option text, out-of-order `anomaly-block2`
-  labels still map correctly, and the duplicate warning is limited to a second
-  complete A–D set with no visible `N.` boundary. Added Q46, single-initial,
-  duplicate-label fixtures, plus an inline-number parse test. Runner 41
-  PASS; unit 70 PASS; extractor green; build one line, no `%`, body parses.
-  AS-10 is next.
-- 2026-10-27 — P11 done: `compactExamAcronyms` maps period-separated exam
-  acronyms (`S.S.C.E.`, `W.A.S.S.C.E.`, `W.A.E.C.`, `N.E.C.O.`, `G.C.E.`,
-  `J.A.M.B.`, `U.T.M.E.`, `P.O.S.T. U.T.M.E.`) to the existing live categories
-  on a local header copy (D-54, INV-45, EC-84). Header text and subject
-  inference are unchanged. Added `header-crs-ssce-periods` and unit coverage.
-  Runner 38 PASS; unit 67 PASS; extractor green; build one line, no `%`, body
-  parses. P12 is next.
-- 2026-10-27 — Planned post-AS follow-up P11–P12/AS-10–AS-12 from the user
-  request: category period acronyms (D-54), option boundary selection (D-55),
-  prior-batch duplicate fingerprints (D-56), 15-batch history (D-57), and
-  automatic dry run plus separate dry/live status (D-58). P0 inbox cleanup is
-  done separately: header/rules restored, agent Promoted block removed, raw Q46
-  kept for P12. Spec 13 references corrected to D-56 and the current runner
-  context. Added root `INTENT.md` as the behavior tie-breaker and linked it
-  from this coordinator and the five packages. Docs-only; runner 37 PASS and
-  unit 66 PASS unchanged.
-- 2026-10-26 — Consolidated Auto-Save UI: active is the default with one
-  mode-labelled confirmation, Start is visibly dimmed when disabled, status is
-  one line plus a progress bar, dry run is summary-only, and the green saved box
-  is summary-only (D-51/D-52, EC-82/EC-83, INV-71/INV-84). Runner 37 PASS; unit
-  65 PASS; browser check and build verified.
-- 2026-10-26 — Added a "Paste clipboard" button that reads the clipboard into
-  the paste box on click (D-50/INV-83). Runner 37 PASS; unit 65 PASS; browser
-  check passed; build verified.
-- 2026-10-26 — Promoted new-edge anomalies: D-47 extends the missing-dot repair
-  to B/C (EC-79/INV-80), D-48 ignores `B.`/`A.` in year abbreviations
-  (EC-80/INV-81), and D-49 normalizes spaced slash labels for all options
-  (EC-81/INV-82). These had blocked Auto-Save. Runner 37 PASS; unit 65 PASS;
-  extractor seven slices green; build verified.
-- 2026-10-26 — Added the 2026 bank slice and fixed the two-line answer heading
-  (D-44/EC-76/INV-77); `bank-2026` covers Q1–Q48 and the 48-entry key. Also
-  added the unheaded pre-2026 section as its own slice/fixture (`bank-pre-2026`,
-  1/0), not a stray: D-45 repairs its missing A dot, D-46 strips divider-only
-  lines (EC-77/EC-78, INV-78/INV-79). Runner 32 PASS; unit 65 PASS; extractor
-  seven slices green; build verified.
-- 2026-10-26 — Removed the 10-save auto-save cap (D-43); a run continues until
-  Stop, a blocker, or the end of the queue. Dry run and the remaining gates are
-  unchanged.
-- 2026-10-25 — V1-V3 of the remaining verification queue closed on the live
-  admin page: `bank-2021` and `anomaly-block2` matched their fixtures, a
-  controlled save was accepted and deleted (no `practice_title` error), and a
-  stale no-batch queue loaded with auto-save blocked. No code change; test rows
-  cleaned up. V4 stays open. The unfiltered admin list did not show the new rows
-  while a filtered list did; the site owner confirmed this is the site's intended
-  list behavior, not a defect.
-- 2026-10-25 — Auto-Save follow-up planned as AS-07…AS-09 from
-  `docs/Active.md`; Fix 2 moved into AS-07 so the live active-mode test cannot
-  run before the draft-only barrier clears. Decisions: cross-category copies
-  allowed, saved log kept on Reset, key-letter preview deferred, per-question
-  unverified status list and a two-consecutive-unverified stop added to AS-07,
-  and `NEEDS_PICTURE` removed. `tests/build-check.js` is a
-  review-packet-only script, not a workspace test.
-- 2026-10-25 — Auto-Save review fixes: queue-mutating controls refuse during an
-  in-flight save and a save only advances the queue it started with; normal Stop
-  and queue completion are status text, not red blockers; `ocrSavedLog` records
-  the inactivity check so the saved list cannot claim inactive for active or
-  unverified saves; a rejected retry preserves an earlier unresolved marker; a
-  storage failure aborts before the POST instead of stranding `saveInProgress`;
-  POST target restored to `location.href`; unit tests 35 PASS.
-- 2026-10-25 — live site cleaned: the AS test drafts (#1516-#1519, #1520,
-  #1528 and lock-test rows) were deleted.
-- 2026-10-25 — AS-06 done: docs close-out; five dry-run scenarios, hide-pause,
-  mock lock, and the 3-question live test passed. Boot-fill regression fixed;
-  cap raised to 10; blocked-reason color fixed. One-browser limit recorded for
-  the two-tab lock message.
-- 2026-10-25 — AS-07 done: live #1754 confirmed 139 + `…`; Start stopped a
-  same-year/category repeat with 0 POST; 2022 repeat and a different long
-  question dry-ran as saves; manual-marker refusal made 0 POST, then one POST
-  with exam year 1800 was rejected so no row was inserted. Unverified
-  list/stop and media removal covered by unit + mock. Active.md §3 retired;
-  unit 49 PASS.
-- 2026-10-25 — P01 done: `input_origin` is required and limited to
-  bank/anomaly/doc/synthetic; all 25 fixtures labelled; missing and unknown
-  values fail the runner. Runner 25 PASS.
-- 2026-10-25 — P02 done: added `tools/extract-bank.js` and
-  `tools/bank-slices.json`; the extractor verifies the bank hash, slice
-  anchors, question/key counts, and output hashes. Added 2022-2025 inputs and
-  PENDING specs; P03's bank-2021 input matches the slice byte-for-byte and
-  stays confirmed. Runner 25 PASS / 4 PENDING; unit 59 PASS.
-- 2026-10-25 — P04 done: `bank-2022` confirmed (40-entry inline key, 13
-  E-option questions, bank Q3 `C. punish them`, dotless Q35 `A 75 years` parsed
-  with no flags). No parser change. Runner 26 PASS / 3 PENDING; unit 59 PASS.
-- 2026-10-25 — P05 done: `bank-2023` confirmed (40-entry inline key, eight
-  E-option questions, Q1/Q33/Q40 option boundaries). No parser change. Runner
-  27 PASS / 2 PENDING; unit 59 PASS.
-- 2026-10-25 — P06 done: `bank-2024` confirmed (Q17-Q40, 40 key entries, no
-  header asserted) and `bank-2025` confirmed (40 questions, 39 key entries, 26
-  absent). No parser change. Runner 29 PASS / 0 PENDING; unit 59 PASS.
-- 2026-10-25 — P07 done: guarded salvage pre-pass added; block 2 parses as 12
-  chunks with 50 inserts, the salvage flag is appended in UI and runner, `nums`
-  is asserted, and all bank inputs get 0 inserts. Runner 30 PASS; unit 59 PASS;
-  build one line, no `%`, body parses.
-- 2026-10-25 — P08 done: bullet mode added for unnumbered `*` blocks; block 1
-  parses as 19 `num: null` items, block 2 and the bank are unchanged. Runner 31
-  PASS; unit 59 PASS; build one line, no `%`, body parses.
-- 2026-10-25 — P09 done: docs updated for bank extraction, salvage, bullet
-  mode, `input_origin`, and the current counts; `qwen2-s1` assertions were ported
-  to `bank-2021` before deleting the pair. Runner 30 PASS; unit 59 PASS;
-  extractor `--check` green. No source change, no new live evidence.
-- 2026-10-25 — P10 done: salvage preserves `Ph.D.`/`U.S.A.` while still
-  repairing fused labels; block-2 stays at 12 chunks/50 inserts. Unit suite is
-  64 PASS; runner adds `required_flags` and asserts it on every item. Stale
-  docs corrected. Runner 30 PASS; extractor `--check` green; build one line,
-  no `%`, body parses.
-- 2026-10-25 — AS-09 done: confirmed-save log/advance faults keep the marker and
-  stop without retry; saved log is re-read and merged by id with mode kept and
-  capped at 200; `has-explanation` and `meta-changed` join the gate; the
-  heartbeat write failure stops and releases the lock; Phase 3 docs corrected.
-  Unit 59 PASS; build one line, no `%`, body parses.
-- 2026-10-25 — Auto-Save phased as AS-01…AS-06; build gains full-line comment
-  stripping and a no-`%` guard; unit harness planned.
-- 2026-10-24 — numbering gaps are flagged on the following question
-  (`gap-q10-missing`); 25 fixtures.
-- 2026-10-24 — header inference extended: answer-key headers fill the form,
-  exam category is inferred, CRS alias added; four synthetic header fixtures.
-- 2026-10-24 — plan created; duplicates removed; ANOMALIES.txt received.

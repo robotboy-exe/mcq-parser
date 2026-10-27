@@ -29,15 +29,15 @@
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
-- Build: `node src/build/build.js` rebuilds only `src/bookmarklet.js`. Then `wc -l src/bookmarklet.js` must print `1`, and its body (leading `javascript:` stripped) must pass `node --check`; exact snippet in `docs/BUILD.md`. Add `--min` only when the user explicitly requests the minified build.
-- Do not rebuild `src/bookmarklet.min.js` unless the user explicitly asks for it; it is a release artifact and may be stale.
+- Build: `node src/build/build.js` rebuilds only `src/bookmarklet.js`. Then `wc -l src/bookmarklet.js` must print `1`, and its body (leading `javascript:` stripped) must pass `node --check`; exact snippet in `docs/BUILD.md`. Do not add `--min`.
+- `src/bookmarklet.min.js` is not tracked. It may exist locally from an older build; do not edit, rely on, or rebuild it.
 - No root `package.json`, lint, typecheck, CI, or test framework. `.opencode/package.json` is only the OpenCode notification plugin; do not `npm install` for project work.
 - Termux has no `/tmp`; use `$HOME/tmp` for temp files.
 
 ## Editing rules
 
-- `src/bookmarklet.js` and `src/bookmarklet.min.js` are generated; never edit them by hand. Edit the two modules, then rebuild. `src/bookmarklet.js` is the default output; rebuild `.min.js` only on explicit request (`node src/build/build.js --min`). Use `.min.js` for mobile.
-- Never add `//` comments to the source modules: the build flattens everything onto one `javascript:` line, where `//` truncates the rest. Do not rely on indentation in multiline template literals; the build trims every line.
+- `src/bookmarklet.js` is generated; never edit it by hand. Edit the two modules, then rebuild. `src/bookmarklet.min.js` is an untracked local artifact; do not edit, rely on, or rebuild it.
+- Full-line `//` comments are stripped by the build; never add inline `//` comments, because the build flattens everything onto one `javascript:` line and an inline `//` truncates the rest. Do not rely on indentation in multiline template literals; the build trims every line.
 - Do not modify the PHP, database, `ocr_helper.js`, or server contract: CSRF, PRG flow, field names, four-option rule, and success flash text are fixed.
 - Do not change `localStorage` key names/shapes: `ocrQueue`, `ocrMeta`, `ansKey`. Do not read/write `ocrSubmitted`.
 - Preserve deliberate quirks: E/F→D collapse, `splitQuestions` numbering guard, advisory-only flags, blank options, `FIXES` order. Do not refactor for style.
