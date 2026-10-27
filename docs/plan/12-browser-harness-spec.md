@@ -1,7 +1,7 @@
 # Automated Browser/Click-Path Harness — Draft Spec
 
-Status: **draft for external review**, not an approved work package. Do not
-implement until this document is reviewed and accepted.
+Status: **unapproved draft for external review**, not an approved work package.
+Do not implement until this document is reviewed and accepted.
 
 This spec is self-contained so it can be refined outside the workspace. It
 describes a browser harness for the bookmarklet's DOM, storage, fill, tick,

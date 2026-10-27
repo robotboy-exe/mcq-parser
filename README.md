@@ -45,14 +45,17 @@ src/
   build/build.js       concatenates modules into one javascript: URL
   bookmarklet.js       generated output (do not edit by hand)
 docs/
+  STATUS.md            current checks, build hash, and live-test state
   SPEC.md              parser/UI behavior specification
   DECISIONS.md         why the unusual heuristics exist
+  LIVE-SAFETY.md       live-write rules and incident record
   AGENTS.md            constraints for future agents
   BUILD.md             build and verification instructions
-  EDGE_CASES.md        83 documented edge cases
-  INVARIANTS.md        84 documented invariants
+  EDGE_CASES.md        documented edge cases
+  INVARIANTS.md        documented invariants
   BASELINE_COMPARISON.md  version comparison from Phase 2
-  plan/                work-package tracker and handoffs
+  plan/                current work tracker and handoffs
+  plan/history.md      dated snapshots, checkpoints, and change log
 fixtures/
   inputs/              archived doc, bank, and anomaly samples
   expected/            documented expected outputs (CONFIRMED/PENDING)
@@ -61,8 +64,11 @@ archive/
   trusted-variants/    original bookmarklet variants A/B/C
   legacy-bookmarklets/ supplied B1/B2/B3 (matched from first/second/third.js)
   live-sources/        admin PHP/HTML, ocr_helper.js, OCR text bank
+  workspace-setup/     setup-era plan, phase prompts, and final report
+  inbox/               parked raw inputs and triage notes
 tests/runner.js        pure-Node fixture harness (no browser)
 tests/unit.js          pure-Node unit tests for parser and auto-save helpers
+tests/ui-harness.js    browser-free UI save/dry-run harness
 tools/extract-bank.js  deterministic bank slicer and verifier
 tools/bank-slices.json source hash, anchors, counts, and output hashes
 ```
@@ -99,37 +105,13 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 ## Status
 
-Workspace setup phases 1–9 are complete. `tests/runner.js` runs every fixture
-and reports PASS, FAIL, or PENDING; run it for the current status.
-`WORKSPACE_SETUP.md` holds the final setup report and the human decisions still
-needed. The baseline is `trusted-variant-C.js` (the merged one-box artifact);
-see `docs/BASELINE_COMPARISON.md` for why.
+Current test counts, build hash and size, and live-test state are in
+[`docs/STATUS.md`](docs/STATUS.md). The fixture runner is the regression gate;
+remaining live checks are tracked in
+[`docs/plan/11-remaining-verification.md`](docs/plan/11-remaining-verification.md).
 
-Current status (2026-10-26): 37/37 fixtures PASS, 65/65 unit tests PASS, and
-`tools/extract-bank.js --check` is green for seven slices. The bank now includes
-the 2026 WASSCE section; its two-line answer heading no longer leaks into Q48's
-options. The unheaded 29 section above it is its own divider-delimited section
-(`bank-pre-2026`), not a stray part of 2025 or 2026. New anomalies are promoted
-from `docs/NEW_EDGE_CASES.txt`; dotless C, slash separators on all options, and
-the `B.C.`/`A.D.` year abbreviations now have fixtures.
-Live verification on the real admin page parsed `bank-2021` (40 questions) and
-`anomaly-block2` (12 chunks with the salvage flag), accepted a controlled manual
-save (then deleted it), and showed
-that a stale queue without a batch identity loads but auto-save is blocked.
-Remaining gap: no new live OCR paste beyond the archived bank and anomaly blocks.
-The unfiltered admin list did not show the new rows while a filtered list did;
-the site owner confirmed this is intended list behavior, so it is not a defect.
-After updating the bookmarklet, press Reset Queue and re-paste rather than
-trusting an old `ocrQueue` (EC-62/INV-56).
-
-Resolved decisions: Reset Queue clears the queue, key, and batch identity; the
-key survives reloads; draft saves are inactive and active mode is opt-in; the
-PRG success text is confirmed from the archived PHP; the legacy `ocrSubmitted`
-flag is ignored; and CRK maps to the live `CRS` option (id 14). The current
-subject list is archived in `archive/live-sources/`; English (Oral) is separate
-from English Language.
-
-B1, B2, and B3 were matched to the supplied root files and archived under
-`archive/legacy-bookmarklets/`; the baseline remains `trusted-variant-C.js`.
-`claude-gaps.md` was supplied in Phase 9 and archived under
-`archive/migration-docs/`; its triage is in `WORKSPACE_SETUP.md` Phase 9.
+The behavior baseline is `trusted-variant-C.js` (the merged one-box artifact);
+see [`docs/BASELINE_COMPARISON.md`](docs/BASELINE_COMPARISON.md). After updating
+the bookmarklet, press Reset Queue and re-paste rather than trusting an old
+`ocrQueue` (EC-62/INV-56). Live deletes and cleanup are owner-only; see
+[`docs/LIVE-SAFETY.md`](docs/LIVE-SAFETY.md).

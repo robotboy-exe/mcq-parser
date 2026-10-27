@@ -1,13 +1,14 @@
 # Remaining verification queue
 
 Status: V1-V3 recorded 2026-10-25; V4 open (optional). Implementation is
-complete through P10 and AS-09. This document lists only the checks that still
+complete through P12 and AS-12. This document lists only the checks that still
 need live state or an explicit decision; it does not propose parser or UI
 changes.
 
-Current baseline (2026-10-26): `node tests/runner.js` 37 PASS / 0 FAIL / 0
-PENDING; `node tests/unit.js` 65 PASS; `node tools/extract-bank.js --check`
-green for seven slices; build one line, no `%`, body parses.
+Current baseline (2026-10-27): `node tests/runner.js` 41 PASS / 0 FAIL / 0
+PENDING; `node tests/unit.js` 115 PASS; `node tools/extract-bank.js --check`
+green for seven slices; `src/bookmarklet.js` is 81,284 bytes, one line, no `%`,
+and its body parses. See `docs/STATUS.md` for the build hash.
 
 ## Why this exists
 
@@ -29,7 +30,7 @@ reproduction (see `docs/EDGE_CASES.md` and `docs/INVARIANTS.md`).
 - **Done when:** the date, test question numbers/IDs, observed counts, and any
   discrepancy are recorded. A mismatch needs a minimal reproduction before any
   code change.
-- **Evidence:** `README.md` status, `AGENTS.md` known gaps, `docs/AGENTS.md`
+- **Evidence:** `docs/STATUS.md`, `AGENTS.md` known gaps, `docs/AGENTS.md`
   test limits.
 - **Result (2026-10-25):** PASS on `skymenupake.com/admin_questions.php` with
   the current `src/bookmarklet.js`, after Reset. `bank-2021` loaded 40 items,
@@ -94,7 +95,8 @@ reproduction (see `docs/EDGE_CASES.md` and `docs/INVARIANTS.md`).
 - **Direct `splitSections` fixture:** setup gap #4 is still partial; decide
   whether a dedicated fixture adds value over the bank/anomaly coverage.
 - **Threshold provenance:** the Auto-Save thresholds are documented but their
-  origin is unknown (WORKSPACE_SETUP gap #11); record evidence or leave as is.
+  origin is unknown (`archive/workspace-setup/WORKSPACE_SETUP.md` gap #11);
+  record evidence or leave as is.
 - **New live OCR paste:** no fresh paste beyond the archived bank/anomaly
   blocks; V1 can cover this if the user supplies one.
 - **Decision (2026-10-25):** no direct `splitSections` fixture was added. The
@@ -118,7 +120,7 @@ reproduction (see `docs/EDGE_CASES.md` and `docs/INVARIANTS.md`).
 - Doc-only updates from a session do not require tests. Run the suite only if
   `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Record results in the relevant EC/INV rows and, when a live run happens, in
-  `docs/plan/README.md` as a dated handoff note.
+  `docs/STATUS.md` and the plan handoff note.
 - Close this queue when V1–V3 are recorded and the affected rows are updated or
   deliberately upheld; V4 can remain open without blocking.
 
