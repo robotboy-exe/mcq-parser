@@ -9,17 +9,18 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 37/37 PASS; `node tests/unit.js` is 65 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 37/37 PASS; `node tests/unit.js` is 66 PASS.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
-- Build: `node src/build/build.js`. Then `wc -l src/bookmarklet.js` must print `1`, and the body (leading `javascript:` stripped) must pass `node --check`; exact snippet in `docs/BUILD.md`.
+- Build: `node src/build/build.js` rebuilds only `src/bookmarklet.js`. Then `wc -l src/bookmarklet.js` must print `1`, and its body (leading `javascript:` stripped) must pass `node --check`; exact snippet in `docs/BUILD.md`. Add `--min` only when the user explicitly requests the minified build.
+- Do not rebuild `src/bookmarklet.min.js` unless the user explicitly asks for it; it is a release artifact and may be stale.
 - No root `package.json`, lint, typecheck, CI, or test framework. `.opencode/package.json` is only the OpenCode notification plugin; do not `npm install` for project work.
 - Termux has no `/tmp`; use `$HOME/tmp` for temp files.
 
 ## Editing rules
 
-- `src/bookmarklet.js` is generated; never edit it by hand. Edit the two modules, then rebuild.
+- `src/bookmarklet.js` and `src/bookmarklet.min.js` are generated; never edit them by hand. Edit the two modules, then rebuild. `src/bookmarklet.js` is the default output; rebuild `.min.js` only on explicit request (`node src/build/build.js --min`). Use `.min.js` for mobile.
 - Never add `//` comments to the source modules: the build flattens everything onto one `javascript:` line, where `//` truncates the rest. Do not rely on indentation in multiline template literals; the build trims every line.
 - Do not modify the PHP, database, `ocr_helper.js`, or server contract: CSRF, PRG flow, field names, four-option rule, and success flash text are fixed.
 - Do not change `localStorage` key names/shapes: `ocrQueue`, `ocrMeta`, `ansKey`. Do not read/write `ocrSubmitted`.

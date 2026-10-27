@@ -5,7 +5,7 @@ Read this file, then read the one work-package file you are executing. Each
 package document is self-contained; you should not need any other package
 document to finish it.
 
-Last updated: 2026-10-25.
+Last updated: 2026-10-27.
 
 ## Auto-Save track (AS-01…AS-06)
 
@@ -55,8 +55,18 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 37 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 65 PASS, 0 FAIL; `node tools/extract-bank.js --check`
+  `node tests/unit.js` → 66 PASS, 0 FAIL; `node tools/extract-bank.js --check`
   exits 0 for seven slices.
+- 2026-10-27: the paused warning gained `Open filtered list`, built from the
+  `ocrSaving` marker's subject/category/year snapshot (or `ocrMeta` for old
+  markers). It targets the filtered Recently Added list so the user can check
+  an ambiguous save directly (D-53, INV-85). Runner 37 PASS; unit 66 PASS;
+  `src/bookmarklet.js` rebuilt, one line, no `%`, body parses.
+- 2026-10-26: the build now writes both `src/bookmarklet.js` (unminified,
+  63054 bytes) and the standalone `src/bookmarklet.min.js` (minified, 56340
+  bytes). The minifier drops comments and whitespace only; no renaming. The
+  build refuses minified output over 65536 UTF-8 bytes. Parser fixtures and
+  unit tests are unchanged, and both built bodies parse.
 - 2026-10-26: the bank source gained the WASSCE 2026 section and a 2026 slice
   (`bank-2026`, 48 questions/48 key entries). Its two-line answer heading left
   `WASSCE C. R. K. 2026` inside Q48 and produced the duplicate-letter flag;
@@ -180,11 +190,11 @@ packet's artifact hash. It is not a workspace test; use the BUILD.md checks.
   expected fixture from parser output.
 - Do not weaken the strict `OPTION`, `splitSections`, or `splitQuestions` rules
   globally to accommodate anomalies. The bank fixtures are the regression wall.
-- Do not edit `src/bookmarklet.js`. Edit `src/parser/parser.js` or
-  `src/ui/ui.js`, then run `node src/build/build.js`.
+- Do not edit `src/bookmarklet.js` or `src/bookmarklet.min.js`. Edit
+  `src/parser/parser.js` or `src/ui/ui.js`, then run `node src/build/build.js`.
 - Full-line `//` comments are allowed in parser/UI modules; `build.js` strips
-  them before flattening. Inline `//` comments remain forbidden. The generated
-  bookmarklet must be one line and contain no `%`; the build fails on `%`.
+  them before flattening. Inline `//` comments remain forbidden. Both generated
+  bookmarklets must be one line and contain no `%`; the build fails on `%`.
 - Do not change PHP, `ocr_helper.js`, existing storage keys/shapes, or the
   server contract. Auto-Save may add the new keys named in its spec; the
   existing `ocrQueue`, `ocrMeta`, and `ansKey` shapes stay compatible.
@@ -300,8 +310,9 @@ blocked. V4 stays open by decision (optional).
 - The package's own acceptance table is fully satisfied.
 - Status and handoff notes are updated.
 - If parser or UI changed: `node src/build/build.js` ran, `wc -l
-  src/bookmarklet.js` prints `1`, the body passes `node --check`, and
-  `src/bookmarklet.js` contains no `%`.
+  src/bookmarklet.js src/bookmarklet.min.js` prints `1` for each, both bodies
+  pass `node --check`, neither contains `%`, and the minified file is at or
+  below 65536 bytes.
 - Auto-Save packages also record their dry-run or live evidence in the package
   handoff. A partial dry run does not mark the package done.
 
@@ -313,14 +324,14 @@ node tests/unit.js
 node tools/extract-bank.js --check
 node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello'))"
 node src/build/build.js
-wc -l src/bookmarklet.js
-rg -n '%' src/bookmarklet.js
+wc -l src/bookmarklet.js src/bookmarklet.min.js
+rg -n '%' src/bookmarklet.js src/bookmarklet.min.js
 ```
 
 Build syntax check (same rule as `docs/BUILD.md`):
 
 ```sh
-node -e "const fs=require('fs');const s=fs.readFileSync('src/bookmarklet.js','utf8').replace(/^javascript:/,'');new Function(s);console.log('OK')"
+node -e "const fs=require('fs');for(const f of ['src/bookmarklet.js','src/bookmarklet.min.js']){new Function(fs.readFileSync(f,'utf8').replace(/^javascript:/,''));}console.log('OK')"
 ```
 
 ## Current expected fixture counts
