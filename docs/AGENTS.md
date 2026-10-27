@@ -47,6 +47,12 @@ features.
 7. **Preserve behavior even when it looks wrong.** E/F→D, the +5 numbering
    guard, flags being advisory, and the absent post-processor are deliberate.
    Fix only with a failing fixture and a documented decision.
+8. **Live site writes follow `docs/LIVE-SAFETY.md`.** By default, the agent
+   does not delete or clean up live records. A live write needs per-action
+   approval for the exact IDs and fields. If a delete is explicitly authorized,
+   use the row's own form, click its button, assert the confirm names the exact
+   ID, and require the exact success flash. Never submit a delete form directly
+   or use a first-match selector.
 
 ## Dangerous areas
 
@@ -61,11 +67,13 @@ features.
 | `splitBulletQuestions` / `splitQuestionItems` | Bullet mode is only for text with no line-start `N.` marker. Never invent numbers: bullet chunks keep `num: null` and the `question number missing` flag. Do not mix bullet and numbered chunks in one paste (INV-74). |
 | `fillForm` / `tick` | They must agree on the E/F→D mapping and on ticking nothing when E/F text is absent. `tick()` computes radio index 3 for E/F; radio values 4/5 do not exist (INV-27, INV-28, INV-30). |
 | Save detector | Hard-coded to the exact success text. The archived PHP confirms the PRG flash flow, so the detector matches the server contract. Do not change one side without the other (INV-49; qwen-2 H07/H09). |
+| Live delete/cleanup | The admin delete is a hard SQL `DELETE` that also removes media. Its only guard is the per-row `onsubmit` confirm, which `.submit()` bypasses. Never delete live records or use a first-match delete form. See `docs/LIVE-SAFETY.md`. |
 | Header inference | First `20\d\d` in the first 3 lines can be a copyright year; fuzzy subject matching can pick the wrong option for names that share words. Both are known risks (EC-61, EC-43; INV-44). EC-44 is confirmed by the PHP. |
 | Auto-Save gate | `autosaveBlockers` is the safety wall. Do not weaken or reorder it to make a batch run; add a documented decision and a test first. It must block gaps, inexact key coverage, conflicts, E/F, flags, bad options, missing meta, an unticked confirmation, a changed confirmation snapshot or mode, markers, lock, hidden, current-batch saved-log, prior-batch fingerprints, recent duplicates, and an edited form (D-33, D-34, D-39, D-51, D-56; SPEC §7.3). Diagram/table words do not block; the uploader owns the media decision (D-38). |
 | Save marker/classification | `ocrSaving` is cleared only on definite Saved/Rejected. Ambiguous keeps it, disables Start, and never retries. Saved requires a redirect, no `.admin-error`, the success regex, and an ID above every logged ID (INV-64, INV-65). |
 | Auto-Save lock/loop | Use the recursive `setTimeout` heartbeat and `autoLock`; never use `setInterval` as the engine, `MutationObserver` for success, or `button.click()`/`requestSubmit()` to advance. A hidden tab finishes the current save and pauses (INV-67). |
-| Dry run | It must copy the queue, use current metadata, POST nothing, and write nothing to `ocrQueue`, `ocrSaving`, `ocrSavedLog`, or `autoLock` (INV-68). |
+| Dry run | It must copy the queue, use current metadata, POST nothing, and write nothing to `ocrQueue`, `ocrSaving`, `ocrSavedLog`, `ocrBatchHistory`, or `autoLock` (INV-68). |
+| Dry/live run state | Dry and live have separate state, panels, progress, and blockers and are mutually exclusive; auto dry runs after Load/key-only Load and becomes `STALE` when its inputs change (event-driven; no stored-stamp poll). Live `COMPLETE` beats Stop; a live run token stops an old loop from overwriting a new Load's idle state, and an unexpected run error ends `BLOCKED`; reload state comes only from `deriveLiveState(queue, savedLog)`, with no run-state key and no auto-resume (D-58; INV-90, INV-91). |
 
 ## What to preserve
 
@@ -113,6 +121,9 @@ features.
   between them was decided (claude §8 issue 10).
 - Reading, writing, deleting, or relying on `ocrSubmitted`; the bookmarklet is
   deliberately self-contained (INV-40; D-27).
+- Submitting a live delete form directly, selecting the first
+  `delete_question` form, or treating "clean up the test rows" as part of a
+  browser check. Cleanup is owner-only; see `docs/LIVE-SAFETY.md`.
 - Trusting an existing `ocrQueue` after changing parser/UI code. There is no
   version marker; reset and re-paste instead (EC-62; INV-56).
 
@@ -136,7 +147,8 @@ The fixture harness is parser-only; it does not execute DOM, storage,
 helpers. For the save write path, a test-only deterministic DOM/storage/fetch
 shim (`tests/ui-harness.js`) evaluates the real `src/ui/ui.js` and drives manual
 save, rejected/ambiguous save, and Reset/re-paste actions; it is not a browser
-test.
+test. None of these harnesses exercise the live admin page, its delete forms,
+or the confirm dialog; live checks follow `docs/LIVE-SAFETY.md`.
 
 The mandatory regression set is the three documented cases (qwen-2 H04):
 

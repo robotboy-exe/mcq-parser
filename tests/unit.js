@@ -49,6 +49,15 @@ function eq(actual, expected, label) {
   assert.deepStrictEqual(actual, expected, label || 'values differ');
 }
 
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function waitFor(check, label) {
+  for (let i = 0; i < 200; i++) {
+    if (check()) return;
+    await wait(10);
+  }
+  throw new Error('timed out waiting for ' + (label || 'condition'));
+}
+
 test('parseKey keeps the plain last-wins map', () => {
   eq(parser.parseKey('1.A 2.B 3.C'), { 1: 'A', 2: 'B', 3: 'C' });
 });
@@ -283,6 +292,20 @@ test('maxSavedId and savedForBatch filter the log', () => {
   eq(parser.maxSavedId([]), 0);
   eq(parser.savedForBatch(log, 'b1'), [{ id: '10', batchId: 'b1' }, { id: null, batchId: 'b1' }]);
   eq(parser.savedForBatch(log, null), []);
+});
+
+test('deriveLiveState reports idle, incomplete and complete batches', () => {
+  const queue = { items: [{ num: 1 }, { num: 2 }, { num: 3 }], i: 1, batchId: 'b1' };
+  const log = [{ id: 10, batchId: 'b1' }];
+  eq(parser.deriveLiveState(null, log), 'idle');
+  eq(parser.deriveLiveState({ items: [], i: 0, batchId: 'b1' }, log), 'idle');
+  eq(parser.deriveLiveState(queue, []), 'idle');
+  eq(parser.deriveLiveState(queue, [{ id: 10, batchId: 'b2' }]), 'idle');
+  eq(parser.deriveLiveState({ ...queue, i: 0 }, log), 'incomplete');
+  eq(parser.deriveLiveState({ ...queue, i: 2 }, log), 'incomplete');
+  eq(parser.deriveLiveState({ ...queue, i: 3 }, log), 'complete');
+  eq(parser.deriveLiveState({ ...queue, i: 9 }, log), 'complete');
+  eq(parser.deriveLiveState({ items: queue.items, i: 2 }, log), 'idle');
 });
 
 test('unverifiedSaves selects only null or missing inactive results', () => {
@@ -700,28 +723,32 @@ testAsync('UI reset and re-paste stop dry run and Start before POST', async () =
   eq(repasted.batchId === saved[0].batchId, false);
   eq(ui.posts.length, 1);
 
-  await ui.click('ocr_auto_dry');
+  await waitFor(() => ui.doc.getElementById('ocr_dry_status').textContent.indexOf('BLOCKED') === 0, 'automatic dry run');
   eq(ui.posts.length, 1);
-  const dryStatus = ui.doc.getElementById('ocr_auto_status').textContent;
-  assert(dryStatus.indexOf('earlier batch') > -1, 'dry run did not report the earlier batch: ' + dryStatus);
-  assert(dryStatus.indexOf('#500') > -1, 'dry run did not report the saved id: ' + dryStatus);
-  eq(ui.doc.getElementById('ocr_auto_blocked').textContent, '');
+  const dryStatus = ui.doc.getElementById('ocr_dry_status').textContent;
+  assert(dryStatus.indexOf('BLOCKED') === 0, 'dry run did not block: ' + dryStatus);
+  const dryBlocked = ui.doc.getElementById('ocr_dry_blocked').textContent;
+  assert(dryBlocked.indexOf('earlier batch') > -1, 'dry run did not report the earlier batch: ' + dryBlocked);
+  assert(dryBlocked.indexOf('#500') > -1, 'dry run did not report the saved id: ' + dryBlocked);
 
   ui.setField('exam_year', '2022');
   ui.form.elements.exam_year.dispatch('change');
+  assert(ui.doc.getElementById('ocr_dry_status').textContent.indexOf('STALE') === 0, 'metadata change did not stale the dry result');
   await ui.click('ocr_auto_dry');
   eq(ui.posts.length, 1);
-  const changedStatus = ui.doc.getElementById('ocr_auto_status').textContent;
+  const changedStatus = ui.doc.getElementById('ocr_dry_status').textContent;
   assert(changedStatus.indexOf('earlier batch') < 0, 'changed year still hit the fingerprint: ' + changedStatus);
-  eq(changedStatus, 'Dry run: all 1 would save as ACTIVE.');
+  eq(changedStatus, 'COMPLETE — all 1 would save as ACTIVE.');
+  eq(ui.doc.getElementById('ocr_dry_blocked').textContent, '');
 
   ui.click('ocr_reset');
   ui.setField('exam_year', '2021');
   ui.setPaste(uiHarness.SAMPLE_TEXT);
   ui.click('ocr_load');
+  await waitFor(() => ui.doc.getElementById('ocr_dry_status').textContent.indexOf('BLOCKED') === 0, 're-paste dry run');
   await ui.click('ocr_auto_start');
   eq(ui.posts.length, 1);
-  const blocked = ui.doc.getElementById('ocr_auto_blocked').textContent;
+  const blocked = ui.doc.getElementById('ocr_live_blocked').textContent;
   assert(blocked.indexOf('earlier batch') > -1, 'Start did not block: ' + blocked);
   assert(blocked.indexOf('#500') > -1, 'Start did not report the saved id: ' + blocked);
 
@@ -798,7 +825,193 @@ testAsync('UI history storage failure does not change a successful save', async 
   eq(ui.storage.has('ocrBatchHistory'), false);
   eq(ui.storage.get('ocrSaving'), null);
   eq(ui.storage.get('ocrQueue').i, 1);
-  eq(ui.doc.getElementById('ocr_auto_blocked').textContent, '');
+  eq(ui.doc.getElementById('ocr_live_blocked').textContent, '');
+});
+
+testAsync('UI full Load starts an automatic dry run that writes and posts nothing', async () => {
+  const ui = uiHarness.createUI();
+  ui.setPaste(uiHarness.SAMPLE_TEXT);
+  ui.click('ocr_load');
+  await waitFor(() => ui.doc.getElementById('ocr_dry_status').textContent.indexOf('COMPLETE') === 0, 'automatic dry run');
+  eq(ui.posts.length, 0);
+  eq(ui.storage.get('ocrSavedLog'), null);
+  eq(ui.storage.get('ocrSaving'), null);
+  eq(ui.storage.get('ocrBatchHistory'), null);
+  eq(ui.storage.get('autoLock'), null);
+});
+
+testAsync('UI key-only Load starts an automatic dry run with the new key', async () => {
+  const storage = uiHarness.sampleStorage('key-only-auto');
+  const ui = uiHarness.createUI({ storage });
+  ui.setPaste('=== ANSWER KEY ===\n1.B');
+  ui.click('ocr_load');
+  await waitFor(() => ui.doc.getElementById('ocr_dry_status').textContent.indexOf('COMPLETE') === 0, 'key-only dry run');
+  eq(ui.storage.get('ansKey'), { 1: 'B' });
+  eq(ui.posts.length, 0);
+});
+
+testAsync('UI automatic dry run still starts with missing metadata and stops blocked', async () => {
+  const storage = uiHarness.sampleStorage('dry-meta');
+  delete storage.ocrMeta;
+  const ui = uiHarness.createUI({ storage });
+  ui.setField('exam_year', '');
+  ui.setPaste('=== ANSWER KEY ===\n1.B');
+  ui.click('ocr_load');
+  await waitFor(() => ui.doc.getElementById('ocr_dry_status').textContent.indexOf('BLOCKED') === 0, 'blocked dry run');
+  assert(ui.doc.getElementById('ocr_dry_blocked').textContent.indexOf('Subject, category or year is missing') > -1);
+  eq(ui.posts.length, 0);
+});
+
+testAsync('UI dry run does not clear a blocked live panel', async () => {
+  const storage = uiHarness.sampleStorage('live-blocked');
+  storage.ocrSaving = { num: 1, at: Date.now(), subject: '1', category: '2', year: '2021' };
+  const ui = uiHarness.createUI({ storage });
+  await ui.click('ocr_auto_start');
+  assert(ui.doc.getElementById('ocr_live_status').textContent.indexOf('BLOCKED') === 0);
+  const liveBlocked = ui.doc.getElementById('ocr_live_blocked').textContent;
+  await ui.click('ocr_auto_dry');
+  eq(ui.doc.getElementById('ocr_dry_status').textContent.indexOf('COMPLETE'), 0);
+  eq(ui.doc.getElementById('ocr_live_status').textContent.indexOf('BLOCKED'), 0);
+  eq(ui.doc.getElementById('ocr_live_blocked').textContent, liveBlocked);
+});
+
+testAsync('UI reload shows incomplete or complete live state from the queue and log', async () => {
+  const mid = uiHarness.sampleStorage('reload-mid');
+  mid.ocrQueue.items.push({ ...mid.ocrQueue.items[0], num: 2 });
+  mid.ocrQueue.i = 1;
+  mid.ocrSavedLog = [{ num: 1, id: 500, at: 1, batchId: 'reload-mid', inactive: false, mode: 'active' }];
+  const partial = uiHarness.createUI({ storage: mid });
+  eq(partial.doc.getElementById('ocr_live_status').textContent, 'INCOMPLETE — queue resumed at 2 of 2');
+
+  const done = uiHarness.sampleStorage('reload-done');
+  done.ocrQueue.items.push({ ...done.ocrQueue.items[0], num: 2 });
+  done.ocrQueue.i = 2;
+  done.ocrSavedLog = [{ num: 1, id: 500, at: 1, batchId: 'reload-done', inactive: false, mode: 'active' }];
+  const complete = uiHarness.createUI({ storage: done });
+  eq(complete.doc.getElementById('ocr_live_status').textContent.indexOf('COMPLETE'), 0);
+});
+
+testAsync('UI live completion beats Stop after the final save', async () => {
+  const ui = uiHarness.createUI({ storage: uiHarness.sampleStorage('stop-last'), inactiveChecked: true });
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.doc.getElementById('ocr_live_status').textContent.indexOf('COMPLETE') === 0, 'live complete');
+  ui.click('ocr_auto_stop');
+  eq(ui.doc.getElementById('ocr_live_status').textContent.indexOf('COMPLETE'), 0);
+  eq(ui.posts.length, 1);
+});
+
+function twoQuestionStorage(batchId) {
+  const storage = uiHarness.sampleStorage(batchId);
+  storage.ocrQueue.items.push({
+    num: 2,
+    question: 'Who was the father of many nations?',
+    a: 'Isaac',
+    b: 'Jacob',
+    c: 'Moses',
+    d: 'Abraham',
+    flags: []
+  });
+  storage.ansKey = { 1: 'A', 2: 'A' };
+  return storage;
+}
+
+function savedReply(_request, count) {
+  return { redirected: true, text: 'Question saved successfully (Question ID: ' + (499 + count) + ')' };
+}
+
+testAsync('UI live completion beats Stop requested during the final save', async () => {
+  let ui;
+  ui = uiHarness.createUI({
+    storage: twoQuestionStorage('stop-during-final'),
+    inactiveChecked: true,
+    reply: (request, count) => {
+      if (count === 2) ui.click('ocr_auto_stop');
+      return savedReply(request, count);
+    }
+  });
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.doc.getElementById('ocr_live_status').textContent.indexOf('COMPLETE') === 0, 'live complete after stop');
+  eq(ui.posts.length, 2);
+});
+
+testAsync('UI full Load during the post-save wait is not overwritten by the old run', async () => {
+  const fresh = '1. Which city is the capital of France?\nA. Paris\nB. Rome\nC. Madrid\nD. Berlin\n\n=== ANSWER KEY ===\n1.A';
+  let ui, loaded = false;
+  ui = uiHarness.createUI({
+    storage: twoQuestionStorage('load-during-wait'),
+    inactiveChecked: true,
+    reply: savedReply,
+    onLongTimeout: ms => {
+      if (ms !== 1500 || loaded) return;
+      loaded = true;
+      ui.setPaste(fresh);
+      ui.click('ocr_load');
+    }
+  });
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.doc.getElementById('ocr_dry_status').textContent.indexOf('COMPLETE') === 0, 'fresh dry after load');
+  eq(ui.doc.getElementById('ocr_live_status').textContent.indexOf('IDLE'), 0);
+  eq(ui.posts.length, 1);
+  eq(ui.storage.get('ocrQueue').i, 0);
+});
+
+testAsync('UI an unexpected error in the live loop ends BLOCKED, not RUNNING', async () => {
+  let threw = false;
+  const ui = uiHarness.createUI({
+    storage: twoQuestionStorage('live-throw'),
+    inactiveChecked: true,
+    onLongTimeout: ms => {
+      if (ms !== 1500 || threw) return;
+      threw = true;
+      throw new Error('simulated run failure');
+    }
+  });
+  await ui.click('ocr_auto_start').catch(() => {});
+  await waitFor(() => ui.doc.getElementById('ocr_live_status').textContent.indexOf('BLOCKED') === 0, 'blocked after error');
+  eq(ui.posts.length, 1);
+  assert(ui.doc.getElementById('ocr_live_blocked').textContent.indexOf('unexpected error') > -1);
+});
+
+async function completedDry(storage) {
+  const ui = uiHarness.createUI({ storage });
+  await ui.click('ocr_auto_dry');
+  eq(ui.doc.getElementById('ocr_dry_status').textContent.indexOf('COMPLETE'), 0);
+  return ui;
+}
+
+testAsync('UI dry result becomes STALE when the key is cleared', async () => {
+  const ui = await completedDry(uiHarness.sampleStorage('stale-key'));
+  ui.click('ans_clear');
+  eq(ui.doc.getElementById('ocr_dry_status').textContent.indexOf('STALE'), 0);
+});
+
+testAsync('UI dry result becomes STALE when the save mode changes', async () => {
+  const ui = await completedDry(uiHarness.sampleStorage('stale-mode'));
+  ui.doc.getElementById('ocr_active_mode').onchange();
+  eq(ui.doc.getElementById('ocr_dry_status').textContent.indexOf('STALE'), 0);
+});
+
+testAsync('UI dry result becomes STALE when the queue is skipped', async () => {
+  const ui = await completedDry(uiHarness.sampleStorage('stale-skip'));
+  ui.click('ocr_skip');
+  eq(ui.doc.getElementById('ocr_dry_status').textContent.indexOf('STALE'), 0);
+});
+
+testAsync('UI dry result becomes STALE when the queue is reset', async () => {
+  const ui = await completedDry(uiHarness.sampleStorage('stale-reset'));
+  ui.click('ocr_reset');
+  eq(ui.doc.getElementById('ocr_dry_status').textContent.indexOf('STALE'), 0);
+});
+
+testAsync('UI manual dry run writes no storage key and posts nothing', async () => {
+  const ui = uiHarness.createUI({ storage: uiHarness.sampleStorage('dry-writes') });
+  const keys = ['ansKey', 'ansKeyBatch', 'ansKeyConflicts', 'ocrBatchHistory', 'ocrMeta', 'ocrQueue', 'ocrSavedLog', 'ocrSaving', 'autoLock'];
+  const snapshot = () => JSON.stringify(keys.map(key => [key, ui.storage.get(key)]));
+  const before = snapshot();
+  await ui.click('ocr_auto_dry');
+  eq(ui.posts.length, 0);
+  eq(snapshot(), before);
+  eq(ui.doc.getElementById('ocr_dry_status').textContent.indexOf('COMPLETE'), 0);
 });
 
 test('savedLogPriorDuplicate returns a matching prior-batch entry', () => {

@@ -784,6 +784,46 @@ key is capped at 15 batches, so older batches disappear even though the log may
 still retain them. Labels are snapshots from the save time; a later label rename
 does not rewrite them. There is no per-question detail in history by design.
 
+## D-58 — Automatic dry run and separate dry/live state
+
+**Choice.** A full Load, and a key-only Load when a queue exists, schedules one
+in-memory dry run after the queue/key are saved. A load token cancels an older
+scheduled dry run; the scheduler waits for a live run to finish and for any
+previous dry run to stop. Auto dry does not run on page load or after Reset.
+Dry and live have separate panels, state, progress, status, and blocker text.
+Dry is teal (`#0f766e`) with `IDLE`, `RUNNING`, `STOPPING`, `COMPLETE`,
+`STOPPED`, `STALE`, and `BLOCKED`; live uses gray `#6b7280` for `IDLE`, blue
+`#1769aa` for `RUNNING`, amber `#b45309` for `STOPPING`/`STOPPED`/`PAUSED`/
+`INCOMPLETE`, green `#0d6b3f` for `COMPLETE`, and red `#b00020` for
+`BLOCKED`/`NEEDS-CHECK`. Every state also has its text label. Live completion
+is checked before Stop so the final save shows `COMPLETE`. A live run token is
+invalidated by a full Load or Reset, so a finishing loop cannot overwrite the
+new idle state with `STOPPED` or `COMPLETE`; an error that escapes the loop ends
+`BLOCKED` instead of leaving `RUNNING`. Stopped, paused,
+blocked, and needs-check states stay visible until the next Start or a new
+Load; a key-only Load and the dry run never clear them. A finished dry result is
+invalidated by events, not by polling a stored stamp: the metadata, key, mode,
+queue-position, Reset, and queue-advancing save handlers call `invalidateDry`,
+which marks the result `STALE`. The in-memory `dryStamp` snapshot is recorded
+but never read back.
+There is no run-state storage key: reload reads `deriveLiveState(queue,
+savedLog)` and shows `COMPLETE` or `INCOMPLETE — queue resumed at X of N`
+without auto-resuming.
+
+**Why.** The manual Dry run button meant the user had to preview every paste.
+Running it automatically gives the same gate result before Start, and separate
+panels stop a dry result from overwriting a live blocker or progress. Persistent
+live states make a reload honest: a finished batch cannot look idle, and a
+partially saved batch says where it stopped.
+
+**Risk.** A dry result is advisory only and can be stale if an untracked input
+changes; the explicit invalidation points cover metadata, mode, key, queue
+position, Reset, and live saves. A reload derives live state from the retained
+saved log, so an entry dropped by the 200 cap can make a finished batch look
+incomplete or idle. Auto dry adds one gate pass after Load; it performs no POST
+and writes no key. Two scheduled Loads use the newest token, so only the latest
+paste is previewed.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

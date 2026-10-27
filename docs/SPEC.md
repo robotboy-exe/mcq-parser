@@ -368,9 +368,13 @@ queue, key, conflicts, and both batch ids (D-30).
 
 ### 7.2 Confirmation and controls
 
-The panel adds Start, Stop, a Dry run button, and a `Save as active (live
-immediately)` checkbox, none of which is persisted. Active is the default for a
-new batch; unticking it selects draft. Before Start, a batch block shows
+The panel has separate dry and live sections. The dry section adds Start dry
+run, Stop dry run, its own status/blocker/progress, and runs automatically after
+a full Load or a key-only Load with an existing queue (D-58). The live section
+holds Start, Stop, and the `Save as active (live immediately)` checkbox, none of
+which is persisted. Active is the default for a new batch; unticking it selects
+draft. The two sections have separate status, progress, and blocker text and
+are mutually exclusive. Before Start, a batch block shows
 Subject, Category, Year, question count, key count, the first/last question
 numbers, and the selected mode. It shows `Mode: ACTIVE. Saved questions go live
 immediately.` in red bold, or `Mode: draft (inactive).` One confirmation tick is
@@ -463,13 +467,30 @@ cleared, the same manual save proceeds normally (Fix 2).
 - There is no save-count cap. A run continues until Stop, a blocker, or the end
   of the queue (D-43).
 - Dry run copies the queue and uses the current form metadata. It writes
-  nothing to the queue, marker, saved log, or lock. It shows one summary line,
-  such as `Dry run: all 40 would save as ACTIVE.` or
-  `Dry run: 12 of 40 checked; stops at #13: Option C is empty.` It never prints
-  a line per question. A progress bar shows checked / remaining.
-- Auto-save shows one status line, such as
-  `Auto-save ACTIVE: 12/40 done · 12 saved this run.` A progress bar shows the
-  queue position. The green saved box names the batch
+  nothing to the queue, marker, saved log, history, or lock. A full Load, or a
+  key-only Load while a queue exists, starts one automatically; a second Load
+  invalidates the older scheduled run. Missing metadata or a missing key does
+  not suppress the run: it stops at the first blocker and shows it in amber.
+  The dry panel uses teal and the labels `IDLE`, `RUNNING`, `STOPPING`,
+  `COMPLETE`, `STOPPED`, `STALE`, and `BLOCKED`; the status is one summary, such
+  as `COMPLETE — all 40 would save as ACTIVE.` or
+  `BLOCKED — 12 of 40 checked; stops at #13.` It never prints a line per
+  question. Its own progress bar shows checked / remaining. Changing metadata,
+  key, mode, queue position, or Reset marks the result `STALE`, and a live save
+  that advances the queue does the same; invalidation is event-driven, not a
+  poll of a stored stamp. Dry never changes the live panel.
+- Auto-save has its own panel and one status line, using `IDLE`, `RUNNING`,
+  `STOPPING`, `STOPPED`, `PAUSED`, `INCOMPLETE`, `COMPLETE`, `BLOCKED`, or
+  `NEEDS-CHECK` with gray, blue, amber, green, or red text; color is never the
+  only signal. Completion is checked before Stop, so a Stop after the final save
+  shows `COMPLETE`. A live run token is invalidated by a full Load or Reset, so
+  a finishing loop cannot overwrite the new idle state with `STOPPED` or
+  `COMPLETE`; an error that escapes the loop ends `BLOCKED`. A stopped, paused,
+  blocked, or needs-check state remains
+  visible until the next Start or a new Load. On reload, `deriveLiveState(queue,
+  savedLog)` shows green `COMPLETE` for a finished batch or amber
+  `INCOMPLETE — queue resumed at X of N` where X is `queue.i + 1`; it never
+  auto-resumes. A progress bar shows the queue position. The green saved box names the batch
   (`Batch: Subject / Category / Year — N questions (#first to #last)`) and shows
   only a summary such as `Saved this batch: #901 to #912, inactive`; full
   per-question details remain behind `Copy saved list`. When the run reaches the

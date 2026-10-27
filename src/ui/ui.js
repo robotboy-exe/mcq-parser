@@ -22,7 +22,7 @@ function runOCRBookmarklet() {
   };
   const p = document.createElement('div');
   p.className = 'admin-field';
-  p.innerHTML = `<style>#ocr_auto_start:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}#ocr_auto_start:disabled:hover{background:#1769aa}</style><div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn admin-btn-muted" id="ocr_paste_clipboard">Paste clipboard</button> <button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_auto"><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <label class="admin-note" style="display:inline-block;margin:0 8px"><input type="checkbox" id="ocr_active_mode"> Save as active (live immediately)</label> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_auto_status" class="admin-note"></div><div id="ocr_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#2e9e63"></progress><span id="ocr_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_auto_blocked" class="admin-note"></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_batch_history" class="admin-note" hidden><div id="ocr_batch_history_list"></div></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button> <a class="admin-btn admin-btn-muted" id="ocr_paused_check" href="#" hidden>Open filtered list</a></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
+  p.innerHTML = `<style>#ocr_auto_start:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}#ocr_auto_start:disabled:hover{background:#1769aa}</style><div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn admin-btn-muted" id="ocr_paste_clipboard">Paste clipboard</button> <button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_auto"><div id="ocr_dry_panel" style="border-left:3px solid #0f766e;padding-left:8px;margin-bottom:10px"><div id="ocr_dry_status" class="admin-note" style="font-weight:bold"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry_stop" disabled>Stop dry run</button><div id="ocr_dry_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_dry_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#0f766e"></progress><span id="ocr_dry_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_dry_blocked" class="admin-note"></div></div><div id="ocr_live_panel" style="border-left:3px solid #6b7280;padding-left:8px"><div id="ocr_live_status" class="admin-note" style="font-weight:bold"></div><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <label class="admin-note" style="display:inline-block;margin:0 8px"><input type="checkbox" id="ocr_active_mode"> Save as active (live immediately)</label> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_live_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_live_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#1769aa"></progress><span id="ocr_live_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_live_blocked" class="admin-note"></div></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_batch_history" class="admin-note" hidden><div id="ocr_batch_history_list"></div></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button> <a class="admin-btn admin-btn-muted" id="ocr_paused_check" href="#" hidden>Open filtered list</a></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
   form.before(p);
   const sb = form.querySelector('button[type=submit]');
   if (sb) {
@@ -105,10 +105,23 @@ function runOCRBookmarklet() {
     if (Array.isArray(storedHistory)) batchHistory = storedHistory;
   } catch (e) {}
   let saveInProgress = false;
-  let stopAuto = false;
-  let autoRunning = false;
-  let autoDry = false;
-  let autoRunCount = 0;
+  let dryRunning = false;
+  let dryStop = false;
+  let dryState = 'idle';
+  let dryStatus = '';
+  let dryBlocked = '';
+  let dryStamp = null;
+  let dryChecked = 0;
+  let dryTotal = 0;
+  let liveRunning = false;
+  let liveStop = false;
+  let liveState = 'idle';
+  let liveStatus = '';
+  let liveBlocked = '';
+  let liveMode = null;
+  let liveRunCount = 0;
+  let loadToken = 0;
+  let liveToken = 0;
   let unverifiedStreak = 0;
   let autoTabId = newBatchId();
   let autoHeartbeat = null;
@@ -116,11 +129,7 @@ function runOCRBookmarklet() {
   let confirmedMeta = null;
   let activeMode = true;
   let activeConfirmed = true;
-  let dryChecked = 0;
-  let dryTotal = 0;
-  let runMode = null;
-  let lastBlocked = '';
-  let autoStatus = '';
+  const anyRunning = () => dryRunning || liveRunning;
   const busyNotice = 'A save is in progress. Wait for it to finish.';
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
   function readLock() {
@@ -138,7 +147,7 @@ function runOCRBookmarklet() {
     }
   }
   function heartbeat() {
-    if (!autoRunning) return;
+    if (!liveRunning) return;
     const step = heartbeatTick({
       lock: readLock(),
       tabId: autoTabId,
@@ -146,7 +155,7 @@ function runOCRBookmarklet() {
       write: lock => store.set('autoLock', lock),
       release: releaseLock
     });
-    if (step.stop) { stopAuto = true; return; }
+    if (step.stop) { liveStop = true; return; }
     autoHeartbeat = setTimeout(heartbeat, 5000);
   }
   function acquireLock() {
@@ -194,14 +203,14 @@ function runOCRBookmarklet() {
       activeMode: activeMode,
       activeConfirmed: activeConfirmed,
       mode: activeMode ? 'active' : 'draft',
-      runMode: runMode,
+      runMode: liveMode,
       radioLetter: radio ? 'ABCD'[Number(radio.value)] : null,
       hasImage: Boolean(e.question_image && (e.question_image.value || (e.question_image.files && e.question_image.files.length))),
       hasVideo: Boolean(e.answer_video && (e.answer_video.value || (e.answer_video.files && e.answer_video.files.length))),
       hasExplanation: Boolean(e.answer_explanation && e.answer_explanation.value && e.answer_explanation.value.trim()),
       savingMarker: (() => { try { return store.get('ocrSaving'); } catch (err) { return null; } })(),
       saveInProgress: saveInProgress,
-      stopRequested: stopAuto,
+      stopRequested: liveStop,
       lock: readLock(),
       tabId: autoTabId,
       now: Date.now(),
@@ -403,91 +412,143 @@ function runOCRBookmarklet() {
       if (url) link.href = url;
     }
   }
-  function renderProgress() {
-    const box = $('ocr_progress');
-    const bar = $('ocr_progress_bar');
-    const label = $('ocr_progress_text');
+  const DRY_COLORS = { idle: '#0f766e', running: '#0f766e', stopping: '#0f766e', complete: '#0f766e', stale: '#0f766e', stopped: '#b45309', blocked: '#b45309' };
+  const LIVE_COLORS = { idle: '#6b7280', running: '#1769aa', stopping: '#b45309', stopped: '#b45309', paused: '#b45309', incomplete: '#b45309', complete: '#0d6b3f', blocked: '#b00020', 'needs-check': '#b00020' };
+  function dryLabel() { return dryState.toUpperCase(); }
+  function liveLabel() { return liveState === 'needs-check' ? 'NEEDS-CHECK' : liveState.toUpperCase(); }
+  function renderDryProgress() {
+    const box = $('ocr_dry_progress');
+    const bar = $('ocr_dry_progress_bar');
+    const label = $('ocr_dry_progress_text');
     if (!box || !bar || !label) return;
-    let done = 0;
-    let total = 0;
-    let tag = '';
-    if (autoRunning && autoDry) {
-      done = dryChecked;
-      total = dryTotal;
-      tag = 'Dry run';
-    } else if (autoRunning) {
-      done = queue.i;
-      total = queue.items.length;
-      tag = runMode === 'active' ? 'ACTIVE' : 'draft';
-    } else if (autoStatus.indexOf('Dry run') === 0) {
-      done = dryChecked;
-      total = dryTotal;
-      tag = 'Dry run';
-    } else {
-      done = queue.i;
-      total = queue.items.length;
-    }
+    box.hidden = !dryTotal;
+    if (!dryTotal) return;
+    bar.max = dryTotal;
+    bar.value = Math.min(dryChecked, dryTotal);
+    label.textContent = dryChecked + '/' + dryTotal;
+  }
+  function renderLiveProgress() {
+    const box = $('ocr_live_progress');
+    const bar = $('ocr_live_progress_bar');
+    const label = $('ocr_live_progress_text');
+    if (!box || !bar || !label) return;
+    const total = queue.items.length;
     box.hidden = !total;
     if (!total) return;
     bar.max = total;
-    bar.value = Math.min(done, total);
-    label.textContent = done + '/' + total + (tag ? ' · ' + tag : '');
+    bar.value = Math.min(queue.i, total);
+    label.textContent = queue.i + '/' + total + (liveMode ? ' · ' + (liveMode === 'active' ? 'ACTIVE' : 'draft') : '');
+  }
+  function renderDry() {
+    const status = $('ocr_dry_status');
+    if (!status) return;
+    let detail = dryStatus;
+    if (dryState === 'running') detail = dryChecked + '/' + dryTotal + ' checked.';
+    else if (dryState === 'idle' && !detail) detail = 'Dry run is idle.';
+    status.textContent = dryLabel() + (detail ? ' — ' + detail : '');
+    status.style.color = DRY_COLORS[dryState] || '#0f766e';
+    const panel = $('ocr_dry_panel');
+    if (panel) panel.style.borderLeftColor = status.style.color;
+    const blocked = $('ocr_dry_blocked');
+    blocked.textContent = dryBlocked;
+    blocked.style.color = dryBlocked ? '#b45309' : '';
+    blocked.style.fontWeight = dryBlocked ? 'bold' : '';
+    renderDryProgress();
+  }
+  function renderLive() {
+    const status = $('ocr_live_status');
+    if (!status) return;
+    let detail = liveStatus;
+    if (liveState === 'running') {
+      detail = (liveMode === 'active' ? 'ACTIVE' : 'draft') + ': ' + queue.i + '/' + queue.items.length + ' done · ' + liveRunCount + ' saved this run.';
+    } else if (liveState === 'idle' && !detail) {
+      detail = savedForBatch(savedLog, queue.batchId).length ? 'Idle.' : 'Auto-save is idle.';
+    }
+    status.textContent = liveLabel() + (detail ? ' — ' + detail : '');
+    status.style.color = LIVE_COLORS[liveState] || '#6b7280';
+    const panel = $('ocr_live_panel');
+    if (panel) panel.style.borderLeftColor = status.style.color;
+    const blocked = $('ocr_live_blocked');
+    blocked.textContent = liveBlocked;
+    blocked.style.color = liveBlocked ? '#b00020' : '';
+    blocked.style.fontWeight = liveBlocked ? 'bold' : '';
+    renderLiveProgress();
   }
   function renderAuto() {
-    if (!$('ocr_auto_start')) return;
+    if (!$('ocr_live_status')) return;
     const modeBox = $('ocr_active_mode');
     if (modeBox) {
-      modeBox.disabled = autoRunning;
+      modeBox.disabled = anyRunning();
       modeBox.checked = activeMode;
     }
     renderBatchConfirm();
     const marker = (() => { try { return store.get('ocrSaving'); } catch (e) { return null; } })();
-    const disabled = autoRunning || !confirmTicked || (activeMode && !activeConfirmed) || Boolean(marker) || !queue.items[queue.i];
+    const disabled = anyRunning() || !confirmTicked || (activeMode && !activeConfirmed) || Boolean(marker) || !queue.items[queue.i];
     $('ocr_auto_start').disabled = disabled;
-    $('ocr_auto_stop').disabled = !autoRunning;
-    $('ocr_auto_dry').disabled = autoRunning;
-    const status = $('ocr_auto_status');
-    if (autoRunning) {
-      status.textContent = autoDry
-        ? 'Dry run: ' + dryChecked + '/' + dryTotal + ' checked.'
-        : 'Auto-save ' + (runMode === 'active' ? 'ACTIVE' : 'draft') + ': ' + queue.i + '/' + queue.items.length + ' done · ' + autoRunCount + ' saved this run.';
-    } else if (autoStatus) {
-      status.textContent = autoStatus;
-    } else {
-      const batchSaved = savedForBatch(savedLog, queue.batchId);
-      status.textContent = batchSaved.length ? 'Idle.' : 'Auto-save is idle.';
-    }
-    const blockedEl = $('ocr_auto_blocked');
-    blockedEl.textContent = lastBlocked;
-    blockedEl.style.color = lastBlocked ? '#b00020' : '';
-    blockedEl.style.fontWeight = lastBlocked ? 'bold' : '';
-    renderProgress();
+    $('ocr_auto_stop').disabled = !liveRunning;
+    $('ocr_auto_dry').disabled = anyRunning();
+    $('ocr_auto_dry_stop').disabled = !dryRunning;
+    renderDry();
+    renderLive();
     renderSaved();
     renderBatchHistory();
     renderPaused();
+  }
+  function syncLiveStateFromStorage() {
+    const derived = deriveLiveState(queue, savedLog);
+    liveBlocked = '';
+    liveRunCount = 0;
+    if (derived === 'complete') {
+      liveState = 'complete';
+      liveStatus = 'Batch complete: ' + batchLabel() + ' · ' + savedForBatch(savedLog, queue.batchId).length + ' saved.';
+    } else if (derived === 'incomplete') {
+      liveState = 'incomplete';
+      liveStatus = 'queue resumed at ' + (queue.i + 1) + ' of ' + queue.items.length;
+    } else {
+      liveState = 'idle';
+      liveStatus = '';
+    }
+  }
+  function invalidateDry(reason) {
+    if (dryRunning) {
+      dryStop = true;
+      dryState = 'stale';
+      dryStatus = reason || '';
+      dryBlocked = '';
+      return;
+    }
+    if (dryState !== 'idle') {
+      dryState = 'stale';
+      dryStatus = reason || '';
+      dryBlocked = '';
+    }
+  }
+  function scheduleAutoDry() {
+    const token = ++loadToken;
+    const attempt = () => {
+      if (token !== loadToken) return;
+      if (!queue.items.length) return;
+      if (anyRunning()) { setTimeout(attempt, 100); return; }
+      runDry();
+    };
+    setTimeout(attempt, 0);
   }
   function resetConfirm() {
     confirmTicked = true;
     confirmedMeta = null;
     activeMode = true;
     activeConfirmed = true;
-    dryChecked = 0;
-    dryTotal = 0;
-    runMode = null;
     const modeBox = $('ocr_active_mode');
     if (modeBox) modeBox.checked = true;
-    lastBlocked = '';
-    autoStatus = '';
   }
   function clearConfirm() {
     confirmTicked = false;
     confirmedMeta = null;
     activeConfirmed = false;
-    lastBlocked = '';
-    autoStatus = '';
   }
-  function showBlocked(blocker) {
-    lastBlocked = blockerText(blocker);
+  function showLiveBlocked(blocker) {
+    liveBlocked = blockerText(blocker);
+    liveState = 'blocked';
   }
   function setResult(text, danger) {
     const r = $('ans_res');
@@ -497,13 +558,23 @@ function runOCRBookmarklet() {
   }
   function busySaving() {
     if (!saveInProgress) return false;
-    if (autoRunning) stopAuto = true;
-    lastBlocked = busyNotice;
+    if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
+    if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
+    liveBlocked = busyNotice;
     renderAuto();
     return true;
   }
-  function markStopped() {
-    if (!autoStatus || autoStatus.indexOf('Paused') !== 0) autoStatus = 'Stopped.';
+  function markLiveComplete() {
+    const savedCount = savedForBatch(savedLog, queue.batchId).length;
+    liveState = 'complete';
+    liveStatus = 'Batch complete: ' + batchLabel() + ' · ' + savedCount + ' saved.';
+    liveBlocked = '';
+  }
+  function markLiveStopped() {
+    if (liveState !== 'paused' && liveState !== 'needs-check' && liveState !== 'blocked') {
+      liveState = 'stopped';
+      liveStatus = 'Stopped.';
+    }
   }
   async function verifyInactive(id) {
     let ctl = null, timer = null;
@@ -603,12 +674,13 @@ function runOCRBookmarklet() {
       savedLog = committed.log;
       if (!committed.ok) {
         const failText = 'Saved as #' + result.id + ' but could not be logged. Do not retry.';
-        lastBlocked = failText;
+        liveBlocked = failText;
         setResult(failText, true);
-        stopAuto = true;
+        if (auto) { liveStop = true; liveState = 'needs-check'; }
         return { kind: 'saved', id: result.id, inactive: inactive, entry: entry, failed: committed.stage };
       }
       recordBatchHistory();
+      if (sameQueue && q) invalidateDry('a save advanced the queue');
       clearSavedMarker(priorSaving, num);
       ['question_image', 'answer_video'].forEach(n => { const el = form.elements[n]; if (el) el.value = ''; });
       const ae = form.elements.answer_explanation;
@@ -623,13 +695,14 @@ function runOCRBookmarklet() {
         unverifiedStreak = tracked.streak;
         if (tracked.stop) {
           unverifiedStop = true;
-          stopAuto = true;
+          liveStop = true;
         }
       }
       if (auto && inactive === null) {
         if (unverifiedStop) {
-          lastBlocked = 'Stopped after 2 unverified checks. Check the saved list before continuing.';
-          setResult(lastBlocked, true);
+          liveBlocked = 'Stopped after 2 unverified checks. Check the saved list before continuing.';
+          liveState = 'needs-check';
+          setResult(liveBlocked, true);
         } else {
           setResult('Saved as #' + result.id + '. Could not verify; check the list.', false);
         }
@@ -637,10 +710,12 @@ function runOCRBookmarklet() {
         setResult('Saved as question #' + result.id + ' (' + (active ? 'active' : 'inactive') + ').', false);
       } else if (auto && active) {
         setResult('SAVED AS INACTIVE: question #' + result.id + ' is not live. Check the list.', true);
-        stopAuto = true;
+        liveStop = true;
+        liveState = 'needs-check';
       } else if (auto) {
         setResult('SAVED AS ACTIVE: question #' + result.id + '. Check the list and turn it off.', true);
-        stopAuto = true;
+        liveStop = true;
+        liveState = 'needs-check';
       } else {
         setResult('Saved as question #' + result.id + '.', false);
       }
@@ -651,7 +726,7 @@ function runOCRBookmarklet() {
     } finally {
       if (timer) clearTimeout(timer);
       saveInProgress = false;
-      if (lastBlocked === busyNotice) lastBlocked = '';
+      if (liveBlocked === busyNotice) liveBlocked = '';
     }
   }
   function renderOCR() {
@@ -671,7 +746,7 @@ function runOCRBookmarklet() {
     renderOCR();
   }
   function copyText(text) {
-    const done = () => { autoStatus = 'Saved list copied.'; renderAuto(); };
+    const done = () => { if (liveState === 'idle') liveStatus = 'Saved list copied.'; renderAuto(); };
     const fallback = () => {
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -688,25 +763,26 @@ function runOCRBookmarklet() {
     }
   }
   async function runDry() {
-    if (autoRunning) return;
-    autoRunning = true;
-    autoDry = true;
-    autoRunCount = 0;
+    if (anyRunning()) return;
+    dryRunning = true;
+    dryStop = false;
+    dryState = 'running';
+    dryStatus = '';
+    dryBlocked = '';
     dryChecked = 0;
-    stopAuto = false;
-    autoStatus = '';
-    lastBlocked = '';
     const dq = { items: queue.items.slice(), i: queue.i, batchId: queue.batchId };
     dryTotal = Math.max(0, dq.items.length - dq.i);
-    let summary = '';
     renderAuto();
-    while (autoRunning) {
-      if (stopAuto) {
-        summary = 'Dry run stopped at ' + dryChecked + '/' + dryTotal + '.';
-        break;
-      }
+    while (true) {
       const q = dq.items[dq.i];
       if (!q) break;
+      if (dryStop) {
+        if (dryState !== 'stale') {
+          dryState = 'stopped';
+          dryStatus = 'stopped at ' + dryChecked + '/' + dryTotal + '.';
+        }
+        break;
+      }
       const st = gateState(dq);
       st.confirmed = true;
       st.activeConfirmed = true;
@@ -721,67 +797,92 @@ function runOCRBookmarklet() {
       st.radioLetter = ['A', 'B', 'C', 'D'].includes(k) ? k : null;
       const blockers = autosaveBlockers(st);
       if (blockers.length) {
-        summary = 'Dry run: ' + dryChecked + ' of ' + dryTotal + ' checked; stops at #' + (q.num == null ? '?' : q.num) + ': ' + blockerText(blockers[0]).replace(/^Cannot auto-save:\s*/, '');
+        dryState = 'blocked';
+        dryBlocked = blockerText(blockers[0]);
+        dryStatus = dryChecked + ' of ' + dryTotal + ' checked; stops at #' + (q.num == null ? '?' : q.num) + '.';
         break;
       }
       dq.i++;
       dryChecked++;
-      renderProgress();
-      $('ocr_auto_status').textContent = 'Dry run: ' + dryChecked + '/' + dryTotal + ' checked.';
+      renderAuto();
       await sleep(0);
     }
-    if (!dryTotal) summary = 'Nothing to dry-run.';
-    else if (!summary) summary = 'Dry run: all ' + dryTotal + ' would save as ' + (activeMode ? 'ACTIVE' : 'draft') + '.';
-    autoStatus = summary;
-    autoRunning = false;
-    autoDry = false;
+    if (dryState === 'running' || dryState === 'stopping') {
+      if (dryState === 'stopping' || dryStop) {
+        dryState = 'stopped';
+        dryStatus = 'stopped at ' + dryChecked + '/' + dryTotal + '.';
+      } else if (!dryTotal) {
+        dryState = 'complete';
+        dryStatus = 'Nothing to dry-run.';
+      } else {
+        dryState = 'complete';
+        dryStatus = 'all ' + dryTotal + ' would save as ' + (activeMode ? 'ACTIVE' : 'draft') + '.';
+      }
+    }
+    dryRunning = false;
+    dryStop = false;
+    dryStamp = dryState === 'stale' ? null : JSON.stringify({
+      batchId: queue.batchId || '',
+      i: queue.i,
+      subject: currentMeta().subject,
+      category: currentMeta().category,
+      year: currentMeta().year,
+      key: JSON.stringify(key),
+      activeMode: activeMode
+    });
     renderAuto();
   }
   async function runAuto() {
-    if (autoRunning) return;
-    stopAuto = false;
-    autoRunCount = 0;
-    dryChecked = 0;
-    dryTotal = 0;
+    if (anyRunning()) return;
+    const runToken = ++liveToken;
+    liveStop = false;
+    liveRunCount = 0;
     unverifiedStreak = 0;
-    autoDry = false;
-    autoStatus = '';
-    lastBlocked = '';
-    runMode = activeMode ? 'active' : 'draft';
+    liveBlocked = '';
+    liveStatus = '';
+    liveMode = activeMode ? 'active' : 'draft';
     const initial = autosaveBlockers(gateState());
-    if (initial.length) { showBlocked(initial[0]); renderAuto(); return; }
-    if (!acquireLock()) { showBlocked({ code: 'lock', detail: 'Another tab is auto-saving.' }); renderAuto(); return; }
-    autoRunning = true;
+    if (initial.length) { showLiveBlocked(initial[0]); renderAuto(); return; }
+    if (!acquireLock()) { showLiveBlocked({ code: 'lock', detail: 'Another tab is auto-saving.' }); renderAuto(); return; }
+    liveRunning = true;
+    liveState = 'running';
     renderAuto();
     try {
-      while (autoRunning) {
-        if (stopAuto) { markStopped(); break; }
-        if (!queue.items[queue.i]) {
-          const savedCount = savedForBatch(savedLog, queue.batchId).length;
-          autoStatus = 'Batch complete: ' + batchLabel() + ' · ' + savedCount + ' saved.';
-          break;
-        }
+      while (true) {
+        if (runToken !== liveToken) return;
+        if (!queue.items[queue.i]) { markLiveComplete(); break; }
+        if (liveStop) { markLiveStopped(); break; }
         const blockers = autosaveBlockers(gateState());
-        if (blockers.length) { showBlocked(blockers[0]); break; }
-        const result = await saveCurrentQuestion({ auto: true, active: runMode === 'active' });
+        if (blockers.length) { showLiveBlocked(blockers[0]); break; }
+        const result = await saveCurrentQuestion({ auto: true, active: liveMode === 'active' });
+        if (runToken !== liveToken) return;
         if (result.kind !== 'saved') {
-          if (result.message) lastBlocked = result.message;
+          if (result.message) liveBlocked = result.message;
+          if (result.kind === 'ambiguous') liveState = 'needs-check';
+          else liveState = 'blocked';
           break;
         }
-        autoRunCount++;
+        liveRunCount++;
         renderAuto();
-        if (stopAuto) { markStopped(); break; }
+        if (result.failed || liveState === 'needs-check') break;
+        if (!queue.items[queue.i]) { markLiveComplete(); break; }
+        if (liveStop) { markLiveStopped(); break; }
         await sleep(1500);
       }
     } finally {
-      autoRunning = false;
+      liveRunning = false;
       releaseLock();
+      if (runToken === liveToken && (liveState === 'running' || liveState === 'stopping')) {
+        liveState = 'blocked';
+        liveBlocked = 'The run stopped after an unexpected error. Check the list before starting again.';
+      }
       renderAuto();
     }
   }
   $('ocr_load').onclick = () => {
     if (busySaving()) return;
-    if (autoRunning) stopAuto = true;
+    if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; liveStatus = 'Stopping for a new Load.'; }
+    if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
     resetConfirm();
     const raw = $('ocr_text').value;
     const salvage = splitSectionsWithSalvage(raw);
@@ -804,8 +905,10 @@ function runOCRBookmarklet() {
         if (applyHeaderInfo(parts.boundary, parts.answers)) saveMeta();
         tick(true);
         $('ans_msg').textContent += ' (' + Object.keys(key).length + ' answers in key.)';
+        invalidateDry('the answer key changed');
         renderOCR();
         $('ocr_status').innerHTML += ' Answer key only (' + Object.keys(key).length + ' entries, ' + parts.how + '). Question queue left unchanged.';
+        scheduleAutoDry();
         return;
       }
       renderAuto();
@@ -827,6 +930,13 @@ function runOCRBookmarklet() {
     }
     queue = { items, i: 0, batchId };
     saveQ();
+    liveToken++;
+    liveState = 'idle';
+    liveStatus = '';
+    liveBlocked = '';
+    liveRunCount = 0;
+    liveMode = null;
+    invalidateDry('a new batch was loaded');
     showOCR();
     if (salvage.salvaged) {
       $('ocr_status').innerHTML += '<div class="admin-note">OCR boundaries repaired (' + salvage.inserts + ' inserts); verify the split.</div>';
@@ -839,6 +949,7 @@ function runOCRBookmarklet() {
       $('ans_msg').textContent = 'No answer key section detected. Any earlier key was cleared.';
       $('ocr_status').innerHTML += '<div class="admin-note">No answer-key section detected. Questions loaded with no key. Add a divider like <code>=== ANSWER KEY ===</code> on its own line if the key was missed.</div>';
     }
+    scheduleAutoDry();
   };
   $('ocr_paste_clipboard').onclick = async () => {
     const ta = $('ocr_text');
@@ -859,7 +970,8 @@ function runOCRBookmarklet() {
   $('ocr_clear_text').onclick = () => { $('ocr_text').value = ''; };
   $('ocr_goto').onclick = () => {
     if (busySaving()) return;
-    if (autoRunning) stopAuto = true;
+    if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
+    if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
     const curQ = queue.items[queue.i];
     const ans = prompt('Go to book question number:', curQ && curQ.num != null ? String(curQ.num) : '');
     if (ans === null) return;
@@ -873,12 +985,22 @@ function runOCRBookmarklet() {
     }
     queue.i = idx;
     saveQ();
+    invalidateDry('the queue position changed');
     showOCR();
   };
-  $('ocr_skip').onclick = () => { if (busySaving()) return; if (autoRunning) stopAuto = true; queue.i++; saveQ(); showOCR(); };
+  $('ocr_skip').onclick = () => {
+    if (busySaving()) return;
+    if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
+    if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
+    queue.i++;
+    saveQ();
+    invalidateDry('the queue position changed');
+    showOCR();
+  };
   $('ocr_reset').onclick = () => {
     if (busySaving()) return;
-    if (autoRunning) stopAuto = true;
+    if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
+    if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
     resetConfirm();
     queue = { items: [], i: 0 };
     saveQ();
@@ -887,6 +1009,13 @@ function runOCRBookmarklet() {
     store.del('ansKey');
     store.del('ansKeyBatch');
     store.del('ansKeyConflicts');
+    invalidateDry('the queue was reset');
+    liveToken++;
+    liveState = 'idle';
+    liveStatus = '';
+    liveBlocked = '';
+    liveRunCount = 0;
+    liveMode = null;
     $('ans_msg').textContent = 'Queue and key cleared.';
     $('ocr_input').hidden = false;
     renderOCR();
@@ -894,27 +1023,44 @@ function runOCRBookmarklet() {
   $('ocr_show').onclick = () => { $('ocr_input').hidden = false; $('ocr_text').focus(); };
   $('ocr_auto_start').onclick = () => runAuto();
   $('ocr_active_mode').onchange = () => {
-    if (autoRunning) { $('ocr_active_mode').checked = activeMode; return; }
+    if (anyRunning()) { $('ocr_active_mode').checked = activeMode; return; }
     activeMode = $('ocr_active_mode').checked;
     clearConfirm();
+    invalidateDry('the save mode changed');
     renderAuto();
   };
-  $('ocr_auto_stop').onclick = () => { stopAuto = true; autoStatus = 'Stopping after the current save.'; renderAuto(); };
+  $('ocr_auto_stop').onclick = () => {
+    if (!liveRunning) return;
+    liveStop = true;
+    liveState = 'stopping';
+    liveStatus = 'Stopping after the current save.';
+    renderAuto();
+  };
   $('ocr_auto_dry').onclick = () => runDry();
+  $('ocr_auto_dry_stop').onclick = () => {
+    if (!dryRunning) return;
+    dryStop = true;
+    dryState = 'stopping';
+    dryStatus = 'Stopping.';
+    renderAuto();
+  };
   $('ocr_saved_copy').onclick = () => copyText(savedCopyText());
-  $('ocr_paused_clear').onclick = () => { store.del('ocrSaving'); lastBlocked = ''; renderAuto(); };
+  $('ocr_paused_clear').onclick = () => { store.del('ocrSaving'); liveBlocked = ''; renderAuto(); };
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden && autoRunning) {
-      stopAuto = true;
-      autoStatus = 'Paused because the tab was hidden. Start again when ready.';
+    if (document.hidden && liveRunning) {
+      liveStop = true;
+      liveState = 'paused';
+      liveStatus = 'Paused because the tab was hidden. Start again when ready.';
       renderAuto();
     }
   });
   FIELDS.forEach(id => {
     const el = $(id);
     if (el) el.addEventListener('change', () => {
-      if (autoRunning) stopAuto = true;
+      if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
+      if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
       clearConfirm();
+      invalidateDry('the metadata changed');
       renderAuto();
     });
   });
@@ -966,13 +1112,15 @@ function runOCRBookmarklet() {
   }
   $('ans_clear').onclick = () => {
     if (busySaving()) return;
-    if (autoRunning) stopAuto = true;
+    if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
+    if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
     clearConfirm();
     key = {};
     keyConflicts = [];
     store.del('ansKey');
     store.del('ansKeyBatch');
     store.del('ansKeyConflicts');
+    invalidateDry('the answer key changed');
     $('ans_msg').textContent = 'Key cleared.';
     renderAuto();
   };
@@ -988,7 +1136,7 @@ function runOCRBookmarklet() {
       setResult("An earlier save is unconfirmed. Check the list, then tap 'I checked. Clear warning.'", true);
       return;
     }
-    if (autoRunning) stopAuto = true;
+    if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
     b.disabled = true;
     setResult('Saving...', false);
     saveCurrentQuestion({ auto: false }).then(() => { b.disabled = false; renderAuto(); }).catch(() => { b.disabled = false; renderAuto(); });
@@ -1000,6 +1148,7 @@ function runOCRBookmarklet() {
       tick();
     }
   }, 600);
+  syncLiveStateFromStorage();
   hadServerError ? renderOCR() : showOCR();
   tick();
 }

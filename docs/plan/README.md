@@ -147,12 +147,13 @@ message style.
 
 Do not amend, rebase, force-push, or create an empty commit.
 
-At cycle end, a separate cycle-close session commits the final phase. It verifies
-the final phase is done and its latest review is `PASS` or accepted, updates the
-final status row, checkpoint row, handoff `Review:` and `Commit:` lines, and
-current snapshot. Then it stages the handoff plus review record(s), runs the
-checks, and commits. It executes no package and does not archive. Do not use a
-normal phase session for this, because the final package is already `done`.
+At cycle end, attach [`prompts/cycle-close.md`](prompts/cycle-close.md) and
+send `cycle close`. It has a read-only Gate 1, then verifies the final phase is
+done and its latest review is `PASS` or accepted, updates the final status row,
+checkpoint row, handoff `Review:` and `Commit:` lines, and current snapshot.
+Then it stages the handoff plus review record(s), runs the checks, and commits.
+It executes no package and does not archive. Do not use a normal phase session
+for this, because the final package is already `done`.
 
 Do not archive automatically when the last phase stops. Archive only when the
 user confirms the cycle is complete or satisfied, or explicitly asks to shelve
@@ -168,8 +169,8 @@ new-cycle checklist and map template are in
 |---|---|---|---|---|
 | phase 2 close | P12 | rigorous | independent-pass-with-accepted-findings; fixes applied | committed 2ad3fa9 |
 | phase 3 close | AS-10 | rigorous | independent-pass-with-accepted-findings; user accepted 2026-10-27; FIX-1/NOTE-1/NOTE-2 fixed | committed ef0883f |
-| phase 4 close | AS-11 | light | light-verified (2026-10-27) | committed at phase 5 start |
-| cycle end | AS-12 | rigorous | planned | before archive |
+| phase 4 close | AS-11 | light | light-verified (2026-10-27) | committed f3454af |
+| cycle end | AS-12 | rigorous | independent-pass-with-accepted-findings; FIX-1/NOTE-1/NOTE-2 fixed; re-review passed; NOTE-3 docs fixed; NOTE-4 accepted (separate docs commit) | committed at cycle close |
 | phase 3 Gate 1 | P11 | light | light-verified (2026-10-27) | committed in catch-up |
 
 Rigorous review records live in [`reviews/`](reviews/README.md), named
@@ -191,8 +192,28 @@ phase 3 session commits
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 41 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 100 PASS, 0 FAIL; `node tools/extract-bank.js --check`
+  `node tests/unit.js` → 115 PASS, 0 FAIL; `node tools/extract-bank.js --check`
   exits 0 for seven slices.
+- 2026-10-27: AS-12 done. Dry and live have separate state, panels, progress,
+  and blockers; a full Load or key-only Load schedules one dry run, a load token
+  cancels an older run, and metadata/key/mode/queue/Reset changes mark the result
+  `STALE`. `deriveLiveState(queue, savedLog)` drives reload `INCOMPLETE` or
+  `COMPLETE`, live completion beats Stop, and there is no run-state key (D-58;
+  INV-90, INV-91). Runner 41 PASS; unit 115 PASS; extractor green; build one
+  line, no `%`, body parses. The review's FIX-1 added live-loop and `STALE`
+  harness tests, NOTE-1 added a live run token, and NOTE-2 ends an escaped live
+  loop `BLOCKED`; the re-review passed, and NOTE-3 now documents event-driven
+  invalidation (the `dryStamp` snapshot is not read). NOTE-4 was accepted with a
+  separate safety/process docs commit; owner-only live rows remain. Live browser smoke
+  passed steps 1-8; test rows #3841-#3846 remain for owner-only cleanup.
+  `src/bookmarklet.min.js` was not rebuilt.
+- 2026-10-27: live-safety guard added after an AS-12 cleanup deleted six live
+  Active Accounting questions (#3795-#3800). A first-match delete form bypassed
+  the confirm dialog; only truncated stems were recovered. Live deletes/cleanup
+  are owner-only; exact-ID, confirm-text, and success-flash checks are mandatory
+  if the owner authorizes one. Test rows #3841-#3846
+  remain. See [`docs/LIVE-SAFETY.md`](../LIVE-SAFETY.md). Docs-only; no tests
+  run.
 - 2026-10-27: AS-11 done. `ocrBatchHistory` stores up to 15 newest-first batch
   summaries built from the current batch's saved entries after a verified save;
   `makeBatchHistoryEntry` and `upsertBatchHistory` are pure helpers, the Recent
@@ -375,6 +396,10 @@ phase 3 session commits
   existing `ocrQueue`, `ocrMeta`, and `ansKey` shapes stay compatible.
 - Commit only at a phase boundary, after the previous phase's review settles.
   Do not commit current-phase work; commit the final phase before archiving.
+- By default, the agent does not delete or clean up live records. Live writes
+  need per-action approval for exact IDs and fields; destructive checks use
+  staging or owner-run cleanup. Read [`docs/LIVE-SAFETY.md`](../LIVE-SAFETY.md)
+  before any live check.
 - Keep the deliberate quirks: E/F → D collapse, advisory-only flags, blank
   options, `FIXES` order, the `+5` numbering guard, no absorbed-option
   post-processor.
@@ -422,7 +447,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | P12 | [15-option-boundary-selection.md](15-option-boundary-selection.md) | Select one ordered A–D sequence; warn on a boundary-less second set | P11 | done (2026-10-27); reviewed, fixes applied |
 | AS-10 | [16-duplicate-fingerprints.md](16-duplicate-fingerprints.md) | Prior-batch duplicate fingerprints in the retained saved log | P12; AS-09 | done (2026-10-27); reviewed, fixes applied, accepted |
 | AS-11 | [17-batch-history.md](17-batch-history.md) | Additive 15-batch one-line history that survives Reset | AS-10 | done (2026-10-27); light-verified |
-| AS-12 | [18-auto-dry-run-and-status.md](18-auto-dry-run-and-status.md) | Auto dry run after Load; separate dry/live status and reload states | AS-11 | not started |
+| AS-12 | [18-auto-dry-run-and-status.md](18-auto-dry-run-and-status.md) | Auto dry run after Load; separate dry/live status and reload states | AS-11 | done (2026-10-27); reviewed; re-review passed; NOTE-3 docs fixed; NOTE-4 accepted (separate docs commit); committed at cycle close |
 
 ## Dependency graph
 
@@ -462,8 +487,8 @@ AS-09 ─────────────────┘
 
 ## Remaining verification queue
 
-All historical work packages through AS-11 are done. AS-12 is planned, not
-part of V1–V4. The remaining verification agenda is
+All historical work packages through AS-12 are done. AS-12 is not part of
+V1–V4. The remaining verification agenda is
 live/evidence-only and is outlined in
 [11-remaining-verification.md](11-remaining-verification.md):
 live parser/OCR/bank run, live `questions` schema check, stale `ocrQueue`
@@ -487,9 +512,9 @@ blocked. V4 stays open by decision (optional).
    or fails verification.
 3. Run `node tests/runner.js` and `node tests/unit.js`; record both counts.
    Docs-only packages follow the repository's docs-only test rule.
-4. Report the read-only scope, dependency verification, review status, and
-   commit readiness, then wait for an explicit `go`. Do not edit or commit in
-   this gate.
+4. Report the read-only scope, dependency verification, review status, commit
+   readiness, and any live actions (none/read-only/write, with exact IDs), then
+   wait for an explicit `go`. Do not edit or commit in this gate.
 5. After `go`, commit the previous settled work first, using the approved
    catch-up plan when more than one phase is settled. Stop if a required review
    is pending or findings are unresolved, or if unrelated changes are present.
@@ -504,7 +529,10 @@ blocked. V4 stays open by decision (optional).
    to the next phase start.
 7. Run the package's acceptance commands. Do not mark the package done on a
    partial pass. If a required browser or live check cannot be done, stop and
-   ask.
+   ask. Before any live/browser check, read
+   [`docs/LIVE-SAFETY.md`](../LIVE-SAFETY.md). Do not delete or clean up live
+   records; a destructive live check requires staging or owner-run cleanup.
+   Leave live-created test rows for the owner and record their exact IDs.
 8. Update the status row above and append a handoff note to the package file
    (date, result, files changed, open questions, hashes, review status, and
    `Commit: deferred`).
@@ -532,6 +560,9 @@ blocked. V4 stays open by decision (optional).
   meet the same checks and stay at or below 65536 bytes.
 - Auto-Save packages also record their dry-run or live evidence in the package
   handoff. A partial dry run does not mark the package done.
+- Any live write is recorded with its exact IDs and fields. The agent performed
+  no live delete/cleanup; created test rows are left for the owner or cleaned
+  up under [`docs/LIVE-SAFETY.md`](../LIVE-SAFETY.md).
 
 ## Shared commands
 
@@ -569,9 +600,9 @@ For a minified build explicitly requested by the user, run the same checks on
 | P12 (done) | 41 | 0 | + Q46, single initials, duplicate labels |
 | AS-10 (done) | 41 | 0 | no new runner fixtures; +19 unit tests (14 AS-10, 4 FIX-1 UI, 1 NOTE-2) |
 | AS-11 (done) | 41 | 0 | no new runner fixtures; +11 unit tests (6 helpers, 5 UI history) |
-| AS-12 (planned) | 41 | 0 | no new runner fixtures |
+| AS-12 (done) | 41 | 0 | no new runner fixtures; +8 unit tests (1 helper, 7 UI dry/live) |
 
-Planned rows are acceptance targets, not current results.
+Rows marked planned were acceptance targets, not results; no row is currently planned.
 
 P01/P02 are reflected in the baseline. P03 ran before P02, so the 2021 slice is
 already confirmed and P02 adds PENDING specs only for 2022-2025.
@@ -604,6 +635,35 @@ authoritative:
 
 ## Change log
 
+- 2026-10-27 — AS-12 NOTE-3 docs fix: D-58, SPEC, Auto-Save-Spec, INVARIANTS,
+  and AGENTS now state that dry-result invalidation is event-driven through
+  `invalidateDry`; the `dryStamp` snapshot is recorded but never read back.
+  NOTE-2 was already closed by the earlier fix. No source, test, fixture, or
+  build change; runner 41 PASS, unit 115 PASS, extractor green. NOTE-4 (commit
+  scope and owner-only live rows) remains for cycle close. Commit deferred.
+- 2026-10-27 — AS-12 review fix: FIX-1 now schedules the shortened live-loop
+  sleep and adds a 2-save Stop test plus key/mode/Skip/Reset `STALE` tests;
+  NOTE-1 adds a live run token so a full Load or Reset cannot be overwritten by
+  a finishing loop; NOTE-2 ends an escaped loop `BLOCKED` instead of leaving
+  `RUNNING`. Runner 41 PASS; unit 115 PASS; extractor green; rebuilt
+  `src/bookmarklet.js`; re-review required before cycle close. Commit deferred.
+- 2026-10-27 — Added a live-safety stop rule after an AS-12 cleanup deleted six
+  live Active Accounting questions (#3795-#3800). The cleanup selected the
+  first `delete_question` form on the edit page and called `.submit()`, which
+  bypassed the per-row confirm; only truncated stems survived in a Playwright
+  snapshot. `docs/LIVE-SAFETY.md` now makes live cleanup owner-only and requires
+  exact-ID scoping, confirm-text assertion, and success-flash verification for
+  any owner-authorized delete. Test rows #3841-#3846 remain. Docs-only; no
+  tests run.
+- 2026-10-27 — AS-12 done: automatic dry run after a full or key-only Load,
+  separate dry/live panels and state, stale invalidation, completion-before-
+  Stop, and reload `INCOMPLETE`/`COMPLETE` from `deriveLiveState` with no
+  run-state key (D-58; INV-90, INV-91). Added 8 unit tests (1 helper, 7 UI
+  dry/live). Runner 41 PASS; unit 108 PASS; extractor green; build one line,
+  80,927 bytes, no `%`, body parses; `src/bookmarklet.min.js` was not rebuilt.
+  Live browser smoke passed steps 1-8 and left test rows #3841-#3846 for
+  owner-only cleanup. Rigorous review is pending at cycle end; commit deferred
+  to cycle close.
 - 2026-10-27 — AS-11 done: added the additive `ocrBatchHistory` key (15
   newest-first batch summaries), `makeBatchHistoryEntry` and
   `upsertBatchHistory`, and the Recent batches box. History is written only

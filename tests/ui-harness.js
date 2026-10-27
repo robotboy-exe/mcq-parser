@@ -348,7 +348,10 @@ function createUI(options) {
     prompt: () => null,
     AbortController: typeof AbortController !== 'undefined' ? AbortController : undefined,
     crypto: { randomUUID: () => 'test-batch-' + (++batchSeq) },
-    setTimeout: (fn, ms) => (ms >= 1000 ? 0 : SET_TIMEOUT(fn, ms)),
+    setTimeout: (fn, ms) => {
+      if (ms >= 1000 && typeof opts.onLongTimeout === 'function') opts.onLongTimeout(ms);
+      return SET_TIMEOUT(fn, ms >= 1000 ? 0 : ms);
+    },
     clearTimeout: id => { if (id) CLEAR_TIMEOUT(id); },
     setInterval: () => 0,
     clearInterval: () => {},

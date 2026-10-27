@@ -608,6 +608,12 @@ function savedForBatch(log, batchId) {
   return (Array.isArray(log) ? log : []).filter(entry => entry && entry.batchId === batchId);
 }
 
+function deriveLiveState(queue, savedLog) {
+  if (!queue || !Array.isArray(queue.items) || !queue.items.length) return 'idle';
+  if (!savedForBatch(savedLog, queue.batchId).length) return 'idle';
+  return Number(queue.i) >= queue.items.length ? 'complete' : 'incomplete';
+}
+
 function unverifiedSaves(entries) {
   return (Array.isArray(entries) ? entries : []).filter(entry => entry && (entry.inactive === null || entry.inactive === undefined));
 }
@@ -991,6 +997,7 @@ if (typeof module !== 'undefined' && module.exports) {
     sameMeta,
     maxSavedId,
     savedForBatch,
+    deriveLiveState,
     makeSavedFingerprint,
     savedLogPriorDuplicate,
     unverifiedSaves,
