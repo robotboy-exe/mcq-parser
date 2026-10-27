@@ -59,12 +59,12 @@ node src/build/build.js --min
 11. Writes `src/bookmarklet.js`, and with `--min` also
     `src/bookmarklet.min.js`, each with a trailing newline, and prints their
     lengths in characters and UTF-8 bytes:
-    - `src/bookmarklet.js` — unminified, 63608 characters and 63621 bytes.
-    - `src/bookmarklet.min.js` — minified standalone, 56823 characters and
-      56836 bytes (only with `--min`).
+    - `src/bookmarklet.js` — unminified, 64773 characters and 64786 bytes.
+    - `src/bookmarklet.min.js` — minified standalone, 57866 characters and
+      57879 bytes (only with `--min`).
 
-For mobile, paste `src/bookmarklet.min.js`. The seven non-ASCII characters in
-each file (two `—`, two `…`, one `–`, two `·`) add 12 bytes over the character
+For mobile, paste `src/bookmarklet.min.js`. The eight non-ASCII characters in
+each file (two `—`, two `…`, one `–`, three `·`) add 13 bytes over the character
 count.
 
 ## Why the line rewriting exists
