@@ -668,6 +668,43 @@ function formatSavedRange(entries) {
   return 'Saved this batch: ' + range + savedModeSuffix(entries);
 }
 
+function makeBatchHistoryEntry(opts) {
+  const o = opts || {};
+  const batchId = o.batchId == null ? '' : String(o.batchId);
+  if (!batchId) return null;
+  const entries = (Array.isArray(o.entries) ? o.entries : []).filter(entry => entry);
+  const ids = Array.from(new Set(entries
+    .map(entry => Number(entry && entry.id))
+    .filter(id => Number.isFinite(id) && id > 0))).sort((a, b) => a - b);
+  if (!ids.length) return null;
+  const at = Number(o.at);
+  return {
+    batchId: batchId,
+    at: Number.isFinite(at) ? at : 0,
+    subject: String(o.subject == null ? '' : o.subject),
+    category: String(o.category == null ? '' : o.category),
+    year: String(o.year == null ? '' : o.year),
+    ids: ids,
+    count: ids.length,
+    mode: savedModeSuffix(entries).replace(/^,\s*/, '')
+  };
+}
+
+function upsertBatchHistory(history, entry, cap) {
+  if (!Array.isArray(history)) return [];
+  const limit = Number.isInteger(cap) && cap > 0 ? cap : 15;
+  const valid = history.filter(item => item && typeof item === 'object'
+    && item.batchId != null && item.batchId !== '');
+  const incoming = entry && typeof entry === 'object' && entry.batchId != null
+    && entry.batchId !== '' && Array.isArray(entry.ids) && entry.ids.length
+    ? entry : null;
+  if (!incoming) return valid.slice(0, limit);
+  const batchId = String(incoming.batchId);
+  const out = valid.filter(item => String(item.batchId) !== batchId);
+  out.unshift(incoming);
+  return out.slice(0, limit);
+}
+
 function recentRowsFromTable(headers, rows) {
   const head = (Array.isArray(headers) ? headers : []).map(text => normalizeAnswer(text));
   const at = name => head.indexOf(normalizeAnswer(name));
@@ -960,6 +997,8 @@ if (typeof module !== 'undefined' && module.exports) {
     trackUnverified,
     savedModeSuffix,
     formatSavedRange,
+    makeBatchHistoryEntry,
+    upsertBatchHistory,
     recentRowsFromTable,
     recentDuplicate,
     savedLogHasNum,

@@ -663,6 +663,7 @@ testAsync('UI rejected save writes no fingerprint', async () => {
   eq(ui.posts.length, 1);
   eq(ui.storage.get('ocrSavedLog'), storage.ocrSavedLog);
   eq(ui.storage.get('ocrSaving'), null);
+  eq(ui.storage.get('ocrBatchHistory'), null);
   assert(ui.doc.getElementById('ans_res').textContent.indexOf('NOT saved') === 0);
 });
 
@@ -675,6 +676,7 @@ testAsync('UI ambiguous save writes no fingerprint', async () => {
   await ui.submit();
   eq(ui.posts.length, 1);
   eq(ui.storage.get('ocrSavedLog'), []);
+  eq(ui.storage.get('ocrBatchHistory'), null);
   assert(ui.storage.get('ocrSaving'), 'ambiguous saves keep the uncertain-save marker');
   eq(ui.doc.getElementById('ans_res').textContent, 'Unknown. It may have saved. Check the list.');
 });
@@ -723,7 +725,80 @@ testAsync('UI reset and re-paste stop dry run and Start before POST', async () =
   assert(blocked.indexOf('earlier batch') > -1, 'Start did not block: ' + blocked);
   assert(blocked.indexOf('#500') > -1, 'Start did not report the saved id: ' + blocked);
 
-  eq(ui.storage.keys(), ['ansKey', 'ansKeyBatch', 'ansKeyConflicts', 'ocrMeta', 'ocrQueue', 'ocrSavedLog']);
+  eq(ui.storage.keys(), ['ansKey', 'ansKeyBatch', 'ansKeyConflicts', 'ocrBatchHistory', 'ocrMeta', 'ocrQueue', 'ocrSavedLog']);
+});
+
+testAsync('UI manual save adds one batch history entry and renders it', async () => {
+  const ui = uiHarness.createUI({ storage: uiHarness.sampleStorage('batch-history') });
+  await ui.submit();
+  const history = ui.storage.get('ocrBatchHistory');
+  eq(history.length, 1);
+  eq(history[0].batchId, 'batch-history');
+  eq(history[0].subject, 'CRS');
+  eq(history[0].category, 'JAMB / UTME');
+  eq(history[0].year, '2021');
+  eq(history[0].ids, [500]);
+  eq(history[0].count, 1);
+  eq(history[0].mode, 'active');
+  const list = ui.doc.getElementById('ocr_batch_history_list');
+  eq(list.children.length, 1);
+  assert(list.children[0].textContent.indexOf('1 saved (#500)') > -1, list.children[0].textContent);
+  eq(ui.doc.getElementById('ocr_batch_history').hidden, false);
+});
+
+testAsync('UI renders stored batch history with contiguous, single and gap ranges', async () => {
+  const at = new Date(2026, 9, 27, 14, 5).getTime();
+  const storage = uiHarness.sampleStorage('render-history');
+  storage.ocrBatchHistory = [
+    { batchId: 'h3', at, subject: 'CRS', category: 'JAMB / UTME', year: '2021', ids: [1785, 1787, 1788], count: 3, mode: 'active' },
+    { batchId: 'h2', at: at - 60000, subject: 'CRS', category: 'WASCE / NECO / GCE', year: '2022', ids: [1780, 1781, 1782], count: 3, mode: 'inactive' },
+    { batchId: 'h1', at: at - 120000, subject: 'Government', category: 'JAMB', year: '2023', ids: [1790], count: 1, mode: '' }
+  ];
+  const ui = uiHarness.createUI({ storage });
+  const list = ui.doc.getElementById('ocr_batch_history_list');
+  eq(list.children.length, 3);
+  eq(list.children[0].textContent, '27 Oct 14:05 · CRS / JAMB / UTME / 2021 · 3 saved (#1785, #1787, #1788) · active');
+  eq(list.children[1].textContent, '27 Oct 14:04 · CRS / WASCE / NECO / GCE / 2022 · 3 saved (#1780–#1782) · inactive');
+  eq(list.children[2].textContent, '27 Oct 14:03 · Government / JAMB / 2023 · 1 saved (#1790)');
+  eq(ui.doc.getElementById('ocr_batch_history').hidden, false);
+});
+
+testAsync('UI shows nothing for absent or malformed batch history', async () => {
+  const absent = uiHarness.createUI({ storage: uiHarness.sampleStorage('no-history') });
+  eq(absent.doc.getElementById('ocr_batch_history').hidden, true);
+  const malformed = uiHarness.sampleStorage('bad-history');
+  malformed.ocrBatchHistory = { nope: true };
+  const ui = uiHarness.createUI({ storage: malformed });
+  eq(ui.doc.getElementById('ocr_batch_history').hidden, true);
+  const entries = uiHarness.sampleStorage('bad-entries');
+  entries.ocrBatchHistory = [null, { batchId: '' }, 'bad'];
+  const second = uiHarness.createUI({ storage: entries });
+  eq(second.doc.getElementById('ocr_batch_history').hidden, true);
+});
+
+testAsync('UI Reset Queue keeps batch history', async () => {
+  const ui = uiHarness.createUI({ storage: uiHarness.sampleStorage('history-reset') });
+  await ui.submit();
+  const before = ui.storage.get('ocrBatchHistory');
+  eq(before.length, 1);
+  ui.click('ocr_reset');
+  eq(ui.storage.get('ocrQueue'), { items: [], i: 0 });
+  eq(ui.storage.get('ocrBatchHistory'), before);
+  eq(ui.doc.getElementById('ocr_batch_history').hidden, false);
+});
+
+testAsync('UI history storage failure does not change a successful save', async () => {
+  const ui = uiHarness.createUI({
+    storage: uiHarness.sampleStorage('history-failure'),
+    failStorageKeys: ['ocrBatchHistory']
+  });
+  await ui.submit();
+  eq(ui.posts.length, 1);
+  eq(ui.storage.get('ocrSavedLog').length, 1);
+  eq(ui.storage.has('ocrBatchHistory'), false);
+  eq(ui.storage.get('ocrSaving'), null);
+  eq(ui.storage.get('ocrQueue').i, 1);
+  eq(ui.doc.getElementById('ocr_auto_blocked').textContent, '');
 });
 
 test('savedLogPriorDuplicate returns a matching prior-batch entry', () => {
@@ -793,6 +868,90 @@ test('saved-log merge and cap keep fingerprints', () => {
   eq(merged.length, 200);
   eq(merged[199].id, 201);
   eq(merged[199].fp, fp);
+});
+
+test('makeBatchHistoryEntry builds sorted unique ids, count and mode', () => {
+  eq(parser.makeBatchHistoryEntry({
+    batchId: 'b1',
+    subject: 'CRS',
+    category: 'JAMB / UTME',
+    year: '2021',
+    at: 123,
+    entries: [
+      { id: 1787, inactive: false, mode: 'active' },
+      { id: 1785, inactive: false, mode: 'active' },
+      { id: 1787, inactive: false, mode: 'active' }
+    ]
+  }), {
+    batchId: 'b1',
+    at: 123,
+    subject: 'CRS',
+    category: 'JAMB / UTME',
+    year: '2021',
+    ids: [1785, 1787],
+    count: 2,
+    mode: 'active'
+  });
+});
+
+test('makeBatchHistoryEntry returns null without a batch or saved ids', () => {
+  const entries = [{ id: 1785, inactive: false, mode: 'active' }];
+  eq(parser.makeBatchHistoryEntry({ subject: 'CRS', entries }), null);
+  eq(parser.makeBatchHistoryEntry({ batchId: 'b1', entries: [] }), null);
+  eq(parser.makeBatchHistoryEntry({ batchId: 'b1', entries: [{ id: null }] }), null);
+  eq(parser.makeBatchHistoryEntry({ batchId: 'b1', entries: 'nope' }), null);
+});
+
+test('makeBatchHistoryEntry reports mixed, unverified and mismatch modes', () => {
+  const make = entries => parser.makeBatchHistoryEntry({
+    batchId: 'b1', subject: 'CRS', category: 'JAMB / UTME', year: '2021', at: 1, entries
+  });
+  eq(make([
+    { id: 1, inactive: false, mode: 'active' },
+    { id: 2, inactive: true, mode: 'draft' }
+  ]).mode, '1 active, 1 inactive');
+  eq(make([{ id: 1, inactive: null, mode: 'draft' }]).mode, 'status not verified');
+  assert(make([{ id: 1, inactive: true, mode: 'active' }]).mode.indexOf('MISMATCH') === 0);
+});
+
+test('upsertBatchHistory replaces the same batch and keeps the newest first', () => {
+  const history = [
+    { batchId: 'b2', ids: [2], count: 1 },
+    { batchId: 'b1', ids: [1], count: 1 }
+  ];
+  const updated = parser.upsertBatchHistory(history, { batchId: 'b2', ids: [2, 3], count: 2, mode: 'active' }, 15);
+  eq(updated.length, 2);
+  eq(updated[0], { batchId: 'b2', ids: [2, 3], count: 2, mode: 'active' });
+  eq(updated[1].batchId, 'b1');
+});
+
+test('upsertBatchHistory drops the oldest entry at the cap', () => {
+  const history = [];
+  for (let i = 14; i >= 0; i--) history.push({ batchId: 'b' + i, ids: [i], count: 1 });
+  const updated = parser.upsertBatchHistory(history, { batchId: 'b15', ids: [15], count: 1, mode: 'active' }, 15);
+  eq(updated.length, 15);
+  eq(updated[0].batchId, 'b15');
+  eq(updated.some(entry => entry.batchId === 'b0'), false);
+  eq(updated.some(entry => entry.batchId === 'b14'), true);
+});
+
+test('upsertBatchHistory accepts only an array and ignores malformed entries', () => {
+  eq(parser.upsertBatchHistory(null, { batchId: 'b1' }, 15), []);
+  eq(parser.upsertBatchHistory('nope', { batchId: 'b1' }, 15), []);
+  const updated = parser.upsertBatchHistory([
+    null,
+    'bad',
+    { batchId: '' },
+    { batchId: 'b1', ids: [1], count: 1 }
+  ], { batchId: 'b2', ids: [2], count: 1 }, 15);
+  eq(updated, [
+    { batchId: 'b2', ids: [2], count: 1 },
+    { batchId: 'b1', ids: [1], count: 1 }
+  ]);
+  eq(parser.upsertBatchHistory([{ batchId: 'b1', ids: [1], count: 1 }], { batchId: 'b2' }, 15),
+    [{ batchId: 'b1', ids: [1], count: 1 }]);
+  eq(parser.upsertBatchHistory([{ batchId: 'b1', ids: [1], count: 1 }], { batchId: 'b2', ids: [] }, 15),
+    [{ batchId: 'b1', ids: [1], count: 1 }]);
 });
 
 test('autosaveBlockers keeps the current-batch number check first', () => {

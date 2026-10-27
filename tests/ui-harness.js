@@ -259,10 +259,20 @@ function createUI(options) {
   };
   let nextError = null;
 
+  const failStorageKeys = new Set(opts.failStorageKeys || []);
   const localStorage = {
-    getItem: key => (storage.has(key) ? storage.get(key) : null),
-    setItem: (key, value) => { storage.set(key, String(value)); },
-    removeItem: key => { storage.delete(key); }
+    getItem: key => {
+      if (failStorageKeys.has(key)) throw new Error('storage read failed for ' + key);
+      return storage.has(key) ? storage.get(key) : null;
+    },
+    setItem: (key, value) => {
+      if (failStorageKeys.has(key)) throw new Error('storage write failed for ' + key);
+      storage.set(key, String(value));
+    },
+    removeItem: key => {
+      if (failStorageKeys.has(key)) throw new Error('storage delete failed for ' + key);
+      storage.delete(key);
+    }
   };
 
   class FormDataMock {

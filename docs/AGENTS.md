@@ -32,8 +32,10 @@ features.
    `ocrMeta`, and `ansKey` are shared with the live helper; `ocrSubmitted`
    remains a shared key name but the bookmarklet no longer touches it
    (INV-36, INV-55; D-22). Auto-Save adds `batchId`, `ansKeyBatch`,
-   `ansKeyConflicts`, `ocrSaving`, `ocrSavedLog`, and `autoLock`; additions are
-   allowed, existing shapes must stay compatible (D-30, D-32, D-36).
+   `ansKeyConflicts`, `ocrSaving`, `ocrSavedLog`, `ocrBatchHistory`, and
+   `autoLock`; additions are allowed, existing shapes must stay compatible
+   (D-30, D-32, D-36, D-57). Reset Queue keeps `ocrBatchHistory`; it is
+   display-only and must never block a save.
 5. **Edit modules, not the build output.** `src/bookmarklet.js` and
    `src/bookmarklet.min.js` are generated. Change `src/parser/parser.js` or
    `src/ui/ui.js`, then rebuild `src/bookmarklet.js`. Do not rebuild

@@ -167,8 +167,8 @@ new-cycle checklist and map template are in
 | Checkpoint | Scope | Level | Review | Commit |
 |---|---|---|---|---|
 | phase 2 close | P12 | rigorous | independent-pass-with-accepted-findings; fixes applied | committed 2ad3fa9 |
-| phase 3 close | AS-10 | rigorous | independent-pass-with-accepted-findings; user accepted 2026-10-27; FIX-1/NOTE-1/NOTE-2 fixed | deferred to phase 4 |
-| phase 4 close | AS-11 | light | planned | deferred to phase 5 |
+| phase 3 close | AS-10 | rigorous | independent-pass-with-accepted-findings; user accepted 2026-10-27; FIX-1/NOTE-1/NOTE-2 fixed | committed ef0883f |
+| phase 4 close | AS-11 | light | light-verified (2026-10-27) | committed at phase 5 start |
 | cycle end | AS-12 | rigorous | planned | before archive |
 | phase 3 Gate 1 | P11 | light | light-verified (2026-10-27) | committed in catch-up |
 
@@ -191,8 +191,17 @@ phase 3 session commits
 ## Current snapshot
 
 - Current test status: `node tests/runner.js` → 41 PASS, 0 FAIL, 0 PENDING;
-  `node tests/unit.js` → 89 PASS, 0 FAIL; `node tools/extract-bank.js --check`
+  `node tests/unit.js` → 100 PASS, 0 FAIL; `node tools/extract-bank.js --check`
   exits 0 for seven slices.
+- 2026-10-27: AS-11 done. `ocrBatchHistory` stores up to 15 newest-first batch
+  summaries built from the current batch's saved entries after a verified save;
+  `makeBatchHistoryEntry` and `upsertBatchHistory` are pure helpers, the Recent
+  batches box renders one `textContent` line per batch, and Reset Queue keeps
+  the key (D-57, INV-89). Rejected/ambiguous saves write nothing, and a history
+  read/write failure cannot block or change a save. Runner 41 PASS; unit 100
+  PASS; extractor green; build one line, no `%`, body parses. `src/bookmarklet.min.js`
+  was not rebuilt. Review light-verified at phase 5 Gate 1 (2026-10-27); committed
+  at phase 5 start.
 - 2026-10-27: AS-10 done. Verified saves may now store an additive `fp`
   fingerprint taken from the posted form at request time; `autosaveBlockers`
   checks the current-batch number first, then a prior-batch fingerprint, then
@@ -202,8 +211,8 @@ phase 3 session commits
   Runner 41 PASS; unit 89 PASS; extractor green; build one line, no `%`, body
   parses. The rigorous review passed with accepted findings; FIX-1 added the
   UI save-path harness, NOTE-1 corrected the test count, and NOTE-2 made the
-  prior-match detail use the matched entry's stored labels. Commit is deferred
-  to phase 4 start.
+  prior-match detail use the matched entry's stored labels. Committed as
+  ef0883f at phase 4 start.
 - 2026-10-27: P12 done. Option parsing selects the earliest occurrence of each
   required letter A–D, then E/F only after D, and sorts the marks by position;
   inner initials stay in option text and out-of-order hostile labels still map
@@ -412,7 +421,7 @@ Status values: `not started`, `in progress`, `blocked`, `done`.
 | P11 | [14-exam-category-period-acronyms.md](14-exam-category-period-acronyms.md) | Map `S.S.C.E.`/`W.A.S.S.C.E.` and period exam acronyms to the live category | P10 | done (2026-10-27); light-verified |
 | P12 | [15-option-boundary-selection.md](15-option-boundary-selection.md) | Select one ordered A–D sequence; warn on a boundary-less second set | P11 | done (2026-10-27); reviewed, fixes applied |
 | AS-10 | [16-duplicate-fingerprints.md](16-duplicate-fingerprints.md) | Prior-batch duplicate fingerprints in the retained saved log | P12; AS-09 | done (2026-10-27); reviewed, fixes applied, accepted |
-| AS-11 | [17-batch-history.md](17-batch-history.md) | Additive 15-batch one-line history that survives Reset | AS-10 | not started |
+| AS-11 | [17-batch-history.md](17-batch-history.md) | Additive 15-batch one-line history that survives Reset | AS-10 | done (2026-10-27); light-verified |
 | AS-12 | [18-auto-dry-run-and-status.md](18-auto-dry-run-and-status.md) | Auto dry run after Load; separate dry/live status and reload states | AS-11 | not started |
 
 ## Dependency graph
@@ -453,8 +462,8 @@ AS-09 ─────────────────┘
 
 ## Remaining verification queue
 
-All historical work packages through AS-10 are done. AS-11–AS-12 are planned,
-not part of V1–V4. The remaining verification agenda is
+All historical work packages through AS-11 are done. AS-12 is planned, not
+part of V1–V4. The remaining verification agenda is
 live/evidence-only and is outlined in
 [11-remaining-verification.md](11-remaining-verification.md):
 live parser/OCR/bank run, live `questions` schema check, stale `ocrQueue`
@@ -559,7 +568,8 @@ For a minified build explicitly requested by the user, run the same checks on
 | P11 (done) | 38 | 0 | + `header-crs-ssce-periods` |
 | P12 (done) | 41 | 0 | + Q46, single initials, duplicate labels |
 | AS-10 (done) | 41 | 0 | no new runner fixtures; +19 unit tests (14 AS-10, 4 FIX-1 UI, 1 NOTE-2) |
-| AS-11–AS-12 (planned) | 41 | 0 | no new runner fixtures |
+| AS-11 (done) | 41 | 0 | no new runner fixtures; +11 unit tests (6 helpers, 5 UI history) |
+| AS-12 (planned) | 41 | 0 | no new runner fixtures |
 
 Planned rows are acceptance targets, not current results.
 
@@ -594,6 +604,17 @@ authoritative:
 
 ## Change log
 
+- 2026-10-27 — AS-11 done: added the additive `ocrBatchHistory` key (15
+  newest-first batch summaries), `makeBatchHistoryEntry` and
+  `upsertBatchHistory`, and the Recent batches box. History is written only
+  after a verified save, survives Reset Queue, contains no per-question detail,
+  and ignores storage failures. The line format uses explicit month
+  abbreviations, `–` for contiguous ranges, and a comma list for gaps (D-57,
+  INV-89). Also corrected the stale INVARIANTS total (88→89 including the new
+  invariant) and a stale D-56 sentence about the DOM harness. Runner 41 PASS;
+  unit 100 PASS; extractor green; build one line, no `%`, body parses.
+  `src/bookmarklet.min.js` was not rebuilt. Review is pending at phase 5 Gate 1;
+  commit is deferred to phase 5 start.
 - 2026-10-27 — AS-10 NOTE-2 fix: the prior-batch duplicate detail now uses the
   matched entry's stored `fp.year`/`fp.category` when present, falling back to
   the current metadata labels. Matching is unchanged. Added one unit test

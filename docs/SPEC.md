@@ -358,7 +358,8 @@ section records the contract as implemented.
 | `ansKeyBatch` | the matching `batchId` | Key loaded with the questions; a key-only paste attaches to the current queue |
 | `ansKeyConflicts` | `[{num, letters}]` | Key loaded; identical repeats are not conflicts |
 | `ocrSaving` | `{num, at, subject, category, year}` crash marker; metadata is a snapshot taken at save time for the paused-warning link | Immediately before a save request |
-| `ocrSavedLog` | `[{num, id, at, batchId, inactive, mode}]`, capped at 200 | Only after a verified save; `inactive` is `true`/`false`/`null` (confirmed, active/manual, or unverified); `mode` is `draft`, `active`, or `manual` |
+| `ocrSavedLog` | `[{num, id, at, batchId, inactive, mode, fp?}]`, capped at 200 | Only after a verified save; `inactive` is `true`/`false`/`null` (confirmed, active/manual, or unverified); `mode` is `draft`, `active`, or `manual`; `fp` is the optional D-56 prior-batch fingerprint |
+| `ocrBatchHistory` | `[{batchId, at, subject, category, year, ids, count, mode}]`, at most 15, newest first | Rebuilt after a verified save from that batch's saved entries; never on rejected/ambiguous saves; Reset Queue does not clear it |
 | `autoLock` | `{tabId, at}` heartbeat | While a run is active |
 
 A queue without `batchId`, or a key whose `ansKeyBatch` does not match it, is
@@ -473,7 +474,11 @@ cleared, the same manual save proceeds normally (Fix 2).
   only a summary such as `Saved this batch: #901 to #912, inactive`; full
   per-question details remain behind `Copy saved list`. When the run reaches the
   end, the status line says `Batch complete: Subject / Category / Year — N
-  questions (#first to #last) · N saved.`
+  questions (#first to #last) · N saved.` A `Recent batches` box after the saved
+  box shows the last 15 batches, newest first, one line each, for example
+  `27 Oct 14:05 · CRS / JAMB / UTME / 2021 · 8 saved (#1785–#1792) · active`.
+  Contiguous IDs use an en dash; gaps list the IDs. It survives Reset Queue and
+  never blocks a save. An absent or malformed history key shows no box.
 - Duplicate safeguards stop (not skip) the run in this order: the number is
   already in this batch's saved log; a retained entry from an earlier batch has
   a complete fingerprint with the same subject, category and year IDs and the

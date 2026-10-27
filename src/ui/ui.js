@@ -22,7 +22,7 @@ function runOCRBookmarklet() {
   };
   const p = document.createElement('div');
   p.className = 'admin-field';
-  p.innerHTML = `<style>#ocr_auto_start:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}#ocr_auto_start:disabled:hover{background:#1769aa}</style><div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn admin-btn-muted" id="ocr_paste_clipboard">Paste clipboard</button> <button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_auto"><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <label class="admin-note" style="display:inline-block;margin:0 8px"><input type="checkbox" id="ocr_active_mode"> Save as active (live immediately)</label> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_auto_status" class="admin-note"></div><div id="ocr_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#2e9e63"></progress><span id="ocr_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_auto_blocked" class="admin-note"></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button> <a class="admin-btn admin-btn-muted" id="ocr_paused_check" href="#" hidden>Open filtered list</a></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
+  p.innerHTML = `<style>#ocr_auto_start:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}#ocr_auto_start:disabled:hover{background:#1769aa}</style><div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn admin-btn-muted" id="ocr_paste_clipboard">Paste clipboard</button> <button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_auto"><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <label class="admin-note" style="display:inline-block;margin:0 8px"><input type="checkbox" id="ocr_active_mode"> Save as active (live immediately)</label> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_auto_status" class="admin-note"></div><div id="ocr_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#2e9e63"></progress><span id="ocr_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_auto_blocked" class="admin-note"></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_batch_history" class="admin-note" hidden><div id="ocr_batch_history_list"></div></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button> <a class="admin-btn admin-btn-muted" id="ocr_paused_check" href="#" hidden>Open filtered list</a></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
   form.before(p);
   const sb = form.querySelector('button[type=submit]');
   if (sb) {
@@ -99,6 +99,11 @@ function runOCRBookmarklet() {
   let savedLog = [];
   try { savedLog = store.get('ocrSavedLog') || []; } catch (e) {}
   if (!Array.isArray(savedLog)) savedLog = [];
+  let batchHistory = [];
+  try {
+    const storedHistory = store.get('ocrBatchHistory');
+    if (Array.isArray(storedHistory)) batchHistory = storedHistory;
+  } catch (e) {}
   let saveInProgress = false;
   let stopAuto = false;
   let autoRunning = false;
@@ -309,6 +314,72 @@ function runOCRBookmarklet() {
     list.appendChild(batchLine);
     list.appendChild(savedLine);
   }
+  function formatBatchHistoryDate(ms) {
+    const d = new Date(Number(ms));
+    if (!Number.isFinite(d.getTime())) return '?';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const pad = n => String(n).padStart(2, '0');
+    return pad(d.getDate()) + ' ' + months[d.getMonth()] + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function formatBatchHistoryIds(ids) {
+    const unique = Array.from(new Set((Array.isArray(ids) ? ids : [])
+      .map(id => Number(id))
+      .filter(id => Number.isFinite(id) && id > 0))).sort((a, b) => a - b);
+    if (!unique.length) return '';
+    if (unique.length === 1) return '1 saved (#' + unique[0] + ')';
+    let contiguous = true;
+    for (let i = 1; i < unique.length; i++) {
+      if (unique[i] !== unique[i - 1] + 1) { contiguous = false; break; }
+    }
+    const range = contiguous
+      ? '#' + unique[0] + '–#' + unique[unique.length - 1]
+      : unique.map(id => '#' + id).join(', ');
+    return unique.length + ' saved (' + range + ')';
+  }
+  function renderBatchHistory() {
+    const box = $('ocr_batch_history');
+    const list = $('ocr_batch_history_list');
+    if (!box || !list) return;
+    list.textContent = '';
+    const lines = [];
+    (Array.isArray(batchHistory) ? batchHistory : []).slice(0, 15).forEach(entry => {
+      if (!entry || !entry.batchId || !Array.isArray(entry.ids) || !entry.ids.length) return;
+      const saved = formatBatchHistoryIds(entry.ids);
+      if (!saved) return;
+      const meta = [entry.subject || '?', entry.category || '?', entry.year || '?'].join(' / ');
+      lines.push(formatBatchHistoryDate(entry.at) + ' · ' + meta + ' · ' + saved
+        + (entry.mode ? ' · ' + entry.mode : ''));
+    });
+    box.hidden = lines.length === 0;
+    if (!lines.length) return;
+    lines.forEach(line => {
+      const row = document.createElement('div');
+      row.textContent = line;
+      list.appendChild(row);
+    });
+  }
+  function recordBatchHistory() {
+    try {
+      const meta = currentMeta();
+      const entry = makeBatchHistoryEntry({
+        batchId: queue.batchId,
+        subject: meta.subjectText || meta.subject,
+        category: meta.categoryText || meta.category,
+        year: meta.year,
+        entries: savedForBatch(savedLog, queue.batchId),
+        at: Date.now()
+      });
+      if (!entry) return;
+      let stored = batchHistory;
+      try {
+        const current = store.get('ocrBatchHistory');
+        if (Array.isArray(current)) stored = current;
+      } catch (e) {}
+      batchHistory = upsertBatchHistory(stored, entry, 15);
+      store.set('ocrBatchHistory', batchHistory);
+    } catch (e) {}
+    try { renderBatchHistory(); } catch (e) {}
+  }
   function renderPaused() {
     const box = $('ocr_paused');
     const text = $('ocr_paused_text');
@@ -392,6 +463,7 @@ function runOCRBookmarklet() {
     blockedEl.style.fontWeight = lastBlocked ? 'bold' : '';
     renderProgress();
     renderSaved();
+    renderBatchHistory();
     renderPaused();
   }
   function resetConfirm() {
@@ -536,6 +608,7 @@ function runOCRBookmarklet() {
         stopAuto = true;
         return { kind: 'saved', id: result.id, inactive: inactive, entry: entry, failed: committed.stage };
       }
+      recordBatchHistory();
       clearSavedMarker(priorSaving, num);
       ['question_image', 'answer_video'].forEach(n => { const el = form.elements[n]; if (el) el.value = ''; });
       const ae = form.elements.answer_explanation;

@@ -751,8 +751,38 @@ server or storage-schema change.
 dropped by the cap it can be saved again. Old entries have no fingerprint and
 are never matched. A question over 4,000 characters is stored as legacy, so a
 later re-paste is not caught. Matching depends on the IDs and year being stable;
-a label-only change does not affect it. The UI hook that writes `fp` has unit
-coverage for the helper and storage path, but no DOM harness.
+a label-only change does not affect it. The UI hook that writes `fp` is covered
+by the test-only deterministic DOM/storage/fetch shim in `tests/ui-harness.js`
+(FIX-1); it is not a browser test.
+
+## D-57 — Batch history is an additive 15-batch one-line log
+
+**Choice.** `ocrBatchHistory` stores at most 15 entries, newest first, one per
+batch: `{batchId, at, subject, category, year, ids, count, mode}`. `ids` are the
+unique saved IDs, sorted ascending. `mode` is the display suffix from
+`savedModeSuffix` with its leading comma removed, so it can be `active`,
+`inactive`, `2 active, 1 inactive`, `status not verified`, or a `MISMATCH`
+string. `makeBatchHistoryEntry` builds an entry from the current batch's saved
+entries and returns `null` without a batch ID or saved IDs. `upsertBatchHistory`
+replaces the same `batchId`, moves the entry to the front, and caps the array at
+15. A verified save updates the history after `ocrSavedLog`; rejected and
+ambiguous saves do not. Reset Queue keeps the history. The UI renders one line
+per entry with `textContent`, explicit month abbreviations, `–` between
+contiguous first/last IDs, a comma list when IDs have gaps, and no suffix when
+`mode` is empty. The storage read and write are wrapped: a failure never sets a
+blocker, stops a run, or changes a save result.
+
+**Why.** The saved box and its copy text are scoped to the current batch, so
+Reset or a new paste hides earlier batches. The retained log still has the data,
+but the user cannot see a compact recent history. This additive key shows the
+last 15 batches without changing `ocrSavedLog`, its merge/cap behavior, the
+current-batch saved box, or Reset semantics.
+
+**Risk.** History is display-only and can lag behind the log if a history write
+fails; the next verified save rebuilds the current batch entry from the log. The
+key is capped at 15 batches, so older batches disappear even though the log may
+still retain them. Labels are snapshots from the save time; a later label rename
+does not rewrite them. There is no per-question detail in history by design.
 
 ## Auto-Save verification notes
 
