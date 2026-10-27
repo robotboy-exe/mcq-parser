@@ -628,6 +628,17 @@ function classifySaveResponse(reply) {
   return { kind: 'ambiguous', message: 'Unknown. It may have saved. Check the list.' };
 }
 
+function checkListUrl(pathname, marker) {
+  const m = marker || {};
+  const subject = String(m.subject == null ? '' : m.subject).trim();
+  const category = String(m.category == null ? '' : m.category).trim();
+  const year = String(m.year == null ? '' : m.year).trim();
+  if (!/^\d+$/.test(subject) || !/^\d+$/.test(category) || !/^\d{4}$/.test(year)) return null;
+  return String(pathname == null ? '' : pathname) + '?subject_id=' + encodeURIComponent(subject)
+    + '&exam_year_filter=' + encodeURIComponent(year)
+    + '&category_filter=' + encodeURIComponent(category);
+}
+
 function sameMeta(snapshot, meta) {
   const s = snapshot || {};
   const m = meta || {};
@@ -782,6 +793,7 @@ if (typeof module !== 'undefined' && module.exports) {
     mergeSavedLog,
     commitSave,
     heartbeatTick,
+    checkListUrl,
     sameMeta,
     maxSavedId,
     savedForBatch,

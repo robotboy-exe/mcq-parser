@@ -543,6 +543,14 @@ test('blockerText maps every known code to a plain sentence', () => {
 });
 
 
+test('checkListUrl builds the filtered Recently Added URL from save metadata', () => {
+  eq(parser.checkListUrl('/admin_questions.php', { subject: '14', category: '3', year: '2024' }),
+    '/admin_questions.php?subject_id=14&exam_year_filter=2024&category_filter=3');
+  eq(parser.checkListUrl('/admin_questions.php', { subject: '', category: '3', year: '2024' }), null);
+  eq(parser.checkListUrl('/admin_questions.php', { subject: '14', category: '3', year: '24' }), null);
+  eq(parser.checkListUrl('/admin_questions.php', null), null);
+});
+
 test('classifySaveResponse accepts a fresh success redirect', () => {
   eq(parser.classifySaveResponse({
     redirected: true,

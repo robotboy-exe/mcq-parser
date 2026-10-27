@@ -22,7 +22,7 @@ function runOCRBookmarklet() {
   };
   const p = document.createElement('div');
   p.className = 'admin-field';
-  p.innerHTML = `<style>#ocr_auto_start:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}#ocr_auto_start:disabled:hover{background:#1769aa}</style><div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn admin-btn-muted" id="ocr_paste_clipboard">Paste clipboard</button> <button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_auto"><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <label class="admin-note" style="display:inline-block;margin:0 8px"><input type="checkbox" id="ocr_active_mode"> Save as active (live immediately)</label> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_auto_status" class="admin-note"></div><div id="ocr_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#2e9e63"></progress><span id="ocr_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_auto_blocked" class="admin-note"></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
+  p.innerHTML = `<style>#ocr_auto_start:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}#ocr_auto_start:disabled:hover{background:#1769aa}</style><div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn admin-btn-muted" id="ocr_paste_clipboard">Paste clipboard</button> <button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_auto"><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <label class="admin-note" style="display:inline-block;margin:0 8px"><input type="checkbox" id="ocr_active_mode"> Save as active (live immediately)</label> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_auto_status" class="admin-note"></div><div id="ocr_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#2e9e63"></progress><span id="ocr_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_auto_blocked" class="admin-note"></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button> <a class="admin-btn admin-btn-muted" id="ocr_paused_check" href="#" hidden>Open filtered list</a></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
   form.before(p);
   const sb = form.querySelector('button[type=submit]');
   if (sb) {
@@ -209,6 +209,16 @@ function runOCRBookmarklet() {
       }
     };
   }
+  function batchLabel() {
+    const meta = currentMeta();
+    const name = (meta.subjectText || '?') + ' / ' + (meta.categoryText || '?') + ' / ' + (meta.year || '?');
+    const count = queue.items.length;
+    if (!count) return name;
+    const first = queue.items[0].num;
+    const last = queue.items[count - 1].num;
+    const range = first != null && last != null ? ' (#' + first + ' to #' + last + ')' : '';
+    return name + ' — ' + count + ' question' + (count === 1 ? '' : 's') + range;
+  }
   function renderBatchConfirm() {
     const box = $('ocr_batch_confirm');
     if (!box) return;
@@ -217,10 +227,8 @@ function runOCRBookmarklet() {
     box.hidden = false;
     const meta = currentMeta();
     if (confirmTicked && !confirmedMeta) confirmedMeta = { subject: meta.subject, category: meta.category, year: meta.year };
-    const first = queue.items[0].num;
-    const last = queue.items[queue.items.length - 1].num;
     const summary = document.createElement('div');
-    summary.textContent = 'Batch: ' + (meta.subjectText || '?') + ' / ' + (meta.categoryText || '?') + ' / ' + (meta.year || '?') + ' — ' + queue.items.length + ' questions, ' + Object.keys(key).length + ' key answers, #' + first + ' to #' + last + '.';
+    summary.textContent = 'Batch: ' + batchLabel() + ', ' + Object.keys(key).length + ' key answers.';
     box.appendChild(summary);
     const yearLine = document.createElement('div');
     const yearStrong = document.createElement('strong');
@@ -272,7 +280,7 @@ function runOCRBookmarklet() {
   function savedCopyText() {
     const entries = savedForBatch(savedLog, queue.batchId);
     if (!entries.length) return 'No saves in this batch.';
-    return entries.map(entry => unverifiedSaves([entry]).length
+    return 'Batch: ' + batchLabel() + '\n' + entries.map(entry => unverifiedSaves([entry]).length
       ? 'Question ' + entry.num + ' (#' + entry.id + '): active status not verified'
       : 'Question ' + entry.num + ' saved as #' + entry.id + '.'
     ).join('\n');
@@ -284,28 +292,45 @@ function runOCRBookmarklet() {
     const entries = savedForBatch(savedLog, queue.batchId);
     const warned = entries.length > 0 && unverifiedSaves(entries).length > 0;
     box.hidden = !entries.length;
-    if (entries.length) {
-      box.style.color = warned ? '#8a4b00' : '#0d6b3f';
-      box.style.background = warned ? '#fff4e5' : '#eef8f1';
-      box.style.border = '1px solid ' + (warned ? '#d97706' : '#2e9e63');
-      box.style.borderLeft = '4px solid ' + (warned ? '#d97706' : '#2e9e63');
-      box.style.borderRadius = '6px';
-      box.style.padding = '8px 10px';
-      box.style.marginTop = '10px';
-      list.style.fontWeight = 'bold';
-    }
-    list.textContent = entries.length ? formatSavedRange(entries) : '';
+    list.textContent = '';
+    if (!entries.length) return;
+    box.style.color = warned ? '#8a4b00' : '#0d6b3f';
+    box.style.background = warned ? '#fff4e5' : '#eef8f1';
+    box.style.border = '1px solid ' + (warned ? '#d97706' : '#2e9e63');
+    box.style.borderLeft = '4px solid ' + (warned ? '#d97706' : '#2e9e63');
+    box.style.borderRadius = '6px';
+    box.style.padding = '8px 10px';
+    box.style.marginTop = '10px';
+    list.style.fontWeight = 'bold';
+    const batchLine = document.createElement('div');
+    batchLine.textContent = 'Batch: ' + batchLabel();
+    const savedLine = document.createElement('div');
+    savedLine.textContent = formatSavedRange(entries);
+    list.appendChild(batchLine);
+    list.appendChild(savedLine);
   }
   function renderPaused() {
     const box = $('ocr_paused');
     const text = $('ocr_paused_text');
+    const link = $('ocr_paused_check');
     if (!box || !text) return;
     let marker = null;
     try { marker = store.get('ocrSaving'); } catch (e) {}
-    if (!marker || saveInProgress) { box.hidden = true; return; }
+    if (!marker || saveInProgress) { box.hidden = true; if (link) link.hidden = true; return; }
     box.hidden = false;
     const when = marker.at ? new Date(marker.at).toLocaleTimeString() : 'an earlier time';
     text.textContent = 'Question ' + (marker.num == null ? '?' : marker.num) + ' may have saved at ' + when + '. It was not retried. Check Recently Added Questions first.';
+    if (link) {
+      let url = checkListUrl(location.pathname, marker);
+      if (!url) {
+        try {
+          const meta = store.get('ocrMeta');
+          if (meta) url = checkListUrl(location.pathname, { subject: meta.subject_id, category: meta.exam_category_id, year: meta.exam_year });
+        } catch (e) {}
+      }
+      link.hidden = !url;
+      if (url) link.href = url;
+    }
   }
   function renderProgress() {
     const box = $('ocr_progress');
@@ -448,7 +473,14 @@ function runOCRBookmarklet() {
     try {
       try { priorSaving = store.get('ocrSaving'); } catch (e) {}
       try {
-        store.set('ocrSaving', { num: num, at: Date.now() });
+        const markerMeta = currentMeta();
+        store.set('ocrSaving', {
+          num: num,
+          at: Date.now(),
+          subject: markerMeta.subject,
+          category: markerMeta.category,
+          year: markerMeta.year
+        });
       } catch (e) {
         setResult('NOT saved: browser storage is unavailable, so the save was not attempted.', true);
         return { kind: 'rejected', reason: 'storage', message: 'browser storage is unavailable.' };
@@ -644,7 +676,11 @@ function runOCRBookmarklet() {
     try {
       while (autoRunning) {
         if (stopAuto) { markStopped(); break; }
-        if (!queue.items[queue.i]) { autoStatus = 'All questions in this batch are done.'; break; }
+        if (!queue.items[queue.i]) {
+          const savedCount = savedForBatch(savedLog, queue.batchId).length;
+          autoStatus = 'Batch complete: ' + batchLabel() + ' · ' + savedCount + ' saved.';
+          break;
+        }
         const blockers = autosaveBlockers(gateState());
         if (blockers.length) { showBlocked(blockers[0]); break; }
         const result = await saveCurrentQuestion({ auto: true, active: runMode === 'active' });

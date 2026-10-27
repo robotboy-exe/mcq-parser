@@ -135,11 +135,12 @@ Status definitions:
 | INV-82 | A slash after an A–F label is treated as an option separator when the label is preceded by start, newline, or whitespace and the slash is followed by whitespace. The slash is normalized to a dot for scanning while character offsets remain unchanged. This supports all labels A–F, inline or at line start. | VERIFIED | D-49; `fixtures/inputs/new-edge-slash-option-a.txt`; `fixtures/inputs/new-edge-slash-all-options.txt`; `tests/runner.js` 2026-10-26 |
 | INV-83 | "Paste clipboard" reads the clipboard only on click, replaces the paste box contents, and does not load or parse. Unavailable, denied, or empty clipboard access focuses the box and shows an alert. | VERIFIED | D-50; `src/ui/ui.js`; browser success-path check 2026-10-26; build check 2026-10-26 |
 | INV-84 | Auto-save and dry run show one concise status line plus a progress bar. Dry run reports only a summary and never a line per question. The green saved box shows only the saved-range summary; per-question detail stays behind `Copy saved list`. Start is visibly dimmed whenever its disabled state is true. | VERIFIED | D-52; `src/ui/ui.js`; browser check 2026-10-26; build check 2026-10-26 |
+| INV-85 | The paused warning has an `Open filtered list` link built only when the `ocrSaving` marker has numeric subject, category, and four-digit year, or else from valid `ocrMeta`; it targets `location.pathname` with `subject_id`, `exam_year_filter`, and `category_filter`. The link is hidden when neither source has valid metadata. | VERIFIED | D-53; `src/parser/parser.js`; `tests/unit.js`; build check 2026-10-26 |
 
 ## Counts
 
-- Total: 84
-- VERIFIED: 75
+- Total: 85
+- VERIFIED: 76
 - AT_RISK: 9
 - CONFLICTED: 0
 

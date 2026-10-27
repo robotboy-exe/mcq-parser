@@ -654,13 +654,29 @@ still not persisted.
 Dry run reports only a summary such as `Dry run: all 40 would save as ACTIVE.`
 or `Dry run: 12 of 40 checked; stops at #13: Option C is empty.` Auto-save
 reports `Auto-save ACTIVE: 12/40 done · 12 saved this run.` The green saved box
-shows only `Saved this batch: ...`; per-question detail stays behind `Copy saved
-list`. Add no separate dry-run report or copy control.
+names the batch (`Batch: Subject / Category / Year — N questions (#first to
+#last)`) and shows only `Saved this batch: ...`; per-question detail stays behind
+`Copy saved list`. Add no separate dry-run report or copy control.
 **Why.** The per-question dry-run lines and appended saved details were a wall of
 text on a phone. The user asked for a summary and a visual progress cue.
 **Risk.** The dry run no longer lists every passing question; after fixing the
 first blocker, run it again to see the next. The detailed saved data is still
 available through the existing Copy button.
+
+## D-53 — Paused warning links to the filtered Recently Added list
+
+**Choice.** Snapshot the form's subject, category, and year into the `ocrSaving`
+marker before each POST. The paused warning gets an `Open filtered list` link to
+`location.pathname` with `subject_id`, `exam_year_filter`, and `category_filter`
+from that snapshot, so the user can check whether the ambiguous save inserted a
+row. Old markers without the snapshot fall back to `ocrMeta`; the link stays
+hidden when neither source has valid numeric metadata.
+**Why.** The unfiltered list intentionally omits new rows, and the user asked
+for a direct route to the page where the check happens instead of navigating
+manually.
+**Risk.** The link is only as accurate as the metadata captured at save time.
+If the form metadata changes after an ambiguous save, the marker keeps the
+original values and the link still points at the attempted question's scope.
 
 ## Auto-Save verification notes
 

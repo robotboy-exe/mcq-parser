@@ -343,7 +343,7 @@ section records the contract as implemented.
 | `ocrQueue.batchId` | UUID string (random/Date fallback) | A questions paste |
 | `ansKeyBatch` | the matching `batchId` | Key loaded with the questions; a key-only paste attaches to the current queue |
 | `ansKeyConflicts` | `[{num, letters}]` | Key loaded; identical repeats are not conflicts |
-| `ocrSaving` | `{num, at}` crash marker | Immediately before a save request |
+| `ocrSaving` | `{num, at, subject, category, year}` crash marker; metadata is a snapshot taken at save time for the paused-warning link | Immediately before a save request |
 | `ocrSavedLog` | `[{num, id, at, batchId, inactive, mode}]`, capped at 200 | Only after a verified save; `inactive` is `true`/`false`/`null` (confirmed, active/manual, or unverified); `mode` is `draft`, `active`, or `manual` |
 | `autoLock` | `{tabId, at}` heartbeat | While a run is active |
 
@@ -434,8 +434,10 @@ points at the same batch/index/item it started with.
 
 The manual submit refuses while an `ocrSaving` marker exists: it makes no POST
 and shows `An earlier save is unconfirmed. Check the list, then tap 'I checked.
-Clear warning.'`. After the marker is cleared, the same manual save proceeds
-normally (Fix 2).
+Clear warning.'`. The paused warning also has `Open filtered list`, which links to
+the Recently Added list filtered by the marker's subject, year, and category;
+it is hidden when no valid numeric metadata is available. After the marker is
+cleared, the same manual save proceeds normally (Fix 2).
 
 ### 7.5 Lock, dry run, duplicates
 
@@ -452,9 +454,12 @@ normally (Fix 2).
   a line per question. A progress bar shows checked / remaining.
 - Auto-save shows one status line, such as
   `Auto-save ACTIVE: 12/40 done · 12 saved this run.` A progress bar shows the
-  queue position. The green saved box shows only a summary such as
-  `Saved this batch: #901 to #912, inactive`; full per-question details remain
-  behind `Copy saved list`.
+  queue position. The green saved box names the batch
+  (`Batch: Subject / Category / Year — N questions (#first to #last)`) and shows
+  only a summary such as `Saved this batch: #901 to #912, inactive`; full
+  per-question details remain behind `Copy saved list`. When the run reaches the
+  end, the status line says `Batch complete: Subject / Category / Year — N
+  questions (#first to #last) · N saved.`
 - Duplicate safeguards stop (not skip) the run when the number is already in
   this batch's saved log, or a recent admin-table row has the same normalized
   subject, exam year, category and question text. A long row is the server's
