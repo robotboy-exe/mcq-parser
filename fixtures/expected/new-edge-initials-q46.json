@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "input_origin": "anomaly",
+  "id": "new-edge-initials-q46",
+  "source": [
+    "docs/NEW_EDGE_CASES.txt lines 274-276",
+    "User request 2026-10-27; P12 option boundary selection"
+  ],
+  "provenance": "Verbatim Q46 block from the user-supplied new edge-case inbox. The initials in `K. A. Gbedemah` and `E. F. Small` are option text, not option labels.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-initials-q46.txt",
+  "kind": "question",
+  "parse_num": 46,
+  "expected": {
+    "question": "46. The West African Students Union (WASU) was formed by",
+    "a": "Siaka Stevens",
+    "b": "K. A. Gbedemah",
+    "c": "E. F. Small",
+    "d": "Oladipo Solanke",
+    "e": "",
+    "f": "",
+    "flags": [],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)",
+      "E/F options present",
+      "option A missing",
+      "option B missing",
+      "option C missing",
+      "option D missing"
+    ]
+  },
+  "must_not": [
+    "Option B becomes `Gbedemah` or the inner `A.` replaces the outer A",
+    "Option C becomes `F. Small` or the inner `E.` becomes Option E",
+    "The duplicate-letter warning is raised"
+  ],
+  "notes": [
+    "Expected option text is transcribed from the raw Q46 block, not from parser output.",
+    "Q46 has one ordered outer A-D set; the inner initials are kept inside options B and C."
+  ],
+  "discrepancies": []
+}

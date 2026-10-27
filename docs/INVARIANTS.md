@@ -37,8 +37,8 @@ Status definitions:
 | INV-14 | The main option regex recognizes uppercase A–F only; the page itself accepts only four options. | VERIFIED | qwen-2-reconciled inv 6 |
 | INV-15 | Option text written to the form must not carry its own `A.`/`B.`/etc. label. | VERIFIED | qwen-2-reconciled inv 15 |
 | INV-16 | An empty option must stay empty and be reported as that option missing; a later option must not be pulled into its place. | VERIFIED | qwen-2-reconciled inv 14; claude-migration §4 |
-| INV-17 | Duplicate option letters must be flagged. | VERIFIED | claude-migration §4; qwen-2-reconciled inv 16 |
-| INV-18 | Flags must cover: missing question number, question under 10 chars, missing A–D, options over 500 chars, duplicate letters, numbering gaps between kept markers, and `E/F options present` (D-37). | VERIFIED | qwen-2-reconciled §2.8; claude-migration §2; user request 2026-10-24; `tests/unit.js` |
+| INV-17 | A second complete A–D option set with no visible question-number boundary must be flagged as a possible merged paste. Duplicate labels inside the selected option set are not flagged solely for duplication (D-55). | VERIFIED | D-55; claude-migration §4; qwen-2-reconciled inv 16 |
+| INV-18 | Flags must cover: missing question number, question under 10 chars, missing A–D, options over 500 chars, a second complete A–D set with no visible question-number boundary, numbering gaps between kept markers, and `E/F options present` (D-37, D-55). | VERIFIED | qwen-2-reconciled §2.8; claude-migration §2; user request 2026-10-24; D-55; `tests/unit.js` |
 | INV-19 | E and F are never flagged as missing. They are instead reported as `E/F options present`. | VERIFIED | claude-migration §2; D-37 |
 | INV-20 | Parser flags are advisory: they must not silently block loading, queueing, or manual saving. Auto-Save consumes them as explicit blockers and shows the reason (D-33). | VERIFIED | qwen-2-reconciled inv 16; D-33 |
 | INV-21 | Question markers must keep the sequence guard `if (last && (n <= last \|\| n > last + 5)) continue;`. | VERIFIED | qwen-1-gaps §5; qwen-1-gaps2 high-risk 4 |
@@ -83,7 +83,7 @@ Status definitions:
 | INV-42 | The header is the first three lines; year is the first `20\d\d` match; it is written to `exam_year`. | VERIFIED | qwen-2-reconciled §2.7 |
 | INV-43 | Header CRK/CRS/C.R.K./C.R.S./CHRISTIAN RELIGIOUS [STUDIES] selects a subject containing `CRS` or `CHRISTIAN RELIGIOUS`; the current live list contains `CRS` (id 14), so the alias selects it. | VERIFIED | qwen-2-reconciled inv/E15; user request 2026-10-24; `archive/live-sources/subjects-select-2026-10-23.html`; fixture harness uses that list |
 | INV-44 | Without an alias, subject selection uses containment then word-overlap scoring (words longer than 2 chars). | AT_RISK | qwen-2-reconciled E17/R13 |
-| INV-45 | `exam_category_id` is inferred from the header: POST UTME first, then JAMB/UTME, then WASSCE/WASCE/WAEC/SSCE/NECO/GCE, then General Practice; a bare `UTME` selects `JAMB / UTME`, and SSCE maps to `WASCE / NECO / GCE`. | VERIFIED | user request 2026-10-24; `archive/live-sources/admin_questions.html`; fixtures `header-crs-*` |
+| INV-45 | `exam_category_id` is inferred from the header: POST UTME first, then JAMB/UTME, then WASSCE/WASCE/WAEC/SSCE/NECO/GCE, then General Practice; a bare `UTME` selects `JAMB / UTME`, and SSCE maps to `WASCE / NECO / GCE`. Period-separated acronyms (`S.S.C.E.`, `W.A.S.S.C.E.`, `W.A.E.C.`, `N.E.C.O.`, `G.C.E.`, `J.A.M.B.`, `U.T.M.E.`, `P.O.S.T. U.T.M.E.`) are normalized on a local copy before matching; the stored header text is unchanged. | VERIFIED | user request 2026-10-24 and 2026-10-27; `archive/live-sources/admin_questions.html`; fixtures `header-crs-*`; `tests/unit.js` |
 | INV-58 | Header metadata is applied from the question part, then the dropped section boundary, then the answer section; the first source to set a field wins. A key-only paste uses the boundary/answer header. | VERIFIED | user request 2026-10-24; browser mock check 2026-10-24 |
 
 ## Saving and server contract
@@ -136,11 +136,13 @@ Status definitions:
 | INV-83 | "Paste clipboard" reads the clipboard only on click, replaces the paste box contents, and does not load or parse. Unavailable, denied, or empty clipboard access focuses the box and shows an alert. | VERIFIED | D-50; `src/ui/ui.js`; browser success-path check 2026-10-26; build check 2026-10-26 |
 | INV-84 | Auto-save and dry run show one concise status line plus a progress bar. Dry run reports only a summary and never a line per question. The green saved box shows only the saved-range summary; per-question detail stays behind `Copy saved list`. Start is visibly dimmed whenever its disabled state is true. | VERIFIED | D-52; `src/ui/ui.js`; browser check 2026-10-26; build check 2026-10-26 |
 | INV-85 | The paused warning has an `Open filtered list` link built only when the `ocrSaving` marker has numeric subject, category, and four-digit year, or else from valid `ocrMeta`; it targets `location.pathname` with `subject_id`, `exam_year_filter`, and `category_filter`. The link is hidden when neither source has valid metadata. | VERIFIED | D-53; `src/parser/parser.js`; `tests/unit.js`; build check 2026-10-26 |
+| INV-86 | Option marks select the earliest accepted occurrence of each required letter A–D, then E and F only after the selected D; marks are sorted by text position before slicing. Out-of-order OCR labels keep their letter, and inner initials such as `C. E. F. Small`, `A. Adebayo`, and `E. Smith` stay in option text instead of replacing the outer labels. | VERIFIED | D-55; `fixtures/inputs/new-edge-initials-q46.txt`; `fixtures/inputs/new-edge-single-initials.txt`; `fixtures/inputs/anomaly-block2.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-27 |
+| INV-87 | The duplicate-set flag is computed from all accepted label matches, not from the selected marks. It fires only when a second complete A–D set starts after the first set's D with no visible `1–3 digit + . + whitespace` question-number boundary between them; a visible number suppresses the warning and the text is never split inline. | VERIFIED | D-55; `fixtures/inputs/new-edge-duplicate-labels.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-27 |
 
 ## Counts
 
-- Total: 85
-- VERIFIED: 76
+- Total: 87
+- VERIFIED: 78
 - AT_RISK: 9
 - CONFLICTED: 0
 

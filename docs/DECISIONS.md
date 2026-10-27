@@ -678,6 +678,52 @@ manually.
 If the form metadata changes after an ambiguous save, the marker keeps the
 original values and the link still points at the attempted question's scope.
 
+## D-54 — Normalize period-separated exam acronyms for category inference
+
+**Choice.** Before the category rules, `pickCategoryIndex` normalizes a local
+copy of the header with `compactExamAcronyms`: dotted runs such as `S.S.C.E.`,
+`W.A.S.S.C.E.`, `W.A.E.C.`, `N.E.C.O.`, `G.C.E.`, `J.A.M.B.`, `U.T.M.E.`, and
+`P.O.S.T. U.T.M.E.` collapse to their letters, and `POSTUTME` becomes
+`POST UTME`. The header text returned by `parseHeader` is not rewritten, and
+`pickSubjectIndex` does not use the helper.
+**Why.** The live list has one `WASCE / NECO / GCE` option, so the period forms
+must resolve to the same category as bare `SSCE`/`WASSCE`. The OCR bank uses
+both dotted and bare forms, and a dotted header previously left the category
+unset.
+**Risk.** The normalization is category-only and local. It cannot select a
+separate SSCE/WASSCE category because none exists, and it does not change the
+stored header or subject inference. A dotted run outside the known category
+words still leaves the category unset.
+
+## D-55 — Select one option set and warn only on a boundary-less duplicate
+
+**Choice.** `parseQuestion` builds the option marks from the accepted label
+matches instead of letting the last occurrence of a letter overwrite earlier
+ones. It takes the earliest occurrence of each required letter A, B, C, and D,
+then accepts E and F only after the selected D. The chosen marks are sorted by
+text position before slicing, so an out-of-order OCR block such as `A. Italy
+D. Britain B. Germany C. France` still maps each letter to its own text. Inner
+initials (`C. E. F. Small`, `A. Adebayo`, `E. Smith`) stay inside the option
+text because they are never selected as the outer A–D labels.
+The duplicate-letter flag is computed separately from all accepted matches: it
+fires only when a second complete A–D set starts after the first set's D and no
+`1–3 digit + . + whitespace` question-number boundary lies between them. A
+visible number suppresses the warning and is not split inline.
+
+**Why.** Replacing each label with its last occurrence broke Q46, where the
+initials inside `K. A. Gbedemah` and `E. F. Small` appeared later in the text
+than the real labels. An ordered A→B→C→D-only scan fixes Q46 but drops the
+out-of-order labels in `anomaly-block2`; selecting the earliest occurrence per
+letter keeps both the hostile block and the bank fixtures intact. The old
+any-repeat warning was too broad for inner initials and did not distinguish a
+real merged paste from a visible next question number.
+
+**Risk.** A lone inner initial that appears before the real A–D set would still
+be the earliest occurrence of that letter. The guardrail and fixtures cover
+initials inside option text, not a label-like title before the options. The
+warning is advisory only; the parser never splits inline, so a genuine merged
+paste still needs manual attention.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

@@ -86,7 +86,14 @@ function pickSubjectIndex(header, optionTexts) {
   return selected;
 }
 
+function compactExamAcronyms(text) {
+  return text
+    .replace(/(?:[A-Z]\.){2,}[A-Z]?(?![A-Za-z])/g, run => run.replace(/[^A-Z]/g, ''))
+    .replace(/\bPOSTUTME\b/g, 'POST UTME');
+}
+
 function pickCategoryIndex(header, optionTexts) {
+  const normalized = compactExamAcronyms(header);
   const rules = [
     { match: /\bPOST[\s-]*UTME\b/, keywords: ['POST UTME'] },
     { match: /\bJAMB\b|\bUTME\b/, keywords: ['JAMB', 'UTME'] },
@@ -94,7 +101,7 @@ function pickCategoryIndex(header, optionTexts) {
     { match: /\bGENERAL[\s-]+PRACTICE\b/, keywords: ['GENERAL PRACTICE'] }
   ];
   for (const rule of rules) {
-    if (!rule.match.test(header)) continue;
+    if (!rule.match.test(normalized)) continue;
     for (let i = 0; i < optionTexts.length; i++) {
       const optText = (optionTexts[i] || '').toUpperCase();
       if (!optText || optText.includes('-- SELECT')) continue;
@@ -145,18 +152,99 @@ function isOptionAbbreviation(raw, match) {
   return /^[A-Z](?:\.|\s|$)/.test(raw.slice(match.index + match[0].length));
 }
 
-function parseQuestion({ num, text }) {
-  const raw = text.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
-  const clean = s => s.replace(/\s+/g, ' ').trim();
-  const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
-  const pos = {};
-  const count = {};
+const OPTION_LETTERS = 'ABCDEF';
+const REQUIRED_OPTION_LETTERS = 'ABCD';
+const QUESTION_BOUNDARY = /(?:^|\s)\d{1,3}\.\s/;
+
+function optionLabelMatches(raw, scanRaw) {
+  const matches = [];
   for (const m of scanRaw.matchAll(OPTION)) {
     const letter = m[1] || m[2];
     if (!letter) continue;
     if (isOptionAbbreviation(raw, m)) continue;
-    pos[letter] = { start: m.index, end: m.index + m[0].length };
-    count[letter] = (count[letter] || 0) + 1;
+    matches.push({ letter, start: m.index, end: m.index + m[0].length });
+  }
+  return matches;
+}
+
+function optionCandidateFrom(matches, startIndex) {
+  const picked = [matches[startIndex]];
+  const used = new Set([startIndex]);
+  const startLetter = matches[startIndex].letter;
+  let cursor = startIndex;
+  for (const letter of OPTION_LETTERS.slice(OPTION_LETTERS.indexOf(startLetter) + 1)) {
+    let next = -1;
+    for (let i = cursor + 1; i < matches.length; i++) {
+      if (matches[i].letter === letter && !used.has(i)) {
+        next = i;
+        break;
+      }
+    }
+    if (next === -1) {
+      for (let i = startIndex + 1; i < cursor; i++) {
+        if (matches[i].letter === letter && !used.has(i)) {
+          next = i;
+          break;
+        }
+      }
+    }
+    if (next === -1) continue;
+    picked.push(matches[next]);
+    used.add(next);
+    cursor = next;
+  }
+  return picked;
+}
+
+function bestOptionCandidate(matches) {
+  const picked = [];
+  for (const letter of REQUIRED_OPTION_LETTERS) {
+    const match = matches.find(p => p.letter === letter);
+    if (match) picked.push(match);
+  }
+  if (!picked.length) return null;
+  const d = picked.find(p => p.letter === 'D');
+  if (d) {
+    const e = matches.find(p => p.letter === 'E' && p.start > d.end);
+    const f = e
+      ? matches.find(p => p.letter === 'F' && p.start > e.end)
+      : matches.find(p => p.letter === 'F' && p.start > d.end);
+    if (e) picked.push(e);
+    if (f) picked.push(f);
+  }
+  return { picked };
+}
+
+function hasUnnumberedDuplicateSet(raw, matches) {
+  const complete = [];
+  for (let i = 0; i < matches.length; i++) {
+    if (matches[i].letter !== 'A') continue;
+    const picked = optionCandidateFrom(matches, i);
+    const letters = new Set(picked.map(p => p.letter));
+    if ([...REQUIRED_OPTION_LETTERS].every(letter => letters.has(letter))) complete.push(picked);
+  }
+  complete.sort((a, b) => a[0].start - b[0].start);
+  for (let i = 0; i < complete.length; i++) {
+    const firstD = complete[i].find(p => p.letter === 'D');
+    if (!firstD) continue;
+    for (let j = i + 1; j < complete.length; j++) {
+      const secondA = complete[j].find(p => p.letter === 'A');
+      if (!secondA || secondA.start <= firstD.end) continue;
+      return !QUESTION_BOUNDARY.test(raw.slice(firstD.end, secondA.start));
+    }
+  }
+  return false;
+}
+
+function parseQuestion({ num, text }) {
+  const raw = text.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+  const clean = s => s.replace(/\s+/g, ' ').trim();
+  const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
+  const matches = optionLabelMatches(raw, scanRaw);
+  const best = bestOptionCandidate(matches);
+  const pos = {};
+  if (best) {
+    for (const p of best.picked) pos[p.letter] = { start: p.start, end: p.end };
   }
   for (const X of 'EF') {
     const P = X === 'E' ? 'D' : 'E';
@@ -181,7 +269,6 @@ function parseQuestion({ num, text }) {
       if (prev && match.index <= prev.end) continue;
       if (!raw.slice(0, match.index).trim()) continue;
       pos[X] = { start: match.index, end: match.index + match[0].length };
-      count[X] = (count[X] || 0) + 1;
       break;
     }
   }
@@ -199,7 +286,7 @@ function parseQuestion({ num, text }) {
     if (!q[l] && l <= 'd') q.flags.push(`option ${l.toUpperCase()} missing`);
     if (q[l] && q[l].length > 500) q.flags.push(`option ${l.toUpperCase()} over 500 characters`);
   }
-  if (Object.values(count).some(c => c > 1)) q.flags.push('a letter appears twice (merged questions?)');
+  if (hasUnnumberedDuplicateSet(raw, matches)) q.flags.push('a letter appears twice (merged questions?)');
   if (q.e || q.f) q.flags.push('E/F options present');
   return q;
 }

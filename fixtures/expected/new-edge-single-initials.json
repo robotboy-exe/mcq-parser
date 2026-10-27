@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "new-edge-single-initials",
+  "source": [
+    "User request 2026-10-27; P12 option boundary selection",
+    "INTENT.md section 2 (initials inside option text are text)"
+  ],
+  "provenance": "Assistant-written input covering a single `A. Adebayo` and `E. Smith` inside option text. Not user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-single-initials.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question": "1. The invited speakers were",
+    "a": "Bello",
+    "b": "Dr. A. Adebayo",
+    "c": "Prof. E. Smith",
+    "d": "Danjuma",
+    "e": "",
+    "f": "",
+    "flags": [],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)",
+      "E/F options present"
+    ]
+  },
+  "must_not": [
+    "The inner `A.` replaces the outer Option A",
+    "`E. Smith` becomes Option E",
+    "The duplicate-letter warning is raised"
+  ],
+  "notes": [
+    "The outer A-D sequence is the only complete set; the lone inner initials must stay in B and C."
+  ],
+  "discrepancies": []
+}

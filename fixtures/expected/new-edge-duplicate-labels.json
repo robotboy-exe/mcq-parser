@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "new-edge-duplicate-labels",
+  "source": [
+    "User request 2026-10-27; P12 duplicate-set warning",
+    "INTENT.md section 2 (second A-D set without a visible number)"
+  ],
+  "provenance": "Assistant-written input with two full A-D sets and no question-number boundary. Not user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-duplicate-labels.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "nums": [1],
+    "questions": [
+      {
+        "num": 1,
+        "question": "The invited speakers were",
+        "a": "Bello",
+        "b": "Adebayo",
+        "c": "Smith",
+        "flags": [
+          "a letter appears twice (merged questions?)"
+        ]
+      }
+    ],
+    "required_flags": [
+      "a letter appears twice (merged questions?)"
+    ],
+    "forbidden_flags": [
+      "E/F options present"
+    ]
+  },
+  "must_not": [
+    "The text was split into two questions",
+    "The duplicate set is silently dropped without the merged-paste warning"
+  ],
+  "notes": [
+    "The first complete A-D set is parsed; the second produces only the advisory warning because no visible question number separates the sets."
+  ],
+  "discrepancies": []
+}

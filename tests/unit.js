@@ -7,6 +7,13 @@ const path = require('path');
 const parser = require('../src/parser/parser.js');
 
 const INPUT_DIR = path.resolve(__dirname, '../fixtures/inputs');
+const ADMIN_HTML_FILE = path.resolve(__dirname, '../archive/live-sources/admin_questions.html');
+const CATEGORY_SELECT = fs.readFileSync(ADMIN_HTML_FILE, 'utf8')
+  .match(/<select[^>]*id="exam_category_id"[\s\S]*?<\/select>/i);
+const CATEGORY_NAMES = CATEGORY_SELECT ? [...CATEGORY_SELECT[0]
+  .matchAll(/<option[^>]*>([^<]+)<\/option>/gi)]
+  .map(m => m[1].trim())
+  .filter(name => name && !name.startsWith('--')) : [];
 
 let passed = 0;
 let failed = 0;
@@ -47,6 +54,23 @@ test('parseKeyDetailed reports differing repeats only', () => {
   });
 });
 
+test('pickCategoryIndex maps period-separated exam acronyms', () => {
+  const selected = header => {
+    const index = parser.pickCategoryIndex(header, CATEGORY_NAMES);
+    return index >= 0 ? CATEGORY_NAMES[index] : null;
+  };
+  eq(selected('CRS SSCE 2023'), 'WASCE / NECO / GCE');
+  eq(selected('CRS WASSCE 2023'), 'WASCE / NECO / GCE');
+  for (const acronym of ['S.S.C.E.', 'W.A.S.S.C.E.', 'W.A.S.C.E.', 'W.A.E.C.', 'N.E.C.O.', 'G.C.E.']) {
+    eq(selected('CRS ' + acronym + ' 2023'), 'WASCE / NECO / GCE', acronym);
+  }
+  eq(selected('CRS J.A.M.B. 2023'), 'JAMB / UTME');
+  eq(selected('CRS U.T.M.E. 2023'), 'JAMB / UTME');
+  eq(selected('CRS P.O.S.T. U.T.M.E. 2023'), 'POST UTME');
+  eq(selected('GENERAL PRACTICE'), 'General Practice');
+  eq(selected('CRS 2023'), null);
+});
+
 test('parseQuestion adds the E/F advisory flag', () => {
   const q = parser.parseQuestion({
     num: 1,
@@ -62,6 +86,37 @@ test('parseQuestion leaves a four-option question unflagged', () => {
     text: 'Who was the father of faith?\nA. Isaac\nB. Jacob\nC. Moses\nD. Abraham'
   });
   eq(q.flags, []);
+});
+
+test('parseQuestion keeps Q46 initials inside options B and C', () => {
+  const text = fs.readFileSync(path.join(INPUT_DIR, 'new-edge-initials-q46.txt'), 'utf8');
+  const q = parser.parseQuestion({ num: 46, text });
+  eq(q.a, 'Siaka Stevens');
+  eq(q.b, 'K. A. Gbedemah');
+  eq(q.c, 'E. F. Small');
+  eq(q.d, 'Oladipo Solanke');
+  eq(q.flags, []);
+});
+
+test('parseQuestion keeps single initials inside option text', () => {
+  const text = fs.readFileSync(path.join(INPUT_DIR, 'new-edge-single-initials.txt'), 'utf8');
+  const q = parser.parseQuestion({ num: 1, text });
+  eq(q.a, 'Bello');
+  eq(q.b, 'Dr. A. Adebayo');
+  eq(q.c, 'Prof. E. Smith');
+  eq(q.d, 'Danjuma');
+  eq(q.flags, []);
+});
+
+test('parseQuestion suppresses the duplicate warning after an inline number', () => {
+  const q = parser.parseQuestion({
+    num: 1,
+    text: '1. First question\nA. one B. two C. three D. four 2. Second question\nA. five B. six C. seven D. eight'
+  });
+  eq(q.a, 'one');
+  eq(q.b, 'two');
+  eq(q.c, 'three');
+  assert(!q.flags.includes('a letter appears twice (merged questions?)'), 'duplicate warning should be suppressed: ' + q.flags.join(', '));
 });
 
 test('byteLength counts UTF-8 bytes', () => {

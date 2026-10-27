@@ -71,7 +71,9 @@ features.
   key (INV-32, INV-33).
 - Blank options stay blank; a later option is not pulled into their place
   (INV-16).
-- Duplicate option letters are flagged with the pre-dedup count (INV-17).
+- A second complete A–D set with no visible question-number boundary is
+  flagged as a possible merged paste; duplicate labels inside one selected set
+  are not flagged solely for duplication (INV-17, D-55).
 - Flags are advisory and never block load/queue/save (INV-20).
 - Numbering gaps are flagged on the later question via `flagNumberingGaps`
   (D-29, INV-59); repeats and large jumps are still skipped.

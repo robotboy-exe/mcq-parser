@@ -81,6 +81,7 @@ current question.
 | EC-43 | Fuzzy subject name | No alias match | Containment / word-overlap scoring | UNVERIFIED | qwen-2-reconciled E17 |
 | EC-44 | Year typo/missing year | `2O21` (letter O) or no `20\d\d` match | No year written; server rejects if `exam_year` is empty/out of 1900–2100; flag/UI does not validate range | CONFIRMED | qwen-2-gaps; `admin_questions.php` range check |
 | EC-61 | Header year false positive | Header contains an earlier `20\d\d` such as a copyright/reference year | First `20\d\d` wins and is written to `exam_year`; no check that it is the exam year | CONFIRMED | qwen-2-reconciled R14 |
+| EC-84 | Period-separated exam acronym | Header uses `S.S.C.E.`, `W.A.S.S.C.E.`, `W.A.E.C.`, `N.E.C.O.`, `G.C.E.`, `J.A.M.B.`, `U.T.M.E.`, or `P.O.S.T. U.T.M.E.` | A local header copy is compacted before category matching; the period forms select the same live option as the bare form (`WASCE / NECO / GCE`, `JAMB / UTME`, or `POST UTME`). The header text and subject inference are unchanged | CONFIRMED | D-54; user request 2026-10-27; `fixtures/inputs/header-crs-ssce-periods.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-27 |
 
 Note: EC-61 was present in the raw phase-3 notes (qwen-2 R14) and was added to
 this table during review.
@@ -142,6 +143,8 @@ this table during review.
 | EC-79 | Dotless B or C between dotted options | Q2 has `C spoke to him.` without a dot, between dotted B and D | The line is parsed as option C; B is not extended and no `option C missing` or duplicate-letter flag is raised, so Auto-Save is not blocked by this question | CONFIRMED | D-47; new edge cases 2020 Q2; `fixtures/inputs/new-edge-dotless-c.txt`; `tests/runner.js` 2026-10-26 |
 | EC-80 | Year abbreviation looks like an option | The stem contains `597 B.C.` or `A.D. 70` | The `B.` or `A.` inside the abbreviation is ignored; the real options remain A–D and no duplicate-letter flag is raised, so Auto-Save is not blocked by this question | CONFIRMED | D-48; new edge cases Q18; `fixtures/inputs/new-edge-year-abbreviation.txt`; `fixtures/inputs/new-edge-year-abbreviation-ad.txt`; `tests/runner.js` 2026-10-26 |
 | EC-81 | Slash option separator on any letter | Q17 has `A/ books of the prophets`; an all-slash block uses `A/ ... B/ ... C/ ... D/ ...` | A spaced slash after an A–F label is normalized to a dot before scanning, so A–D parse correctly inline or at line start; `A/B`, `and/or`, fractions, and dates are not matched | CONFIRMED | D-49; new edge cases Q17; `fixtures/inputs/new-edge-slash-option-a.txt`; `fixtures/inputs/new-edge-slash-all-options.txt`; `tests/runner.js` 2026-10-26 |
+| EC-85 | Initials inside option text | Q46 has `B. K. A. Gbedemah` and `C. E. F. Small`; another question has `B. Dr. A. Adebayo` and `C. Prof. E. Smith` | The outer A–D labels win; the inner initials stay in options B and C, no Option E/F is created, and no duplicate-letter flag is raised | CONFIRMED | D-55; `fixtures/inputs/new-edge-initials-q46.txt`; `fixtures/inputs/new-edge-single-initials.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-27 |
+| EC-86 | Second A–D set and inline number | A block contains a second full A–D set, with or without a visible `2.` between the sets | Without a visible number the item stays one question and gets `a letter appears twice (merged questions?)`. A visible `2.` suppresses the warning and is not split inline; no second queue item is created | CONFIRMED | D-55; `fixtures/inputs/new-edge-duplicate-labels.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-27 |
 
 Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
 
@@ -179,10 +182,15 @@ closed by the archived PHP/HTML sources:
 - EC-82 and EC-83 are CONFIRMED by the 2026-10-26 browser check of the injected
   panel: default ticks, metadata clearing only the confirmation, the dimmed
   Start button, and the dry-run summary/progress.
+- EC-84 is CONFIRMED by the unit and fixture checks for period-separated
+  category acronyms; the header text and subject inference are unchanged.
+- EC-85 and EC-86 are CONFIRMED by the Q46, single-initial, duplicate-label,
+  and inline-number fixture/unit checks; the duplicate warning is now scoped to
+  a boundary-less second A–D set.
 
 ## Counts
 
-- Total: 83
-- CONFIRMED: 79
+- Total: 86
+- CONFIRMED: 82
 - UNVERIFIED: 4
 - CONFLICTED: 0

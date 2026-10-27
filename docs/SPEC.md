@@ -105,7 +105,10 @@ joined, uppercased, and `year` is the first `\b20\d\d\b` match or `null`.
 `pickSubjectIndex` returns the index of the best matching `subject_id` option,
 or `-1`. `pickCategoryIndex` returns the index of the matching
 `exam_category_id` option for POST UTME, JAMB/UTME, WASSCE/WASCE/WAEC/SSCE/
-NECO/GCE, or General Practice, or `-1`.
+NECO/GCE, or General Practice, or `-1`. It first normalizes a local copy of the
+header by collapsing period-separated acronyms (`S.S.C.E.` → `SSCE`,
+`P.O.S.T. U.T.M.E.` → `POST UTME`) and normalizing `POSTUTME`; the header text
+returned by `parseHeader` is unchanged.
 
 ### 3.4 UI state
 
@@ -205,17 +208,26 @@ word or option. The UI and the runner call `splitSectionsWithSalvage(raw)`:
    whitespace and the next text begins with an uppercase letter followed by
    `.`, whitespace, or the end. For example, the `B.` in `597 B.C.` is not an
    option.
-5. Position map is last-write-wins for a repeated letter; match counts record
-   every accepted occurrence.
+5. Select one option set from the accepted labels: take the earliest
+   occurrence of each required letter A, B, C, D, then accept E (and then F)
+   only when it starts after the selected D. Convert the selected marks to a
+   position map and sort them by text position before slicing. This keeps
+   out-of-order OCR labels mapped to their letters and keeps inner initials
+   such as `C. E. F. Small` and `A. Adebayo` inside option text (D-55).
 6. Loose E/F fallback: if E is missing and D exists, a line after D starting
    with lone `E` + whitespace + text is accepted; F similarly after E.
 7. Missing-label repair: if A, B, or C is absent, accept a line beginning with
    that letter, whitespace, and a lowercase word. The line must be after the
    chunk start and between the nearest existing labels. A requires B–D; B
    requires C and D; C requires D. D is not repaired.
-8. Stem = text before the first mark. Each option = text from its mark to the
+8. Duplicate-set warning: from all accepted label matches, find a complete A–D
+   set and a later complete A–D set that starts after the first set's D. Warn
+   only when no `1–3 digit + . + whitespace` question-number boundary lies
+   between them. A visible number suppresses the warning; the text is never
+   split inline.
+9. Stem = text before the first mark. Each option = text from its mark to the
    next mark (last runs to end).
-9. Compute flags (below).
+10. Compute flags (below).
 
 The baseline has **no** absorbed-option post-processor. The `[^\S\n]*` after
 the label is what prevents a blank `C.` from consuming `D.`.
@@ -236,9 +248,11 @@ the label is what prevents a blank `C.` from consuming `D.`.
   overlap of words longer than 2 chars. Highest score wins; ties keep the first.
 - Category: `pickCategoryIndex` maps POST UTME, JAMB/UTME,
   WASSCE/WASCE/WAEC/SSCE/NECO/GCE, and General Practice to the archived live
-  `exam_category_id` options. POST UTME is checked before JAMB/UTME; a bare
-  `UTME` selects `JAMB / UTME`, and SSCE maps to `WASCE / NECO / GCE` because
-  the live list has no SSCE entry.
+  `exam_category_id` options. Period-separated forms (`S.S.C.E.`,
+  `W.A.S.S.C.E.`, `W.A.E.C.`, `N.E.C.O.`, `G.C.E.`, `J.A.M.B.`, `U.T.M.E.`,
+  `P.O.S.T. U.T.M.E.`) normalize to the same words before matching. POST UTME is
+  checked before JAMB/UTME; a bare `UTME` selects `JAMB / UTME`, and SSCE maps to
+  `WASCE / NECO / GCE` because the live list has no SSCE entry.
 - No match leaves the subject/category untouched.
 - The current live subject list is archived in
   `archive/live-sources/subjects-select-2026-10-23.html`: it contains `CRS`
@@ -301,7 +315,7 @@ loading, queueing, or saving.
 | `question text missing or very short` | stem length < 10 |
 | `option A/B/C/D missing` | that option is empty (E/F are never flagged missing) |
 | `option X over 500 characters` | any A–F option length > 500 |
-| `a letter appears twice (merged questions?)` | any option letter matched more than once (pre-dedup count, excluding dotted abbreviations such as `B.C.`) |
+| `a letter appears twice (merged questions?)` | a second complete A–D set exists with no visible `N.` question-number boundary before it (D-55); inner initials alone do not warn, and a visible number suppresses it |
 | `question N missing (numbering gap)` | a kept marker jumps by more than 1 after a known question number; attached to the later question. A run of missing numbers uses `questions N-M missing (numbering gap)` |
 | `E/F options present` | `q.e` or `q.f` is non-empty (D-37); the auto-save gate also blocks this question |
 

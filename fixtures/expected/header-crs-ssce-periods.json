@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "header-crs-ssce-periods",
+  "source": [
+    "User request 2026-10-27 (period-separated exam-category acronyms)",
+    "archive/live-sources/admin_questions.html exam_category_id options"
+  ],
+  "provenance": "Synthetic minimal paste: the S1 stem from header-crs-ssce with the header changed to period-separated S.S.C.E. The live category list has no SSCE entry, so it must map to WASCE / NECO / GCE.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/header-crs-ssce-periods.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "header": {
+      "year": 2023,
+      "subject_contains_any": [
+        "CRS",
+        "CHRISTIAN RELIGIOUS"
+      ],
+      "category_contains_any": [
+        "WASCE / NECO / GCE"
+      ]
+    }
+  }
+}
