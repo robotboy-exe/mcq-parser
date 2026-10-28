@@ -98,7 +98,7 @@ this table during review.
 | EC-50 | Repeated injection interval | Click repeatedly | New interval/DOM each time (inferred risk) | UNVERIFIED | qwen-2-reconciled R12 |
 | EC-51 | Legacy `ocrSubmitted` flag | Flag present in localStorage at boot | Ignored; the bookmarklet does not read, delete, or advance on it (D-27) | CONFIRMED | qwen-2-reconciled E26/U03; user decision; `src/ui/ui.js` |
 | EC-52 | Page scroll on save | Save via AJAX | Page stays in place; no auto-scroll | CONFIRMED | qwen-1-migration §3 |
-| EC-53 | Media-required question | Diagram/video needed | Cannot be created via bookmarklet; attach later in native Edit UI | CONFIRMED | qwen-2-gaps §4 |
+| EC-53 | Media-required question | Diagram/video needed | A shared stimulus image can be attached through the D-60 image plan; arbitrary video and other media still require the native Edit UI | CONFIRMED | qwen-2-gaps §4; D-60 |
 | EC-54 | Newlines in Option D | E/F appended to D | `option_d` is `<input type=text>`; the browser strips `\n\n` | CONFIRMED | claude-migration §8 (issue 3); `admin_questions.html`, `admin_questions.php` |
 | EC-62 | Old-format queue after update | `ocrQueue` written by an older variant | Shape is shared, but old items may lack `e`/`f` or contain old misparses; no version marker exists. A queue without `batchId` still loads and fills the form, but auto-save blocks with `This queue has no batch identity`; manual use remains possible. Reset and re-paste after updating until a migration/version check exists | CONFIRMED | `archive/migration-docs/claude-gaps.md` item 6; live V3 2026-10-25 |
 | EC-82 | Active is the default | A new paste loads a batch | `Save as active` and the single batch confirmation start ticked; Start is enabled when the rest of the gate is clean. A metadata, key, or mode change clears only the confirmation and keeps the active choice. New paste or Reset restores both defaults | CONFIRMED | D-51; INV-71; browser check 2026-10-26 |
@@ -145,6 +145,9 @@ this table during review.
 | EC-81 | Slash option separator on any letter | Q17 has `A/ books of the prophets`; an all-slash block uses `A/ ... B/ ... C/ ... D/ ...` | A spaced slash after an A–F label is normalized to a dot before scanning, so A–D parse correctly inline or at line start; `A/B`, `and/or`, fractions, and dates are not matched | CONFIRMED | D-49; new edge cases Q17; `fixtures/inputs/new-edge-slash-option-a.txt`; `fixtures/inputs/new-edge-slash-all-options.txt`; `tests/runner.js` 2026-10-26 |
 | EC-85 | Initials inside option text | Q46 has `B. K. A. Gbedemah` and `C. E. F. Small`; another question has `B. Dr. A. Adebayo` and `C. Prof. E. Smith` | The outer A–D labels win; the inner initials stay in options B and C, no Option E/F is created, and no duplicate-letter flag is raised | CONFIRMED | D-55; `fixtures/inputs/new-edge-initials-q46.txt`; `fixtures/inputs/new-edge-single-initials.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-27 |
 | EC-86 | Second A–D set and inline number | A block contains a second full A–D set, with or without a visible `2.` between the sets | Without a visible number the item stays one question and gets `a letter appears twice (merged questions?)`. A visible `2.` suppresses the warning and is not split inline; no second queue item is created | CONFIRMED | D-55; `fixtures/inputs/new-edge-duplicate-labels.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-27 |
+| EC-87 | Shared table between questions | A table follows Q13 with `Use the information below to answer questions 14 and 15` | The intro and table are removed from Q13; Q13.D is `leads to a reduction in price`; Q14/Q15 get `needsImage`; one stimulus has `nums: [14,15]`; the key is unchanged | CONFIRMED | D-59; `fixtures/inputs/new-edge-shared-stimulus.txt`; `tests/runner.js` 2026-10-28 |
+| EC-88 | Marker placement fallback | `[image]`/`[[image]]` appears before, after, inside, alone, inline, or far from a table | A standalone marker uses an adjacent block first, then the nearest block in the same question chunk forward/backward; an inline marker removes only itself. The eight-question fixture yields 8 stimuli, `needsImage` `[2,3,4,6,7,8]`, and Q8 keeps `Some explanatory paragraph that stays.` | CONFIRMED | D-59; `fixtures/inputs/stimulus-marker-placements.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-28 |
+| EC-89 | Image plan gate | A detected block has no file/range, a range names a number outside the paste, or a `needsImage` question is not covered | Auto-save blocks with `stimulus-unassigned`, `stimulus-range`, or `image-required`; a generic row cannot satisfy a detected block; a ready covering row clears the gate | CONFIRMED | D-60; `tests/unit.js` 2026-10-28 |
 
 Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
 
@@ -187,10 +190,12 @@ closed by the archived PHP/HTML sources:
 - EC-85 and EC-86 are CONFIRMED by the Q46, single-initial, duplicate-label,
   and inline-number fixture/unit checks; the duplicate warning is now scoped to
   a boundary-less second A–D set.
+- EC-87, EC-88, and EC-89 are CONFIRMED by the P13 fixtures and unit checks for
+  the shared table, marker fallback, and image-plan gate.
 
 ## Counts
 
-- Total: 86
-- CONFIRMED: 82
+- Total: 89
+- CONFIRMED: 85
 - UNVERIFIED: 4
 - CONFLICTED: 0

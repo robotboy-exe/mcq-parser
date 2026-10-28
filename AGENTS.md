@@ -25,7 +25,7 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 41/41 PASS; `node tests/unit.js` is 115 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 43/43 PASS; `node tests/unit.js` is 126 PASS.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.

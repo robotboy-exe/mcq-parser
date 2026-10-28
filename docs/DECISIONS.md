@@ -824,6 +824,60 @@ incomplete or idle. Auto dry adds one gate pass after Load; it performs no POST
 and writes no key. Two scheduled Loads use the newest token, so only the latest
 paste is previewed.
 
+## D-59 — Shared stimulus blocks are ordered metadata
+
+**Choice.** A block is removed from the preceding question when it is either a
+standard intro line plus table evidence or an explicit image marker with a
+nearby valid block. The marker forms are standalone `[image]`/`[[image]]` and
+`[image: 14-15]`/`[[image: 14-15]]`, plus inline double-bracket markers. A
+standalone marker uses an adjacent block first, then the nearest block in the
+same question chunk forward and backward; if none is valid, only the marker is
+removed. A block must stay inside one question chunk: numbered question lines,
+option labels, dividers, key headings, key lines, and missing-text placeholders
+are structural boundaries. `[missing text]` is not an image marker. The block
+becomes `{sourceNum, nums, marker, text, source}`; `parseStimulusRange` accepts
+ranges and comma lists and keeps only endpoints for a span over 50.
+`applyStimulusFlags` assigns `stim-1…` ids and order, sorts and de-duplicates
+`nums`, marks every target question `needsImage`, and records numbers outside
+the paste in `stim.missing`.
+
+**Why.** The Q14–Q15 table was saved as Q13.D because the parser had no concept
+of a shared stimulus. Removing the block from the preceding question is the only
+way to keep Q13 clean while preserving the table for the questions it belongs
+to. OCR often drops or moves a marker, so the standard intro is the primary
+signal and the marker is a fallback.
+
+**Risk.** Detection is heuristic. A table-like question stem can be removed if
+it sits next to an intro line; a real table with only one weak row may be left
+in place; a marker far from its block can attach to the wrong block in the same
+question chunk. The gate forces a human to assign an image, so a false positive
+is visible before save. The block text is retained in `stimuli` for review, but
+the UI does not save it as text.
+
+## D-60 — One in-memory image can cover a question range
+
+**Choice.** The image plan is per tab and is not stored: rows are
+`{stimulusId, nums, name, file}` for detected blocks, or `{stimulusId: null,
+nums, name, file}` for a generic uncovered range. A detected block must have its
+own row; a generic row cannot satisfy it. A question marked `needsImage` is
+covered when any ready row contains its number. The gate blocks
+`stimulus-unassigned` when a detected block has no file or range,
+`stimulus-range` when a row names a number outside the paste, and
+`image-required` when the current question is not covered. The save pipeline
+injects the first covering file as `fd.set('question_image', file, file.name)`
+and uses a 60-second timeout when an image is attached. The plan is cleared on
+Reset or Full Load, kept on key-only Load, and never restored after reload.
+
+**Why.** A shared table is one image for several questions. Storing files in
+`localStorage` would exceed the quota, leak names, and make a stale queue look
+ready. Keeping the plan in memory is honest: the user re-selects after reload.
+
+**Risk.** A reload loses the files; the detected blocks remain and Start stays
+blocked until they are re-selected. A range can cover a question with no
+detected block only through the generic row, and that row is not tied to a
+stimulus. The native manual image path is unchanged; an existing file still
+triggers `file-attached` for auto-save. No PHP or storage-schema change.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

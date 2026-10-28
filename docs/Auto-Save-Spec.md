@@ -3,7 +3,7 @@
 Add a click-started **Auto-save** mode to the existing merged bookmarklet (`bookmarklet.js`). Active is the default for a new batch, so clean questions matched to an answer key save live unless the user unticks `Save as active` for inactive drafts. Everything else stays manual.
 
 - Client-side only. No server access. The site is `admin_questions.php`, which inserts into the table `questions`.
-- **Non-goals:** media, passages, E/F questions, auto-retry, bulk activation of existing drafts (§10 is active mode, not bulk activation), any server change.
+- **Non-goals:** video and other media, passages as text, E/F questions, auto-retry, bulk activation of existing drafts (§10 is active mode, not bulk activation), any server change. One shared image per question range is in scope (D-59/D-60).
 - The existing manual flow, parsing, and the "new paste replaces the key; no key clears it" rule must not change.
 
 ## 2. Rules for the code
@@ -15,7 +15,7 @@ Add a click-started **Auto-save** mode to the existing merged bookmarklet (`book
 
 ## 3. Data model (localStorage)
 
-- `ocrQueue`: existing shape, plus `batchId` (a UUID, with a Date/random fallback). It is created in `ocr_load` when questions are loaded.
+- `ocrQueue`: existing shape, plus `batchId` (a UUID, with a Date/random fallback). It is created in `ocr_load` when questions are loaded. Items may also add `stimuli` and `needsImage` from P13. The image plan (`{stimulusId, nums, name, file}`) is in memory only and is never written to storage.
 - `ansKey`: **unchanged shape** (a plain `{num: letter}` map), so every existing reader keeps working.
 - `ansKeyBatch`: new. It is set to `queue.batchId` whenever a key is loaded together with questions. A key-only paste attaches to the current queue's `batchId`. Clearing the key, or loading questions with no key, deletes `ansKeyBatch`. **Reset Queue now also clears `ansKey`, `ansKeyBatch` and `queue.batchId`**, consistent with "key only relevant in the moment".
 - `ocrSaving`: crash marker `{num, at, subject, category, year}`. The last three snapshot the form metadata at save time so the paused warning can link to the matching filtered Recently Added list. Old markers without them fall back to `ocrMeta` when available.
@@ -33,6 +33,7 @@ Add a click-started **Auto-save** mode to the existing merged bookmarklet (`book
 - A **batch confirmation** block shown before Start. It lists Subject, Category, Year, number of questions, number of key entries, the first and last question numbers, and the mode. It has one tick-box, labelled `I checked the batch and understand these save live.` in active mode and `I checked the batch details.` in draft. Active is the default; both the active box and confirmation start ticked on a new batch. Metadata, key, or mode changes clear the confirmation but keep the active choice. New paste and Reset restore both defaults. Start is disabled until the confirmation is ticked.
 - Each section has its own concise status and progress. Live shows `RUNNING — ACTIVE: 12/40 done · 12 saved this run`; dry shows one summary such as `COMPLETE — all 40 would save as ACTIVE` or `BLOCKED — 12 of 40 checked; stops at #13`, never a line per question. The live progress bar follows `queue.i`; the dry bar follows its checked count.
 - Each section has its own **blocked reason** line in plain words; a dry blocker never overwrites the live blocker.
+- An **image plan** appears when the queue has a detected stimulus or a `needsImage` question. Each detected block is one ordered row: `Image block N (after Q13)`, a range prefilled from the parser, a `Choose image` file input (`image/*`), the file name/size, `Attach`/`Replace`, `Remove`, and a status (`No image`, `Ready`, `Range not in this paste`, `Question Q14 needs this image`). `Use ranges in order` assigns chosen files to detected rows in order. A generic `Add image` row exists only for uncovered `needsImage` questions and cannot satisfy a detected block. The plan is per tab, cleared on Reset or Full Load, kept on key-only Load, and shown as `No image` after reload; no file or name is stored. Start stays disabled until every detected block has a file and a valid range and the current `needsImage` question is covered (D-59/D-60).
 - A **saved list** headed by the batch identity (`Batch: Subject / Category / Year — N questions (#first to #last)`) and then the summary ("Saved this batch: #901 to #910, inactive"), with a Copy button, built from `ocrSavedLog`. The copy text repeats the batch identity line. The suffix is honest: `active` or `inactive` for a uniform batch, `N active, M inactive` for a mix, `MISMATCH: N saved in the wrong state` first, or `status not verified` when any check was inconclusive. Per-question details stay behind Copy.
 - A **Recent batches** box after the saved list, one line per batch for the last 15, newest first, for example `27 Oct 14:05 · CRS / JAMB / UTME / 2021 · 8 saved (#1785–#1792) · active`. Contiguous IDs use an en dash; gaps list the IDs; one ID reads `1 saved (#1785)`; an empty mode is omitted. It is rendered with `textContent`, uses explicit month abbreviations, survives Reset Queue, and shows nothing for an absent or malformed key.
 - A paused-run message: "A previous save may have been interrupted. Check the question list before continuing", with a button "I checked. Clear warning." and a link "Open filtered list" that opens `admin_questions.php?subject_id=<id>&exam_year_filter=<year>&category_filter=<id>` for the marker's subject, year, and category. The link is hidden when the marker and `ocrMeta` cannot supply valid numeric metadata.
@@ -53,7 +54,7 @@ It returns a list of reasons, and an empty list means safe. The loop stops on th
 9. Options A to D are non-empty, case- and whitespace-normalised distinct, and each is ≤ 500 **bytes**. The question text is ≥ 10 characters.
 10. Subject, category and year are set, and the single batch confirmation is ticked.
 11. The selected mode did not change since Start.
-12. No file is chosen in `question_image` or `answer_video`. Diagram/table words do not block; the uploader decides whether a batch needs images (D-38).
+12. No file is chosen natively in `question_image` or `answer_video`. Diagram/table words alone do not block; the image plan decides. A detected stimulus needs its own ready row with a file and a range (`stimulus-unassigned`); every range must name a question in this paste (`stimulus-range`); the current `needsImage` question must be covered by a ready row (`image-required`). A generic row cannot satisfy a detected stimulus. D-38 still means no word-list guessing.
 13. No `ocrSaving` marker, no save in progress, the Stop flag is off, and this tab holds the lock.
 14. The page is visible (`!document.hidden`). On hide, finish the current save and pause. Never start a save while hidden.
 15. The number is not already in this batch's saved log; no retained entry from an earlier batch has a complete matching fingerprint (D-56); and no loaded 20-row table row is a recent duplicate. The order is current-batch number, prior-batch fingerprint, then the table. Dry run calls the same gate, including the prior-batch check, but it does not pre-block on missing metadata, key, marker, lock, visibility, or an in-flight save; it reports the first real blocker as amber `BLOCKED`.
@@ -63,8 +64,8 @@ It returns a list of reasons, and an empty list means safe. The loop stops on th
 The manual submit handler is rewritten to call this same function. It returns `'saved' | 'rejected' | 'ambiguous'`.
 
 1. Set the guard flag. Write `ocrSaving`.
-2. Build `FormData(form)`. If `auto`, draft mode calls `fd.delete('is_active')`, active mode calls `fd.set('is_active','1')`, and both set `fd.set('autosave','1')`. If manual, keep today's behaviour (Decision A). **Remove the two forced `is_active = true` lines** from `fillForm` and the submit handler, but keep manual saves active by leaving the checkbox ticked on the manual path only.
-3. `fetch(location.href, {method:'POST', body: fd, credentials:'same-origin', signal})` with a 30-second `AbortController` timeout.
+2. Build `FormData(form)`. If `auto`, draft mode calls `fd.delete('is_active')`, active mode calls `fd.set('is_active','1')`, and both set `fd.set('autosave','1')`. If manual, keep today's behaviour (Decision A). **Remove the two forced `is_active = true` lines** from `fillForm` and the submit handler, but keep manual saves active by leaving the checkbox ticked on the manual path only. For auto, find the first ready image-plan row whose range contains the current question and call `fd.set('question_image', file, file.name)`; never overwrite a native file already in the form.
+3. `fetch(location.href, {method:'POST', body: fd, credentials:'same-origin', signal})` with a 30-second `AbortController` timeout, or 60 seconds when an image is attached.
 4. Classify the response:
    - **Rejected (definite, not saved):** the page contains `.admin-error` and `response.redirected` is false. Show the server's text. Clear `ocrSaving`.
    - **Session expired (definite, not saved):** the page contains "Administrator Login". Clear `ocrSaving`.
@@ -100,7 +101,11 @@ The dry run never enters this function. It copies the queue, checks the same gat
 - option order exactly `ABCD`;
 - duplicate options;
 - the byte-length check;
-- `parseKey` conflict output.
+- `parseKey` conflict output;
+- stimulus range parsing and marker/intro removal;
+- ordered `applyStimulusFlags` and `needsImage` targets;
+- the three image-plan blockers and coverage;
+- `FormData` file preservation and the 60-second image timeout.
 
 **Dry-run scenarios:**
 
@@ -125,6 +130,8 @@ Nothing in this build requires a server change. The two safeguards the server wo
 - **Repeats are blocked in the browser.** Before each auto-save, the tool stops the run if its number is already in this batch's saved log. It also stops if any retained `ocrSavedLog` entry from an earlier batch has a complete D-56 fingerprint with the same subject, category and year IDs and the same normalized question text; the newest such entry (by `at`, then `id`) is reported with its saved ID, year and category. Finally it stops if the newest 20 questions on the admin page show the same normalized subject, exam year, category and question text. A long question reaches the table as its first 139 characters plus `…`; a truncated row matches by prefix once it is at least 40 characters, and an untruncated row matches only the full text. A row whose year or category cannot be read falls back to subject and text.
 
 Known limits: this catches repeats from the same run, the retained 200-entry log, and the loaded 20-row table. It does not catch a repeat whose log entry was dropped by the cap, a legacy entry saved before fingerprints, or a question over 4,000 characters at save time. The batch confirmation screen should say so. The fingerprint check never matches the current batch, so two items in one paste are not checked against each other.
+
+Image limits: the plan is per tab and is not persisted. Reload loses the files, and Start stays blocked until they are re-selected. Detection is heuristic; a table-like stem next to an intro line can be removed, and a marker can attach to the wrong block in the same question chunk. The block text is kept in `stimuli` for review, but it is not saved as text. A range can cover an uncovered question only through the generic row; that row is not tied to a detected stimulus.
 
 ## 10. Phase 2: active mode (AS-08)
 

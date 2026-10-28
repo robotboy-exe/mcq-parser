@@ -1,0 +1,69 @@
+1. First question
+[image: 2]
+Opening stock: 10
+Purchases: 20
+A. one
+B. two
+C. three
+D. four
+
+2. Second question
+Opening stock: 30
+Purchases: 40
+[image: 3]
+A. one
+B. two
+C. three
+D. four
+
+3. Third question
+Opening stock: 50
+Purchases: 60
+[image: 4]
+Debtors: 12
+Creditors: 8
+A. one
+B. two
+C. three
+D. four
+
+4. Fourth question
+[image]
+A. one
+B. two
+C. three
+D. four
+
+5. Fifth question [[image]] about something
+A. one
+B. two
+C. three
+D. four
+
+6. Sixth question
+[image: 6]
+Sales: 100
+Cost: 50
+A. one
+B. two
+C. three
+D. four
+
+7. Seventh question
+[image: 7]
+Assets: 200
+Liabilities: 80
+A. one
+B. two
+C. three
+D. four
+
+8. Eighth question
+[image: 8]
+Some explanatory paragraph that stays.
+Opening stock: 50
+Purchases: 60
+A. one
+B. two
+C. three
+D. four

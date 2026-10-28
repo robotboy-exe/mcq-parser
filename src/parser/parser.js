@@ -12,6 +12,10 @@ const STEM_LINE = /^\s*\d{1,3}[.)]\s+\S.{11,}/;
 const KEY_WORD = /\b(ANSWERS?|KEY|SCHEME|SOLUTIONS?)\b/i;
 const INLINE_PAIR = /(\d{1,3})\s*[.\-:)]\s*\(?([A-F])\)?(?![A-Za-z])/gi;
 const LOOSE = { E: /\n[^\S\n]*E[^\S\n]+(?=\S)/, F: /\n[^\S\n]*F[^\S\n]+(?=\S)/ };
+const STIMULUS_MARKER_LINE = /^[^\S\n]*\[\[?\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]?[^\S\n]*$/i;
+const STIMULUS_MARKER_INLINE = /\[\[\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]/gi;
+const STIMULUS_INTRO = /\b(?:use|study|consider|refer\s+to|the\s+following|below|above)\b[^\n]{0,100}\b(?:information|data|table|schedule|list|diagram|figure|chart|passage|graph|extract)\b[^\n]{0,100}\bquestions?\b/i;
+const STIMULUS_INTRO_RANGE = /\bquestions?\s+\d{1,3}\s*(?:and|to|[-–—])\s*\d{1,3}\b/i;
 
 function parseHeader(text) {
   const header = text.split('\n').slice(0, 3).join(' ').toUpperCase();
@@ -236,8 +240,313 @@ function hasUnnumberedDuplicateSet(raw, matches) {
   return false;
 }
 
+function stimulusNumberTokens(line) {
+  return (line.match(/[₦$£€]?\d[\d,]*(?:\.\d+)?/g) || []).length;
+}
+
+function stimulusQuestionLine(line) {
+  return /^[^\S\n]*\d{1,3}\.\s+/.test(line);
+}
+
+function stimulusOptionLine(line) {
+  return /^[^\S\n]*[A-F][^\S\n]*[.)][^\S\n]*/.test(line) || /^[^\S\n]*[A-F][^\S\n]+(?=\d)/.test(line);
+}
+
+function stimulusDividerLine(line) {
+  return /^[^\S\n]*={3,}[^\S\n]*$/.test(line);
+}
+
+function stimulusKeyHeading(line) {
+  return /^\s*(?:answer\s*key|answers?|key|scheme|solutions?)\s*:?\s*$/i.test(line);
+}
+
+function stimulusStructuralLine(line) {
+  return stimulusQuestionLine(line)
+    || stimulusOptionLine(line)
+    || stimulusDividerLine(line)
+    || stimulusKeyHeading(line)
+    || KEY_LINE.test(line)
+    || PLACEHOLDER.test(line);
+}
+
+function stimulusIntroLine(line) {
+  if (stimulusStructuralLine(line)) return false;
+  const t = line.trim();
+  if (!t || t.length > 220) return false;
+  return STIMULUS_INTRO.test(t)
+    || (STIMULUS_INTRO_RANGE.test(t) && /\b(?:below|above|following)\b/i.test(t));
+}
+
+function stimulusStrongTableLine(line) {
+  const t = line.trim();
+  if (!t) return false;
+  if (/^\|.*\|$/.test(t)) return true;
+  if (/^[-+|: ]{3,}$/.test(t)) return true;
+  if (/^[A-Za-z][A-Za-z0-9 /&().'\-]{0,60}\s*[:=]\s*[₦$£€]?\s*[\d(]/i.test(t)) return true;
+  if (/^(?:total|subtotal|balance|net|gross)\b/i.test(t) && stimulusNumberTokens(t) > 0) return true;
+  return false;
+}
+
+function stimulusWeakTableLine(line) {
+  const t = line.trim();
+  if (!t) return false;
+  const n = stimulusNumberTokens(t);
+  return n >= 3 || (n >= 2 && /[:=]/.test(t));
+}
+
+function stimulusTableLine(line) {
+  return stimulusStrongTableLine(line) || stimulusWeakTableLine(line);
+}
+
+function stimulusBlockLine(line) {
+  return !stimulusStructuralLine(line) && (stimulusIntroLine(line) || stimulusTableLine(line));
+}
+
+function stimulusMarkerLine(line) {
+  return STIMULUS_MARKER_LINE.test(line);
+}
+
+function stimulusTransparentLine(lines, index) {
+  const line = lines[index];
+  return !line.trim() || stimulusMarkerLine(line) || stimulusBlockLine(line);
+}
+
+function stimulusRun(lines, index) {
+  let start = index;
+  let end = index;
+  while (start > 0 && stimulusTransparentLine(lines, start - 1)) start--;
+  while (end + 1 < lines.length && stimulusTransparentLine(lines, end + 1)) end++;
+  return { start, end };
+}
+
+function stimulusEvidence(lines, start, end) {
+  let intro = 0;
+  let strong = 0;
+  let weak = 0;
+  let table = 0;
+  for (let i = start; i <= end; i++) {
+    const line = lines[i];
+    if (!line.trim() || stimulusMarkerLine(line) || stimulusStructuralLine(line)) continue;
+    if (stimulusIntroLine(line)) intro++;
+    if (stimulusStrongTableLine(line)) {
+      strong++;
+      table++;
+    } else if (stimulusWeakTableLine(line)) {
+      weak++;
+      table++;
+    }
+  }
+  return { intro, strong, weak, table };
+}
+
+function validStimulusBlock(lines, start, end) {
+  const e = stimulusEvidence(lines, start, end);
+  return (e.intro > 0 && e.table > 0) || e.strong > 0 || e.weak >= 2;
+}
+
+function nearestStimulusBlock(lines, markerLine) {
+  let i = markerLine + 1;
+  while (i < lines.length && !stimulusStructuralLine(lines[i])) {
+    if (stimulusBlockLine(lines[i])) {
+      const run = stimulusRun(lines, i);
+      if (validStimulusBlock(lines, run.start, run.end)) return run;
+      i = run.end + 1;
+    } else {
+      i++;
+    }
+  }
+  i = markerLine - 1;
+  while (i >= 0 && !stimulusStructuralLine(lines[i])) {
+    if (stimulusBlockLine(lines[i])) {
+      const run = stimulusRun(lines, i);
+      if (validStimulusBlock(lines, run.start, run.end)) return run;
+      i = run.start - 1;
+    } else {
+      i--;
+    }
+  }
+  return null;
+}
+
+function parseStimulusRange(text) {
+  const s = String(text == null ? '' : text);
+  const nums = new Set();
+  const rangeRe = /(\d{1,3})\s*(?:[-–—]|to|and|&)\s*(\d{1,3})/gi;
+  let m;
+  while ((m = rangeRe.exec(s))) {
+    let a = +m[1];
+    let b = +m[2];
+    if (a > b) {
+      const t = a;
+      a = b;
+      b = t;
+    }
+    if (b - a > 50) {
+      nums.add(a);
+      nums.add(b);
+      continue;
+    }
+    for (let n = a; n <= b; n++) nums.add(n);
+  }
+  for (const d of s.match(/\d{1,3}/g) || []) {
+    const n = +d;
+    if (n > 0) nums.add(n);
+  }
+  return [...nums].filter(n => Number.isInteger(n) && n > 0).sort((a, b) => a - b);
+}
+
+function extractStimulusMarkers(raw, num) {
+  const lines = raw.split('\n');
+  const markers = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const standalone = line.match(STIMULUS_MARKER_LINE);
+    if (standalone) {
+      markers.push({ at: i, line: i, inline: false, range: standalone[1] || '', marker: line.trim() });
+      continue;
+    }
+    STIMULUS_MARKER_INLINE.lastIndex = 0;
+    let m;
+    while ((m = STIMULUS_MARKER_INLINE.exec(line))) {
+      markers.push({
+        at: i + m.index / Math.max(1, line.length),
+        line: i,
+        inline: true,
+        index: m.index,
+        length: m[0].length,
+        range: m[1] || '',
+        marker: m[0]
+      });
+    }
+  }
+  if (!markers.length) return { text: raw, stimuli: [] };
+  for (const mk of markers) {
+    if (mk.inline) continue;
+    const run = stimulusRun(lines, mk.line);
+    mk.block = validStimulusBlock(lines, run.start, run.end) ? run : nearestStimulusBlock(lines, mk.line);
+  }
+  const removed = new Set();
+  for (const mk of markers) {
+    if (mk.block) {
+      for (let i = mk.block.start; i <= mk.block.end; i++) removed.add(i);
+    }
+    if (!mk.inline) removed.add(mk.line);
+  }
+  const stimuli = markers.map(mk => {
+    let text = '';
+    if (mk.block) {
+      text = lines.slice(mk.block.start, mk.block.end + 1)
+        .filter(line => !stimulusMarkerLine(line))
+        .join('\n')
+        .trim();
+    }
+    return {
+      at: mk.at,
+      sourceNum: num,
+      nums: parseStimulusRange(mk.range),
+      marker: mk.marker,
+      text,
+      source: 'marker'
+    };
+  });
+  const cleaned = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (removed.has(i)) {
+      cleaned.push('');
+      continue;
+    }
+    let line = lines[i];
+    for (const mk of markers) {
+      if (mk.inline && mk.line === i) {
+        line = line.slice(0, mk.index) + ' ' + line.slice(mk.index + mk.length);
+      }
+    }
+    cleaned.push(line);
+  }
+  return { text: cleaned.join('\n'), stimuli };
+}
+
+function extractStimulusIntros(raw, num) {
+  const lines = raw.split('\n');
+  const removed = new Set();
+  const stimuli = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (removed.has(i) || !stimulusIntroLine(lines[i])) continue;
+    const run = stimulusRun(lines, i);
+    const evidence = stimulusEvidence(lines, run.start, run.end);
+    if (!validStimulusBlock(lines, run.start, run.end) || !evidence.table) continue;
+    for (let j = run.start; j <= run.end; j++) removed.add(j);
+    stimuli.push({
+      at: i,
+      sourceNum: num,
+      nums: parseStimulusRange(lines[i]),
+      marker: lines[i].trim(),
+      text: lines.slice(run.start, run.end + 1).join('\n').trim(),
+      source: 'intro'
+    });
+  }
+  if (!removed.size) return { text: raw, stimuli: [] };
+  return {
+    text: lines.map((line, i) => removed.has(i) ? '' : line).join('\n'),
+    stimuli
+  };
+}
+
+function extractStimuli(raw, num) {
+  const marked = extractStimulusMarkers(raw, num);
+  const intro = extractStimulusIntros(marked.text, num);
+  const ordered = marked.stimuli.concat(intro.stimuli).sort((a, b) => a.at - b.at);
+  return {
+    text: intro.text,
+    stimuli: ordered.map(stim => ({
+      sourceNum: stim.sourceNum,
+      nums: stim.nums,
+      marker: stim.marker,
+      text: stim.text,
+      source: stim.source
+    }))
+  };
+}
+
+function applyStimulusFlags(items) {
+  const list = Array.isArray(items) ? items : [];
+  const byNum = new Map();
+  for (const item of list) {
+    if (!item || typeof item !== 'object') continue;
+    if (Object.prototype.hasOwnProperty.call(item, 'needsImage')) delete item.needsImage;
+    if (Number.isInteger(item.num)) byNum.set(item.num, item);
+  }
+  let order = 0;
+  for (const item of list) {
+    if (!item || !Array.isArray(item.stimuli)) continue;
+    for (const stim of item.stimuli) {
+      if (!stim || typeof stim !== 'object') continue;
+      order++;
+      stim.id = 'stim-' + order;
+      stim.order = order;
+      if (!Number.isInteger(stim.sourceNum)) stim.sourceNum = item.num;
+      const nums = [];
+      for (const n of Array.isArray(stim.nums) ? stim.nums : []) {
+        if (!Number.isInteger(n) || n <= 0 || nums.includes(n)) continue;
+        nums.push(n);
+      }
+      nums.sort((a, b) => a - b);
+      stim.nums = nums;
+      stim.missing = [];
+      for (const n of nums) {
+        const target = byNum.get(n);
+        if (target) target.needsImage = true;
+        else stim.missing.push(n);
+      }
+    }
+  }
+  return list;
+}
+
 function parseQuestion({ num, text }) {
-  const raw = text.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+  const normalized = text.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+  const extracted = extractStimuli(normalized, num);
+  const raw = extracted.text.replace(/\n{3,}/g, '\n\n');
   const clean = s => s.replace(/\s+/g, ' ').trim();
   const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
   const matches = optionLabelMatches(raw, scanRaw);
@@ -288,6 +597,7 @@ function parseQuestion({ num, text }) {
   }
   if (hasUnnumberedDuplicateSet(raw, matches)) q.flags.push('a letter appears twice (merged questions?)');
   if (q.e || q.f) q.flags.push('E/F options present');
+  if (extracted.stimuli.length) q.stimuli = extracted.stimuli;
   return q;
 }
 
@@ -852,6 +1162,33 @@ function autosaveBlockers(state) {
     add('queue-number', 'All questions in this batch are done.');
     return out;
   }
+  const imagePlan = Array.isArray(s.imagePlan) ? s.imagePlan : [];
+  const queueNums = new Set(items.map(item => item.num).filter(Number.isInteger));
+  const planFor = id => imagePlan.find(entry => entry && String(entry.stimulusId) === String(id)) || null;
+  let stimIndex = 0;
+  for (const item of items) {
+    const stimuli = item && Array.isArray(item.stimuli) ? item.stimuli : [];
+    for (const stim of stimuli) {
+      if (!stim || typeof stim !== 'object') continue;
+      stimIndex++;
+      const label = 'Image block ' + (Number.isInteger(stim.order) ? stim.order : stimIndex)
+        + (Number.isInteger(stim.sourceNum) ? ' (after Q' + stim.sourceNum + ')' : '');
+      const plan = planFor(stim.id);
+      const rawNums = plan && Array.isArray(plan.nums) ? plan.nums : [];
+      const nums = rawNums.map(n => Number(n)).filter(n => Number.isInteger(n) && n > 0);
+      if (!plan || !plan.file || !plan.name || !nums.length) {
+        add('stimulus-unassigned', label + ' has no image or range yet.');
+        continue;
+      }
+      const bad = nums.filter(n => !queueNums.has(n));
+      if (bad.length) add('stimulus-range', label + ' names question ' + bad.join(', ') + ', which is not in this paste.');
+    }
+  }
+  const covers = num => imagePlan.some(entry => {
+    if (!entry || !entry.file || !entry.name || !Array.isArray(entry.nums)) return false;
+    return entry.nums.map(n => Number(n)).includes(Number(num));
+  });
+  if (q.needsImage && !covers(q.num)) add('image-required', 'Question ' + q.num + ' needs an image.');
   if (!queue.batchId) add('batch-missing', 'This queue has no batch identity. Paste the questions again.');
   else if (!s.keyBatch || s.keyBatch !== queue.batchId) add('batch-mismatch', 'The saved key belongs to a different batch. Paste the matching key.');
   if (!isConsecutiveQueue(items)) add('queue-number', 'The question numbers are not consecutive.');
@@ -943,6 +1280,9 @@ function blockerText(blocker) {
     case 'mode-unconfirmed': return 'Cannot auto-save:' + detail;
     case 'mode-changed': return 'Cannot auto-save:' + detail;
     case 'meta-changed': return 'Cannot auto-save:' + detail;
+    case 'stimulus-unassigned': return 'Cannot auto-save:' + detail;
+    case 'stimulus-range': return 'Cannot auto-save:' + detail;
+    case 'image-required': return 'Cannot auto-save:' + detail;
     case 'file-attached': return 'Cannot auto-save:' + detail;
     case 'has-explanation': return 'Cannot auto-save:' + detail;
     case 'saving-marker': return 'Cannot auto-save:' + detail;
@@ -976,6 +1316,9 @@ if (typeof module !== 'undefined' && module.exports) {
     splitBulletQuestions,
     splitQuestionItems,
     parseQuestion,
+    parseStimulusRange,
+    extractStimuli,
+    applyStimulusFlags,
     flagNumberingGaps,
     splitSections,
     salvageNormalize,

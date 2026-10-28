@@ -29,8 +29,8 @@ const SALVAGE_FLAG = 'OCR boundaries repaired; verify question and option split'
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
 const ASSERTED_KEYS = {
-  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'required_flags', 'forbidden_flags'],
-  question: ['a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'forbidden_flags'],
+  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'required_flags', 'forbidden_flags', 'needs_image', 'stimulus_count', 'stimuli'],
+  question: ['a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'forbidden_flags', 'needs_image'],
   key: ['key']
 };
 const UNASSERTED_KEYS = {
@@ -39,7 +39,8 @@ const UNASSERTED_KEYS = {
   key: ['ui_notes']
 };
 const HEADER_KEYS = ['year', 'subject_contains_any', 'category_contains_any'];
-const QUESTION_KEYS = ['num', 'index', 'a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags'];
+const QUESTION_KEYS = ['num', 'index', 'a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'needs_image'];
+const STIMULUS_KEYS = ['order', 'source_num', 'nums', 'text_contains', 'missing'];
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -128,6 +129,46 @@ function validateExpected(spec) {
        !expected.nums.every(n => n === null || isInteger(n)))) {
     return 'expected.nums must be an array of integers or null';
   }
+  if (has(expected, 'needs_image') &&
+      (!Array.isArray(expected.needs_image) || !expected.needs_image.every(isInteger))) {
+    return 'expected.needs_image must be an array of integers';
+  }
+  if (has(expected, 'stimulus_count') &&
+      (!isInteger(expected.stimulus_count) || expected.stimulus_count < 0)) {
+    return 'expected.stimulus_count must be a non-negative integer';
+  }
+  if (has(expected, 'stimuli')) {
+    if (!Array.isArray(expected.stimuli)) return 'expected.stimuli must be an array';
+    for (let index = 0; index < expected.stimuli.length; index++) {
+      const stim = expected.stimuli[index];
+      if (!stim || typeof stim !== 'object' || Array.isArray(stim)) {
+        return `expected.stimuli[${index}] must be an object`;
+      }
+      for (const key of Object.keys(stim)) {
+        if (!STIMULUS_KEYS.includes(key)) {
+          return `unknown expected.stimuli[${index}] key: ${show(key)}`;
+        }
+      }
+      if (has(stim, 'order') && (!isInteger(stim.order) || stim.order < 1)) {
+        return `expected.stimuli[${index}].order must be a positive integer`;
+      }
+      if (has(stim, 'source_num') &&
+          stim.source_num !== null && !isInteger(stim.source_num)) {
+        return `expected.stimuli[${index}].source_num must be an integer or null`;
+      }
+      if (has(stim, 'nums') &&
+          (!Array.isArray(stim.nums) || !stim.nums.every(isInteger))) {
+        return `expected.stimuli[${index}].nums must be an array of integers`;
+      }
+      if (has(stim, 'missing') &&
+          (!Array.isArray(stim.missing) || !stim.missing.every(isInteger))) {
+        return `expected.stimuli[${index}].missing must be an array of integers`;
+      }
+      if (has(stim, 'text_contains') && !isStringArray(stim.text_contains)) {
+        return `expected.stimuli[${index}].text_contains must be an array of strings`;
+      }
+    }
+  }
   if (has(expected, 'key')) {
     const key = expected.key;
     if (!key || typeof key !== 'object' || Array.isArray(key)) {
@@ -202,6 +243,9 @@ function validateExpected(spec) {
       if (has(question, 'flags') && question.flags !== null && !isStringArray(question.flags)) {
         return `expected.questions[${index}].flags must be an array of strings or null`;
       }
+      if (has(question, 'needs_image') && typeof question.needs_image !== 'boolean') {
+        return `expected.questions[${index}].needs_image must be a boolean`;
+      }
     }
   }
 
@@ -216,14 +260,16 @@ function parseFixture(spec, inputText) {
       (text, [pattern, replacement]) => text.replace(pattern, replacement),
       sections.questions
     );
-    const items = parser.flagNumberingGaps(parser.splitQuestionItems(fixed).map(parser.parseQuestion));
+    const items = parser.applyStimulusFlags(
+      parser.flagNumberingGaps(parser.splitQuestionItems(fixed).map(parser.parseQuestion))
+    );
     if (salvage.salvaged) items.forEach(item => item.flags.push(SALVAGE_FLAG));
     return { items, sections, header: parser.parseHeader(fixed) };
   }
 
   if (spec.kind === 'question') {
     const num = spec.parse_num === undefined ? null : spec.parse_num;
-    return { items: [parser.parseQuestion({ num, text: inputText })] };
+    return { items: parser.applyStimulusFlags([parser.parseQuestion({ num, text: inputText })]) };
   }
 
   if (spec.kind === 'key') {
@@ -294,6 +340,58 @@ function checkQuestion(question, expected, label, checks) {
       expected.flags,
       question.flags
     ));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(expected, 'needs_image')) {
+    checks.push(makeCheck(
+      `${label}.needs_image`,
+      Boolean(question.needsImage) === expected.needs_image,
+      expected.needs_image,
+      Boolean(question.needsImage)
+    ));
+  }
+}
+
+function flattenStimuli(items) {
+  const out = [];
+  for (const item of items) {
+    if (!item || !Array.isArray(item.stimuli)) continue;
+    for (const stim of item.stimuli) out.push(stim);
+  }
+  return out;
+}
+
+function checkStimuli(expected, actual, checks) {
+  for (let index = 0; index < expected.length; index++) {
+    const want = expected[index];
+    const stim = actual[index];
+    const label = `stimuli[${index}]`;
+    if (!stim) {
+      checks.push(makeCheck(label, false, 'stimulus present', 'not found'));
+      continue;
+    }
+    if (has(want, 'order')) {
+      checks.push(makeCheck(`${label}.order`, stim.order === want.order, want.order, stim.order));
+    }
+    if (has(want, 'source_num')) {
+      checks.push(makeCheck(`${label}.source_num`, stim.sourceNum === want.source_num, want.source_num, stim.sourceNum));
+    }
+    if (has(want, 'nums')) {
+      checks.push(makeCheck(`${label}.nums`, deepEqual(stim.nums, want.nums), want.nums, stim.nums));
+    }
+    if (has(want, 'missing')) {
+      checks.push(makeCheck(`${label}.missing`, deepEqual(stim.missing, want.missing), want.missing, stim.missing));
+    }
+    if (Array.isArray(want.text_contains)) {
+      for (const needle of want.text_contains) {
+        checks.push(makeCheck(
+          `${label}.text contains ${show(needle)}`,
+          typeof stim.text === 'string' && stim.text.includes(needle),
+          true,
+          stim.text
+        ));
+      }
+    }
   }
 }
 
@@ -392,6 +490,30 @@ function runFixture(spec, inputText) {
     if (has(expected, 'nums')) {
       const actualNums = actual.items.map(item => item.num === undefined ? null : item.num);
       checks.push(makeCheck('nums', deepEqual(actualNums, expected.nums), expected.nums, actualNums));
+    }
+
+    if (has(expected, 'stimulus_count')) {
+      const actualStimuli = flattenStimuli(actual.items);
+      checks.push(makeCheck(
+        'stimulus_count',
+        actualStimuli.length === expected.stimulus_count,
+        expected.stimulus_count,
+        actualStimuli.length
+      ));
+    }
+
+    if (has(expected, 'needs_image')) {
+      const actualNeeds = actual.items.filter(item => item && item.needsImage).map(item => item.num);
+      checks.push(makeCheck(
+        'needs_image',
+        deepEqual(actualNeeds, expected.needs_image),
+        expected.needs_image,
+        actualNeeds
+      ));
+    }
+
+    if (Array.isArray(expected.stimuli)) {
+      checkStimuli(expected.stimuli, flattenStimuli(actual.items), checks);
     }
 
     (expected.questions || []).forEach((expectedQuestion, position) => {

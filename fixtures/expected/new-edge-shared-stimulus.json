@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "new-edge-shared-stimulus",
+  "source": [
+    "docs/NEW_EDGE_CASES.txt Q12-Q17 block recorded 2026-10-27",
+    "User OCR: a shared table follows Q13 and belongs to Q14-Q15"
+  ],
+  "provenance": "User-supplied OCR block from docs/NEW_EDGE_CASES.txt. The Q15 duplicate labels were corrected by the user before promotion; the table and key are otherwise verbatim. Not present in the bank or ANOMALIES.txt.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-shared-stimulus.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 6,
+    "nums": [12, 13, 14, 15, 16, 17],
+    "questions": [
+      {
+        "num": 13,
+        "question": "An advantage of self-service to customers is that it",
+        "a": "encourages impulse buying",
+        "b": "enables customers to inspect goods",
+        "c": "enables customers to buy on credit",
+        "d": "leads to a reduction in price",
+        "flags": []
+      },
+      {
+        "num": 14,
+        "question": "Calculate average stock",
+        "a": "D15,000.00",
+        "d": "D10,000.00",
+        "needs_image": true
+      },
+      {
+        "num": 15,
+        "question": "The value of current liabilities is",
+        "a": "D10,000.00",
+        "b": "D13,000.00",
+        "needs_image": true
+      }
+    ],
+    "needs_image": [14, 15],
+    "stimulus_count": 1,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": 13,
+        "nums": [14, 15],
+        "text_contains": [
+          "Use the information below to answer questions 14 and 15",
+          "Opening stock: 22,000.00",
+          "Overdraft: 5,000.00"
+        ],
+        "missing": []
+      }
+    ],
+    "key": {
+      "12": "C",
+      "13": "D",
+      "14": "A",
+      "15": "B",
+      "16": "D",
+      "17": "A"
+    },
+    "forbidden_flags": [
+      "option D missing"
+    ]
+  },
+  "must_not": [
+    "The shared table is saved as Q13 option D",
+    "Q14 and Q15 are left without an image requirement",
+    "The table is split into fake questions or options"
+  ],
+  "notes": [
+    "The standard intro line plus its table is removed from Q13 and becomes one ordered stimulus with the range 14-15.",
+    "Q14 and Q15 are marked needs_image; the UI must assign a file before auto-save."
+  ],
+  "discrepancies": []
+}

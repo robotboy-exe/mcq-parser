@@ -26,6 +26,12 @@ historical.
 | phase 4 | H4 | independent | independent-pass (2026-10-27); NOTE-4 fixed | committed in cycle-close catch-up |
 | cycle end | H5 | independent | independent-pass (2026-10-27); NOTE-5 fixed; NOTE-6 catch-up approved | committed at cycle close |
 
+## Stimulus image cycle checkpoints (stimulus-images-2026-10)
+
+| Checkpoint | Scope | Level | Review | Commit |
+|---|---|---|---|---|
+| phase 1 | P13 | light | light-verified (2026-10-28) | committed at phase 2 start |
+
 Rigorous review records live in [`reviews/`](reviews/README.md), named
 `<cycle-id>-phase-<N>.md`, with an optional `<...>-re-review.md` after a fix.
 The latest re-review is authoritative for the current verdict; earlier findings
@@ -79,6 +85,18 @@ authoritative:
 
 ## Change log
 
+- 2026-10-28 — Stimulus image cycle started. P13 adds parser detection for a
+  standard intro plus table, explicit `[image]`/`[[image]]` markers with
+  optional ranges, ordered `stimuli` metadata, `needsImage` flags, and the
+  `stimulus-unassigned`, `stimulus-range`, and `image-required` gate reasons.
+  Two fixtures were added; runner 43 PASS and unit 126 PASS. The bookmarklet was
+  rebuilt; no UI change. Light-verified at phase 2 Gate 1; committed at
+  phase 2 start.
+- 2026-10-27 — Housekeeping cycle archived: the active map was copied to
+  `docs/plan/prompts/cycles/housekeeping-2026-10.md` with its relative links
+  adjusted for the new location; `docs/plan/prompts/phase-map.md` now reports no
+  active cycle. No new cycle was invented. Docs-only; no tests run. The archive
+  change is uncommitted.
 - 2026-10-27 — Housekeeping cycle closed: H1-H5 committed in order in the
   approved cycle-close catch-up; all five independent reviews PASS;
   NOTE-1/3/4/5 fixed and NOTE-6 resolved by the catch-up decision. No source,

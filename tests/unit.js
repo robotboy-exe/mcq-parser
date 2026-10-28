@@ -142,6 +142,93 @@ test('parseQuestion suppresses the duplicate warning after an inline number', ()
   assert(!q.flags.includes('a letter appears twice (merged questions?)'), 'duplicate warning should be suppressed: ' + q.flags.join(', '));
 });
 
+test('parseStimulusRange accepts ranges and lists', () => {
+  eq(parser.parseStimulusRange('questions 14 and 15'), [14, 15]);
+  eq(parser.parseStimulusRange('14-16'), [14, 15, 16]);
+  eq(parser.parseStimulusRange('14, 16'), [14, 16]);
+  eq(parser.parseStimulusRange('Q14-Q15'), [14, 15]);
+  eq(parser.parseStimulusRange('14 & 15'), [14, 15]);
+  eq(parser.parseStimulusRange('14 to 16'), [14, 15, 16]);
+  eq(parser.parseStimulusRange(''), []);
+  eq(parser.parseStimulusRange('0'), []);
+});
+
+test('parseQuestion removes a marker block and keeps the options', () => {
+  const q = parser.parseQuestion({
+    num: 1,
+    text: 'First question\n[image]\nOpening stock: 10\nPurchases: 20\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(q.question, 'First question');
+  eq(q.a, 'one');
+  eq(q.d, 'four');
+  eq(q.stimuli.length, 1);
+  eq(q.stimuli[0].source, 'marker');
+  eq(q.stimuli[0].nums, []);
+  eq(q.stimuli[0].text, 'Opening stock: 10\nPurchases: 20');
+});
+
+test('parseQuestion keeps the paragraph around a far marker', () => {
+  const q = parser.parseQuestion({
+    num: 8,
+    text: 'Eighth question\n[image: 8]\nSome explanatory paragraph that stays.\nOpening stock: 50\nPurchases: 60\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(q.question, 'Eighth question Some explanatory paragraph that stays.');
+  eq(q.stimuli[0].nums, [8]);
+  eq(q.stimuli[0].text, 'Opening stock: 50\nPurchases: 60');
+});
+
+test('parseQuestion does not treat [missing text] as an image marker', () => {
+  const q = parser.parseQuestion({
+    num: 1,
+    text: 'First question [missing text]\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(q.question.includes('[missing text]'), true);
+  eq(q.stimuli, undefined);
+});
+
+test('parseQuestion removes an inline double-bracket marker only', () => {
+  const q = parser.parseQuestion({
+    num: 5,
+    text: 'Fifth question [[image]] about something\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(q.question, 'Fifth question about something');
+  eq(q.stimuli.length, 1);
+  eq(q.stimuli[0].nums, []);
+  eq(q.stimuli[0].text, '');
+});
+
+test('parseQuestion removes the standard intro table without a marker', () => {
+  const q = parser.parseQuestion({
+    num: 13,
+    text: 'Stem\nA. one\nB. two\nC. three\nD. four\nUse the information below to answer questions 14 and 15\nOpening stock: 22,000.00\nPurchases: 20,000.00'
+  });
+  eq(q.question, 'Stem');
+  eq(q.d, 'four');
+  eq(q.stimuli.length, 1);
+  eq(q.stimuli[0].source, 'intro');
+  eq(q.stimuli[0].nums, [14, 15]);
+  eq(q.stimuli[0].text.includes('Opening stock: 22,000.00'), true);
+});
+
+test('applyStimulusFlags orders stimuli and records missing targets', () => {
+  const items = [
+    { num: 13, stimuli: [{ sourceNum: 13, nums: [14, 16], marker: '[image]', text: '', source: 'marker' }] },
+    { num: 14 },
+    { num: 15, stimuli: [{ sourceNum: 15, nums: [15], marker: '[image]', text: '', source: 'marker' }] }
+  ];
+  parser.applyStimulusFlags(items);
+  eq(items[0].stimuli[0].id, 'stim-1');
+  eq(items[0].stimuli[0].order, 1);
+  eq(items[1].needsImage, true);
+  eq(items[0].stimuli[0].missing, [16]);
+  eq(items[2].stimuli[0].id, 'stim-2');
+  eq(items[2].needsImage, true);
+  delete items[0].stimuli;
+  delete items[2].stimuli;
+  parser.applyStimulusFlags(items);
+  eq(items[1].needsImage, undefined);
+});
+
 test('byteLength counts UTF-8 bytes', () => {
   eq(parser.byteLength('abc'), 3);
   eq(parser.byteLength('é'), 2);
@@ -481,6 +568,48 @@ function cleanState() {
 
 test('autosaveBlockers clears a clean batch', () => {
   eq(parser.autosaveBlockers(cleanState()), []);
+});
+
+test('autosaveBlockers requires an assigned image for each detected block', () => {
+  const s = cleanState();
+  s.queue.items[0].stimuli = [{ id: 'stim-1', order: 1, sourceNum: 1, nums: [2], missing: [] }];
+  s.queue.items[1].needsImage = true;
+  eq(parser.autosaveBlockers(s)[0].code, 'stimulus-unassigned');
+  s.imagePlan = [{ stimulusId: 'stim-1', nums: [2] }];
+  eq(parser.autosaveBlockers(s)[0].code, 'stimulus-unassigned');
+  s.imagePlan = [{ stimulusId: 'stim-1', nums: [2], name: 'table.png' }];
+  eq(parser.autosaveBlockers(s)[0].code, 'stimulus-unassigned');
+  s.imagePlan = [{ stimulusId: 'stim-1', nums: [2], name: 'table.png', file: {} }];
+  eq(parser.autosaveBlockers(s), []);
+});
+
+test('autosaveBlockers rejects a stimulus range outside the queue', () => {
+  const s = cleanState();
+  s.queue.items[0].stimuli = [{ id: 'stim-1', order: 1, sourceNum: 1, nums: [9], missing: [] }];
+  s.imagePlan = [{ stimulusId: 'stim-1', nums: [9], name: 'table.png', file: {} }];
+  const first = parser.autosaveBlockers(s)[0];
+  eq(first.code, 'stimulus-range');
+  assert(first.detail.indexOf('9') > -1, first.detail);
+});
+
+test('autosaveBlockers requires an image on a flagged question', () => {
+  const s = cleanState();
+  s.queue.items[0].needsImage = true;
+  eq(parser.autosaveBlockers(s)[0].code, 'image-required');
+  s.imagePlan = [{ nums: [1] }];
+  eq(parser.autosaveBlockers(s)[0].code, 'image-required');
+  s.imagePlan = [{ nums: [1], name: 'single.png' }];
+  eq(parser.autosaveBlockers(s)[0].code, 'image-required');
+  s.imagePlan = [{ nums: [1], name: 'single.png', file: {} }];
+  eq(parser.autosaveBlockers(s), []);
+});
+
+test('autosaveBlockers accepts a mapped stimulus covering the flagged question', () => {
+  const s = cleanState();
+  s.queue.items[0].needsImage = true;
+  s.queue.items[0].stimuli = [{ id: 'stim-1', order: 1, sourceNum: 1, nums: [1], missing: [] }];
+  s.imagePlan = [{ stimulusId: 'stim-1', nums: [1], name: 'shared.png', file: {} }];
+  eq(parser.autosaveBlockers(s), []);
 });
 
 test('autosaveBlockers gates active mode confirmation and mode changes', () => {
@@ -1255,7 +1384,8 @@ test('blockerText maps every known code to a plain sentence', () => {
     'key-letter', 'no-answer', 'answer-mismatch', 'ef-present', 'flags', 'options-not-abcd',
     'option-empty', 'option-duplicate', 'option-long', 'question-short',
     'meta-missing', 'not-confirmed', 'mode-unconfirmed', 'mode-changed',
-    'meta-changed', 'file-attached', 'has-explanation', 'saving-marker', 'save-in-progress',
+    'meta-changed', 'stimulus-unassigned', 'stimulus-range', 'image-required',
+    'file-attached', 'has-explanation', 'saving-marker', 'save-in-progress',
     'stopped', 'lock', 'hidden', 'saved-log', 'duplicate', 'form-edited'];
   for (const code of codes) {
     const text = parser.blockerText({ code, detail: 'detail' });

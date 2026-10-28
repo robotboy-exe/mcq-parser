@@ -6,22 +6,25 @@ Read this file, then read the one work-package file you are executing. Each
 package document is self-contained; you should not need any other package
 document to finish it.
 
-For P11–P12/AS-10–AS-12, the user's intent is in
+For P11–P13/AS-10–AS-14, the user's intent is in
 [`INTENT.md`](../../INTENT.md) at the project root. Read it before those
 packages. Package prose owns implementation detail; `INTENT.md` is the
 tie-breaker for behavior.
 
-Last updated: 2026-10-27.
+Last updated: 2026-10-28.
+
+Current cycle: [`stimulus-images-2026-10`](prompts/phase-map.md).
 
 Dated snapshots, archived checkpoints, and the change log are in
 [`history.md`](history.md).
 
-## Housekeeping cycle (housekeeping-2026-10)
+## Housekeeping cycle (housekeeping-2026-10) — archived
 
-The active map is [`prompts/phase-map.md`](prompts/phase-map.md). These phases
-clean up docs, ignored artifacts, and the tracker; they do not change parser or
-UI behavior and do not add fixtures. The archived `post-as-2026-10` review
-checkpoints are in [`history.md`](history.md).
+The cycle is archived at
+[`prompts/cycles/housekeeping-2026-10.md`](prompts/cycles/housekeeping-2026-10.md).
+These phases cleaned up docs, ignored artifacts, and the tracker; they did not
+change parser or UI behavior and did not add fixtures. The archived
+`post-as-2026-10` review checkpoints are in [`history.md`](history.md).
 
 | Phase | Package | Status |
 |---|---|---|
@@ -30,6 +33,25 @@ checkpoints are in [`history.md`](history.md).
 | 3 | [03-archive-and-split.md](housekeeping/03-archive-and-split.md) | done (2026-10-27); docs-only; reviewed PASS; committed in cycle-close catch-up |
 | 4 | [04-local-cleanup.md](housekeeping/04-local-cleanup.md) | done (2026-10-27); local cleanup; reviewed PASS; committed in cycle-close catch-up |
 | 5 | [05-inbox-triage.md](housekeeping/05-inbox-triage.md) | done (2026-10-27); docs/inbox-only; reviewed PASS; NOTE-1/3/4/5 fixed; NOTE-6 catch-up approved; committed at cycle close |
+
+## Stimulus image track (P13, AS-13–AS-14) — active
+
+User request 2026-10-27. A shared table between questions is currently saved as
+the previous question's Option D. This track detects the block, removes it from
+the question, and lets the uploader attach one image to the questions named by
+the block. It is the first track that writes an image through auto-save.
+
+| Phase | Package | Status |
+|---|---|---|
+| 1 | [19-shared-stimulus-images.md](19-shared-stimulus-images.md) | done (2026-10-28); parser/gate/fixtures; runner 43 PASS, unit 126 PASS; light-verified (2026-10-28) |
+| 2 | [as-13-image-plan-ui.md](as-13-image-plan-ui.md) | pending; depends on P13 |
+| 3 | [as-14-stimulus-docs-live.md](as-14-stimulus-docs-live.md) | pending; depends on AS-13 |
+
+The cycle map is [`prompts/phase-map.md`](prompts/phase-map.md). D-59 records
+the stimulus metadata and D-60 records the in-memory image plan and gate. No
+PHP, database, `ocr_helper.js`, server-contract, or localStorage-key change.
+The image plan is per tab and is not stored; a reload requires re-selecting
+files. `[missing text]` remains a placeholder, not an image marker.
 
 ## Auto-Save track (AS-01…AS-06)
 
@@ -100,7 +122,8 @@ P0 is a one-off inbox cleanup, done 2026-10-27. It has no package row:
 `Promoted 2026-10-26` block was removed, and the raw Q46 case was kept for P12.
 
 The sequence is linear: P10 → P11 → P12 → AS-10 → AS-11 → AS-12, with AS-10
-also depending on AS-09. For this track, rebuild only `src/bookmarklet.js`.
+also depending on AS-09. The stimulus image track is a separate linear sequence:
+P13 → AS-13 → AS-14. For these tracks, rebuild only `src/bookmarklet.js`.
 `src/bookmarklet.min.js` is untracked and outside the workspace contract; do
 not rebuild it. Commits follow the phase-boundary rule below.
 

@@ -232,6 +232,38 @@ word or option. The UI and the runner call `splitSectionsWithSalvage(raw)`:
 The baseline has **no** absorbed-option post-processor. The `[^\S\n]*` after
 the label is what prevents a blank `C.` from consuming `D.`.
 
+### Stage 3b — Shared stimulus extraction (`extractStimuli`)
+
+A shared table between questions must not become the preceding question's
+Option D. The parser runs this stage before option matching and removes the
+block from the question text.
+
+- **Structural lines** are numbered question lines, option labels, divider-only
+  `===` lines, key headings, key lines, and missing-text placeholders. A block
+  never crosses one.
+- **Standard intro:** a line matching `use|study|consider|refer to|the
+  following|below|above` plus `information|data|table|schedule|list|diagram|
+  figure|chart|passage|graph|extract` plus `question(s)`, or a `questions N and
+  M` line containing `below|above|following`. It is removed only when the same
+  run contains table evidence.
+- **Table evidence:** a pipe row, a separator row, a `label: number` row, a
+  `total/subtotal/balance/net/gross` row with a number, or at least two rows
+  with two or more number tokens (or three or more number tokens).
+- **Markers:** standalone `[image]`, `[[image]]`, `[image: 14-15]`,
+  `[[image: 14-15]]`; inline double-bracket markers only. A standalone marker
+  uses an adjacent block first, then the nearest valid block in the same
+  question chunk forward then backward; if none is valid, only the marker is
+  removed. An inline marker removes only its own text. `[missing text]` is not
+  a marker.
+- **Ranges:** `parseStimulusRange` accepts `14-15`, `14–15`, `14 to 15`,
+  `14 and 15`, `14,16`, and `Q14-Q15`; a span over 50 keeps only its endpoints.
+- **Output:** `q.stimuli` is present only when non-empty. Each entry is
+  `{sourceNum, nums, marker, text, source}` before `applyStimulusFlags` adds
+  `id`, `order`, and `missing`. `applyStimulusFlags` clears old `needsImage`
+  flags, marks every target question `needsImage`, and records targets outside
+  the paste in `missing`. It is a separate pure step so the runner and UI can
+  apply it after parsing a whole queue.
+
 ### Stage 4 — Header inference
 
 - The UI reads three header sources in order: the question part, the dropped
@@ -364,7 +396,9 @@ section records the contract as implemented.
 
 A queue without `batchId`, or a key whose `ansKeyBatch` does not match it, is
 legacy: manual use is unchanged and auto-save is blocked. Reset Queue clears the
-queue, key, conflicts, and both batch ids (D-30).
+queue, key, conflicts, and both batch ids (D-30). `ocrQueue` items may add
+`stimuli` and `needsImage`; the image plan and its Files are in memory only and
+are never stored (D-59, D-60).
 
 ### 7.2 Confirmation and controls
 
@@ -406,22 +440,27 @@ first one and stops. An empty list means safe. It checks:
    each ≤500 UTF-8 bytes; the stem is at least 10 characters.
 10. Subject, category, and year are set and the single confirmation is ticked.
 11. The selected mode did not change since Start.
-12. No file is selected in `question_image` or `answer_video`. Diagram/table
-    words do not block; the uploader decides whether a batch needs images
-    (D-38).
+12. No file is selected natively in `question_image` or `answer_video`.
+    Diagram/table words alone do not block, but a detected stimulus must have an
+    image plan row with a file and a range (`stimulus-unassigned`), every range
+    must name a question in this paste (`stimulus-range`), and the current
+    `needsImage` question must be covered by a ready plan row (`image-required`)
+    (D-38, D-59, D-60).
 13. No `ocrSaving` marker, no save in progress, Stop is off, and this tab holds
     `autoLock` (another tab is refused while its lock is under 15 seconds old).
 14. The page is visible; a hidden tab finishes the current save and pauses.
-
-The form is also compared with the loaded question before each save; an edited
-form stops the run with `form no longer matches`.
+15. The form still matches the loaded question; an edited form stops the run
+    with `form no longer matches`.
 
 ### 7.4 Save classification and marker
 
 The manual submit and the auto loop both call
-`saveCurrentQuestion({auto, active})`. It writes `ocrSaving`, posts
-`FormData(form)` to `location.href` with same-origin credentials and a
-30-second abort timeout, then classifies the reply:
+`saveCurrentQuestion({auto, active})`. It writes `ocrSaving`, builds
+`FormData(form)`, and injects the first ready image-plan row whose range
+contains the current question as `question_image` with its File and file name
+(D-60). It posts to `location.href` with same-origin credentials and a 30-second
+abort timeout, or 60 seconds when an image is attached, then classifies the
+reply:
 
 - **Rejected** — `Administrator Login`, or `.admin-error` with no redirect.
   Show the server text, clear the marker, do not advance.

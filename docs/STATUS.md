@@ -1,22 +1,26 @@
 # Current status
 
-Last verified: 2026-10-27 on branch `experiments` at `490f60a`.
+Last verified: 2026-10-28 on branch `experiments` at `490f60a` plus uncommitted P13 work.
 
 ## Checks
 
 | Check | Result |
 |---|---|
-| `node tests/runner.js` | 41 fixtures: 41 PASS, 0 FAIL, 0 PENDING |
-| `node tests/unit.js` | 115 PASS, 0 FAIL |
+| `node tests/runner.js` | 43 fixtures: 43 PASS, 0 FAIL, 0 PENDING |
+| `node tests/unit.js` | 126 PASS, 0 FAIL |
 | `node tools/extract-bank.js --check` | OK: source, anchors, counts, and 7 output hashes match |
 | `src/bookmarklet.js` | 1 line, no `%`, body parses |
-| `src/bookmarklet.js` size | 81,284 bytes |
-| `src/bookmarklet.js` SHA-256 | `f110322ec435c8bcf3ac1e39feffb4cc92b0ca76d16bc1c95ac23d2e6c9d081d` |
+| `src/bookmarklet.js` size | 91,460 bytes |
+| `src/bookmarklet.js` SHA-256 | `516155b759ea5ea4a1a0a94af35be2157bfdf0e0d403522ab829d49ff11b6fc7` |
 
 The fixture runner is the regression gate. It is parser-only; it does not
 exercise the DOM, storage, `fillForm`, `tick`, or save path. `tests/ui-harness.js`
 covers some UI save and dry-run paths without a browser. There is no checked-in
 browser test suite.
+
+P13 adds the stimulus gate but not the image-plan UI. Until AS-13, auto-save is
+intentionally blocked for any queue with a detected stimulus because no plan
+can be assigned; manual use is unchanged.
 
 ## Build policy
 

@@ -33,7 +33,8 @@ features.
    remains a shared key name but the bookmarklet no longer touches it
    (INV-36, INV-55; D-22). Auto-Save adds `batchId`, `ansKeyBatch`,
    `ansKeyConflicts`, `ocrSaving`, `ocrSavedLog`, `ocrBatchHistory`, and
-   `autoLock`; additions are allowed, existing shapes must stay compatible
+   `autoLock`; `ocrQueue` items may add `stimuli`/`needsImage` (D-59/D-60).
+   Additions are allowed, existing shapes must stay compatible
    (D-30, D-32, D-36, D-57). Reset Queue keeps `ocrBatchHistory`; it is
    display-only and must never block a save.
 5. **Edit modules, not the build output.** `src/bookmarklet.js` is generated.
@@ -65,11 +66,12 @@ features.
 | `splitQuestions` numbering guard | `n <= last || n > last + 5` drops repeats and large jumps. It can merge real questions after a restart or OCR digit error (INV-21, INV-24). |
 | `salvageNormalize` / `splitSectionsWithSalvage` | The repair must stay a no-op on bank text. The `inserts >= 2` trigger and the `after > before` chunk gate are mandatory; a repair that does not add questions must be discarded and the strict result kept byte-for-byte (INV-72). |
 | `splitBulletQuestions` / `splitQuestionItems` | Bullet mode is only for text with no line-start `N.` marker. Never invent numbers: bullet chunks keep `num: null` and the `question number missing` flag. Do not mix bullet and numbered chunks in one paste (INV-74). |
+| `extractStimuli` / `applyStimulusFlags` | The block must stay inside one question chunk and must not remove a question or option line. Standard intro needs table evidence; `[missing text]` is not a marker; a marker with no valid block removes only itself. `applyStimulusFlags` must clear old `needsImage`, assign order by queue order, and keep out-of-paste targets in `missing` (D-59, INV-92, INV-93). |
 | `fillForm` / `tick` | They must agree on the E/F→D mapping and on ticking nothing when E/F text is absent. `tick()` computes radio index 3 for E/F; radio values 4/5 do not exist (INV-27, INV-28, INV-30). |
 | Save detector | Hard-coded to the exact success text. The archived PHP confirms the PRG flash flow, so the detector matches the server contract. Do not change one side without the other (INV-49; qwen-2 H07/H09). |
 | Live delete/cleanup | The admin delete is a hard SQL `DELETE` that also removes media. Its only guard is the per-row `onsubmit` confirm, which `.submit()` bypasses. Never delete live records or use a first-match delete form. See `docs/LIVE-SAFETY.md`. |
 | Header inference | First `20\d\d` in the first 3 lines can be a copyright year; fuzzy subject matching can pick the wrong option for names that share words. Both are known risks (EC-61, EC-43; INV-44). EC-44 is confirmed by the PHP. |
-| Auto-Save gate | `autosaveBlockers` is the safety wall. Do not weaken or reorder it to make a batch run; add a documented decision and a test first. It must block gaps, inexact key coverage, conflicts, E/F, flags, bad options, missing meta, an unticked confirmation, a changed confirmation snapshot or mode, markers, lock, hidden, current-batch saved-log, prior-batch fingerprints, recent duplicates, and an edited form (D-33, D-34, D-39, D-51, D-56; SPEC §7.3). Diagram/table words do not block; the uploader owns the media decision (D-38). |
+| Auto-Save gate | `autosaveBlockers` is the safety wall. Do not weaken or reorder it to make a batch run; add a documented decision and a test first. It must block gaps, inexact key coverage, conflicts, E/F, flags, bad options, missing meta, an unticked confirmation, a changed confirmation snapshot or mode, markers, lock, hidden, current-batch saved-log, prior-batch fingerprints, recent duplicates, an edited form, unassigned detected stimuli, out-of-paste image ranges, and an uncovered `needsImage` question (D-33, D-34, D-39, D-51, D-56, D-59, D-60; SPEC §7.3). Diagram/table words alone do not block; the uploader owns the image plan (D-38). |
 | Save marker/classification | `ocrSaving` is cleared only on definite Saved/Rejected. Ambiguous keeps it, disables Start, and never retries. Saved requires a redirect, no `.admin-error`, the success regex, and an ID above every logged ID (INV-64, INV-65). |
 | Auto-Save lock/loop | Use the recursive `setTimeout` heartbeat and `autoLock`; never use `setInterval` as the engine, `MutationObserver` for success, or `button.click()`/`requestSubmit()` to advance. A hidden tab finishes the current save and pauses (INV-67). |
 | Dry run | It must copy the queue, use current metadata, POST nothing, and write nothing to `ocrQueue`, `ocrSaving`, `ocrSavedLog`, `ocrBatchHistory`, or `autoLock` (INV-68). |
@@ -84,6 +86,9 @@ features.
 - A second complete A–D set with no visible question-number boundary is
   flagged as a possible merged paste; duplicate labels inside one selected set
   are not flagged solely for duplication (INV-17, D-55).
+- A shared stimulus block is removed from the preceding question and attached
+  as ordered metadata; target questions get `needsImage`. The image plan is
+  in-memory and is never stored (D-59, D-60; INV-92–INV-94).
 - Flags are advisory and never block load/queue/save (INV-20).
 - Numbering gaps are flagged on the later question via `flagNumberingGaps`
   (D-29, INV-59); repeats and large jumps are still skipped.

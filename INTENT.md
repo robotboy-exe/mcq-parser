@@ -1,9 +1,9 @@
-# Build Intent — Post-AS Follow-up (D-54–D-58)
+# Build Intent — Post-AS Follow-up (D-54–D-60)
 
-This is the user's intent for P11, P12, AS-10, AS-11, and AS-12. It is the
-tie-breaker for the prose in `docs/plan/`. The package documents own the
-implementation details; if a package choice conflicts with this file, ask
-before changing the behavior.
+This is the user's intent for P11, P12, AS-10, AS-11, AS-12, P13, AS-13, and
+AS-14. It is the tie-breaker for the prose in `docs/plan/`. The package
+documents own the implementation details; if a package choice conflicts with
+this file, ask before changing the behavior.
 
 Implementation choices such as DOM IDs, exact array shapes, wait timing, and
 specific CSS values are not part of the intent. They may change if the behavior
@@ -82,11 +82,27 @@ For live runs, completion beats Stop. Stopped, paused, and incomplete states
 stay visible. Reloading mid-batch shows `INCOMPLETE — queue resumed at X of N`;
 a finished batch shows complete; do not auto-resume.
 
+### 6. Shared stimulus images — D-59/D-60 / P13–AS-14
+
+A table between questions belongs to the later questions, not the previous
+question's Option D. Detect the standard intro plus table, remove it from the
+preceding question, and attach ordered stimulus metadata. A manual `[image]` or
+`[[image]]` marker with an optional range is the fallback because OCR placement
+is unreliable. `[missing text]` is not an image marker.
+
+The uploader assigns one image to one or more questions. The image plan is
+in-memory, never stored; reload requires re-selecting files. A detected block
+must have a file and a range, a range must be in the paste, and the current
+question must be covered. Save the first covering file as `question_image` with
+a 60-second timeout. No PHP, database, server-contract, or localStorage-key
+change.
+
 ## Guardrails
 
 - No inline question splitting.
 - No duplicate override.
-- No changes to existing storage key shapes; only the additive keys named here.
+- No changes to existing storage key shapes; only the additive keys named here
+  and the additive `ocrQueue` fields `stimuli`/`needsImage` (D-59/D-60).
 - No minified rebuild unless asked.
 - No commit unless asked.
 - If package prose conflicts with this file, stop and ask before changing
