@@ -31,6 +31,7 @@ historical.
 | Checkpoint | Scope | Level | Review | Commit |
 |---|---|---|---|---|
 | phase 1 | P13 | light | light-verified (2026-10-28) | committed at phase 2 start |
+| phase 2 | AS-13 | light | light-verified (2026-10-28) | committed at phase 3 start |
 
 Rigorous review records live in [`reviews/`](reviews/README.md), named
 `<cycle-id>-phase-<N>.md`, with an optional `<...>-re-review.md` after a fix.
@@ -85,6 +86,15 @@ authoritative:
 
 ## Change log
 
+- 2026-10-28 — AS-13 adds the in-memory image plan and save injection: ordered
+  detected-block rows, ranges, Attach/Replace/Remove, a generic row for
+  uncovered `needsImage` questions, Start gating, 60-second image timeout, and
+  no storage shape change. Live draft smoke saved #4142–#4144 (Q13 no image;
+  Q14/Q15 image), left for owner cleanup. Runner 43 PASS; unit 140 PASS;
+  bookmarklet rebuilt. Light-verified at phase 3 Gate 1; committed at phase 3
+  start. The
+  post-batch banner showed placeholders/2026 after the form reset; direct edit
+  pages confirm 2024. Manifest: `$HOME/tmp/as13-live-manifest-2026-10-28.json`.
 - 2026-10-28 — Stimulus image cycle started. P13 adds parser detection for a
   standard intro plus table, explicit `[image]`/`[[image]]` markers with
   optional ranges, ordered `stimuli` metadata, `needsImage` flags, and the

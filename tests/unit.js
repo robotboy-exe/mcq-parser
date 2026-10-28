@@ -1535,6 +1535,222 @@ test('salvageNormalize is a no-op on every bank input', () => {
   }
 });
 
+function imageStorage(batchId, extraNeeds) {
+  const mk = (num, question) => ({ num, question, a: 'one', b: 'two', c: 'three', d: 'four', flags: [] });
+  const items = [
+    Object.assign(mk(13, 'Shared table question thirteen'), {
+      stimuli: [{
+        sourceNum: 13, nums: [14, 15],
+        marker: 'Use the information below to answer questions 14 and 15',
+        text: 'Opening stock: 22,000', source: 'intro',
+        id: 'stim-1', order: 1, missing: []
+      }]
+    }),
+    Object.assign(mk(14, 'First table question fourteen'), { needsImage: true }),
+    Object.assign(mk(15, 'Second table question fifteen'), { needsImage: true })
+  ];
+  if (extraNeeds !== undefined) items.push(Object.assign(mk(extraNeeds, 'Separate image question ' + extraNeeds), { needsImage: true }));
+  return {
+    ocrQueue: { items, i: 0, batchId },
+    ansKey: { 13: 'D', 14: 'A', 15: 'B' },
+    ansKeyBatch: batchId,
+    ansKeyConflicts: [],
+    ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' },
+    ocrSavedLog: []
+  };
+}
+
+function fakeImage(name, size) {
+  return { name, size: size == null ? 1234 : size, type: 'image/png' };
+}
+
+function chooseImage(ui, id, file) {
+  const input = ui.doc.getElementById(id);
+  input.files = [file];
+  if (typeof input.onchange === 'function') input.onchange();
+}
+
+testAsync('UI image plan is hidden for a queue without stimuli', async () => {
+  const ui = uiHarness.createUI({ storage: uiHarness.sampleStorage('plain') });
+  eq(ui.doc.getElementById('ocr_image_plan').hidden, true);
+  eq(ui.doc.getElementById('ocr_img_generic_range'), null);
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
+});
+
+testAsync('UI image plan shows an ordered detected block and blocks Start', async () => {
+  const ui = uiHarness.createUI({ storage: imageStorage('stim-shown') });
+  const panel = ui.doc.getElementById('ocr_image_plan');
+  eq(panel.hidden, false);
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image');
+  eq(ui.doc.getElementById('ocr_img_range_0').value, '14-15');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+  eq(ui.doc.getElementById('ocr_img_generic_range'), null);
+});
+
+testAsync('UI image plan attaches a file and enables Start', async () => {
+  const ui = uiHarness.createUI({ storage: imageStorage('stim-attach') });
+  const file = fakeImage('table.png');
+  chooseImage(ui, 'ocr_img_file_0', file);
+  ui.doc.getElementById('ocr_img_range_0').value = '14, 15';
+  ui.click('ocr_img_attach_0');
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready');
+  eq(ui.doc.getElementById('ocr_img_file_name_0').textContent, 'table.png (1234 bytes)');
+  eq(ui.doc.getElementById('ocr_img_range_0').value, '14-15');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
+  eq(ui.storage.get('ocrImagePlan'), null);
+});
+
+testAsync('UI image plan rejects an empty range', async () => {
+  const ui = uiHarness.createUI({ storage: imageStorage('stim-empty') });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.doc.getElementById('ocr_img_range_0').value = '';
+  ui.click('ocr_img_attach_0');
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+});
+
+testAsync('UI image plan blocks an out-of-paste range', async () => {
+  const ui = uiHarness.createUI({ storage: imageStorage('stim-outside') });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.doc.getElementById('ocr_img_range_0').value = '14-19';
+  ui.click('ocr_img_attach_0');
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Range not in this paste: 16, 17, 18, 19');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+});
+
+testAsync('UI generic image row appears only for uncovered flagged questions', async () => {
+  const covered = uiHarness.createUI({ storage: imageStorage('generic-none') });
+  eq(covered.doc.getElementById('ocr_img_generic_range'), null);
+
+  const ui = uiHarness.createUI({ storage: imageStorage('generic-needed', 18) });
+  eq(ui.doc.getElementById('ocr_img_generic_range').value, '18');
+  eq(ui.doc.getElementById('ocr_img_missing_18').textContent, 'Question Q18 needs an image.');
+  chooseImage(ui, 'ocr_img_generic_file', fakeImage('single.png'));
+  ui.click('ocr_img_generic_attach');
+  eq(ui.doc.getElementById('ocr_img_generic_status').textContent, 'Ready');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true, 'a generic row must not satisfy the detected block');
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.click('ocr_img_attach_0');
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
+});
+
+testAsync('UI image plan is empty after reload and never stored', async () => {
+  const storage = imageStorage('stim-reload');
+  const first = uiHarness.createUI({ storage });
+  chooseImage(first, 'ocr_img_file_0', fakeImage('table.png'));
+  first.click('ocr_img_attach_0');
+  eq(first.doc.getElementById('ocr_img_status_0').textContent, 'Ready');
+  assert(!first.storage.keys().some(key => /image|stim/i.test(key)), 'image plan leaked into storage');
+
+  const reloaded = uiHarness.createUI({ storage });
+  eq(reloaded.doc.getElementById('ocr_img_status_0').textContent, 'No image');
+  eq(reloaded.doc.getElementById('ocr_img_file_name_0').textContent, '');
+  eq(reloaded.doc.getElementById('ocr_auto_start').disabled, true);
+});
+
+testAsync('UI Reset clears the image plan', async () => {
+  const ui = uiHarness.createUI({ storage: imageStorage('stim-reset') });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.click('ocr_img_attach_0');
+  ui.click('ocr_reset');
+  eq(ui.doc.getElementById('ocr_image_plan').hidden, true);
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+  eq(ui.storage.get('ocrQueue'), { items: [], i: 0 });
+});
+
+testAsync('UI full Load clears the plan and re-detects the blocks', async () => {
+  const ui = uiHarness.createUI({ storage: imageStorage('stim-load') });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.click('ocr_img_attach_0');
+  ui.setPaste(fs.readFileSync(path.join(INPUT_DIR, 'new-edge-shared-stimulus.txt'), 'utf8'));
+  ui.click('ocr_load');
+  const queue = ui.storage.get('ocrQueue');
+  eq(queue.items.filter(item => item.needsImage).map(item => item.num), [14, 15]);
+  const holder = queue.items.find(item => Array.isArray(item.stimuli) && item.stimuli.length);
+  eq(holder.stimuli[0].nums, [14, 15]);
+  eq(ui.doc.getElementById('ocr_image_plan').hidden, false);
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+});
+
+testAsync('UI key-only Load keeps the queue and image plan', async () => {
+  const ui = uiHarness.createUI({ storage: imageStorage('stim-keyonly') });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.click('ocr_img_attach_0');
+  ui.setPaste('=== ANSWER KEY ===\n13:D 14:A 15:B');
+  ui.click('ocr_load');
+  eq(ui.storage.get('ocrQueue').items.length, 3);
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
+});
+
+testAsync('UI save injects the image only on a covered question', async () => {
+  const timeouts = [];
+  const ui = uiHarness.createUI({
+    storage: imageStorage('stim-save'),
+    onLongTimeout: ms => timeouts.push(ms),
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 500)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 501)' }
+    ]
+  });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.click('ocr_img_attach_0');
+  await ui.submit();
+  const first = ui.posts[0].body;
+  eq(first.get('question_text'), 'Shared table question thirteen');
+  assert(first.get('question_image') !== ui.doc.getElementById('ocr_img_file_0').files[0], 'uncovered question got the image');
+
+  await ui.submit();
+  const second = ui.posts[1].body;
+  eq(second.get('question_text'), 'First table question fourteen');
+  eq(second.get('question_image').name, 'table.png');
+  eq(second.get('question_image').size, 1234);
+  assert(timeouts.indexOf(30000) > -1, 'missing 30-second timeout: ' + timeouts.join(','));
+  assert(timeouts.indexOf(60000) > -1, 'missing 60-second timeout: ' + timeouts.join(','));
+});
+
+testAsync('UI dry run reports an attached image and posts nothing', async () => {
+  const ui = uiHarness.createUI({ storage: imageStorage('stim-dry') });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.click('ocr_img_attach_0');
+  await ui.click('ocr_auto_dry');
+  eq(ui.posts.length, 0);
+  const status = ui.doc.getElementById('ocr_dry_status').textContent;
+  assert(status.indexOf('image attached') > -1, 'dry run did not report the image: ' + status);
+});
+
+testAsync('UI saved log keeps its shape when the save used an image', async () => {
+  const storage = imageStorage('stim-log');
+  storage.ocrQueue.i = 1;
+  const ui = uiHarness.createUI({ storage });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.click('ocr_img_attach_0');
+  await ui.submit();
+  const entry = ui.storage.get('ocrSavedLog')[0];
+  eq(Object.keys(entry).sort(), ['at', 'batchId', 'fp', 'id', 'inactive', 'mode', 'num']);
+});
+
+testAsync('UI plan row clears after its last covered save', async () => {
+  const storage = imageStorage('stim-clear');
+  storage.ocrQueue.i = 1;
+  const ui = uiHarness.createUI({
+    storage,
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 500)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 501)' }
+    ]
+  });
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
+  ui.click('ocr_img_attach_0');
+  await ui.submit();
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready', 'Q15 still needs the shared image');
+  await ui.submit();
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+});
+
 (async () => {
   for (const item of asyncTests) {
     try {

@@ -295,7 +295,10 @@ function createUI(options) {
       });
     }
     get(name) { return this.map.has(name) ? this.map.get(name) : null; }
-    set(name, value) { this.map.set(name, String(value)); }
+    set(name, value) {
+      const fileLike = value && typeof value === 'object' && typeof value.name === 'string';
+      this.map.set(name, fileLike ? value : String(value));
+    }
     delete(name) { this.map.delete(name); }
     has(name) { return this.map.has(name); }
     entries() { return this.map.entries(); }

@@ -44,7 +44,7 @@ the block. It is the first track that writes an image through auto-save.
 | Phase | Package | Status |
 |---|---|---|
 | 1 | [19-shared-stimulus-images.md](19-shared-stimulus-images.md) | done (2026-10-28); parser/gate/fixtures; runner 43 PASS, unit 126 PASS; light-verified (2026-10-28) |
-| 2 | [as-13-image-plan-ui.md](as-13-image-plan-ui.md) | pending; depends on P13 |
+| 2 | [as-13-image-plan-ui.md](as-13-image-plan-ui.md) | done (2026-10-28); image plan UI + draft live smoke (#4142–#4144); runner 43 PASS, unit 140 PASS; light-verified (2026-10-28) |
 | 3 | [as-14-stimulus-docs-live.md](as-14-stimulus-docs-live.md) | pending; depends on AS-13 |
 
 The cycle map is [`prompts/phase-map.md`](prompts/phase-map.md). D-59 records

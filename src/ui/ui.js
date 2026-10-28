@@ -22,7 +22,7 @@ function runOCRBookmarklet() {
   };
   const p = document.createElement('div');
   p.className = 'admin-field';
-  p.innerHTML = `<style>#ocr_auto_start:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}#ocr_auto_start:disabled:hover{background:#1769aa}</style><div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn admin-btn-muted" id="ocr_paste_clipboard">Paste clipboard</button> <button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_auto"><div id="ocr_dry_panel" style="border-left:3px solid #0f766e;padding-left:8px;margin-bottom:10px"><div id="ocr_dry_status" class="admin-note" style="font-weight:bold"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry_stop" disabled>Stop dry run</button><div id="ocr_dry_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_dry_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#0f766e"></progress><span id="ocr_dry_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_dry_blocked" class="admin-note"></div></div><div id="ocr_live_panel" style="border-left:3px solid #6b7280;padding-left:8px"><div id="ocr_live_status" class="admin-note" style="font-weight:bold"></div><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <label class="admin-note" style="display:inline-block;margin:0 8px"><input type="checkbox" id="ocr_active_mode"> Save as active (live immediately)</label> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_live_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_live_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#1769aa"></progress><span id="ocr_live_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_live_blocked" class="admin-note"></div></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_batch_history" class="admin-note" hidden><div id="ocr_batch_history_list"></div></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button> <a class="admin-btn admin-btn-muted" id="ocr_paused_check" href="#" hidden>Open filtered list</a></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
+  p.innerHTML = `<style>#ocr_auto_start:disabled{opacity:.45;cursor:not-allowed;filter:grayscale(1)}#ocr_auto_start:disabled:hover{background:#1769aa}</style><div id="ocr_input"><label for="ocr_text">Paste the WHOLE block: questions + answer key (one box)</label><textarea id="ocr_text" style="min-height:220px"></textarea><button type="button" class="admin-btn admin-btn-muted" id="ocr_paste_clipboard">Paste clipboard</button> <button type="button" class="admin-btn" id="ocr_load">Load questions + key</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear_text" style="margin-left:8px">Clear text</button><div class="admin-note">Recommended divider on its own line: <code>=== ANSWER KEY ===</code>. Varying headers are auto-detected otherwise. To fix the key mid-queue: Show paste box, paste ONLY the key, Load (queue is kept).</div></div><div id="ocr_status" class="admin-note"></div><div id="ocr_image_plan" class="admin-note" hidden></div><div id="ocr_auto"><div id="ocr_dry_panel" style="border-left:3px solid #0f766e;padding-left:8px;margin-bottom:10px"><div id="ocr_dry_status" class="admin-note" style="font-weight:bold"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry">Dry run</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_dry_stop" disabled>Stop dry run</button><div id="ocr_dry_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_dry_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#0f766e"></progress><span id="ocr_dry_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_dry_blocked" class="admin-note"></div></div><div id="ocr_live_panel" style="border-left:3px solid #6b7280;padding-left:8px"><div id="ocr_live_status" class="admin-note" style="font-weight:bold"></div><button type="button" class="admin-btn" id="ocr_auto_start" disabled>Start auto-save</button> <label class="admin-note" style="display:inline-block;margin:0 8px"><input type="checkbox" id="ocr_active_mode"> Save as active (live immediately)</label> <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto_stop" disabled>Stop</button><div id="ocr_batch_confirm" class="admin-note" hidden></div><div id="ocr_live_progress" class="admin-note" hidden><div style="display:flex;align-items:center;gap:8px"><progress id="ocr_live_progress_bar" max="1" value="0" style="flex:1;height:10px;accent-color:#1769aa"></progress><span id="ocr_live_progress_text" style="min-width:64px;text-align:right"></span></div></div><div id="ocr_live_blocked" class="admin-note"></div></div><div id="ocr_saved_box" class="admin-note" hidden><div id="ocr_saved_list"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_saved_copy">Copy saved list</button></div><div id="ocr_batch_history" class="admin-note" hidden><div id="ocr_batch_history_list"></div></div><div id="ocr_paused" class="admin-alert admin-error" hidden><div id="ocr_paused_text"></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_paused_clear">I checked. Clear warning.</button> <a class="admin-btn admin-btn-muted" id="ocr_paused_check" href="#" hidden>Open filtered list</a></div></div><button type="button" class="admin-btn admin-btn-muted" id="ocr_goto" hidden>Go to question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_reset" style="margin-left:8px">Reset Queue</button> <button type="button" class="admin-btn admin-btn-muted" id="ocr_show" style="margin-left:8px">Show paste box</button><hr style="margin:20px 0;border:0;border-top:1px solid #d5dfe9"><button type="button" class="admin-btn admin-btn-muted" id="ans_clear">Clear saved key</button><div id="ans_msg" class="admin-note"></div>`;
   form.before(p);
   const sb = form.querySelector('button[type=submit]');
   if (sb) {
@@ -94,6 +94,8 @@ function runOCRBookmarklet() {
     if (!auto && form.elements.is_active) form.elements.is_active.checked = true;
   }
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
+  let imagePlan = [];
+  const imagePending = new Map();
   const saveQ = () => store.set('ocrQueue', queue);
   let last = queue.i;
   let savedLog = [];
@@ -113,6 +115,7 @@ function runOCRBookmarklet() {
   let dryStamp = null;
   let dryChecked = 0;
   let dryTotal = 0;
+  let dryImageCount = 0;
   let liveRunning = false;
   let liveStop = false;
   let liveState = 'idle';
@@ -216,12 +219,268 @@ function runOCRBookmarklet() {
       now: Date.now(),
       visible: !document.hidden,
       savedLog: savedLog,
+      imagePlan: imagePlan,
       recentRows: recentRows(),
       form: {
         question: e.question_text ? e.question_text.value : '',
         options: ['option_a', 'option_b', 'option_c', 'option_d'].map(id => e[id] ? e[id].value : '')
       }
     };
+  }
+  function planNums(row) {
+    const list = row && Array.isArray(row.nums) ? row.nums : [];
+    return list.map(n => Number(n)).filter(n => Number.isInteger(n) && n > 0);
+  }
+  function planReady(row) {
+    return Boolean(row && row.file && typeof row.name === 'string' && row.name.trim() && planNums(row).length);
+  }
+  function planRowFor(num) {
+    return imagePlan.find(row => planReady(row) && planNums(row).includes(Number(num))) || null;
+  }
+  function stimulusPlan(stim) {
+    return imagePlan.find(row => row && String(row.stimulusId) === String(stim.id)) || null;
+  }
+  function detectedStimuli() {
+    const list = [];
+    queue.items.forEach(item => {
+      (item && Array.isArray(item.stimuli) ? item.stimuli : []).forEach(stim => { if (stim) list.push(stim); });
+    });
+    return list.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+  }
+  function needsImageQuestions() {
+    return queue.items.filter(item => item && item.needsImage && Number.isInteger(item.num));
+  }
+  function queueNumberSet() {
+    return new Set(queue.items.map(item => item.num).filter(Number.isInteger));
+  }
+  function formatPlanRange(nums) {
+    const list = (Array.isArray(nums) ? nums : []).map(Number).filter(n => Number.isInteger(n) && n > 0);
+    if (!list.length) return '';
+    if (list.length === 1) return String(list[0]);
+    let contiguous = true;
+    for (let i = 1; i < list.length; i++) if (list[i] !== list[i - 1] + 1) { contiguous = false; break; }
+    return contiguous ? list[0] + '-' + list[list.length - 1] : list.join(', ');
+  }
+  function parsePlanRange(text) {
+    return parseStimulusRange(text);
+  }
+  function planStatus(row) {
+    if (!planReady(row)) return 'No image';
+    const known = queueNumberSet();
+    const bad = planNums(row).filter(n => !known.has(n));
+    if (bad.length) return 'Range not in this paste: ' + bad.join(', ');
+    return 'Ready';
+  }
+  function setImagePlanRow(stimulusId, nums, file) {
+    const entry = {
+      stimulusId: stimulusId == null ? null : stimulusId,
+      nums: (Array.isArray(nums) ? nums : []).slice(),
+      file: file,
+      name: file && file.name ? String(file.name) : ''
+    };
+    const at = imagePlan.findIndex(row => stimulusId == null ? row && row.stimulusId == null : row && String(row.stimulusId) === String(stimulusId));
+    if (at > -1) imagePlan[at] = entry;
+    else imagePlan.push(entry);
+    return entry;
+  }
+  function clearImagePlan() {
+    imagePlan = [];
+    imagePending.clear();
+  }
+  function imageGateBlockers() {
+    try {
+      return autosaveBlockers(gateState()).filter(blocker => blocker && (
+        blocker.code === 'stimulus-unassigned' || blocker.code === 'stimulus-range' || blocker.code === 'image-required'
+      ));
+    } catch (e) {
+      return [];
+    }
+  }
+  function pickFile(input) {
+    const files = input && input.files;
+    if (files && files[0]) return files[0];
+    return input && input.value ? { name: String(input.value).split(/[\\/]/).pop() } : null;
+  }
+  function fileLine(file) {
+    if (!file) return '';
+    const size = Number(file.size);
+    return String(file.name || '') + (Number.isFinite(size) ? ' (' + size + ' bytes)' : '');
+  }
+  function renderImagePlan() {
+    const box = $('ocr_image_plan');
+    if (!box) return;
+    box.textContent = '';
+    const stimuli = detectedStimuli();
+    const needs = needsImageQuestions();
+    box.hidden = !stimuli.length && !needs.length;
+    if (box.hidden) return;
+    const known = queueNumberSet();
+    const heading = document.createElement('div');
+    heading.style.fontWeight = 'bold';
+    heading.textContent = 'Image plan (this tab only; reload clears files)';
+    box.appendChild(heading);
+    stimuli.forEach((stim, idx) => {
+      const row = document.createElement('div');
+      row.style.margin = '6px 0';
+      row.style.paddingLeft = '6px';
+      row.style.borderLeft = '3px solid #1769aa';
+      const plan = stimulusPlan(stim);
+      const title = document.createElement('div');
+      title.textContent = 'Image block ' + (Number.isInteger(stim.order) ? stim.order : idx + 1)
+        + (Number.isInteger(stim.sourceNum) ? ' (after Q' + stim.sourceNum + ')' : '');
+      row.appendChild(title);
+      const range = document.createElement('input');
+      range.type = 'text';
+      range.id = 'ocr_img_range_' + idx;
+      range.value = formatPlanRange(plan ? planNums(plan) : stim.nums);
+      range.placeholder = 'e.g. 14-15';
+      row.appendChild(range);
+      row.appendChild(document.createTextNode(' '));
+      const file = document.createElement('input');
+      file.type = 'file';
+      file.accept = 'image/*';
+      file.id = 'ocr_img_file_' + idx;
+      const selected = document.createElement('span');
+      selected.id = 'ocr_img_file_name_' + idx;
+      selected.textContent = fileLine(imagePending.get(stim.id) || (plan && plan.file));
+      file.onchange = () => {
+        const chosen = pickFile(file);
+        if (chosen) imagePending.set(stim.id, chosen);
+        else imagePending.delete(stim.id);
+        selected.textContent = fileLine(chosen || (plan && plan.file));
+      };
+      row.appendChild(file);
+      row.appendChild(selected);
+      const attach = document.createElement('button');
+      attach.type = 'button';
+      attach.className = 'admin-btn admin-btn-muted';
+      attach.id = 'ocr_img_attach_' + idx;
+      attach.textContent = plan && plan.file ? 'Replace' : 'Attach';
+      attach.onclick = () => {
+        const chosen = imagePending.get(stim.id) || pickFile(file);
+        const nums = parsePlanRange(range.value);
+        if (!chosen || !nums.length) return;
+        setImagePlanRow(stim.id, nums, chosen);
+        imagePending.delete(stim.id);
+        renderImagePlan();
+        renderAuto();
+      };
+      row.appendChild(attach);
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'admin-btn admin-btn-muted';
+      remove.id = 'ocr_img_remove_' + idx;
+      remove.textContent = 'Remove';
+      remove.onclick = () => {
+        imagePlan = imagePlan.filter(entry => !entry || String(entry.stimulusId) !== String(stim.id));
+        imagePending.delete(stim.id);
+        renderImagePlan();
+        renderAuto();
+      };
+      row.appendChild(remove);
+      const status = document.createElement('div');
+      status.id = 'ocr_img_status_' + idx;
+      status.textContent = planStatus(plan);
+      status.style.fontWeight = 'bold';
+      status.style.color = planStatus(plan) === 'Ready' ? '#0d6b3f' : (planStatus(plan) === 'No image' ? '' : '#b45309');
+      row.appendChild(status);
+      box.appendChild(row);
+    });
+    if (stimuli.length) {
+      const bulkFiles = document.createElement('input');
+      bulkFiles.type = 'file';
+      bulkFiles.accept = 'image/*';
+      bulkFiles.multiple = true;
+      bulkFiles.id = 'ocr_img_bulk_files';
+      box.appendChild(bulkFiles);
+      const bulk = document.createElement('button');
+      bulk.type = 'button';
+      bulk.className = 'admin-btn admin-btn-muted';
+      bulk.id = 'ocr_img_bulk';
+      bulk.textContent = 'Use ranges in order';
+      bulk.onclick = () => {
+        const picked = bulkFiles.files ? Array.from(bulkFiles.files) : [];
+        stimuli.forEach((stim, idx) => {
+          const chosen = picked[idx] || imagePending.get(stim.id);
+          if (!chosen) return;
+          const input = $('ocr_img_range_' + idx);
+          const nums = parsePlanRange(input ? input.value : '');
+          if (!nums.length) return;
+          setImagePlanRow(stim.id, nums, chosen);
+          if (!picked[idx]) imagePending.delete(stim.id);
+        });
+        renderImagePlan();
+        renderAuto();
+      };
+      box.appendChild(bulk);
+    }
+    const stimNums = new Set();
+    stimuli.forEach(stim => (Array.isArray(stim.nums) ? stim.nums : []).forEach(n => stimNums.add(Number(n))));
+    const uncovered = needs.filter(item => !stimNums.has(Number(item.num))).map(item => item.num);
+    const generic = imagePlan.find(entry => entry && entry.stimulusId == null) || null;
+    if (uncovered.length || generic) {
+      const row = document.createElement('div');
+      row.style.margin = '6px 0';
+      row.style.paddingLeft = '6px';
+      row.style.borderLeft = '3px solid #6b7280';
+      const title = document.createElement('div');
+      title.textContent = 'Add image for other questions';
+      row.appendChild(title);
+      const range = document.createElement('input');
+      range.type = 'text';
+      range.id = 'ocr_img_generic_range';
+      range.value = formatPlanRange(generic ? planNums(generic) : uncovered);
+      range.placeholder = 'e.g. 18';
+      row.appendChild(range);
+      row.appendChild(document.createTextNode(' '));
+      const file = document.createElement('input');
+      file.type = 'file';
+      file.accept = 'image/*';
+      file.id = 'ocr_img_generic_file';
+      row.appendChild(file);
+      const attach = document.createElement('button');
+      attach.type = 'button';
+      attach.className = 'admin-btn admin-btn-muted';
+      attach.id = 'ocr_img_generic_attach';
+      attach.textContent = generic && generic.file ? 'Replace' : 'Attach';
+      attach.onclick = () => {
+        const chosen = pickFile(file);
+        const nums = parsePlanRange(range.value);
+        if (!chosen || !nums.length) return;
+        setImagePlanRow(null, nums, chosen);
+        renderImagePlan();
+        renderAuto();
+      };
+      row.appendChild(attach);
+      if (generic) {
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'admin-btn admin-btn-muted';
+        remove.id = 'ocr_img_generic_remove';
+        remove.textContent = 'Remove';
+        remove.onclick = () => {
+          imagePlan = imagePlan.filter(entry => !entry || entry.stimulusId != null);
+          renderImagePlan();
+          renderAuto();
+        };
+        row.appendChild(remove);
+      }
+      const status = document.createElement('div');
+      status.id = 'ocr_img_generic_status';
+      status.textContent = generic ? planStatus(generic) : 'No image';
+      status.style.fontWeight = 'bold';
+      row.appendChild(status);
+      box.appendChild(row);
+    }
+    const missing = needs.map(item => item.num).filter(num => !planRowFor(num));
+    missing.forEach(num => {
+      const line = document.createElement('div');
+      line.id = 'ocr_img_missing_' + num;
+      line.textContent = 'Question Q' + num + ' needs an image.';
+      line.style.color = '#b45309';
+      line.style.fontWeight = 'bold';
+      box.appendChild(line);
+    });
   }
   function batchLabel() {
     const meta = currentMeta();
@@ -483,7 +742,7 @@ function runOCRBookmarklet() {
     }
     renderBatchConfirm();
     const marker = (() => { try { return store.get('ocrSaving'); } catch (e) { return null; } })();
-    const disabled = anyRunning() || !confirmTicked || (activeMode && !activeConfirmed) || Boolean(marker) || !queue.items[queue.i];
+    const disabled = anyRunning() || !confirmTicked || (activeMode && !activeConfirmed) || Boolean(marker) || !queue.items[queue.i] || imageGateBlockers().length > 0;
     $('ocr_auto_start').disabled = disabled;
     $('ocr_auto_stop').disabled = !liveRunning;
     $('ocr_auto_dry').disabled = anyRunning();
@@ -636,6 +895,13 @@ function runOCRBookmarklet() {
         else fd.delete('is_active');
         fd.set('autosave', '1');
       }
+      const nativeImage = form.elements.question_image
+        && (form.elements.question_image.value || (form.elements.question_image.files && form.elements.question_image.files.length));
+      let usedPlanRow = null;
+      if (!nativeImage) {
+        usedPlanRow = planRowFor(num);
+        if (usedPlanRow) fd.set('question_image', usedPlanRow.file, usedPlanRow.name);
+      }
       const fingerprint = makeSavedFingerprint({
         subject_id: fd.get('subject_id'),
         exam_category_id: fd.get('exam_category_id'),
@@ -643,7 +909,7 @@ function runOCRBookmarklet() {
         question_text: fd.get('question_text')
       }, { subject: selectedText('subject_id'), category: selectedText('exam_category_id') });
       ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      if (ctl) timer = setTimeout(() => ctl.abort(), 30000);
+      if (ctl) timer = setTimeout(() => ctl.abort(), usedPlanRow ? 60000 : 30000);
       const res = await fetch(location.href, { method: 'POST', body: fd, credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
       const txt = await res.text();
       const doc = new DOMParser().parseFromString(txt, 'text/html');
@@ -680,6 +946,11 @@ function runOCRBookmarklet() {
         return { kind: 'saved', id: result.id, inactive: inactive, entry: entry, failed: committed.stage };
       }
       recordBatchHistory();
+      if (usedPlanRow) {
+        const laterNeeds = queue.items.slice(savedIndex + 1)
+          .some(item => item && item.needsImage && planNums(usedPlanRow).includes(item.num));
+        if (!laterNeeds) imagePlan = imagePlan.filter(row => row !== usedPlanRow);
+      }
       if (sameQueue && q) invalidateDry('a save advanced the queue');
       clearSavedMarker(priorSaving, num);
       ['question_image', 'answer_video'].forEach(n => { const el = form.elements[n]; if (el) el.value = ''; });
@@ -739,6 +1010,7 @@ function runOCRBookmarklet() {
     $('ocr_save_flag').hidden = !(q && q.flags.length);
     $('ocr_save_flag').textContent = q && q.flags.length ? `Check this one: ${q.flags.join(', ')}` : '';
     $('ocr_status').innerHTML = !active ? '' : !q ? `All ${queue.items.length} questions done.` : `Question ${queue.i + 1} of ${queue.items.length} (book number ${q.num ?? '?'})` + (q.flags.length ? `<div class="admin-alert admin-error">Check this one: ${q.flags.join(', ')}</div>` : '');
+    renderImagePlan();
     renderAuto();
   }
   function showOCR(auto) {
@@ -770,6 +1042,7 @@ function runOCRBookmarklet() {
     dryStatus = '';
     dryBlocked = '';
     dryChecked = 0;
+    dryImageCount = 0;
     const dq = { items: queue.items.slice(), i: queue.i, batchId: queue.batchId };
     dryTotal = Math.max(0, dq.items.length - dq.i);
     renderAuto();
@@ -802,6 +1075,7 @@ function runOCRBookmarklet() {
         dryStatus = dryChecked + ' of ' + dryTotal + ' checked; stops at #' + (q.num == null ? '?' : q.num) + '.';
         break;
       }
+      if (planRowFor(q.num)) dryImageCount++;
       dq.i++;
       dryChecked++;
       renderAuto();
@@ -816,7 +1090,8 @@ function runOCRBookmarklet() {
         dryStatus = 'Nothing to dry-run.';
       } else {
         dryState = 'complete';
-        dryStatus = 'all ' + dryTotal + ' would save as ' + (activeMode ? 'ACTIVE' : 'draft') + '.';
+        dryStatus = 'all ' + dryTotal + ' would save as ' + (activeMode ? 'ACTIVE' : 'draft')
+          + (dryImageCount ? '; ' + dryImageCount + ' with image attached' : '') + '.';
       }
     }
     dryRunning = false;
@@ -888,7 +1163,7 @@ function runOCRBookmarklet() {
     const salvage = splitSectionsWithSalvage(raw);
     const parts = salvage.parts;
     const text = FIXES.reduce((t, [re, fix]) => t.replace(re, fix), parts.questions);
-    const items = flagNumberingGaps(splitQuestionItems(text).map(parseQuestion));
+    const items = applyStimulusFlags(flagNumberingGaps(splitQuestionItems(text).map(parseQuestion)));
     if (salvage.salvaged) items.forEach(item => item.flags.push(SALVAGE_FLAG));
     const detailed = parts.answers.trim() ? parseKeyDetailed(parts.answers) : { key: {}, conflicts: [] };
     const newKey = detailed.key;
@@ -929,6 +1204,7 @@ function runOCRBookmarklet() {
       store.del('ansKeyBatch');
     }
     queue = { items, i: 0, batchId };
+    clearImagePlan();
     saveQ();
     liveToken++;
     liveState = 'idle';
@@ -1003,6 +1279,7 @@ function runOCRBookmarklet() {
     if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
     resetConfirm();
     queue = { items: [], i: 0 };
+    clearImagePlan();
     saveQ();
     key = {};
     keyConflicts = [];

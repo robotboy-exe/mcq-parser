@@ -1,6 +1,7 @@
 # AS-13 — Image plan UI, file selection, and auto-save injection
 
-Status: pending. Depends on: P13 (done; review/commit pending). Blocks: AS-14.
+Status: done (2026-10-28). Depends on: P13 (done, light-verified, committed).
+Blocks: AS-14.
 
 Intent: [INTENT.md](../../INTENT.md) is the behavior tie-breaker.
 
@@ -155,8 +156,45 @@ Browser smoke on the admin page (no browser test suite exists):
 ## Handoff note (append when done)
 
 ```text
-Date:
-Result:
-Files:
-Hashes (SHA-256):
+Date: 2026-10-28
+Result: done. The image plan is in-memory only and shows one ordered row per
+detected stimulus, with range, file, Attach/Replace, Remove, and status. A
+generic row appears only for uncovered needsImage questions. Start stays
+disabled for an unassigned block, an out-of-paste range, or an uncovered
+question; Reset/Full Load clear the plan, and a key-only Load keeps it. Save
+injection sets question_image from the first ready row covering the current
+question, never overwrites a native file, and uses a 60-second timeout with an
+image (30 otherwise). The save log and batch history keep their existing shape.
+Runner 43 PASS; unit 140 PASS; bookmarklet rebuilt (one line, body parses, no
+%, no inline //).
+Live smoke (admin page, draft approval): pasted Q12-Q17; block after Q13 showed
+range 14-15, No image, Start disabled. Attached a 68-byte PNG (SHA-256
+e25ee002218606bc42b55e38c01ece666dec1518c891550398483cb8aecc199e), status
+Ready, Start enabled. Dry run reported 2 with image attached and made 0 POSTs.
+Reload showed No image with Start disabled; Reset hid the panel; key-only Load
+kept the ready plan.
+Live draft batch (marker OCR-AS13-TEST-2026-10-28, CRS / JAMB / UTME / 2024,
+batch 322acb87-ee89-4ed5-a055-5f79f2a6683c; 3 POSTs): #4142 Q13 no image,
+#4143 Q14 image, #4144 Q15 image. Edit pages confirm all three are inactive,
+year 2024, CRS / JAMB / UTME; #4143 and #4144 show the uploaded image; the
+ticked keys are 13:D, 14:A, 15:B. Rows were
+left for the owner; cleanup is owner-only. Exact manifest:
+$HOME/tmp/as13-live-manifest-2026-10-28.json.
+Observation: after the batch, the form reset, so the completion banner's meta
+label displayed placeholders/2026 even though the saved rows are 2024; direct
+edit pages and saved-log fingerprints are authoritative. Not changed here.
+Files: src/ui/ui.js; src/bookmarklet.js (rebuilt); tests/ui-harness.js;
+tests/unit.js; docs/plan/as-13-image-plan-ui.md; docs/plan/README.md;
+docs/plan/history.md.
+Hashes (SHA-256): src/ui/ui.js
+  1e1f80077c744b753decd2baad8d34e9dde2cee6886e1eef04e96c0645caabba;
+  src/bookmarklet.js
+  8b5393e45f079aaec55f4b9aab9b98570db69c54e11244f0cc436f2cc827e2fa;
+  tests/ui-harness.js
+  af74b69163de0a865adfaea5cfa0524bb7f03c5bcbcbb19a72ad740806596886;
+  tests/unit.js
+  53d2327129570d78bc01de8eaf736d8de12e11ee8f65187ce896343eb8dfee78.
+Review: light-verified (2026-10-28) at phase 3 Gate 1; probes, hashes, build,
+  tests, live manifest, and guardrails checked. No independent review record.
+Commit: deferred to phase 3 start.
 ```
