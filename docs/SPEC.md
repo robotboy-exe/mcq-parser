@@ -99,9 +99,10 @@ or `-1`. `exam_category_id` is never inferred.
 
 ### 3.4 UI state
 
-- `localStorage.ocrQueue`: `{ items: [question...], i: number }`. There is no
-  version marker, so a queue written by an older variant can outlive a parser
-  update; reset and re-paste after updating (EC-62/INV-56).
+- `localStorage.ocrQueue`: `{ items: [question...], i: number }`. The deployed
+  helper's old item shape without `e`/`f` was loaded successfully in a browser
+  check on 2026-10-30. There is still no version marker and old question
+  content is not reparsed, so reset and re-paste after updating (EC-62/INV-56).
 - `localStorage.ocrMeta`: `{ subject_id, exam_category_id, exam_year }`.
 - `localStorage.ansKey`: the parsed key map.
 - `localStorage.ocrSubmitted`: a legacy shared key. The bookmarklet no longer
@@ -271,9 +272,10 @@ the current rendered page (`archive/live-sources/admin_questions.html`):
 - CSRF is carried by the form's hidden `csrf_token`; the bookmarklet posts the
   form as-is.
 
-The PHP inserts into `questions`. The only schema evidence supplied is a
-`questions1` dump with a required `practice_title`; whether live `questions` has
-that requirement is unverified (EC-63/INV-57). If it does, every save would
-fail even though the bookmarklet and PHP agree.
+The PHP inserts into `questions`. A production run with the current bookmarklet
+saved question 5040 for year 2030 on 2026-10-30, proving that the deployed
+`questions` schema accepts the INSERT columns above. The unrelated `questions1`
+dump's required `practice_title` does not apply to this live path
+(EC-63/INV-57).
 
-See `docs/INVARIANTS.md` for the full rule list and which items are unverified.
+See `docs/INVARIANTS.md` for the full rule list and which items remain at risk.

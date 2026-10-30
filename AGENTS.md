@@ -35,5 +35,14 @@
 
 ## Known gaps
 
-- No live browser run, no live `questions` schema check, and no real OCR paste beyond the documented S1 sample. Stale `ocrQueue` data has no version marker; reset and re-paste after parser/UI changes.
-- Do not promote `UNVERIFIED`/`AT_RISK`/`CONFLICTED` items to defects without reproduction; see `docs/EDGE_CASES.md` and `docs/INVARIANTS.md`.
+- A production Chromium run saved question 5040 through the bookmarklet on
+  2026-10-30, confirming the live save path and `questions` schema. The user
+  also confirmed that the installed bookmarklet opens normally in Brave on
+  Android.
+- The deployed helper's old queue shape (without `e`/`f`) loads in the current
+  bookmarklet, but stale question content is not reparsed and there is still no
+  version marker. Reset and re-paste after parser/UI changes.
+- All documented edge cases have now been reproduced or confirmed. Remaining
+  `AT_RISK` invariants are operational risks, not defects to change without a
+  failing fixture or browser reproduction; see `docs/EDGE_CASES.md` and
+  `docs/INVARIANTS.md`.

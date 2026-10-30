@@ -4,7 +4,7 @@ This is the entry point for all remaining parser/fixture work. Read this file,
 then read the one work-package file you are executing. Each package document is
 self-contained; you should not need any other package document to finish it.
 
-Last updated: 2026-10-24.
+Last updated: 2026-10-30.
 
 ## Current snapshot
 
@@ -19,6 +19,10 @@ Last updated: 2026-10-24.
   source/output hashes, anchors, and counts), the bank and both anomaly blocks
   are covered, and `qwen2-s1` was retired after its assertions moved to
   `bank-2021`.
+- Catch-up verification is complete: all 65 edge cases now have evidence, an
+  old deployed-helper queue was exercised, and production save 5040 confirmed
+  the live browser save path and `questions` schema. The user also confirmed
+  successful bookmark invocation in Brave on Android.
 
 ## Source hierarchy and priority
 
@@ -183,3 +187,7 @@ authoritative:
   numbered and bank behavior unchanged; 26 PASS.
 - 2026-10-24 — P09 done: docs/contract updated, `qwen2-s1` retired after moving
   its assertions to `bank-2021`, final audit green; 25 PASS.
+- 2026-10-30 — catch-up verification: parser/browser probes closed all six
+  UNVERIFIED edge cases; production question 5040 confirmed the live save and
+  schema; the pre-existing six-item live queue was restored after the run; the
+  installed bookmark opened normally in Brave on Android.

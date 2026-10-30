@@ -29,7 +29,7 @@ Status definitions:
 | EC-10 | Option text on line after label | `A.` then text on next line | Text attaches to A; A is not missing | CONFIRMED | claude-migration §3 (case 8) |
 | EC-11 | Empty option label then next option | `C.` empty, then `D. seek revenge` | `c=''`, `d='seek revenge'`, flag `option C missing` only | CONFIRMED | qwen-2-reconciled E05; claude-migration §3 (case 7) |
 | EC-12 | Duplicate option letter | Same letter matched twice | Flag `a letter appears twice (merged questions?)` | CONFIRMED | qwen-2-reconciled E12; claude-migration §3 (case 18) |
-| EC-13 | Letter-like text in stem/option | `Vitamin C.` or `Vitamin B-12` in prose/option | Ideally nothing treated as an option; no guard exists | UNVERIFIED | claude-migration §3 (case 17), §5; qwen-2-reconciled R05 |
+| EC-13 | Letter-like text in stem/option | `Vitamin C.` or `Vitamin B-12` in prose/option | `Vitamin C.` can be treated as another C label and corrupt option boundaries; `Vitamin B-12` is left intact | CONFIRMED | claude-migration §3 (case 17), §5; qwen-2-reconciled R05; local parser probe 2026-10-30 |
 | EC-14 | Option-splitting post-processor removed | Any option containing a later letter label | Not split; post-processor stays removed | CONFIRMED | claude-migration §3 (case 16), §5 |
 | EC-15 | Overlong option | Any option over 500 characters | Flag only; server would reject | CONFIRMED | qwen-2-reconciled E11; claude-migration §3 (case 21) |
 | EC-16 | Very short/missing stem | `question.length < 10` | Flag `question text missing or very short` | CONFIRMED | qwen-2-reconciled E10; claude-migration §3 (case 21) |
@@ -53,7 +53,7 @@ Status definitions:
 | EC-29 | Placeholder key line | `5. [missing]` | Counted for splitting; produces no key entry | CONFIRMED | claude-migration §3 (case 6) |
 | EC-30 | New paste key lifecycle | Questions with key / questions without key | Replace old key / clear old key | CONFIRMED | claude-migration §3 (case 22) |
 | EC-31 | Late key load | Key applied after questions are loaded | Current question re-evaluated | CONFIRMED | qwen-1-migration §3 |
-| EC-32 | Key text with explanations | Extra digit+letter pairs in key explanations | Could create bogus key entries | UNVERIFIED | claude-migration §8 (issue 8) |
+| EC-32 | Key text with explanations | Extra digit+letter pairs in key explanations | Creates bogus key entries; `1. A - compare 99.B` also produces key entry `99: B` | CONFIRMED | claude-migration §8 (issue 8); local parser probe 2026-10-30 |
 
 Note for EC-31: the baseline merged UI has no separate "Save key" button; the
 equivalent path is a key-only paste, which reloads the key and refills the
@@ -78,7 +78,7 @@ current question.
 |---|---|---|---|---|---|
 | EC-41 | CRK / C.R.K. alias | Header contains CRK variants | Select CRS / CHRISTIAN RELIGIOUS subject; the current live list contains `CRS` (id 14), so CRK selects it | CONFIRMED | qwen-2-reconciled E15; `archive/live-sources/subjects-select-2026-10-23.html`; harness uses that list |
 | EC-42 | Year in header | First `20\d\d` in first 3 lines | Written to `exam_year` | CONFIRMED | qwen-2-reconciled E16 |
-| EC-43 | Fuzzy subject name | No alias match | Containment / word-overlap scoring | UNVERIFIED | qwen-2-reconciled E17 |
+| EC-43 | Fuzzy subject name | No alias match | Containment / word-overlap scoring runs; common names match, but `FURTHER MATHEMATICS` selects `Mathematics` instead of `Further maths` | CONFIRMED | qwen-2-reconciled E17; current live subject-list probe 2026-10-30 |
 | EC-44 | Year typo/missing year | `2O21` (letter O) or no `20\d\d` match | No year written; server rejects if `exam_year` is empty/out of 1900–2100; flag/UI does not validate range | CONFIRMED | qwen-2-gaps; `admin_questions.php` range check |
 | EC-61 | Header year false positive | Header contains an earlier `20\d\d` such as a copyright/reference year | First `20\d\d` wins and is written to `exam_year`; no check that it is the exam year | CONFIRMED | qwen-2-reconciled R14 |
 
@@ -94,12 +94,12 @@ this table during review.
 | EC-47 | Page reload mid-queue | `ocrQueue` present in localStorage | Queue indexed restored; current item refilled | CONFIRMED | qwen-2-reconciled E24 |
 | EC-48 | Prior server error present | `.admin-error` on boot | Text fields are not refilled and the status is rendered; `tick()` still runs and may tick the correct-option radio from the saved key | CONFIRMED | qwen-2-reconciled E25; src/ui/ui.js |
 | EC-49 | Duplicate UI cleanup | Bookmarklet clicked again | Remove old `ocr_helper.js`, `#ocr_input` `.admin-field`, `#ans_panel` before injecting | CONFIRMED | qwen-1-migration §3; qwen-2-reconciled invariant 1 |
-| EC-50 | Repeated injection interval | Click repeatedly | New interval/DOM each time (inferred risk) | UNVERIFIED | qwen-2-reconciled R12 |
+| EC-50 | Repeated injection interval | Click repeatedly | A second injection leaves two `#ans_res` nodes; old listeners and the old interval have no cleanup path | CONFIRMED | qwen-2-reconciled R12; archived-page browser run 2026-10-30 |
 | EC-51 | Legacy `ocrSubmitted` flag | Flag present in localStorage at boot | Ignored; the bookmarklet does not read, delete, or advance on it (D-27) | CONFIRMED | qwen-2-reconciled E26/U03; user decision; `src/ui/ui.js` |
 | EC-52 | Page scroll on save | Save via AJAX | Page stays in place; no auto-scroll | CONFIRMED | qwen-1-migration §3 |
 | EC-53 | Media-required question | Diagram/video needed | Cannot be created via bookmarklet; attach later in native Edit UI | CONFIRMED | qwen-2-gaps §4 |
 | EC-54 | Newlines in Option D | E/F appended to D | `option_d` is `<input type=text>`; the browser strips `\n\n` | CONFIRMED | claude-migration §8 (issue 3); `admin_questions.html`, `admin_questions.php` |
-| EC-62 | Old-format queue after update | `ocrQueue` written by an older variant | Shape is shared, but old items may lack `e`/`f` or contain old misparses; no version marker exists. Reset and re-paste after updating until a migration/version check exists | UNVERIFIED | `archive/migration-docs/claude-gaps.md` item 6 |
+| EC-62 | Old-format queue after update | `ocrQueue` written by the deployed helper | An item without `e`/`f` loads, fills A–D, and ticks its saved key correctly. Its old parsed content is retained unchanged; no version marker exists, so reset and re-paste after updating | CONFIRMED | `archive/migration-docs/claude-gaps.md` item 6; archived-page browser run 2026-10-30 |
 
 ## F. Saving and server
 
@@ -111,7 +111,7 @@ this table during review.
 | EC-58 | Network failure | `fetch` rejects | `NOT saved: network problem. Try again.` | CONFIRMED | qwen-2-reconciled E23; claude-migration §3 (case 25) |
 | EC-59 | PRG success detection | POST returns redirected GET with session flash | Success regex matches the flash text | CONFIRMED | `admin_questions.php` stores the flash, redirects, and renders it; qwen-2-gaps §1 |
 | EC-60 | Category limit | More than 10 active categories | Dropdown only exposes `id <= 10`; matcher cannot select beyond | CONFIRMED | qwen-2-gaps §5; `admin_questions.php` query |
-| EC-63 | Live `questions` schema mismatch | PHP inserts into `questions`; only schema evidence is a `questions1` dump with required `practice_title` | Whether live `questions` has that required column is unknown; if it does, every save would fail | UNVERIFIED | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert |
+| EC-63 | Live `questions` schema mismatch | PHP inserts into `questions`; a separate `questions1` dump requires `practice_title` | The production INSERT succeeds without `practice_title`; the current bookmarklet saved question 5040 for year 2030 | CONFIRMED | `archive/migration-docs/claude-gaps.md` item 7; `admin_questions.php` insert; production run 2026-10-30 |
 
 ## G. Hostile OCR families (now covered)
 
@@ -136,13 +136,14 @@ closed by the archived PHP/HTML sources:
   success text.
 - EC-44, EC-54, EC-57, and EC-60 are now confirmed directly from
   `archive/live-sources/admin_questions.php` and `admin_questions.html`.
-- EC-62 and EC-63 remain UNVERIFIED: both need live state, not another code
-  reading. EC-62 needs an old queue sample; EC-63 needs the live `questions`
-  schema.
+- EC-13, EC-32, EC-43, EC-50, and EC-62 were exercised with parser probes or
+  the archived page on 2026-10-30. EC-63 was closed by production save 5040.
+  These confirmations document current behavior; they do not approve parser or
+  UI fixes without the required failing fixture or browser test.
 
 ## Counts
 
 - Total: 65
-- CONFIRMED: 59
-- UNVERIFIED: 6
+- CONFIRMED: 65
+- UNVERIFIED: 0
 - CONFLICTED: 0

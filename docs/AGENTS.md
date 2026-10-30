@@ -81,8 +81,8 @@ features.
   escaping was wrong before and silently failed (claude §5.1, §10).
 - Adding a post-processor without correct escaping and tests against
   `Vitamin C.` and `Vitamin B-12` (INV-22).
-- Changing the key lifecycle (including Reset-vs-key) without an explicit
-  product decision; it is still open (claude §8 issue 4).
+- Changing the key lifecycle without a new explicit product decision. The
+  current decision is that Reset Queue keeps the key (D-26).
 - Treating this bookmarklet as part of the PHP Bulk Import plan; no link
   between them was decided (claude §8 issue 10).
 - Reading, writing, deleting, or relying on `ocrSubmitted`; the bookmarklet is
@@ -161,10 +161,12 @@ Verification used during development: strip the leading `javascript:` and run
 
 ## When evidence is missing
 
-Items marked UNVERIFIED, AT_RISK, or CONFLICTED in `docs/EDGE_CASES.md` and
-`docs/INVARIANTS.md` were inferred from code or docs and were not observed in a
-live session. Do not promote them to confirmed defects without reproduction
-(qwen-2 H09). The save/PRG flow is now confirmed from the archived PHP, and the
-current live subject list confirms CRK → CRS. The remaining live checks are the
-full current page markup, the live `questions` schema (EC-63/INV-57), stale
-queue behavior (EC-62/INV-56), and any remaining UNVERIFIED/AT_RISK behaviors.
+All edge cases in `docs/EDGE_CASES.md` now have direct code, local-browser, or
+production evidence. A production Chromium run on 2026-10-30 saved question
+5040 through the current bookmarklet, confirming the save/PRG path and live
+`questions` schema (EC-63/INV-57). An old deployed-helper queue without `e`/`f`
+also loaded successfully, but stale parsed content is not reparsed and no queue
+version marker exists (EC-62/INV-56). The user also confirmed that the installed
+bookmark opens the panel normally in Brave on Android, covering bookmark length
+and URL decoding. Remaining `AT_RISK` invariants still need a failing fixture or
+browser reproduction before behavior changes.

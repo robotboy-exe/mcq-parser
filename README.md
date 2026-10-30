@@ -97,9 +97,12 @@ PENDING; `WORKSPACE_SETUP.md` holds the setup report. The baseline is
 `docs/BASELINE_COMPARISON.md` for why.
 
 The real-bank suite (`bank-2021`–`bank-2025`) and both anomaly blocks are now
-covered. Verification gaps still carried: no live browser run and no live
-`questions` schema check. After updating the bookmarklet, press Reset Queue and
-re-paste rather than trusting an old `ocrQueue` (EC-62/INV-56).
+covered. On 2026-10-30, the current bookmarklet saved production question 5040
+for year 2030, confirming the live browser save path and `questions` schema.
+The deployed helper's old queue shape also loaded successfully, but stale
+content is not reparsed; after updating, press Reset Queue and re-paste
+(EC-62/INV-56). The user also confirmed that the installed bookmark opens the
+panel normally in Brave on Android.
 
 Resolved decisions: Reset Queue keeps the key, the key survives reloads, saves
 are forced active, the PRG success text is confirmed from the archived PHP, the

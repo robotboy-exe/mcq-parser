@@ -806,3 +806,28 @@ Workspace setup is closed. Diff B2 → C, then begin parser work with the
 fixture-first workflow. The live browser run, live `questions` schema, and
 stale-queue behavior remain verification gaps. Do not change parser behavior
 without a failing fixture and a documented decision.
+
+## Catch-up Verification — 2026-10-30
+
+This verification supersedes the three open checks in the Phase 9 snapshot;
+it did not change parser/UI code or fixture expectations.
+
+1. **Parser probes:** `Vitamin C.` can corrupt option boundaries while
+   `Vitamin B-12` remains intact; explanatory key text can add bogus entries;
+   and `FURTHER MATHEMATICS` selects `Mathematics` rather than `Further maths`.
+2. **Archived-page browser run:** load, metadata inference, A–D fill, key tick,
+   forced-active state, mocked save, and queue advance passed. Reinjecting the
+   bookmarklet produced duplicate `#ans_res` nodes, confirming EC-50.
+3. **Old queue:** a representative item matching the deployed helper's actual
+   shape, without `e`/`f`, loaded, filled, and ticked correctly. Old parsed text
+   is not reparsed, so the reset/re-paste guidance and version-marker risk
+   remain.
+4. **Production run:** the current workspace bookmarklet saved the approved
+   validation question as ID 5040 under Government / General Practice / 2030,
+   with Option C selected. This confirms the live PRG save and `questions`
+   schema. Per user instruction, the question remains for manual deletion.
+5. **State restoration:** all seven pre-existing live `localStorage` keys were
+   restored; the original queue returned to 6 items at index 4.
+6. **Brave Android:** the user invoked the installed bookmark on the live page
+   and confirmed that the panel appeared normally, covering bookmark length and
+   URL-decoding behavior.
