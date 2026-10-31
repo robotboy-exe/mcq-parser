@@ -1,193 +1,168 @@
-# OCR Parser Work Plan — Coordinator
+# OCR Owner Tool Work Plan — Coordinator
 
-This is the entry point for all remaining parser/fixture work. Read this file,
-then read the one work-package file you are executing. Each package document is
-self-contained; you should not need any other package document to finish it.
+This is the operational source of truth for the active owner-tool cycle. Read
+this file, [`../../INTENT.md`](../../INTENT.md), the active
+[`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-10-30.
+Last updated: 2026-10-31.
 
-## Current snapshot
+## Current state
 
-- Current test status: `node tests/runner.js` → 25 PASS, 0 FAIL, 0 PENDING.
-- `IMPROVISED C.docx.txt` is the priority-1 source; `ANOMALIES.txt` is priority-2.
-- `ANOMALIES.txt` and the duplicate-file removals are committed.
-- P02 pins the current bank hash; re-audit the manifest if the source changes.
-- The former `merged_bookmarklet.txt` duplicate has been deleted. The canonical
-  archived copy is `archive/trusted-variants/trusted-variant-C.js`.
-- P01–P09 are all done: `input_origin` is enforced, `tools/extract-bank.js`
-  generates the five per-year inputs deterministically (`--check` verifies
-  source/output hashes, anchors, and counts), the bank and both anomaly blocks
-  are covered, and `qwen2-s1` was retired after its assertions moved to
-  `bank-2021`.
-- Catch-up verification is complete: all 65 edge cases now have evidence, an
-  old deployed-helper queue was exercised, and production save 5040 confirmed
-  the live browser save path and `questions` schema. The user also confirmed
-  successful bookmark invocation in Brave on Android.
+- Active cycle: `owner-tool-2026-11`.
+- Product work: not started.
+- Next package: OT00, Integration Baseline.
+- Current `main` parser baseline: 25 PASS, 0 FAIL, 0 PENDING.
+- Selected clean experiments base: `d5a62f0`; OT00 must independently verify
+  its claimed 43 fixture and 140 unit/UI passes.
+- Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
+- Current status summary: [`../STATUS.md`](../STATUS.md).
+- Historical P01-P09 and shelved-cycle record: [`history.md`](history.md).
 
-## Source hierarchy and priority
+## Product direction
 
-1. **`archive/live-sources/IMPROVISED C.docx.txt`** — priority 1, canonical OCR
-   bank. Contains five exam-year sections: 2021–2025. SHA-256:
-   `96ed3af8fb53e3ba3f2bf355a5f8094db54587996f1c8112e088dae5347c5a5c`.
-2. **`archive/live-sources/ANOMALIES.txt`** — priority 2. SHA-256:
-   `718ca1e70f84fcdc84280710394cdeb73e5ff62183e7b09d14e8ffc7d22e8321`.
-   Block 2 (`STURCTURED GOVERNMENT QUESTIONS 2025`) is the original block that
-   started the project. Block 1 is the `*`-bulleted, unnumbered family.
-3. **`archive/migration-docs/`** — historical evidence and corroboration only.
-4. **Synthetic fixtures** — explicit exceptions. Allowed only where no bank or
-   anomaly input covers the documented behavior. They must be labelled.
+- Replace the deployed `ocr_helper.js` with a readable owner tool.
+- Do not ship a bookmarklet or Auto-Save workflow.
+- Fill the native form for human review and use native PRG saves.
+- Use fresh versioned state; do not trust legacy queues.
+- Release A: owner tool plus underline/multiline.
+- Release B: manual shared-context persistence and complete-group delivery.
+- Release C: comprehension and cloze OCR automation.
 
-## Non-negotiable rules
+`INTENT.md` is authoritative when package prose is ambiguous.
 
-- The parser receives **one exam year per paste**. Extracting a year from the
-  bank is an external, deterministic step; multi-year parsing is out of scope.
-- Add or change behavior only with a failing fixture first. Never regenerate an
-  expected fixture from parser output.
-- Do not weaken the strict `OPTION`, `splitSections`, or `splitQuestions` rules
-  globally to accommodate anomalies. The bank fixtures are the regression wall.
-- Do not edit `src/bookmarklet.js`. Edit `src/parser/parser.js` or
-  `src/ui/ui.js`, then run `node src/build/build.js`.
-- Do not add `//` comments to parser/UI modules; the build produces one line.
-- Do not change PHP, `ocr_helper.js`, storage keys/shapes, or the server
-  contract.
-- Do not commit unless the user explicitly asks.
-- Keep the deliberate quirks: E/F → D collapse, advisory-only flags, blank
-  options, `FIXES` order, the `+5` numbering guard, no absorbed-option
-  post-processor.
+## Package states
 
-## Fixture origins
+Status values are `not started`, `in progress`, `blocked`, and `done`.
 
-Every `fixtures/expected/*.json` must eventually carry one of:
+| Phase | ID | Package | Depends on | Status | External gate |
+|---|---|---|---|---|---|
+| 1 | OT00 | [Integration Baseline](owner-tool/ot-00-integration-baseline.md) | none | not started | explicit approval before merge commit |
+| 2 | OT01 | [Evidence and Fixtures](owner-tool/ot-01-evidence-and-fixtures.md) | OT00 | not started | none |
+| 3 | OT02 | [Production Parser Core](owner-tool/ot-02-production-parser-core.md) | OT01 | not started | none |
+| 4 | OT03 | [Owner Tool Replacement](owner-tool/ot-03-owner-tool-replacement.md) | OT02 | blocked | production `ocr_helper.js` |
+| 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | blocked | `answer_details.php` |
+| 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review | blocked | redacted DB config, DDL, versions |
+| 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | blocked | practice writer and reader/writer audit |
+| 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | not started | inherited server contract |
+| 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | not started | answer-key sample for final acceptance |
+| 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | not started | answer-key sample for final acceptance |
+| 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked | local PHP, staging, all prior artifacts |
 
-| `input_origin` | Meaning |
+The active map duplicates these statuses for session resolution. Update both
+files in the same package handoff; a mismatch blocks the next Gate 1.
+
+## External artifact request
+
+| Artifact | One-line justification |
 |---|---|
-| `bank` | Slice or documented excerpt of `IMPROVISED C.docx.txt` (whitespace changes allowed; truncation noted) |
-| `anomaly` | Slice of `ANOMALIES.txt` |
-| `doc` | Real sample transcribed in a migration doc, not present in the bank |
-| `synthetic` | Assistant-written input covering a behavior absent from the sources |
+| Current production `ocr_helper.js` | Defines the exact behavior and state being replaced |
+| Redacted `cbt_db.php` | Confirms charset, PDO mode, and transaction setup |
+| DDL/migrations for `questions`, `subjects`, `exam_category` | Supplies exact types, keys, engine, and charset for migration |
+| `answer_details.php` | Completes the safe question/context rendering audit |
+| PHP and MySQL/MariaDB versions | Determines supported PHP and SQL syntax |
+| Practice-question writer/importer | Preserves the existing `practice_title` contract |
+| Search list for question readers/writers | Finds every affected output and persistence path |
 
-`P01` introduces and enforces this field; the runner rejects a missing or
-unknown value. Free-text `provenance`/`source` fields still carry detail.
+If no DDL file exists, request only:
 
-## Work packages
-
-Status values: `not started`, `in progress`, `blocked`, `done`.
-
-| ID | Document | Goal | Depends on | Status |
-|---|---|---|---|---|
-| P01 | [01-origin-taxonomy.md](01-origin-taxonomy.md) | Add and enforce `input_origin`; label the 19 existing fixtures | — | done (20 labelled) |
-| P02 | [02-bank-extraction.md](02-bank-extraction.md) | Deterministic per-year extractor + 5 bank inputs + PENDING specs | P01 | done |
-| P03 | [03-bank-2021-inline-key.md](03-bank-2021-inline-key.md) | 2021 fixture + first parser fix: detect inline keys | P02 (deferred) | done |
-| P04 | [04-bank-2022.md](04-bank-2022.md) | 2022 fixture: inline key, real dotless option, 13 E-option questions | P03 | done |
-| P05 | [05-bank-2023.md](05-bank-2023.md) | 2023 fixture: inline key + 8 E-option questions | P03 | done |
-| P06 | [06-bank-2024-2025.md](06-bank-2024-2025.md) | 2024 partial-year fixture + 2025 fixture with missing key entry | P03 | done |
-| P07 | [07-anomaly-block2-salvage.md](07-anomaly-block2-salvage.md) | Guarded salvage normalizer + block-2 fixture | P06 | done |
-| P08 | [08-anomaly-block1-bullets.md](08-anomaly-block1-bullets.md) | Unnumbered `*` question mode | P07 | done |
-| P09 | [09-docs-cleanup.md](09-docs-cleanup.md) | Docs updates, retire superseded fixtures, final audit | all | done |
-
-## Dependency graph
-
-```text
-P01 ──> P02 ──> P03 ──┬──> P04
-                      ├──> P05
-                      └──> P06 ──> P07 ──> P08
-                                             │
-P01 ─────────────────────────────────────────┴──> P09
+```sql
+SELECT VERSION();
+SHOW CREATE TABLE questions;
+SHOW CREATE TABLE subjects;
+SHOW CREATE TABLE exam_category;
 ```
 
-P04, P05, and P06 can run in parallel after P03. P07 requires the whole bank
-suite to be green. P09 is last.
+Secrets, credentials, cookies, and production data are not required.
+
+## Review checkpoints
+
+| Checkpoint | Scope | Level | Status |
+|---|---|---|---|
+| phase 1 close | OT00 integration baseline | rigorous | pending |
+| phases 2-4 | OT01-OT03 | light at next Gate 1 | pending |
+| phase 5 close | OT04 Release A | rigorous | pending |
+| phases 6-7 | OT05-OT06 | light at next Gate 1 | pending |
+| phase 8 close | OT07 Release B | rigorous | pending |
+| phase 9 | OT08 | light at OT09 Gate 1 | pending |
+| phase 10 close | OT09 Release C | rigorous | pending |
+| phase 11 close | OT10 final release | rigorous | pending |
+
+Rigorous reviews use [`prompts/review-session.md`](prompts/review-session.md)
+and write only one record per package under [`reviews/`](reviews/README.md).
+`BLOCK` findings require a fix session and re-review. Accepted `FIX` findings
+follow the review record's exact next action.
 
 ## Session protocol
 
-1. Run `node tests/runner.js`; record the starting result.
-2. Read the package document completely before editing anything.
-3. Confirm its preconditions (status of dependencies, source hashes, test count).
-4. Execute the steps. Keep parser changes and fixture changes in separate
-   commits/diffs when possible, but do not commit unless asked.
-5. Run the package's acceptance commands. Do not mark the package done on a
-   partial pass.
-6. Update the status row above and append a handoff note to the package file
-   (date, result, files changed, open questions, new hashes).
-7. Leave the working tree in a resumable state: no orphan inputs, no failing
-   fixtures, and a note explaining anything left for the next session.
+1. Execute one package per session using
+   [`prompts/phase-session.md`](prompts/phase-session.md).
+2. Gate 1 is read-only. Resolve status, dependencies, external gates, review
+   state, worktree scope, and baseline evidence, then wait for explicit `go`.
+3. A `blocked` package stops at Gate 1. Do not skip to dependent product work.
+4. After `go`, execute only that package and do not preview/start the next one.
+5. Add failing evidence before behavior changes where the package requires it.
+6. Run every acceptance check. Never mark a package done on partial evidence.
+7. Update this table, the active map, current status, package handoff, and
+   history where required.
+8. Stop after the handoff with `Commit: deferred`.
+9. Commit only when the user explicitly asks. Never amend, rebase, force-push,
+   or bundle unrelated changes.
 
-## Definition of done (every package)
+## Definition of done
 
-- `node tests/runner.js` exits 0 with the expected PASS/PENDING counts.
-- No orphan inputs.
-- New expectations were transcribed from the cited source and spot-checked; they
-  were not copied from parser output.
-- The package's own acceptance table is fully satisfied.
-- Status and handoff notes are updated.
-- If parser or UI changed: `node src/build/build.js` ran, `wc -l
-  src/bookmarklet.js` prints `1`, and the body passes `node --check`.
+Every package must satisfy all applicable items:
 
-## Shared commands
+- dependencies and external gates are verified from files/evidence;
+- every acceptance row maps to a test, probe, or explicit recorded gap;
+- source-backed expectations were not generated from parser output;
+- no unrelated or user-owned worktree change was reverted or bundled;
+- current-facing docs match implemented behavior;
+- package status and active-map status agree;
+- handoff records exact files, commands/results, hashes, open questions, review
+  status, and deferred commit state;
+- required PHP/browser/staging checks are not replaced with assumptions;
+- no orphan fixture or failing baseline remains.
+
+## Baseline commands
+
+Before OT00, run the commands available on each source line and report them
+separately. After OT00, its handoff defines the authoritative merged baseline.
+
+Current main:
 
 ```sh
 node tests/runner.js
 node tools/extract-bank.js --check
-node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello'))"
-node src/build/build.js
-wc -l src/bookmarklet.js
 ```
 
-Build syntax check (same rule as `docs/BUILD.md`):
+Clean experiments/integration is expected to add:
 
 ```sh
-node -e "const fs=require('fs');const s=fs.readFileSync('src/bookmarklet.js','utf8').replace(/^javascript:/,'');new Function(s);console.log('OK')"
+node tests/unit.js
 ```
 
-## Current expected fixture counts
+OT05 onward also requires the user's local PHP environment. Exact commands are
+defined after the target PHP/database versions and schema are supplied.
 
-| After package | PASS | PENDING | Notes |
-|---|---|---|---|
-| baseline | 19 | 0 | before P03 |
-| P03 (done) | 20 | 0 | inline-key fix + bank-2021; P02 extractor deferred |
-| P02 (done) | 20 | 4 | extractor + bank-2022..2025 PENDING; bank-2021 confirmed |
-| P04 | 21 | 0 | bank-2022 confirmed |
-| P05 | 22 | 0 | bank-2023 confirmed |
-| P06 | 24 | 0 | bank-2024 and bank-2025 confirmed |
-| P07 | 25 | 0 | anomaly block 2 added |
-| P08 | 26 | 0 | anomaly block 1 added |
-| P09 | 25 | 0 | `qwen2-s1` retired; bank-2021 covers it |
+## Branch and worktree safety
 
-P02 added four PENDING specs, not five: the 2021 bank fixture was already
-confirmed by P03. P04–P06 replace the PENDING specs with confirmed ones.
+- Never reset, clean, stash, switch, or rewrite the existing dirty experiments
+  worktree.
+- Never import its uncommitted P20-P22 files to resolve a conflict.
+- Preserve unexpected user changes unless they directly block the package; then
+  stop and ask.
+- Live writes require explicit per-action approval. Destructive production
+  cleanup is owner-only.
 
-## Removed duplicates (for the audit trail)
+## Completed historical track
 
-The following 10 byte-identical duplicates were removed; the `archive/` copy is
-authoritative:
+P01-P09 are done and retained under `docs/plan/01-*.md` through `09-*.md`.
+They are evidence/history, not phases in the active owner-tool cycle. Their
+summary and final counts live in [`history.md`](history.md).
 
-- `docs/claude-migration.md`
-- `docs/qwen-1-gaps.md`
-- `docs/qwen-1-gaps2.md`
-- `docs/qwen-1-migration.md`
-- `docs/qwen-2-gaps.md`
-- `docs/qwen-2-reconciled.md`
-- `trusted-variant-A.js`
-- `trusted-variant-B.js`
-- `trusted-variant-C.js`
-- `archive/live-sources/admin_questions-live-2026-10-23.html`
+## Cycle close
 
-## Change log
-
-- 2026-10-24 — plan created; duplicates removed; ANOMALIES.txt received.
-- 2026-10-24 — P01 done: `input_origin` required and enforced; all 20 fixtures
-  labelled (7 bank, 1 doc, 12 synthetic).
-- 2026-10-24 — P02 done: extractor + manifest, five bank inputs (2021 unchanged
-  byte-for-byte), four PENDING specs for 2022–2025.
-- 2026-10-24 — P04–P06 done: bank-2022/2023/2024/2025 confirmed from source;
-  24 PASS, 0 FAIL, 0 PENDING; no parser changes.
-- 2026-10-24 — P07 done: guarded salvage pre-pass (50 inserts on block 2,
-  12 chunks; zero inserts on every bank input); anomaly-block2 confirmed.
-- 2026-10-24 — P08 done: `*`-bullet mode yields 19 `num: null` questions;
-  numbered and bank behavior unchanged; 26 PASS.
-- 2026-10-24 — P09 done: docs/contract updated, `qwen2-s1` retired after moving
-  its assertions to `bank-2021`, final audit green; 25 PASS.
-- 2026-10-30 — catch-up verification: parser/browser probes closed all six
-  UNVERIFIED edge cases; production question 5040 confirmed the live save and
-  schema; the pre-existing six-item live queue was restored after the run; the
-  installed bookmark opened normally in Brave on Android.
+After OT10 and its rigorous review settle, use
+[`prompts/cycle-close.md`](prompts/cycle-close.md). Cycle close executes no
+package, commits only with explicit authorization, and leaves the cycle active
+until the owner separately confirms archival.
