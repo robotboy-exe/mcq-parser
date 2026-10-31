@@ -1,55 +1,68 @@
-# Current status
+# Current Status
 
-Last verified: 2026-10-28 on branch `experiments` at `490f60a` plus uncommitted P13 work.
+Last updated: 2026-10-31.
 
-## Checks
+## Active cycle
 
-| Check | Result |
-|---|---|
-| `node tests/runner.js` | 43 fixtures: 43 PASS, 0 FAIL, 0 PENDING |
-| `node tests/unit.js` | 126 PASS, 0 FAIL |
-| `node tools/extract-bank.js --check` | OK: source, anchors, counts, and 7 output hashes match |
-| `src/bookmarklet.js` | 1 line, no `%`, body parses |
-| `src/bookmarklet.js` size | 91,460 bytes |
-| `src/bookmarklet.js` SHA-256 | `516155b759ea5ea4a1a0a94af35be2157bfdf0e0d403522ab829d49ff11b6fc7` |
+- Cycle: `owner-tool-2026-11`
+- Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
+- Coordinator: [`plan/README.md`](plan/README.md)
+- Intent: [`../INTENT.md`](../INTENT.md)
+- Next package: OT00, Integration Baseline
+- Product implementation: not started
 
-The fixture runner is the regression gate. It is parser-only; it does not
-exercise the DOM, storage, `fillForm`, `tick`, or save path. `tests/ui-harness.js`
-covers some UI save and dry-run paths without a browser. There is no checked-in
-browser test suite.
+## Known baselines
 
-P13 adds the stimulus gate but not the image-plan UI. Until AS-13, auto-save is
-intentionally blocked for any queue with a detected stimulus because no plan
-can be assigned; manual use is unchanged.
+| Line | Evidence | Status |
+|---|---|---|
+| `main` at `e5dec50` | `node tests/runner.js` | 25 PASS, 0 FAIL, 0 PENDING |
+| clean experiments commit `d5a62f0` | package handoff claim | 43 fixtures and 140 unit/UI tests; OT00 must independently verify |
+| dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
-## Build policy
+The dirty experiments review found parser data loss and image-plan/Auto-Save
+defects despite its green 46/155 suites. The owner selected the clean
+`d5a62f0` baseline and a manual-review replacement tool, so those dirty changes
+are shelved rather than repaired in this cycle.
 
-`src/bookmarklet.js` is the only tracked build output. Rebuild it with
-`node src/build/build.js` after editing `src/parser/parser.js` or
-`src/ui/ui.js`.
+## Supplied but untracked evidence
 
-`src/bookmarklet.min.js` is not tracked and is ignored. A stale local copy may
-exist; do not edit, rely on, or rebuild it. The legacy `--min` build currently
-exceeds the 65,536-byte guard. See `docs/BUILD.md`.
+- `deployed/admin_questions.php`
+- `deployed/cbt.php`
+- `deployed/cbt_practice.php`
+- `admin-needs.txt`
+- `sample-underline.txt`
+- `sample-passages.txt`
 
-## Live site
+OT01 owns archival hashes, provenance, and fixture promotion. Do not edit these
+source copies before OT01 records them.
 
-Live V1-V3 checks passed on 2026-10-25: `bank-2021` and `anomaly-block2` parsed
-on the admin page, a controlled manual save was accepted and deleted, and a
-stale queue without a batch identity loaded but auto-save was blocked. There is
-still no new live OCR paste beyond the archived bank and anomaly blocks.
+## External gates
 
-On 2026-10-27 a live AS-12 test cleanup deleted six Active Accounting questions
-(#3795-#3800). Only truncated stems were recovered. Test rows #3841-#3846
-remain. Live deletes and cleanup are owner-only; the agent must not delete or
-clean up live records. See `docs/LIVE-SAFETY.md`.
+| Artifact | Required by | Reason |
+|---|---|---|
+| Current production `ocr_helper.js` | OT03 | Establish the exact behavior and state being replaced |
+| `answer_details.php` | OT04 | Audit and implement safe post-test rendering |
+| Redacted `cbt_db.php` | OT05 | Confirm charset, PDO mode, and transaction setup |
+| DDL for `questions`, `subjects`, `exam_category` | OT05 | Define exact migration types, keys, engine, and charset |
+| PHP and MySQL/MariaDB versions | OT05 | Select supported language and SQL features |
+| Practice-question writer/importer | OT06 | Preserve the `practice_title` contract |
+| Search list for question readers/writers | OT06 | Find every affected renderer and write path |
+| Representative context paste with answer key | OT08/OT09 final acceptance | Prove the one-box key workflow on the new families |
+
+`header.php`, `footer.php`, and `cbt_exam_attempts` are not requested up front.
+
+## Delivery stages
+
+- Release A: OT03-OT04, owner-tool replacement plus underline/multiline.
+- Release B: OT05-OT07, manual shared-context persistence and delivery.
+- Release C: OT08-OT09, comprehension and cloze OCR automation.
+- OT10 performs final release verification and human-developer handoff.
 
 ## Source of truth
 
-- Behavior: `docs/SPEC.md`
-- Decisions: `docs/DECISIONS.md`
-- Edge cases and invariants: `docs/EDGE_CASES.md`, `docs/INVARIANTS.md`
-- Build and verification: `docs/BUILD.md`
-- Remaining live checks: `docs/plan/11-remaining-verification.md`
-- Work tracker: `docs/plan/README.md`
-- Dated history: `docs/plan/history.md`
+- Product intent: `INTENT.md`
+- Current work state: this file
+- Package state and review cadence: `docs/plan/README.md`
+- Active phase order: `docs/plan/prompts/phase-map.md`
+- Package contracts: `docs/plan/owner-tool/`
+- Historical parser packages: `docs/plan/01-*.md` through `09-*.md`
