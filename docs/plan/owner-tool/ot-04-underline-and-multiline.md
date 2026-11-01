@@ -1,10 +1,11 @@
 # OT04 — Underline and Multiline
 
-- **Status:** blocked
+- **Status:** not started
 - **Depends on:** OT03
 - **Blocks:** OT06, OT08, OT09
-- **External gate:** current `answer_details.php`
-- **Release:** A
+- **External gate:** none; current `answer_details.php` integration is deferred
+  to OT10 if the source is unavailable at handoff
+- **Release:** A implementation
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal
@@ -34,15 +35,16 @@ without introducing a rich-text editor or the deferred math palette.
    and preview to the readable owner-tool assets.
 4. Dispatch preview updates after programmatic owner-tool fills and native form
    resets.
-5. Add one shared client renderer for candidate question/context text using DOM
-   text nodes and exact underline markers.
-6. Add a matching safe PHP renderer for server-rendered detail output where
-   needed; do not use permissive `strip_tags`.
-7. Apply rendering and `white-space: pre-wrap` to both CBT pages, result review,
-   print output, and `answer_details.php`.
+5. Add shared client and PHP renderers using text nodes/escaping plus exact
+   underline markers; do not use permissive `strip_tags`.
+6. Apply rendering and `white-space: pre-wrap` to both supplied CBT pages,
+   result review, and print output.
+7. If `answer_details.php` is available before handoff, apply the same shared
+   renderer there. Otherwise record its exact integration contract and leave
+   the source-owned change and runtime verification to OT10.
 8. Strip only exact underline markers from admin list summaries.
 9. Audit XSS, malformed-tag, encoded-tag, Unicode, mobile selection, and undo
-   behavior.
+   behavior across the available paths.
 
 ## Acceptance
 
@@ -55,7 +57,9 @@ without introducing a rich-text editor or the deferred math palette.
 | OCR paragraphs | Single wraps fold; blank-line paragraphs remain |
 | 1994 header | Year inferred as 1994; 20xx behavior unchanged |
 | Candidate pages | Both CBT paths render underline and paragraphs |
-| Result/detail/print | Same safe rendering rules; no literal supported tags |
+| Result/print | Same safe rendering rules; no literal supported tags |
+| Shared renderer | Exact underline tags only; reusable by server detail/context paths |
+| Deferred detail source | Integration contract recorded for OT10 when `answer_details.php` is unavailable; no replacement page guessed |
 | XSS probes | Scripts, attributes, other tags, and encoded tags render as text |
 | Options/explanations | Remain plain text |
 | Math palette | Absent and explicitly deferred |
@@ -66,6 +70,8 @@ without introducing a rich-text editor or the deferred math palette.
 - Never render stored question/context text as unrestricted `innerHTML`.
 - Do not support arbitrary HTML, attributes, Markdown, or WYSIWYG content.
 - Do not apply paragraph-preserving cleanup to option values.
+- Do not create or infer `answer_details.php`; OT10 must integrate the supplied
+  source before final release acceptance.
 - Do not bundle the P24 math palette.
 - Do not start OT05.
 
@@ -76,12 +82,21 @@ Date:
 Result:
 Formatting syntax/security rule:
 Parser fixtures and tests:
-Candidate/detail outputs audited:
+Candidate/result/print outputs audited:
+Answer-details integration status/contract:
 Desktop/mobile evidence:
 Files changed:
 Hashes:
 Open questions:
-Review: pending rigorous Release A review
+Review: pending rigorous Release A implementation review
 Commit: deferred
 Next: OT05 blocked/not started
 ```
+
+## Rescope
+
+On 2026-11-01 the owner moved unavailable `answer_details.php` integration from
+the OT04 start/completion gate to OT10. OT04 can therefore implement and review
+all source-backed formatting work now. The security rule is unchanged, and OT10
+cannot complete final Release A acceptance until the supplied detail page uses
+the same renderer and passes the detail-page probes.

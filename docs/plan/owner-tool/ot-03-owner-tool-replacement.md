@@ -177,3 +177,9 @@ Review: light verification completed at OT04 Gate 1 (2026-11-01, no BLOCK findin
 Commit: authorized by user on 2026-11-01 (phase 4 committed on request)
 Next: OT04 blocked: answer_details.php
 ```
+
+## Post-handoff rescope
+
+On 2026-11-01 the owner deferred unavailable `answer_details.php` integration
+to OT10. The historical handoff above is unchanged; OT04 is now ready and has
+no external start gate.

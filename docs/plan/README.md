@@ -10,7 +10,8 @@ Last updated: 2026-11-01.
 
 - Active cycle: `owner-tool-2026-11`.
 - Product work: OT00-OT03 complete; Release A part 1 (owner tool) is in place.
-- Next package: OT04, Underline and Multiline (blocked: `answer_details.php`).
+- Next package: OT04, Underline and Multiline (ready; `answer_details.php`
+  integration is deferred to OT10).
 - Current `main` parser baseline: 25 PASS, 0 FAIL, 0 PENDING.
 - Integration line baseline: 45 runner PASS + 2 PENDING, 140 unit PASS,
   16 owner-tool PASS, 7 bank slices OK.
@@ -42,7 +43,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 2 | OT01 | [Evidence and Fixtures](owner-tool/ot-01-evidence-and-fixtures.md) | OT00 | done | none |
 | 3 | OT02 | [Production Parser Core](owner-tool/ot-02-production-parser-core.md) | OT01 | done | none |
 | 4 | OT03 | [Owner Tool Replacement](owner-tool/ot-03-owner-tool-replacement.md) | OT02 | done | satisfied (helper archived 2026-11-01) |
-| 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | blocked | `answer_details.php` |
+| 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | not started | none; detail-page integration deferred to OT10 |
 | 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review | blocked | redacted DB config, DDL, versions |
 | 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | blocked | practice writer and reader/writer audit |
 | 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | not started | inherited server contract |
@@ -60,7 +61,7 @@ files in the same package handoff; a mismatch blocks the next Gate 1.
 | Current production `ocr_helper.js` | Defines the exact behavior and state being replaced |
 | Redacted `cbt_db.php` | Confirms charset, PDO mode, and transaction setup |
 | DDL/migrations for `questions`, `subjects`, `exam_category` | Supplies exact types, keys, engine, and charset for migration |
-| `answer_details.php` | Completes the safe question/context rendering audit |
+| `answer_details.php` | Completes detail-page integration and security verification in OT10; not an OT04 gate |
 | PHP and MySQL/MariaDB versions | Determines supported PHP and SQL syntax |
 | Practice-question writer/importer | Preserves the existing `practice_title` contract |
 | Search list for question readers/writers | Finds every affected output and persistence path |
@@ -76,13 +77,19 @@ SHOW CREATE TABLE exam_category;
 
 Secrets, credentials, cookies, and production data are not required.
 
+`answer_details.php` is intentionally requested just in time. OT04 builds and
+tests the shared renderer and applies it to the supplied CBT, result, and print
+paths. If the detail source is still unavailable, OT04 records the integration
+contract and OT10 applies and verifies it; no package may invent a replacement
+page or declare the final release complete without that source.
+
 ## Review checkpoints
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
 | phase 1 close | OT00 integration baseline | rigorous | pending |
 | phases 2-4 | OT01-OT03 | light at next Gate 1 | pending |
-| phase 5 close | OT04 Release A | rigorous | pending |
+| phase 5 close | OT04 Release A implementation (detail-source integration deferred) | rigorous | pending |
 | phases 6-7 | OT05-OT06 | light at next Gate 1 | pending |
 | phase 8 close | OT07 Release B | rigorous | pending |
 | phase 9 | OT08 | light at OT09 Gate 1 | pending |

@@ -3,8 +3,8 @@
 - **Status:** blocked
 - **Depends on:** OT09 and its settled rigorous review
 - **Blocks:** cycle close
-- **External gate:** user's local PHP machine, staging environment, and all
-  prior source-contract artifacts
+- **External gate:** user's local PHP machine, staging environment, current
+  `answer_details.php`, and all other prior source-contract artifacts
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal
@@ -21,8 +21,10 @@ concise human-developer deployment and maintenance handoff.
    syntax checks, and security/adversarial probes.
 3. On the local PHP machine, run `php -l` on every PHP file and apply migration
    preflight/forward/rollback tests against a disposable production-shaped DB.
-4. Verify Release A behavior independently: owner tool, native PRG, underline,
-   paragraphs, result/detail rendering, and legacy-state warning.
+4. Integrate OT04's shared safe renderer into the supplied
+   `answer_details.php`, then verify Release A behavior independently: owner
+   tool, native PRG, underline, paragraphs, result/detail rendering, and
+   legacy-state warning.
 5. Verify Release B behavior independently: context CRUD, activation safety,
    complete-group random selection, both CBT paths, and rollback hiding.
 6. Verify Release C behavior independently: singular/multiple comprehension,
@@ -50,6 +52,7 @@ concise human-developer deployment and maintenance handoff.
 | PHP lint | Every PHP file passes on target PHP version |
 | Migration | Preflight, forward, rerun behavior, backup, and rollback proven |
 | Release A | Independent acceptance complete |
+| Answer details | Supplied page uses the shared safe renderer and passes formatting/XSS probes |
 | Release B | Independent acceptance complete |
 | Release C | Independent acceptance complete |
 | Security | Stored-XSS probes remain text; only exact underline/gap markup renders |
@@ -67,6 +70,8 @@ concise human-developer deployment and maintenance handoff.
 - Do not delete production questions, contexts, media, or users.
 - Do not mark acceptance complete when a required local/staging/browser check
   was skipped.
+- Do not invent `answer_details.php` or close Release A without integrating and
+  testing the supplied source.
 - Do not archive or close the cycle automatically.
 
 ## Handoff template
@@ -77,6 +82,7 @@ Result:
 Node/fixture/PHP results:
 Migration/rollback evidence:
 Release A/B/C acceptance:
+Deferred source integrations:
 Desktop/mobile staging evidence:
 Security evidence:
 Deployment manifest path/hash:

@@ -8,7 +8,8 @@ Last updated: 2026-11-01.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Next package: OT04, Underline and Multiline (blocked: `answer_details.php`)
+- Next package: OT04, Underline and Multiline (ready; `answer_details.php`
+  integration is deferred to OT10)
 - Product implementation: OT03 complete (readable owner tool loaded by
   `admin_questions.php`; native PRG saves; versioned `cbtOwnerTool:v1` state)
 
@@ -44,7 +45,7 @@ PHP runtime (no PHP installed in this workspace).
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| `answer_details.php` | OT04 | Audit and implement safe post-test rendering |
+| `answer_details.php` | OT10 (not an OT04 gate) | Integrate and verify safe post-test rendering before final release |
 | Redacted `cbt_db.php` | OT05 | Confirm charset, PDO mode, and transaction setup |
 | DDL for `questions`, `subjects`, `exam_category` | OT05 | Define exact migration types, keys, engine, and charset |
 | PHP and MySQL/MariaDB versions | OT05 | Select supported language and SQL features |
@@ -53,10 +54,15 @@ PHP runtime (no PHP installed in this workspace).
 | Representative context paste with answer key | OT08/OT09 final acceptance | Prove the one-box key workflow on the new families |
 
 `header.php`, `footer.php`, and `cbt_exam_attempts` are not requested up front.
+OT04 proceeds against the supplied admin, CBT, result, and print paths and must
+record the shared detail-page integration contract rather than guessing the
+missing source.
 
 ## Delivery stages
 
-- Release A: OT03-OT04, owner-tool replacement plus underline/multiline.
+- Release A: OT03-OT04 implement the owner-tool replacement plus
+  underline/multiline; OT10 integrates the deferred detail-page source before
+  final release acceptance.
 - Release B: OT05-OT07, manual shared-context persistence and delivery.
 - Release C: OT08-OT09, comprehension and cloze OCR automation.
 - OT10 performs final release verification and human-developer handoff.
