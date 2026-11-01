@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "input_origin": "user_sample",
+  "id": "sample-uppercase-paren-q51",
+  "source": [
+    "sample-underline.txt lines 74-76"
+  ],
+  "provenance": "User supplied sample-underline.txt excerpt for uppercase paren options A) through D).",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/sample-uppercase-paren-q51.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "nums": [51],
+    "questions": [
+      {
+        "num": 51,
+        "question": "Ator led a <u>dog's life</u> for the twenty years he stayed in the United Kingdom.",
+        "a": "lived a dirty life",
+        "b": "was promiscuous",
+        "c": "was domesticated",
+        "d": "led an unhappy and troubled life",
+        "flags": []
+      }
+    ]
+  },
+  "must_not": [
+    "Options are left in the stem",
+    "Flags report missing options"
+  ],
+  "notes": [
+    "Validates existing support for uppercase paren options A) B) C) D)."
+  ],
+  "discrepancies": []
+}

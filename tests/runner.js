@@ -3,7 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const parser = require('../src/parser/parser.js');
+const parser = require('../src/parser/core.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const EXPECTED_DIR = path.join(ROOT, 'fixtures/expected');
@@ -23,7 +23,7 @@ const CATEGORY_NAMES = CATEGORY_SELECT ? [...CATEGORY_SELECT[0]
   .map(m => m[1].trim())
   .filter(name => name && !name.startsWith('--')) : [];
 
-const INPUT_ORIGINS = new Set(['bank', 'anomaly', 'doc', 'synthetic']);
+const INPUT_ORIGINS = new Set(['bank', 'anomaly', 'doc', 'synthetic', 'user_sample']);
 const SALVAGE_FLAG = 'OCR boundaries repaired; verify question and option split';
 
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];

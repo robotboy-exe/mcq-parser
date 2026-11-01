@@ -10,6 +10,20 @@ features.
   replies short.
 - Do not add unused files, speculative features, or refactors for style.
 
+## Canonical parser core
+
+The pure, canonical parser implementation lives in `src/parser/core.js` (API
+version `2.0.0`). It exports:
+- Pure regexes: `FIXES`, `OPTION`, `KEY_LINE`, `PLACEHOLDER`, `STEM_LINE`, `KEY_WORD`, `INLINE_PAIR`, `LOOSE`.
+- Pure parsing & inference: `parseHeader`, `pickSubjectIndex`, `pickCategoryIndex`, `splitQuestions`, `splitBulletQuestions`, `splitQuestionItems`, `parseQuestion`, `parseStimulusRange`, `extractStimuli`, `applyStimulusFlags`, `flagNumberingGaps`, `splitSections`, `salvageNormalize`, `splitSectionsWithSalvage`, `keyPairs`, `parseKeyDetailed`, `parseKey`, and `parsePaste`.
+- Browser & Node compatibility: Works in Node (`module.exports`) and Browser (`window.OCRParser`).
+- Zero dependencies: No DOM, storage (`localStorage`), fetch, or UI/form references.
+
+`src/parser/parser.js` re-exports the canonical parser core for backward
+compatibility with the legacy bookmarklet and auto-save test harnesses.
+The bookmarklet build and `src/ui/ui.js` are legacy artifacts maintained for
+historical regression testing, not the production delivery path.
+
 ## Ground rules
 
 1. **The migration docs are the contract.** Read

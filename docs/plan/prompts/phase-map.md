@@ -6,9 +6,9 @@ Intent: [`../../../INTENT.md`](../../../INTENT.md)
 
 | Phase | Package | File | Status |
 |---|---|---|---|
-| 1 | OT00 — Integration Baseline | [`../owner-tool/ot-00-integration-baseline.md`](../owner-tool/ot-00-integration-baseline.md) | not started |
-| 2 | OT01 — Evidence and Fixtures | [`../owner-tool/ot-01-evidence-and-fixtures.md`](../owner-tool/ot-01-evidence-and-fixtures.md) | not started |
-| 3 | OT02 — Production Parser Core | [`../owner-tool/ot-02-production-parser-core.md`](../owner-tool/ot-02-production-parser-core.md) | not started |
+| 1 | OT00 — Integration Baseline | [`../owner-tool/ot-00-integration-baseline.md`](../owner-tool/ot-00-integration-baseline.md) | done |
+| 2 | OT01 — Evidence and Fixtures | [`../owner-tool/ot-01-evidence-and-fixtures.md`](../owner-tool/ot-01-evidence-and-fixtures.md) | done |
+| 3 | OT02 — Production Parser Core | [`../owner-tool/ot-02-production-parser-core.md`](../owner-tool/ot-02-production-parser-core.md) | done |
 | 4 | OT03 — Owner Tool Replacement | [`../owner-tool/ot-03-owner-tool-replacement.md`](../owner-tool/ot-03-owner-tool-replacement.md) | blocked: production helper required |
 | 5 | OT04 — Underline and Multiline | [`../owner-tool/ot-04-underline-and-multiline.md`](../owner-tool/ot-04-underline-and-multiline.md) | blocked: answer-details source required |
 | 6 | OT05 — Context Schema and Admin | [`../owner-tool/ot-05-context-schema-and-admin.md`](../owner-tool/ot-05-context-schema-and-admin.md) | blocked: DB contract required |

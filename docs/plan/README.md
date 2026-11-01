@@ -36,9 +36,9 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | OT00 | [Integration Baseline](owner-tool/ot-00-integration-baseline.md) | none | not started | explicit approval before merge commit |
-| 2 | OT01 | [Evidence and Fixtures](owner-tool/ot-01-evidence-and-fixtures.md) | OT00 | not started | none |
-| 3 | OT02 | [Production Parser Core](owner-tool/ot-02-production-parser-core.md) | OT01 | not started | none |
+| 1 | OT00 | [Integration Baseline](owner-tool/ot-00-integration-baseline.md) | none | done | explicit approval before merge commit |
+| 2 | OT01 | [Evidence and Fixtures](owner-tool/ot-01-evidence-and-fixtures.md) | OT00 | done | none |
+| 3 | OT02 | [Production Parser Core](owner-tool/ot-02-production-parser-core.md) | OT01 | done | none |
 | 4 | OT03 | [Owner Tool Replacement](owner-tool/ot-03-owner-tool-replacement.md) | OT02 | blocked | production `ocr_helper.js` |
 | 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | blocked | `answer_details.php` |
 | 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review | blocked | redacted DB config, DDL, versions |

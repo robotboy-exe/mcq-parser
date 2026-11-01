@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "input_origin": "user_sample",
+  "id": "sample-cloze-section6",
+  "source": [
+    "sample-passages.txt lines 39-56"
+  ],
+  "provenance": "User supplied sample-passages.txt SECTION 6 cloze passage with gap table 71-80.",
+  "status": "PENDING",
+  "input_file": "fixtures/inputs/sample-cloze-section6.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 10,
+    "nums": [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+    "context": {
+      "title": "SECTION 6",
+      "text": "Three workers of the Jojomo Plastic Company were ......... 71. .......... Last month after the police had started a nationwide hunt for them. They were ......... 72. ......... before a Grand Bassa High Court, and ....... 73. ......... with fraud and resisting arrest. However, one of the charges was ... 74. ......... All of them pleaded not guilty and were ....... 75......... In custody. They engaged the services of a lawyer to represent them in court.\n\nDuring the ...........76. ............, the prosecutor and the defendant questioned the accused and called on ....... 77. ....... to say what they knew after they had sworn ..... 78. ... to tell the truth, the whole truth and nothing but the truth. \"During questioning, the three workers accused the manager of the crime but no attention was paid to them. The ....... 79. ......... Found them guilty and they were ......... 80. ....... to twenty-fire years imprisonment."
+    },
+    "questions": [
+      {
+        "num": 71,
+        "question": "Gap 71",
+        "a": "captured",
+        "b": "arrested",
+        "c": "seized",
+        "d": "caught",
+        "flags": []
+      },
+      {
+        "num": 72,
+        "question": "Gap 72",
+        "a": "dragged",
+        "b": "exhibited",
+        "c": "drawn",
+        "d": "arraigned",
+        "flags": []
+      },
+      {
+        "num": 73,
+        "question": "Gap 73",
+        "a": "charged",
+        "b": "convicted",
+        "c": "executed",
+        "d": "suspected",
+        "flags": []
+      },
+      {
+        "num": 74,
+        "question": "Gap 74",
+        "a": "dropped",
+        "b": "declined",
+        "c": "released",
+        "d": "discharged",
+        "flags": []
+      },
+      {
+        "num": 75,
+        "question": "Gap 75",
+        "a": "resigned",
+        "b": "kept",
+        "c": "confined",
+        "d": "remanded",
+        "flags": []
+      },
+      {
+        "num": 76,
+        "question": "Gap 76",
+        "a": "tribunal",
+        "b": "test",
+        "c": "trial",
+        "d": "panel",
+        "flags": []
+      },
+      {
+        "num": 77,
+        "question": "Gap 77",
+        "a": "witnesses",
+        "b": "eyewitnesses",
+        "c": "spectators",
+        "d": "observers",
+        "flags": []
+      },
+      {
+        "num": 78,
+        "question": "Gap 78",
+        "a": "a vow",
+        "b": "an oath",
+        "c": "an allegiance",
+        "d": "a pledge",
+        "flags": []
+      },
+      {
+        "num": 79,
+        "question": "Gap 79",
+        "a": "adjudicator",
+        "b": "lawyer",
+        "c": "jury",
+        "d": "referee",
+        "flags": []
+      },
+      {
+        "num": 80,
+        "question": "Gap 80",
+        "a": "decreed",
+        "b": "sent",
+        "c": "sentenced",
+        "d": "condemned",
+        "flags": []
+      }
+    ]
+  },
+  "must_not": [
+    "Cloze options merged into single question stem",
+    "Columns A-D misaligned across rows"
+  ],
+  "notes": [
+    "Marked PENDING pending OT09 cloze table and gap parsing."
+  ],
+  "discrepancies": [
+    "Current parser does not recognize cloze passages or tabular options."
+  ]
+}

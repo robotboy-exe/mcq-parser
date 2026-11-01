@@ -1298,34 +1298,11 @@ function blockerText(blocker) {
 }
 
 
-if (typeof module !== 'undefined' && module.exports) {
+if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
+  const core = require('./core.js');
   module.exports = {
-    FIXES,
-    OPTION,
-    KEY_LINE,
-    PLACEHOLDER,
-    STEM_LINE,
-    KEY_WORD,
-    INLINE_PAIR,
-    LOOSE,
+    ...core,
     SAVE_SUCCESS,
-    parseHeader,
-    pickSubjectIndex,
-    pickCategoryIndex,
-    splitQuestions,
-    splitBulletQuestions,
-    splitQuestionItems,
-    parseQuestion,
-    parseStimulusRange,
-    extractStimuli,
-    applyStimulusFlags,
-    flagNumberingGaps,
-    splitSections,
-    salvageNormalize,
-    splitSectionsWithSalvage,
-    keyPairs,
-    parseKeyDetailed,
-    parseKey,
     newBatchId,
     byteLength,
     normalizeAnswer,

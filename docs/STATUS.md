@@ -8,15 +8,16 @@ Last updated: 2026-10-31.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Next package: OT00, Integration Baseline
-- Product implementation: not started
+- Next package: OT03, Owner Tool Replacement (blocked: production helper required)
+- Product implementation: OT02 complete (canonical pure parser core v2.0.0 established)
 
 ## Known baselines
 
 | Line | Evidence | Status |
 |---|---|---|
 | `main` at `e5dec50` | `node tests/runner.js` | 25 PASS, 0 FAIL, 0 PENDING |
-| clean experiments commit `d5a62f0` | package handoff claim | 43 fixtures and 140 unit/UI tests; OT00 must independently verify |
+| clean experiments commit `d5a62f0` | `node tests/runner.js` & `tests/unit.js` | 43 PASS runner, 140 PASS unit |
+| integration line (`owner-tool-integration`) | `node tests/runner.js` & `tests/unit.js` | 45 PASS, 0 FAIL, 2 PENDING runner; 140 PASS unit |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save

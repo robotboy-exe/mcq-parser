@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "input_origin": "user_sample",
+  "id": "sample-underline-stems",
+  "source": [
+    "sample-underline.txt lines 7-8 and 13-14"
+  ],
+  "provenance": "User supplied sample-underline.txt questions 2 and 4 with literal <u> markers.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/sample-underline-stems.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [2, 4],
+    "questions": [
+      {
+        "num": 2,
+        "question": "School prefects are expected to be <u>honourable</u> in all their conduct, not",
+        "a": "stupid",
+        "b": "wicked",
+        "c": "devious",
+        "d": "dirty",
+        "flags": []
+      },
+      {
+        "num": 4,
+        "question": "The lies she told will merely <u>exacerbate</u> the situation rather than .................... it.",
+        "a": "aid",
+        "b": "improve",
+        "c": "appease",
+        "d": "reduce",
+        "flags": [
+          "question 3 missing (numbering gap)"
+        ]
+      }
+    ]
+  },
+  "must_not": [
+    "<u> markers stripped by parser",
+    "Options missed"
+  ],
+  "notes": [
+    "Preserves literal <u> tags in question stem."
+  ],
+  "discrepancies": []
+}

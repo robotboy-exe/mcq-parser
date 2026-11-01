@@ -1,18 +1,20 @@
-# OCR Parser Bookmarklet
+# OCR Question Importer & Parser
 
-A single-file `javascript:` bookmarklet that helps enter OCR'd exam questions
-into the existing CBT admin "Add a New Question" page. It parses a paste
-containing questions and an optional answer key, fills the form one question at
-a time, ticks answers from the key, and saves through the page's own form POST.
+Tools and pure parsing engines for importing OCR exam questions into the CBT
+admin "Add a New Question" interface.
 
-The parser is kept separate from the UI so it can be tested without a browser.
+> **Note on Architecture:** The canonical parser implementation is
+> `src/parser/core.js` (pure, dual Browser/Node export). The legacy bookmarklet
+> build (`src/bookmarklet.js` and `src/ui/ui.js`) is retained for historical
+> verification and evidence, but the production target is a direct, readable
+> owner-tool integration (`owner-tool-2026-11` cycle) per `INTENT.md`.
+
+The parser core is kept strictly pure and free of DOM, storage, or network code
+so it can be tested without a browser and reused across browser and server contexts.
 
 ## Quick start
 
 ```sh
-# Rebuild the bookmarklet from the modules
-node src/build/build.js
-
 # Run the fixture harness and unit tests
 node tests/runner.js
 node tests/unit.js
@@ -20,30 +22,22 @@ node tests/unit.js
 # Verify the archived bank slices and their hashes
 node tools/extract-bank.js --check
 
-# Run the parser directly
-node -e "const p=require('./src/parser/parser.js'); console.log(p.parseQuestion({num:1,text:'Who was the father of faith? A. Abraham B. Moses C. David D. Joseph'}))"
-```
-
-To use it: open the admin Add-a-New-Question page, create a bookmark whose URL
-is the full contents of `src/bookmarklet.js`, then click it. Press **Paste
-clipboard** to fill the box from the clipboard, or paste manually, then press
-**Load questions + key**.
-
-Recommended key divider on its own line:
-
-```text
-=== ANSWER KEY ===
-1.B 2.C 3.A
+# Run the canonical parser core directly
+node -e "const p=require('./src/parser/core.js'); console.log(p.parsePaste('1. Who was the father of faith? A. Abraham B. Moses C. David D. Joseph'))"
 ```
 
 ## Project layout
 
 ```text
 src/
-  parser/parser.js     pure parsing: sections, questions, options, key, header
-  ui/ui.js             DOM injection, form fill, queue, storage, save
-  build/build.js       concatenates modules into one javascript: URL
-  bookmarklet.js       generated output (do not edit by hand)
+  parser/
+    core.js            canonical pure parser (dual Node/Browser export, v2.0.0)
+    parser.js          legacy parser + auto-save helper module (re-exports core)
+  ui/
+    ui.js              legacy bookmarklet UI and DOM driver
+  build/
+    build.js           legacy bookmarklet bundler
+  bookmarklet.js       legacy generated bookmarklet artifact
 docs/
   STATUS.md            current checks, build hash, and live-test state
   SPEC.md              parser/UI behavior specification

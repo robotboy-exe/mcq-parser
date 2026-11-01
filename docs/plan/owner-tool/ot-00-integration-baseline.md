@@ -1,6 +1,6 @@
 # OT00 — Integration Baseline
 
-- **Status:** not started
+- **Status:** done
 - **Depends on:** none
 - **Blocks:** OT01-OT10
 - **External gate:** explicit approval before creating the integration merge
@@ -94,5 +94,35 @@ Files changed:
 Open questions:
 Review: pending rigorous OT00 review
 Commit: deferred | <explicitly authorized SHA>
+Next: OT01 not started
+```
+
+## Handoff
+
+```text
+Date: 2026-10-31
+Result: PASS
+Integration branch/worktree: owner-tool-integration at /data/data/com.termux/files/home/projects/ocr-parser-integration
+Parents/ancestors:
+  - d5a62f06314454a556898318ead403702f8cecfa (clean experiments commit)
+  - cb7f9b2c34cb8f343a419c8f000c01a931dc3bdf (main containing owner-tool-2026-11 intent/plan and deployed sources)
+Baselines before and after merge:
+  - main (e5dec50): 25/25 runner PASS, 5 bank slices OK
+  - clean experiments (d5a62f0): 43/43 runner PASS, 140/140 unit PASS, 7 bank slices OK
+  - merged integration line: 43/43 runner PASS, 140/140 unit PASS, 7 bank slices OK
+Conflict-resolution manifest:
+  - Code/tests/runner/fixtures (src/, tests/, fixtures/, tools/): resolved to clean experiments d5a62f0.
+  - Active cycle docs/plans (INTENT.md, docs/plan/prompts/*, docs/plan/reviews/*, docs/plan/owner-tool/*, docs/plan/history.md, deployed/*, sample-*): resolved to main / owner-tool-2026-11.
+  - Coordinator (docs/plan/README.md): resolved to main owner-tool coordinator.
+  - Core reference docs (AGENTS.md, README.md, docs/AGENTS.md, docs/DECISIONS.md, docs/EDGE_CASES.md, docs/INVARIANTS.md, docs/SPEC.md): resolved to d5a62f0 baseline.
+  - Blocked experiments work (P20-P22): excluded byte-for-byte; uncommitted experiments worktree untouched.
+Dirty experiments state verified unchanged:
+  - Checked git status --porcelain on /data/data/com.termux/files/home/projects/ocr-parser-experiments; exact 21 modified and 11 untracked files preserved byte-for-byte.
+Files changed:
+  - Integration merge commit d66f96b created with joined histories.
+  - Documentation status updates in phase-map.md, README.md, STATUS.md, ot-00-integration-baseline.md.
+Open questions: None.
+Review: pending rigorous OT00 review
+Commit: d66f96b (merge authorized by user)
 Next: OT01 not started
 ```

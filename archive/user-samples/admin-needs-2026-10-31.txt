@@ -1,0 +1,9 @@
+- the ability to underline words so that they render as underlined for candidates during testing
+- ability for questions to render on multiple lines on the candidate testing session instead of the current single line word-wrap rendering
+- ability to fill in questions that span multiple questions more easily like passages or any section with shared context.
+- a way to deliver shared context questions to the candidates without abandoning cbt randomness
+
+====
+
+
+- earlier, admin complained the live ocr_helper.js wasn't parsing parentheses separated options [A) book. B) Apple. etc] and I know my parser in experiments does so if this simpler parser in this worktree doesn't do it, we will add it as well 
