@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-10-31.
+Last updated: 2026-11-01.
 
 ## Active cycle
 
@@ -8,8 +8,9 @@ Last updated: 2026-10-31.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Next package: OT03, Owner Tool Replacement (blocked: production helper required)
-- Product implementation: OT02 complete (canonical pure parser core v2.0.0 established)
+- Next package: OT04, Underline and Multiline (blocked: `answer_details.php`)
+- Product implementation: OT03 complete (readable owner tool loaded by
+  `admin_questions.php`; native PRG saves; versioned `cbtOwnerTool:v1` state)
 
 ## Known baselines
 
@@ -17,7 +18,7 @@ Last updated: 2026-10-31.
 |---|---|---|
 | `main` at `e5dec50` | `node tests/runner.js` | 25 PASS, 0 FAIL, 0 PENDING |
 | clean experiments commit `d5a62f0` | `node tests/runner.js` & `tests/unit.js` | 43 PASS runner, 140 PASS unit |
-| integration line (`owner-tool-integration`) | `node tests/runner.js` & `tests/unit.js` | 45 PASS, 0 FAIL, 2 PENDING runner; 140 PASS unit |
+| integration line (`owner-tool-integration`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js` | 45 PASS, 0 FAIL, 2 PENDING runner; 140 unit; 16 owner-tool |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -25,23 +26,24 @@ defects despite its green 46/155 suites. The owner selected the clean
 `d5a62f0` baseline and a manual-review replacement tool, so those dirty changes
 are shelved rather than repaired in this cycle.
 
-## Supplied but untracked evidence
+## Supplied evidence
 
-- `deployed/admin_questions.php`
+- `deployed/admin_questions.php` (OT03 replaced the helper include here)
 - `deployed/cbt.php`
 - `deployed/cbt_practice.php`
 - `admin-needs.txt`
 - `sample-underline.txt`
 - `sample-passages.txt`
+- `ocr_helper.js` (current production helper, archived by OT03)
 
-OT01 owns archival hashes, provenance, and fixture promotion. Do not edit these
-source copies before OT01 records them.
+OT01 recorded archival hashes and provenance; `deployed/` is the working copy.
+The `admin_questions.php` include change is HTML-only and has not been run in a
+PHP runtime (no PHP installed in this workspace).
 
 ## External gates
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| Current production `ocr_helper.js` | OT03 | Establish the exact behavior and state being replaced |
 | `answer_details.php` | OT04 | Audit and implement safe post-test rendering |
 | Redacted `cbt_db.php` | OT05 | Confirm charset, PDO mode, and transaction setup |
 | DDL for `questions`, `subjects`, `exam_category` | OT05 | Define exact migration types, keys, engine, and charset |

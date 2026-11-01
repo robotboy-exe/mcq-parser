@@ -1,0 +1,50 @@
+.owner-tool {
+  border: 1px solid #d5dfe9;
+  border-radius: 10px;
+  padding: 14px;
+  background: #f7f9fc;
+  margin-bottom: 16px;
+}
+
+.owner-tool-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 10px;
+  color: #263445;
+}
+
+.owner-tool-head span {
+  color: #536273;
+  font-size: 14px;
+}
+
+#owner_tool_text {
+  width: 100%;
+  min-height: 160px;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid #d5dfe9;
+  border-radius: 8px;
+  background: #fff;
+  color: #263445;
+}
+
+.owner-tool-flags {
+  color: #b45309;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.owner-tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.owner-tool-actions .admin-btn {
+  margin: 0;
+}

@@ -4,16 +4,18 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-10-31.
+Last updated: 2026-11-01.
 
 ## Current state
 
 - Active cycle: `owner-tool-2026-11`.
-- Product work: not started.
-- Next package: OT00, Integration Baseline.
+- Product work: OT00-OT03 complete; Release A part 1 (owner tool) is in place.
+- Next package: OT04, Underline and Multiline (blocked: `answer_details.php`).
 - Current `main` parser baseline: 25 PASS, 0 FAIL, 0 PENDING.
-- Selected clean experiments base: `d5a62f0`; OT00 must independently verify
-  its claimed 43 fixture and 140 unit/UI passes.
+- Integration line baseline: 45 runner PASS + 2 PENDING, 140 unit PASS,
+  16 owner-tool PASS, 7 bank slices OK.
+- Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
+  140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
 - Current status summary: [`../STATUS.md`](../STATUS.md).
 - Historical P01-P09 and shelved-cycle record: [`history.md`](history.md).
@@ -39,7 +41,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 1 | OT00 | [Integration Baseline](owner-tool/ot-00-integration-baseline.md) | none | done | explicit approval before merge commit |
 | 2 | OT01 | [Evidence and Fixtures](owner-tool/ot-01-evidence-and-fixtures.md) | OT00 | done | none |
 | 3 | OT02 | [Production Parser Core](owner-tool/ot-02-production-parser-core.md) | OT01 | done | none |
-| 4 | OT03 | [Owner Tool Replacement](owner-tool/ot-03-owner-tool-replacement.md) | OT02 | blocked | production `ocr_helper.js` |
+| 4 | OT03 | [Owner Tool Replacement](owner-tool/ot-03-owner-tool-replacement.md) | OT02 | done | satisfied (helper archived 2026-11-01) |
 | 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | blocked | `answer_details.php` |
 | 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review | blocked | redacted DB config, DDL, versions |
 | 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | blocked | practice writer and reader/writer audit |

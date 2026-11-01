@@ -24,6 +24,16 @@ compatibility with the legacy bookmarklet and auto-save test harnesses.
 The bookmarklet build and `src/ui/ui.js` are legacy artifacts maintained for
 historical regression testing, not the production delivery path.
 
+## Production path (owner tool)
+
+`src/owner-tool/controller.js`, `src/owner-tool/state.js`, and
+`src/owner-tool/style.css` are the shipping tool loaded by `admin_questions.php`.
+They are readable source files with no build step: edit them directly, then run
+`node tests/owner-tool.js`. The bookmarklet sections below describe the legacy
+artifact, which is retained as evidence and is not a production deliverable.
+Owner-tool state lives under `cbtOwnerTool:v1`; never read, import, migrate, or
+delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
+
 ## Ground rules
 
 1. **The migration docs are the contract.** Read

@@ -1040,7 +1040,10 @@ if (is_file(__DIR__ . '/header.php')) {
 </div>
 </main>
 
-<script src="ocr_helper.js"></script>
+<link rel="stylesheet" href="src/owner-tool/style.css">
+<script src="src/parser/core.js"></script>
+<script src="src/owner-tool/state.js"></script>
+<script src="src/owner-tool/controller.js"></script>
 
 
 <?php if (is_file(__DIR__ . '/footer.php')) { include __DIR__ . '/footer.php'; } ?>

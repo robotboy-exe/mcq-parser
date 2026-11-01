@@ -15,9 +15,10 @@ so it can be tested without a browser and reused across browser and server conte
 ## Quick start
 
 ```sh
-# Run the fixture harness and unit tests
+# Run the fixture harness, unit tests, and owner-tool harness
 node tests/runner.js
 node tests/unit.js
+node tests/owner-tool.js
 
 # Verify the archived bank slices and their hashes
 node tools/extract-bank.js --check
@@ -38,6 +39,10 @@ src/
   build/
     build.js           legacy bookmarklet bundler
   bookmarklet.js       legacy generated bookmarklet artifact
+  owner-tool/
+    controller.js      production owner-tool controller (native PRG saves)
+    state.js           versioned cbtOwnerTool:v1 state store
+    style.css          owner-tool panel styles
 docs/
   STATUS.md            current checks, build hash, and live-test state
   SPEC.md              parser/UI behavior specification
@@ -63,6 +68,7 @@ archive/
 tests/runner.js        pure-Node fixture harness (no browser)
 tests/unit.js          pure-Node unit tests for parser and auto-save helpers
 tests/ui-harness.js    browser-free UI save/dry-run harness
+tests/owner-tool.js    browser-free harness for the production owner-tool controller
 tools/extract-bank.js  deterministic bank slicer and verifier
 tools/bank-slices.json source hash, anchors, counts, and output hashes
 ```
