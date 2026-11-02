@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-01.
+Last updated: 2026-11-02.
 
 ## Active cycle
 
@@ -8,10 +8,11 @@ Last updated: 2026-11-01.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Next package: OT04, Underline and Multiline (ready; `answer_details.php`
-  integration is deferred to OT10)
-- Product implementation: OT03 complete (readable owner tool loaded by
-  `admin_questions.php`; native PRG saves; versioned `cbtOwnerTool:v1` state)
+- Current package: OT04, Underline and Multiline. Implementation and supplied
+  `answer_details.php` integration are complete on the fix branch; target-PHP
+  and Brave/Android acceptance remain.
+- Product implementation: parser 2.1.0, exact underline rendering, multiline
+  stems, Add/Edit formatting, and native PRG preservation are in place.
 
 ## Known baselines
 
@@ -19,7 +20,7 @@ Last updated: 2026-11-01.
 |---|---|---|
 | `main` at `e5dec50` | `node tests/runner.js` | 25 PASS, 0 FAIL, 0 PENDING |
 | clean experiments commit `d5a62f0` | `node tests/runner.js` & `tests/unit.js` | 43 PASS runner, 140 PASS unit |
-| integration line (`owner-tool-integration`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js` | 45 PASS, 0 FAIL, 2 PENDING runner; 140 unit; 16 owner-tool |
+| OT04 fix branch | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js` | 47 PASS, 0 FAIL, 2 PENDING runner; 143 unit; 33 owner-tool |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -36,16 +37,18 @@ are shelved rather than repaired in this cycle.
 - `sample-underline.txt`
 - `sample-passages.txt`
 - `ocr_helper.js` (current production helper, archived by OT03)
+- `answer_details.php` (archived byte-identically on 2026-11-02 and integrated)
 
-OT01 recorded archival hashes and provenance; `deployed/` is the working copy.
-The `admin_questions.php` include change is HTML-only and has not been run in a
-PHP runtime (no PHP installed in this workspace).
+OT01/OT04 recorded archival hashes and provenance; `deployed/` is the working
+copy. Changed PHP has not been linted or executed in this workspace because PHP
+is not installed; `tests/php-render.php` is ready for the target runtime.
 
 ## External gates
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| `answer_details.php` | OT10 (not an OT04 gate) | Integrate and verify safe post-test rendering before final release |
+| Target PHP runtime | OT04 | Lint changed PHP and execute `tests/php-render.php` |
+| Brave/Android staging smoke | OT04 | Verify selection, underline, undo, paragraphs, candidate/result/detail/print |
 | Redacted `cbt_db.php` | OT05 | Confirm charset, PDO mode, and transaction setup |
 | DDL for `questions`, `subjects`, `exam_category` | OT05 | Define exact migration types, keys, engine, and charset |
 | PHP and MySQL/MariaDB versions | OT05 | Select supported language and SQL features |
@@ -54,15 +57,13 @@ PHP runtime (no PHP installed in this workspace).
 | Representative context paste with answer key | OT08/OT09 final acceptance | Prove the one-box key workflow on the new families |
 
 `header.php`, `footer.php`, and `cbt_exam_attempts` are not requested up front.
-OT04 proceeds against the supplied admin, CBT, result, and print paths and must
-record the shared detail-page integration contract rather than guessing the
-missing source.
+The supplied detail page is now part of OT04; OT10 repeats Release A acceptance
+instead of performing first-time integration.
 
 ## Delivery stages
 
-- Release A: OT03-OT04 implement the owner-tool replacement plus
-  underline/multiline; OT10 integrates the deferred detail-page source before
-  final release acceptance.
+- Release A: OT03-OT04 implement the owner-tool replacement, underline/multiline,
+  and detail-page formatting; OT10 independently verifies the release.
 - Release B: OT05-OT07, manual shared-context persistence and delivery.
 - Release C: OT08-OT09, comprehension and cloze OCR automation.
 - OT10 performs final release verification and human-developer handoff.

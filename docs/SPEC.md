@@ -32,7 +32,8 @@ single-question section.
 
 One plain-text paste containing any combination of:
 
-- Optional header: first 3 lines may carry a subject name and a `20\d\d` year.
+- Optional header: first 3 lines may carry a subject name and a `19\d\d` or
+  `20\d\d` year.
   Example: `IMPROVISED C. R. K. QUESTIONS FOR 2021`.
 - Divider-only lines of equals signs (`========`) separate sections. They are
   stripped before question parsing, so a trailing divider is not absorbed into
@@ -87,7 +88,8 @@ The key section is not spell-corrected.
 }
 ```
 
-- `question` and each option are whitespace-collapsed and trimmed.
+- `question` folds single OCR wraps but keeps blank-line paragraphs; each option
+  is whitespace-collapsed and trimmed.
 - `num` comes from the question marker, not from queue position.
 - Options absent from the source remain `''`; E/F are not invented.
 - A leading chunk before the first marker is returned with `num: null` only if
@@ -101,7 +103,8 @@ Placeholder lines create no entry.
 ### 3.3 Header metadata
 
 `parseHeader` returns `{ year, header }`, where `header` is the first 3 lines
-joined, uppercased, and `year` is the first `\b20\d\d\b` match or `null`.
+joined, uppercased, and `year` is the first `\b(?:19|20)\d\d\b` match or
+`null`.
 `pickSubjectIndex` returns the index of the best matching `subject_id` option,
 or `-1`. `pickCategoryIndex` returns the index of the matching
 `exam_category_id` option for POST UTME, JAMB/UTME, WASSCE/WASCE/WAEC/SSCE/
@@ -146,7 +149,7 @@ Rules are checked in this order; the first match wins:
 The answer section starts at the boundary line if that line is key-like or has
 ≥2 inline pairs; otherwise it starts on the next line (a pure heading is
 dropped). If that pure heading is directly preceded by a title block (a
-non-empty run containing a `20\d\d` year and an exam/subject word, bounded by a
+non-empty run containing a `19\d\d` or `20\d\d` year and an exam/subject word, bounded by a
 blank line), the title block is dropped from the question part too. For example,
 `WASSCE C. R. K. 2026` above `OBJECTIVE ANSWERS` must not become part of the
 last question's options. `splitSections` also returns the dropped `boundary`
@@ -265,6 +268,9 @@ block from the question text.
   flags, marks every target question `needsImage`, and records targets outside
   the paste in `missing`. It is a separate pure step so the runner and UI can
   apply it after parsing a whole queue.
+- Leading and trailing blank lines around a removed block remain in the stem;
+  blank lines inside the removed block leave with it. This preserves real
+  paragraphs without inventing breaks where a block was inline.
 
 ### Stage 4 — Header inference
 
@@ -572,12 +578,14 @@ All server-derived text is rendered with `textContent` or created nodes, never
   `strip()` (plain text for summaries); `deployed/render.php` provides the same
   rules server-side as `cbt_format_text()` and `cbt_strip_formatting()`. Never
   use permissive `strip_tags`.
-- `<u class=…>`, `<U>`, other tags, encoded `&lt;u&gt;`, and an unmatched
-  `</u>` stay literal text. A second `<u>` inside an open underline also stays
-  literal.
+- `<u class=…>`, `<U>`, other tags, encoded `&lt;u&gt;`, and unmatched opening or
+  closing markers stay literal text. A second `<u>` inside an open underline
+  also stays literal.
 - Question stems and the result table render with `white-space: pre-wrap`, so
   manual newlines and OCR paragraph breaks survive; the admin list summary is
   truncated after stripping the markers.
 - Header year inference accepts 1900–2099.
+- `cbtOwnerTool:v1` state with another parser version is never rewritten as
+  current by a key paste or submit; full re-paste or explicit Reset is required.
 
 See `docs/INVARIANTS.md` for the full rule list and which items are unverified.

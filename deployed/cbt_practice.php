@@ -613,7 +613,7 @@ include __DIR__ . '/header.php';
 </main>
 
 <?php if ($examStarted): ?>
-<script src="src/owner-tool/render.js"></script>
+<script src="src/owner-tool/render.js?v=2.1.0"></script>
 <script>
 // Questions are randomly selected from MySQL for the chosen subject/category.
 // JSON_HEX_* prevents question text from breaking the script context.
@@ -654,7 +654,7 @@ function renderQuestion() {
 
     let html = `
         <div class="question-number">Question ${current + 1}</div>
-        <p class="question-text">${formatQuestionText(q.question)}</p>
+        <p class="question-text"></p>
     `;
 
     // The diagram is optional, so questions without one remain unchanged.
@@ -683,6 +683,7 @@ function renderQuestion() {
 
     html += "</div>";
     questionArea.innerHTML = html;
+    renderQuestionText(questionArea.querySelector('.question-text'), q.question);
 
     document.querySelectorAll('input[name="answer"]').forEach(input => {
         input.addEventListener("change", function() {
@@ -867,7 +868,6 @@ function escapeHtml(value) {
 }
 
 // Only the exact <u> markers are formatting; everything else stays text.
-const formatQuestionText = (value) => (window.CBTText ? window.CBTText.format(value) : escapeHtml(value));
 const renderQuestionText = (element, value) => {
     if (window.CBTText) {
         window.CBTText.render(element, value);

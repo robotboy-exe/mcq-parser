@@ -8,6 +8,10 @@ const ROOT = path.resolve(__dirname, '..');
 const STATE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/state.js'), 'utf8');
 const CONTROLLER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/controller.js'), 'utf8');
 const RENDER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/render.js'), 'utf8');
+const ADMIN_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/admin_questions.php'), 'utf8');
+const CBT_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt.php'), 'utf8');
+const PRACTICE_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt_practice.php'), 'utf8');
+const DETAIL_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/answer_details.php'), 'utf8');
 const parser = require('../src/parser/core.js');
 const stateApi = require('../src/owner-tool/state.js');
 const textApi = require('../src/owner-tool/render.js');
@@ -97,6 +101,10 @@ function createElement(doc, tag, props) {
     addEventListener(type, fn) {
       (this.listeners[type] = this.listeners[type] || []).push(fn);
     },
+    dispatchEvent(event) {
+      this.dispatch(event && event.type, event);
+      return true;
+    },
     dispatch(type, event) {
       (this.listeners[type] || []).slice().forEach(fn => fn(event || { type }));
     },
@@ -152,10 +160,18 @@ function createDocument(options) {
     successElement: opts.success ? { textContent: String(opts.success) } : null,
     errorElement: opts.error ? { textContent: String(opts.error) } : null,
     registerFromHTML(html) {
-      const re = /id="([^"]+)"/g;
+      const re = /<([a-z][\w-]*)([^>]*)>/gi;
       let match;
       while ((match = re.exec(html))) {
-        if (!this.byId.has(match[1])) this.byId.set(match[1], createElement(this, 'div', { id: match[1] }));
+        const id = match[2].match(/\bid="([^"]+)"/i);
+        if (!id) continue;
+        const classes = match[2].match(/\bclass="([^"]*)"/i);
+        if (!this.byId.has(id[1])) {
+          this.byId.set(id[1], createElement(this, match[1], {
+            id: id[1],
+            className: classes ? classes[1] : '',
+          }));
+        }
       }
     },
     getElementById(id) {
@@ -170,14 +186,22 @@ function createDocument(options) {
       return node;
     },
     query(scope, selector) {
-      if (selector === 'input[name=action][value=save_question]') return this.actionInput;
+      if (selector === 'input[name=action][value=save_question]') {
+        return this.actionInput && this.actionInput.value === 'save_question' ? this.actionInput : null;
+      }
+      if (selector === 'input[name=action][value=update_question]') {
+        return this.actionInput && this.actionInput.value === 'update_question' ? this.actionInput : null;
+      }
       if (selector === 'input[name=correct_option]') return doc.radios[0] || null;
       if (selector === '[name=correct_option]') return doc.radios[0] || null;
       const radio = selector.match(/^input\[name="correct_option"\]\[value="(\d+)"\]$/);
       if (radio) return doc.radios[Number(radio[1])] || null;
       if (selector === 'input[name=correct_option]:checked') return doc.radios.find(r => r.checked) || null;
       if (selector === '.admin-success') return this.successElement;
-      if (selector === '.admin-error') return this.errorElement;
+      if (selector === '.admin-error') {
+        if (this.errorElement) return this.errorElement;
+        return [...this.byId.values()].find(el => String(el.className || '').split(/\s+/).includes('admin-error')) || null;
+      }
       if (selector === '.admin-table') return null;
       if (selector === 'button[type=submit]') return this.submitButton;
       return null;
@@ -198,7 +222,8 @@ function createDocument(options) {
   return doc;
 }
 
-function createForm(doc) {
+function createForm(doc, options) {
+  const opts = options || {};
   const form = createElement(doc, 'form', { id: 'question_form' });
   const fields = {
     subject_id: selectElement(doc, 'subject_id', ['CRS', 'CRK', 'Government'], '1'),
@@ -241,7 +266,19 @@ function createForm(doc) {
     return radio;
   });
   doc.submitButton = createElement(doc, 'button', { id: 'save_question', type: 'submit' });
-  doc.actionInput = createElement(doc, 'input', { name: 'action', value: 'save_question', form });
+  doc.actionInput = createElement(doc, 'input', {
+    name: 'action',
+    value: opts.action || (String(opts.search || '').indexOf('edit=') !== -1 ? 'update_question' : 'save_question'),
+    form,
+  });
+  Object.keys(opts.formValues || {}).forEach(name => {
+    if (name === 'correct_option') {
+      const selected = Number(opts.formValues[name]);
+      doc.radios.forEach((radio, index) => { radio.checked = index === selected; });
+    } else if (fields[name]) {
+      fields[name].value = String(opts.formValues[name]);
+    }
+  });
   form.before = node => doc.body.appendChild(node);
   doc.form = form;
   doc.byId.set('question_form', form);
@@ -251,7 +288,7 @@ function createForm(doc) {
 function createEnv(options) {
   const opts = options || {};
   const doc = createDocument({ success: opts.success, error: opts.error });
-  const form = createForm(doc);
+  const form = createForm(doc, opts);
   const raw = new Map();
   Object.keys(opts.storage || {}).forEach(key => raw.set(key, String(opts.storage[key])));
   const localStorage = {
@@ -478,16 +515,27 @@ test('a near-miss flash does not advance', () => {
   assert(next.text('owner_tool_warning').indexOf('Could not confirm') > -1, 'review warning shown');
 });
 
-test('a server error keeps the current item', () => {
+test('a server error keeps the current item and the server-rendered edits', () => {
   const env = createEnv();
   env.paste(FULL_PASTE);
   env.click('owner_tool_load');
+  env.setField('question_text', 'Edited <u>stem</u>\n\nSecond paragraph.');
+  env.setField('option_b', 'Edited B');
   env.submit();
-  const next = env.reload({ error: 'Question text is required.' });
+  const next = env.reload({
+    error: 'Question text is required.',
+    formValues: {
+      question_text: 'Edited <u>stem</u>\n\nSecond paragraph.',
+      option_b: 'Edited B',
+      correct_option: 1,
+    },
+  });
   assertEqual(next.state().currentIndex, 0, 'item kept');
   assertEqual(next.state().pendingSubmission, null, 'in-flight state cleared');
   assert(next.text('owner_tool_warning').indexOf('rejected') > -1, 'error warning shown');
-  assertEqual(next.field('question_text'), 'Who was the father of faith in the Bible?', 'same item refilled');
+  assertEqual(next.field('question_text'), 'Edited <u>stem</u>\n\nSecond paragraph.', 'posted stem preserved');
+  assertEqual(next.field('option_b'), 'Edited B', 'posted option preserved');
+  assertEqual(next.radioIndex(), 1, 'posted answer preserved');
 });
 
 test('an ambiguous reload keeps the item and never retries', () => {
@@ -499,6 +547,18 @@ test('an ambiguous reload keeps the item and never retries', () => {
   assertEqual(next.state().currentIndex, 0, 'no advance');
   assertEqual(next.state().pendingSubmission, null, 'no stale marker');
   assert(next.text('owner_tool_warning').indexOf('Check Recently Added Questions') > -1, 'review warning shown');
+});
+
+test('Show Paste never overwrites administrator edits', () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  env.setField('question_text', 'Edited <u>stem</u>\n\nSecond paragraph.');
+  env.setField('option_b', 'Edited B');
+  env.click('owner_tool_show');
+  env.click('owner_tool_show');
+  assertEqual(env.field('question_text'), 'Edited <u>stem</u>\n\nSecond paragraph.', 'stem preserved');
+  assertEqual(env.field('option_b'), 'Edited B', 'option preserved');
 });
 
 test('skip advances deterministically and clears the marker', () => {
@@ -545,10 +605,21 @@ test('legacy bookmarklet state is reported, never imported or deleted', () => {
   assertEqual(env.field('question_text'), '', 'nothing imported into the form');
 });
 
-test('edit pages get no importer UI and no storage writes', () => {
+test('edit pages get formatting only and no storage writes', () => {
   const env = createEnv({ search: '?edit=42' });
   assertEqual(env.doc.getElementById('owner_tool'), null, 'no panel');
+  assert(env.doc.getElementById('owner_format_tool'), 'formatting panel is present');
+  env.type('Edit this existing question.');
+  env.select(5, 9);
+  env.click('owner_tool_underline');
+  assertEqual(env.field('question_text'), 'Edit <u>this</u> existing question.', 'edit selection underlined');
   assertEqual(env.raw.size, 0, 'no storage writes');
+});
+
+test('an invalid edit URL with an Add form keeps the importer', () => {
+  const env = createEnv({ search: '?edit=bad', action: 'save_question' });
+  assert(env.doc.getElementById('owner_tool'), 'Add importer is present');
+  assertEqual(env.doc.getElementById('owner_format_tool'), null, 'format-only panel is absent');
 });
 
 test('stale-parser state is refused and preserved', () => {
@@ -560,6 +631,22 @@ test('stale-parser state is refused and preserved', () => {
   assertEqual(env.field('question_text'), '', 'stale queue is not filled');
   assertEqual(env.state().parserVersion, '1.9.9', 'stored state is not rewritten');
   assertEqual(env.state().items.length, 1, 'stored items preserved');
+});
+
+test('stale-parser state cannot be re-versioned by a key paste or native submit', () => {
+  const stale = stateApi.emptyState('2.0.0', 'q-old');
+  stale.items = [{ num: 1, question: 'Old flattened stem', a: 'A', b: 'B', c: 'C', d: 'D', e: '', f: '', flags: [] }];
+  stale.answerKey = { 1: 'A' };
+  const stored = JSON.stringify(stale);
+  const env = createEnv({ storage: { [stateApi.KEY]: stored } });
+  env.paste('1.B');
+  env.click('owner_tool_load');
+  env.submit();
+  assertEqual(env.raw.get(stateApi.KEY), stored, 'stale state remains byte-for-byte unchanged');
+  assert(env.visible('owner_tool_reset'), 'Reset remains available for explicit replacement');
+  env.click('owner_tool_reset');
+  assertEqual(env.state().parserVersion, parser.version, 'Reset creates current state');
+  assertEqual(env.state().items.length, 0, 'Reset discards stale items');
 });
 
 test('corrupt state warns without crashing or deleting', () => {
@@ -628,8 +715,71 @@ test('format() restores only the exact markers', () => {
   assertEqual(textApi.format('a < b'), 'a &lt; b', 'a lone angle bracket is escaped');
   assertEqual(textApi.format('<script>alert(1)</script>'), '&lt;script&gt;alert(1)&lt;/script&gt;', 'scripts are escaped');
   assertEqual(textApi.format('<u>one <u>two</u>'), '<u>one &lt;u&gt;two</u>', 'a nested opener stays text');
+  assertEqual(textApi.format('<u>open only'), '&lt;u&gt;open only', 'an unmatched opener stays text');
+  assertEqual(textApi.format('<u>'.repeat(1000)), '&lt;u&gt;'.repeat(1000), 'many unmatched openers stay literal');
   assertEqual(textApi.strip('a <u>b</u> c'), 'a b c', 'strip removes only exact markers');
+  assertEqual(textApi.strip('a <u>open only'), 'a <u>open only', 'strip keeps an unmatched opener');
   assertEqual(textApi.strip('a &lt;u&gt; b'), 'a &lt;u&gt; b', 'strip leaves encoded markers alone');
+});
+
+test('every deployed question-text sink uses the shared renderer', () => {
+  [CBT_SOURCE, PRACTICE_SOURCE].forEach(source => {
+    assert(source.indexOf("renderQuestionText(questionArea.querySelector('.question-text'), q.question)") > -1,
+      'candidate question uses DOM renderer');
+    assert(source.indexOf('renderQuestionText(questionLabel, q.question)') > -1,
+      'result question uses DOM renderer');
+    assert(source.indexOf('${formatQuestionText(q.question)}') === -1,
+      'stored question text is not interpolated into innerHTML');
+  });
+  assert(ADMIN_SOURCE.indexOf('cbt_strip_formatting((string) $item[\'question_text\'])') > -1,
+    'admin summary strips only shared formatting markers');
+  assert(DETAIL_SOURCE.indexOf("require_once __DIR__ . '/render.php';") > -1,
+    'detail page loads the PHP renderer');
+  assert(DETAIL_SOURCE.indexOf("cbt_format_text((string) $question['question_text'])") > -1,
+    'detail page formats question text');
+  assert(DETAIL_SOURCE.indexOf("answer_h($question['answer_explanation'])") > -1,
+    'detail explanation stays plain text');
+});
+
+test('underline refuses to create nested or overlapping marker pairs', () => {
+  const env = createEnv();
+  env.type('<u>abcdef</u>');
+  env.select(5, 7);
+  env.click('owner_tool_underline');
+  assertEqual(env.field('question_text'), '<u>abcdef</u>', 'partial inner selection is unchanged');
+  assert(env.text('owner_tool_hint').indexOf('entire underlined text') > -1, 'owner receives a useful instruction');
+});
+
+test('underline retains the last non-empty selection when toolbar focus collapses it', () => {
+  const env = createEnv();
+  env.type('Edit this existing question.');
+  env.select(5, 9);
+  env.form.elements.question_text.dispatch('select');
+  env.select(0, 0);
+  env.click('owner_tool_underline');
+  assertEqual(env.field('question_text'), 'Edit <u>this</u> existing question.', 'remembered words are underlined');
+});
+
+test('programmatic fill clears a selection remembered from the prior question', () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  env.select(4, 10);
+  env.form.elements.question_text.dispatch('select');
+  env.click('owner_tool_skip');
+  const before = env.field('question_text');
+  env.click('owner_tool_underline');
+  assertEqual(env.field('question_text'), before, 'next question is unchanged');
+  assert(env.text('owner_tool_hint').indexOf('Select the words') > -1, 'empty-selection guidance shown');
+});
+
+test('underline refuses a selection that touches only part of a marker', () => {
+  const env = createEnv();
+  env.type('<u>word</u>');
+  env.select(8, 10);
+  env.click('owner_tool_underline');
+  assertEqual(env.field('question_text'), '<u>word</u>', 'partial closing marker is unchanged');
+  assert(env.text('owner_tool_hint').indexOf('entire underlined text') > -1, 'overlap guidance shown');
 });
 
 test('the preview refreshes after a programmatic fill and a native reset', async () => {
@@ -672,7 +822,7 @@ test('excluded behavior is absent from the production controller', () => {
   assert(submitAt > -1, 'the native submit listener exists');
   const submitBody = CONTROLLER_SOURCE.slice(submitAt, submitAt + 400);
   assert(submitBody.indexOf('preventDefault') === -1, 'native submit is never intercepted');
-  assertEqual((CONTROLLER_SOURCE.match(/\.preventDefault\(/g) || []).length, 1, 'the only preventDefault call is the underline shortcut');
+  assertEqual((CONTROLLER_SOURCE.match(/\.preventDefault\(/g) || []).length, 2, 'only underline keyboard and focus retention suppress defaults');
   assert(CONTROLLER_SOURCE.indexOf('is_active') === -1, 'active checkbox is never forced');
 });
 

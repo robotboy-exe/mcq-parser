@@ -163,6 +163,9 @@ and infer the subject from that header.
 `exam_year`; a header longer than 3 lines or a typo like `2O21` yields no year.
 The UI does not validate the 1900–2100 range (EC-44, EC-61; qwen-2 R14).
 
+**Year range superseded by D-66.** The same first-three-lines rule now accepts
+1900–2099; the false-positive risk remains.
+
 ## D-16 — Subject fuzzy matching, with a CRK→CRS alias
 
 **Choice.** Try the CRK/`C.R.K.`/`CHRISTIAN RELIGIOUS` alias first; otherwise
@@ -469,6 +472,8 @@ the archived bank source by SHA-256, extract each year by anchors, and write
 the supported contract. Every expected fixture declares `input_origin`
 (`bank`, `anomaly`, `doc`, or `synthetic`), and expected values are transcribed
 from sources rather than generated from parser output.
+OT01 later added `user_sample` for owner-supplied real OCR; it follows the same
+source-transcription rule.
 **Why.** A five-year paste mixes key years and makes year attribution
 ambiguous; the parser has no year-pairing model and the source contains fused
 headings. Deterministic extraction gives reproducible inputs and counts
@@ -520,6 +525,9 @@ directly above an answer heading, with only a blank line between it and the
 previous question content, could be dropped. The title must also be a
 standalone block, so ordinary option lines are not affected. Re-run the bank
 fixtures and the 2026 fixture when touching `splitSections`.
+
+**Year range extended by D-66.** The same title rule accepts 19xx and 20xx so a
+1994 answer title cannot leak into Option D.
 
 ## D-45 — Repair a missing dot on option A before dotted B–D
 
@@ -878,6 +886,39 @@ detected block only through the generic row, and that row is not tied to a
 stimulus. The native manual image path is unchanged; an existing file still
 triggers `file-attached` for auto-save. No PHP or storage-schema change.
 
+## D-66 — Exact underline markers and paragraph-preserving owner text
+
+**Choice.** Parser API 2.1.0 accepts header years 1900–2099, folds single OCR
+wraps in question stems, and retains evidenced blank-line paragraph boundaries.
+Option values remain single-line. Removing a shared stimulus preserves only
+blank lines that existed outside the removed block; it neither deletes a real
+paragraph boundary nor creates one from removed table rows.
+
+Question/context formatting uses only balanced, lowercase, exact `<u>` and
+`</u>` markers. The shared browser renderer creates text nodes plus `<u>` nodes;
+the PHP renderer escapes every segment before emitting only those tags. An
+uppercase, attributed, encoded, nested, overlapping, or unmatched marker stays
+literal text. Options and explanations remain plain. Formatting controls run on
+Add and as a storage-free formatting-only tool on Edit. Native submission and
+the four-option contract are unchanged.
+
+Changing parser output bumps the parser version rather than trusting an old
+`cbtOwnerTool:v1` queue. A stale queue cannot be rewritten as current by a
+key-only paste or native submit; only a full re-paste or explicit Reset replaces
+it. Validation errors and Show Paste preserve the administrator's native-form
+edits.
+
+**Why.** The supplied English questions require underlined words, the 1994
+passage requires pre-2000 year inference, and shared passages require readable
+paragraphs. Escaping first and allowing two exact markers provides the required
+presentation without a rich-text editor or unrestricted stored HTML.
+
+**Risk.** Direct marker editing can still produce literal malformed text, which
+is intentionally safer than repairing or interpreting it. PHP and browser
+implementations must stay aligned through the shared vector corpus. Mobile
+selection behavior and target-PHP execution remain release evidence, not facts
+inferred from the Node harness.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of
@@ -917,5 +958,6 @@ Everything previously listed here is resolved by D-14, D-18, D-22, D-24–D-28.
 
 Sources: `claude-migration.md` §8–§9, `qwen-2-reconciled.md` U02/U03/R11–R15,
 `qwen-2-gaps.md`, `archive/live-sources/admin_questions.php`,
-`archive/live-sources/subjects-select-2026-10-23.html`, and the recorded user
+`archive/live-sources/subjects-select-2026-10-23.html`,
+`archive/live-sources/answer_details-2026-11-02.php`, and the recorded user
 decisions.

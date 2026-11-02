@@ -210,6 +210,43 @@ test('parseQuestion removes the standard intro table without a marker', () => {
   eq(q.stimuli[0].text.includes('Opening stock: 22,000.00'), true);
 });
 
+test('parseQuestion preserves real paragraphs around a removed marker block', () => {
+  const q = parser.parseQuestion({
+    num: 1,
+    text: 'First paragraph has enough words.\n\n[[image: 2]]\nUse the table below to answer questions 2 and 3\nSales: 10 20 30\n\nSecond paragraph also has enough words.\nA. One\nB. Two\nC. Three\nD. Four'
+  });
+  eq(q.question, 'First paragraph has enough words.\n\nSecond paragraph also has enough words.');
+  eq(q.stimuli[0].nums, [2]);
+});
+
+test('parseQuestion does not invent a paragraph when removing an inline intro block', () => {
+  const q = parser.parseQuestion({
+    num: 1,
+    text: 'First line has enough words.\nUse the table below to answer questions 2 and 3\nSales: 10 20 30\nContinuation line has enough words.\nA. One\nB. Two\nC. Three\nD. Four'
+  });
+  eq(q.question, 'First line has enough words. Continuation line has enough words.');
+  eq(q.stimuli[0].nums, [2, 3]);
+});
+
+test('splitSections removes a 19xx answer title without extending option D', () => {
+  const parsed = parser.parsePaste([
+    'CRS 1994 JAMB',
+    '1. Which statement is correct today?',
+    'A. One',
+    'B. Two',
+    'C. Three',
+    'D. Four',
+    '',
+    'WASSCE C.R.K. 1994',
+    'OBJECTIVE ANSWERS',
+    '1.A'
+  ].join('\n'));
+  eq(parsed.header.year, '1994');
+  eq(parsed.sections.boundary, 'WASSCE C.R.K. 1994\nOBJECTIVE ANSWERS');
+  eq(parsed.items[0].d, 'Four');
+  eq(parsed.key, { 1: 'A' });
+});
+
 test('applyStimulusFlags orders stimuli and records missing targets', () => {
   const items = [
     { num: 13, stimuli: [{ sourceNum: 13, nums: [14, 16], marker: '[image]', text: '', source: 'marker' }] },

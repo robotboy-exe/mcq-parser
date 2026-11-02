@@ -3,8 +3,8 @@
 - **Status:** blocked
 - **Depends on:** OT03
 - **Blocks:** OT06, OT08, OT09
-- **External gate:** current `answer_details.php`
-- **Release:** A
+- **External gate:** target-PHP lint/renderer vectors and Brave/Android formatting smoke
+- **Release:** A implementation
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal
@@ -26,23 +26,28 @@ without introducing a rich-text editor or the deferred math palette.
 
 ## Work
 
-1. Add source-backed failing fixtures for underline preservation, paragraph
-   cleanup, 1994 inference, and uppercase `A)` regression.
+1. Retain the source-backed underline and uppercase `A)` regressions; add failing
+   fixtures for paragraph cleanup and 1994 inference.
 2. Add a block-text cleaner that preserves paragraph boundaries after option
-   positions are found; leave option cleaning single-line.
-3. Add the minimal underline button, selection retention, keyboard shortcut,
-   and preview to the readable owner-tool assets.
+   positions are found and after stimulus removal; leave option cleaning
+   single-line.
+3. Add the minimal underline button, retained selection, keyboard shortcut,
+   undo-safe edit, and preview to Add and formatting-only Edit paths.
 4. Dispatch preview updates after programmatic owner-tool fills and native form
-   resets.
+   resets; preserve server-rendered edits after validation errors and Show Paste.
 5. Add one shared client renderer for candidate question/context text using DOM
    text nodes and exact underline markers.
 6. Add a matching safe PHP renderer for server-rendered detail output where
    needed; do not use permissive `strip_tags`.
 7. Apply rendering and `white-space: pre-wrap` to both CBT pages, result review,
    print output, and `answer_details.php`.
-8. Strip only exact underline markers from admin list summaries.
-9. Audit XSS, malformed-tag, encoded-tag, Unicode, mobile selection, and undo
-   behavior.
+8. Archive the supplied detail source unchanged and keep options/explanations
+   plain in its deployed working copy.
+9. Strip only balanced exact underline markers from admin list summaries.
+10. Bump the parser version and ensure stale owner-tool state cannot be rewritten
+    as current without a full re-paste or explicit Reset.
+11. Audit XSS, malformed-tag, encoded-tag, Unicode, mobile selection, undo,
+    validation-error, and ambiguous-PRG behavior.
 
 ## Acceptance
 
@@ -50,6 +55,8 @@ without introducing a rich-text editor or the deferred math palette.
 |---|---|
 | Underline button/shortcut | Selected text is wrapped with exact `<u>` tags |
 | Empty selection | Predictable caret placement; no malformed hidden markup |
+| Add/Edit | Add gets the importer plus formatting; Edit gets formatting only and mutates no queue state |
+| Undo/selection | Desktop undo is one step; toolbar focus retains the selected words |
 | Preview | Typing, owner-tool fill, form reset, and edits update safely |
 | Manual newlines | Stored and rendered exactly |
 | OCR paragraphs | Single wraps fold; blank-line paragraphs remain |
@@ -57,7 +64,11 @@ without introducing a rich-text editor or the deferred math palette.
 | Candidate pages | Both CBT paths render underline and paragraphs |
 | Result/detail/print | Same safe rendering rules; no literal supported tags |
 | XSS probes | Scripts, attributes, other tags, and encoded tags render as text |
+| Malformed markers | Unmatched, uppercase, attributed, nested, and overlapping markers remain safe/literal |
 | Options/explanations | Remain plain text |
+| State transition | Parser 2.0 state remains untouched until full re-paste or explicit Reset |
+| PRG preservation | Validation errors keep posted edits; ambiguous reload is never mistaken for rejection |
+| PHP renderer | Target PHP lints every changed file and passes the shared vector script |
 | Math palette | Absent and explicitly deferred |
 | Browser | Desktop Chromium and Brave/Android formatting smoke recorded |
 
@@ -66,6 +77,9 @@ without introducing a rich-text editor or the deferred math palette.
 - Never render stored question/context text as unrestricted `innerHTML`.
 - Do not support arbitrary HTML, attributes, Markdown, or WYSIWYG content.
 - Do not apply paragraph-preserving cleanup to option values.
+- Do not interpolate stored question text into candidate `innerHTML`.
+- Do not rewrite stale owner-tool state merely because the page loaded or a key
+  was pasted.
 - Do not bundle the P24 math palette.
 - Do not start OT05.
 
@@ -76,7 +90,8 @@ Date:
 Result:
 Formatting syntax/security rule:
 Parser fixtures and tests:
-Candidate/detail outputs audited:
+Candidate/result/detail/print outputs audited:
+PHP renderer evidence:
 Desktop/mobile evidence:
 Files changed:
 Hashes:
@@ -84,4 +99,78 @@ Open questions:
 Review: pending rigorous Release A review
 Commit: deferred
 Next: OT05 blocked/not started
+```
+
+## Rescope history
+
+On 2026-11-01 the owner moved unavailable `answer_details.php` integration from
+the OT04 start/completion gate to OT10. That allowed the source-backed work to
+start without inventing a replacement page.
+
+On 2026-11-02 the source arrived before OT04 handoff. Its supplied bytes are
+archived at `archive/live-sources/answer_details-2026-11-02.php`; OT04 now owns
+the shared-renderer integration, while OT10 retains independent Release A
+verification rather than first-time integration.
+
+## Handoff
+
+```text
+Date: 2026-11-02
+Result: BLOCKED only on target-PHP and Brave/Android acceptance evidence
+Formatting syntax/security rule:
+  - Only balanced lowercase <u>...</u> pairs format text.
+  - Every other tag, attribute, encoded marker, unmatched marker, or nested
+    opener remains escaped/literal; options and explanations remain plain.
+Parser/state evidence:
+  - Parser API 2.1.0; 1900-2099 applies to header and answer-title consumers.
+  - Stem paragraphs survive stimulus removal; options remain single-line.
+  - Stale parser state cannot be re-versioned by key-only paste or native submit.
+Parser fixtures and tests:
+  - node tests/runner.js -> 49 fixtures: 47 PASS, 0 FAIL, 2 PENDING
+  - node tests/unit.js -> 143 PASS, 0 FAIL
+  - node tests/owner-tool.js -> 33 PASS, 0 FAIL
+  - node tools/extract-bank.js --check -> 7 slices OK
+  - node --check on changed JS/test files -> PASS
+  - git diff --check -> PASS
+Candidate/detail outputs audited:
+  - Both CBT pages and result/print paths use the shared DOM renderer.
+  - The supplied detail page uses the shared PHP renderer for question text.
+  - Admin summaries strip only supported balanced markers before truncation.
+Desktop/mobile evidence:
+  - Headless Chromium 152.0.7977.82 local harness: underline, one-step undo,
+    retained selection, Edit formatting-only mode, XSS vectors, ambiguous PRG,
+    and validation-error preservation PASS; no console warning/error except the
+    harness favicon request.
+  - Brave/Android staging smoke: PENDING.
+PHP renderer evidence:
+  - tests/php-render.php contains 9 parity/security vectors.
+  - Target PHP lint and execution: PENDING (PHP is unavailable in this workspace).
+Files changed:
+  - src/parser/core.js
+  - src/owner-tool/controller.js, render.js, style.css
+  - deployed/admin_questions.php, cbt.php, cbt_practice.php, render.php,
+    answer_details.php
+  - archive/live-sources/answer_details-2026-11-02.php
+  - fixtures/inputs + fixtures/expected for format-paragraph-stem and
+    header-year-1994
+  - tests/unit.js, tests/owner-tool.js, tests/php-render.php
+  - AGENTS.md, README.md, docs/AGENTS.md, docs/DECISIONS.md,
+    docs/EDGE_CASES.md, docs/INVARIANTS.md, docs/SPEC.md, docs/STATUS.md
+  - docs/plan/README.md, history.md, prompts/phase-map.md, OT03, OT04, OT10
+Key hashes:
+  - src/parser/core.js e12ce8eaf82eef40e25b83a3050ac9c502f381deef1cc2b53266442f86ff1df9
+  - src/owner-tool/controller.js 100939e72657434e136ddadaf2b812ba94f21520dcb815ccfc38c70c64791ba7
+  - src/owner-tool/render.js 567c51eef91828de5e964dd951b6055285be0199778c23024809e925efcf87cb
+  - deployed/render.php 205af86993d8bf2adcbcd262476e64fcc90fe9a2b3fd379cba9488c1d1450d2f
+  - deployed/answer_details.php b796fc097c0b6651590116e37d38c1d5c0632073f351a696fc40a7c8932d955c
+  - archived supplied answer_details.php 680cfd697ba61b3c21e07c0f9e2cb4d6780ea2100ceae8e78fd4e492aa7368bf
+  - tests/owner-tool.js 53694310bcd9c4a51b7c6ae2b47aea57ca831309069303df5faa7ab97c6349e0
+  - tests/php-render.php 78f6074e01745ded3ce6fa58e3ec605fbae36d965ce3aaf27f57050eb55c8494
+Open questions:
+  - Confirm the target web runtime is PHP 8.3 despite phpMyAdmin's PHP 8.4.27
+    export header, then run the pending PHP commands.
+  - Record the Brave/Android staging smoke before rigorous review.
+Review: fix session complete; rigorous Release A review waits for the two external checks
+Commit: deferred
+Next: OT04 remains blocked; do not start OT05
 ```

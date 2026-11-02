@@ -15,25 +15,35 @@ function cbt_text_segments(string $text): array
     $underlined = false;
     $length = strlen($text);
     $i = 0;
+    $remainingCloses = substr_count($text, $close);
 
     // Byte-wise scanning is safe here: the marker bytes are ASCII and never
     // appear inside a multi-byte UTF-8 sequence.
     while ($i < $length) {
-        if (!$underlined && substr($text, $i, strlen($open)) === $open) {
-            if ($buffer !== '') {
-                $parts[] = ['text' => $buffer, 'underline' => false];
-                $buffer = '';
+        if (substr($text, $i, strlen($open)) === $open) {
+            if (!$underlined && $remainingCloses > 0) {
+                if ($buffer !== '') {
+                    $parts[] = ['text' => $buffer, 'underline' => false];
+                    $buffer = '';
+                }
+                $underlined = true;
+            } else {
+                $buffer .= $open;
             }
-            $underlined = true;
             $i += strlen($open);
             continue;
         }
-        if ($underlined && substr($text, $i, strlen($close)) === $close) {
-            if ($buffer !== '') {
-                $parts[] = ['text' => $buffer, 'underline' => true];
-                $buffer = '';
+        if (substr($text, $i, strlen($close)) === $close) {
+            if ($underlined) {
+                if ($buffer !== '') {
+                    $parts[] = ['text' => $buffer, 'underline' => true];
+                    $buffer = '';
+                }
+                $underlined = false;
+            } else {
+                $buffer .= $close;
             }
-            $underlined = false;
+            $remainingCloses--;
             $i += strlen($close);
             continue;
         }

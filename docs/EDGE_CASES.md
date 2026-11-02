@@ -77,10 +77,10 @@ current question.
 | ID | Short name | Trigger | Expected behavior | Status | Source |
 |---|---|---|---|---|---|
 | EC-41 | CRK / CRS alias | Header contains CRK or CRS variants, including `CHRISTIAN RELIGIOUS STUDIES` | Select CRS / CHRISTIAN RELIGIOUS subject; the current live list contains `CRS` (id 14), so the alias selects it | CONFIRMED | qwen-2-reconciled E15; user request 2026-10-24; `archive/live-sources/subjects-select-2026-10-23.html`; harness uses that list |
-| EC-42 | Year in header | First `20\d\d` in first 3 lines | Written to `exam_year` | CONFIRMED | qwen-2-reconciled E16 |
+| EC-42 | Year in header | First `19\d\d` or `20\d\d` in first 3 lines | Written to `exam_year` for 1900–2099 | CONFIRMED | D-66; fixture `header-year-1994`; qwen-2-reconciled E16 |
 | EC-43 | Fuzzy subject name | No alias match | Containment / word-overlap scoring | UNVERIFIED | qwen-2-reconciled E17 |
-| EC-44 | Year typo/missing year | `2O21` (letter O) or no `20\d\d` match | No year written; server rejects if `exam_year` is empty/out of 1900–2100; flag/UI does not validate range | CONFIRMED | qwen-2-gaps; `admin_questions.php` range check |
-| EC-61 | Header year false positive | Header contains an earlier `20\d\d` such as a copyright/reference year | First `20\d\d` wins and is written to `exam_year`; no check that it is the exam year | CONFIRMED | qwen-2-reconciled R14 |
+| EC-44 | Year typo/missing year | `2O21` (letter O) or no `19\d\d`/`20\d\d` match | No year written; server rejects if `exam_year` is empty/out of 1900–2100; flag/UI does not validate range | CONFIRMED | qwen-2-gaps; `admin_questions.php` range check |
+| EC-61 | Header year false positive | Header contains an earlier 1900–2099 copyright/reference year | First matching year wins and is written to `exam_year`; no check that it is the exam year | CONFIRMED | D-66; qwen-2-reconciled R14 |
 | EC-84 | Period-separated exam acronym | Header uses `S.S.C.E.`, `W.A.S.S.C.E.`, `W.A.E.C.`, `N.E.C.O.`, `G.C.E.`, `J.A.M.B.`, `U.T.M.E.`, or `P.O.S.T. U.T.M.E.` | A local header copy is compacted before category matching; the period forms select the same live option as the bare form (`WASCE / NECO / GCE`, `JAMB / UTME`, or `POST UTME`). The header text and subject inference are unchanged | CONFIRMED | D-54; user request 2026-10-27; `fixtures/inputs/header-crs-ssce-periods.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-27 |
 
 Note: EC-61 was present in the raw phase-3 notes (qwen-2 R14) and was added to
@@ -103,6 +103,10 @@ this table during review.
 | EC-62 | Old-format queue after update | `ocrQueue` written by an older variant | Shape is shared, but old items may lack `e`/`f` or contain old misparses; no version marker exists. A queue without `batchId` still loads and fills the form, but auto-save blocks with `This queue has no batch identity`; manual use remains possible. Reset and re-paste after updating until a migration/version check exists | CONFIRMED | `archive/migration-docs/claude-gaps.md` item 6; live V3 2026-10-25 |
 | EC-82 | Active is the default | A new paste loads a batch | `Save as active` and the single batch confirmation start ticked; Start is enabled when the rest of the gate is clean. A metadata, key, or mode change clears only the confirmation and keeps the active choice. New paste or Reset restores both defaults | CONFIRMED | D-51; INV-71; browser check 2026-10-26 |
 | EC-83 | Compact status and progress | Auto-save, dry run, or a saved batch | Status is one line, dry run prints one summary instead of one line per question, a progress bar shows the position, and the green saved box shows only the saved-range summary; details remain behind Copy saved list. Start is visibly dimmed when disabled | CONFIRMED | D-52; INV-84; browser check 2026-10-26 |
+| EC-90 | Stale owner parser state | `cbtOwnerTool:v1` was parsed by another parser version | State is warned and remains byte-identical; key-only paste/native submit cannot re-version it; full paste or explicit Reset is required | CONFIRMED | D-66; `tests/owner-tool.js` |
+| EC-91 | Native validation failure | Administrator edited stem formatting, paragraphs, options, or answer before a rejected save | Server-rendered posted values and preview remain; original queue text does not overwrite them | CONFIRMED | D-66; `tests/owner-tool.js`; desktop Chromium harness |
+| EC-92 | Edit-page formatting | URL/action is Edit Question | Importer remains absent, formatting/preview works, and owner state is not written | CONFIRMED | D-66; `tests/owner-tool.js`; desktop Chromium harness |
+| EC-93 | Overlapping/malformed underline | Selection overlaps an existing pair, or text contains uppercase/attributed/encoded/unmatched markers | Toolbar refuses overlap; unsupported markers remain literal and cannot create stored XSS | CONFIRMED | D-66; `tests/owner-tool.js` |
 
 ## F. Saving and server
 
@@ -137,7 +141,7 @@ this table during review.
 | EC-73 | Unnumbered bullet OCR | Questions use `*` bullets and no line-start `N.` marker exists | Bullet mode splits 19 items; each keeps `num: null`, gets `question number missing`, and the UI shows the flag; no number is invented | CONFIRMED | P08; `fixtures/inputs/anomaly-block1.txt`; `tests/runner.js` 2026-10-25; `tests/unit.js` |
 | EC-74 | Fused question boundaries | A question number or option label is fused into surrounding OCR text | Guarded salvage repairs only boundary shapes when it adds at least 2 inserts and more question chunks; the repaired block yields 12 items with numbers `[null,2,3,4,7,8,9,12,13,14,15,16]` and 50 inserts, all flagged `OCR boundaries repaired; verify question and option split`; the strict result is kept otherwise | CONFIRMED | P07; `fixtures/inputs/anomaly-block2.txt`; `tests/runner.js` 2026-10-25; `tests/unit.js` |
 | EC-75 | Multi-year bank paste | Two or more exam years are pasted as one block | Unsupported: one year per paste is the contract, because keys are matched to the current paste and cross-year text can merge or attach a key to the wrong year. Split with `node tools/extract-bank.js` into `bank-YYYY.txt`; the extractor verifies the source hash, anchors, counts, and output hashes | CONFIRMED | P02; SPEC §2; `tools/extract-bank.js --check` 2026-10-25 |
-| EC-76 | Two-line answer heading | A title line such as `WASSCE C. R. K. 2026` sits directly above the pure heading `OBJECTIVE ANSWERS` | The title block is dropped from the question part and kept in `boundary` metadata. Q48 parses as `care for one another / desire the word of God / live a godly life / pray and fast more often` with no duplicate-letter flag; the key still has 48 entries | CONFIRMED | D-44; new bank source 2026-10-26; `fixtures/inputs/bank-2026.txt`; `tests/runner.js` 2026-10-26 |
+| EC-76 | Two-line answer heading | A 1900–2099 title such as `WASSCE C. R. K. 1994` or `2026` sits directly above the pure heading `OBJECTIVE ANSWERS` | The title block is dropped from the question part and kept in `boundary` metadata; it never extends the final option | CONFIRMED | D-44, D-66; `fixtures/inputs/bank-2026.txt`; `tests/runner.js`; `tests/unit.js` |
 | EC-77 | Dotless `A` before dotted B–D | The unheaded single-question section has `A stay with them` with no dot, followed by `B.`, `C.`, and `D.` | The line is parsed as option A; the stem ends at `... begged Jesus to`. Leading articles such as `A 5 ...` and `A good ...` are not affected because the repair is not used at the start of the chunk | CONFIRMED | D-45; new bank source 2026-10-26; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
 | EC-78 | Divider-only section line | A paste includes its surrounding `========` separators, including a trailing one | The dividers are blanked before slicing; Q29's D is `heal their sick.` with no `========`. The unheaded section stays separate from 2025 and 2026; multi-section paste is still unsupported | CONFIRMED | D-46; `fixtures/inputs/bank-pre-2026.txt`; `tests/runner.js` 2026-10-26 |
 | EC-79 | Dotless B or C between dotted options | Q2 has `C spoke to him.` without a dot, between dotted B and D | The line is parsed as option C; B is not extended and no `option C missing` or duplicate-letter flag is raised, so Auto-Save is not blocked by this question | CONFIRMED | D-47; new edge cases 2020 Q2; `fixtures/inputs/new-edge-dotless-c.txt`; `tests/runner.js` 2026-10-26 |
@@ -148,6 +152,7 @@ this table during review.
 | EC-87 | Shared table between questions | A table follows Q13 with `Use the information below to answer questions 14 and 15` | The intro and table are removed from Q13; Q13.D is `leads to a reduction in price`; Q14/Q15 get `needsImage`; one stimulus has `nums: [14,15]`; the key is unchanged | CONFIRMED | D-59; `fixtures/inputs/new-edge-shared-stimulus.txt`; `tests/runner.js` 2026-10-28 |
 | EC-88 | Marker placement fallback | `[image]`/`[[image]]` appears before, after, inside, alone, inline, or far from a table | A standalone marker uses an adjacent block first, then the nearest block in the same question chunk forward/backward; an inline marker removes only itself. The eight-question fixture yields 8 stimuli, `needsImage` `[2,3,4,6,7,8]`, and Q8 keeps `Some explanatory paragraph that stays.` | CONFIRMED | D-59; `fixtures/inputs/stimulus-marker-placements.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-28 |
 | EC-89 | Image plan gate | A detected block has no file/range, a range names a number outside the paste, or a `needsImage` question is not covered | Auto-save blocks with `stimulus-unassigned`, `stimulus-range`, or `image-required`; a generic row cannot satisfy a detected block; a ready covering row clears the gate | CONFIRMED | D-60; `tests/unit.js` 2026-10-28 |
+| EC-94 | Paragraph next to removed stimulus | A real blank-line paragraph surrounds a marker/table, or an inline table has no blank boundary | Real boundary remains; removing an inline block does not invent a paragraph | CONFIRMED | D-66; `tests/unit.js` |
 
 Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
 
@@ -192,10 +197,13 @@ closed by the archived PHP/HTML sources:
   a boundary-less second A–D set.
 - EC-87, EC-88, and EC-89 are CONFIRMED by the P13 fixtures and unit checks for
   the shared table, marker fallback, and image-plan gate.
+- EC-90 through EC-94 are CONFIRMED by the OT04 parser/owner-tool regressions
+  and desktop Chromium harness; target PHP and Brave/Android remain release
+  acceptance gaps tracked as invariants rather than unknown edge behavior.
 
 ## Counts
 
-- Total: 89
-- CONFIRMED: 85
+- Total: 94
+- CONFIRMED: 90
 - UNVERIFIED: 4
 - CONFLICTED: 0

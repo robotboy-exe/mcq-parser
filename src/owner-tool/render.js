@@ -28,6 +28,12 @@
     var buffer = '';
     var open = false;
     var i = 0;
+    var remainingCloses = 0;
+    var scan = 0;
+    while ((scan = source.indexOf(CLOSE, scan)) !== -1) {
+      remainingCloses++;
+      scan += CLOSE.length;
+    }
 
     function flush() {
       if (!buffer) return;
@@ -36,15 +42,24 @@
     }
 
     while (i < source.length) {
-      if (!open && source.slice(i, i + OPEN.length) === OPEN) {
-        flush();
-        open = true;
+      if (source.slice(i, i + OPEN.length) === OPEN) {
+        if (!open && remainingCloses > 0) {
+          flush();
+          open = true;
+        } else {
+          buffer += OPEN;
+        }
         i += OPEN.length;
         continue;
       }
-      if (open && source.slice(i, i + CLOSE.length) === CLOSE) {
-        flush();
-        open = false;
+      if (source.slice(i, i + CLOSE.length) === CLOSE) {
+        if (open) {
+          flush();
+          open = false;
+        } else {
+          buffer += CLOSE;
+        }
+        remainingCloses--;
         i += CLOSE.length;
         continue;
       }

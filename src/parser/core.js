@@ -52,7 +52,7 @@ function pickSubjectIndex(header, optionTexts) {
   }
   if (!subjectSet) {
     const subjectStr = header
-      .replace(/\b(20\d{2})\b/g, '')
+      .replace(/\b((?:19|20)\d{2})\b/g, '')
       .replace(/\b(THE|AND|FOR|ANSWERS|QUESTIONS|STRUCTURED|IMPROVISED|PAPER|OBJECTIVE|SECTION|OF|IN|A)\b/g, '')
       .replace(/[^\w\s]/g, ' ')
       .replace(/\s+/g, ' ')
@@ -324,6 +324,14 @@ function stimulusRun(lines, index) {
   return { start, end };
 }
 
+function trimStimulusRun(lines, run) {
+  let start = run.start;
+  let end = run.end;
+  while (start <= end && !lines[start].trim()) start++;
+  while (end >= start && !lines[end].trim()) end--;
+  return { start, end };
+}
+
 function stimulusEvidence(lines, start, end) {
   let intro = 0;
   let strong = 0;
@@ -354,7 +362,7 @@ function nearestStimulusBlock(lines, markerLine) {
   while (i < lines.length && !stimulusStructuralLine(lines[i])) {
     if (stimulusBlockLine(lines[i])) {
       const run = stimulusRun(lines, i);
-      if (validStimulusBlock(lines, run.start, run.end)) return run;
+      if (validStimulusBlock(lines, run.start, run.end)) return trimStimulusRun(lines, run);
       i = run.end + 1;
     } else {
       i++;
@@ -364,7 +372,7 @@ function nearestStimulusBlock(lines, markerLine) {
   while (i >= 0 && !stimulusStructuralLine(lines[i])) {
     if (stimulusBlockLine(lines[i])) {
       const run = stimulusRun(lines, i);
-      if (validStimulusBlock(lines, run.start, run.end)) return run;
+      if (validStimulusBlock(lines, run.start, run.end)) return trimStimulusRun(lines, run);
       i = run.start - 1;
     } else {
       i--;
@@ -428,7 +436,9 @@ function extractStimulusMarkers(raw, num) {
   for (const mk of markers) {
     if (mk.inline) continue;
     const run = stimulusRun(lines, mk.line);
-    mk.block = validStimulusBlock(lines, run.start, run.end) ? run : nearestStimulusBlock(lines, mk.line);
+    mk.block = validStimulusBlock(lines, run.start, run.end)
+      ? trimStimulusRun(lines, run)
+      : nearestStimulusBlock(lines, mk.line);
   }
   const removed = new Set();
   for (const mk of markers) {
@@ -477,19 +487,20 @@ function extractStimulusIntros(raw, num) {
     const run = stimulusRun(lines, i);
     const evidence = stimulusEvidence(lines, run.start, run.end);
     if (!validStimulusBlock(lines, run.start, run.end) || !evidence.table) continue;
-    for (let j = run.start; j <= run.end; j++) removed.add(j);
+    const content = trimStimulusRun(lines, run);
+    for (let j = content.start; j <= content.end; j++) removed.add(j);
     stimuli.push({
       at: i,
       sourceNum: num,
       nums: parseStimulusRange(lines[i]),
       marker: lines[i].trim(),
-      text: lines.slice(run.start, run.end + 1).join('\n').trim(),
+      text: lines.slice(content.start, content.end + 1).join('\n').trim(),
       source: 'intro'
     });
   }
   if (!removed.size) return { text: raw, stimuli: [] };
   return {
-    text: lines.map((line, i) => removed.has(i) ? '' : line).join('\n'),
+    text: lines.filter((line, i) => !removed.has(i)).join('\n'),
     stimuli
   };
 }
@@ -638,7 +649,7 @@ function sectionTitleLine(t) {
   if (/^\s*\d{1,3}\s*[.)]\s/.test(h)) return false;
   if (/^\s*[A-F]\s*[.)]\s/i.test(h)) return false;
   if (/\?/.test(h)) return false;
-  if (!/\b20\d{2}\b/.test(h)) return false;
+  if (!/\b(?:19|20)\d{2}\b/.test(h)) return false;
   return /\b(?:WASSCE|WASCE|WAEC|SSCE|NECO|GCE|JAMB|UTME|POST\s*UTME|STRUCTURED|IMPROVISED|OBJECTIVE|QUESTIONS?|ANSWERS?|PAPER|SECTION|C\s*\.?\s*R\s*\.?\s*[SK]|CHRISTIAN\s+RELIGIOUS)\b/i.test(h);
 }
 

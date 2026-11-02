@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var TOOL_VERSION = '1.0.0';
+  var TOOL_VERSION = '1.1.0';
   var SUCCESS_FLASH = /^Question saved successfully \(Question ID: \d+\)\.$/;
   var META_FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   var OPTION_FIELDS = ['option_a', 'option_b', 'option_c', 'option_d'];
@@ -16,10 +16,12 @@
     return;
   }
 
-  var actionInput = document.querySelector('input[name=action][value=save_question]');
+  var saveAction = document.querySelector('input[name=action][value=save_question]');
+  var updateAction = document.querySelector('input[name=action][value=update_question]');
+  var actionInput = saveAction || updateAction;
   var form = actionInput && actionInput.form;
   if (!form) return;
-  if (location.search.indexOf('edit=') !== -1) return;
+  var editMode = Boolean(updateAction);
 
   var storage = window.localStorage;
   var parserVersion = String(parser.version || '');
@@ -27,12 +29,14 @@
   var loaded = decision.state || stateApi.emptyState(parserVersion, stateApi.makeQueueId());
   var blocked = decision.status !== 'ok' && decision.status !== 'empty';
   var pasteVisible = false;
+  var savedSelection = null;
 
   function $(id) {
     return document.getElementById(id);
   }
 
   function persist() {
+    if (blocked) return false;
     loaded.parserVersion = parserVersion;
     loaded.version = stateApi.STATE_VERSION;
     var written = stateApi.writeState(storage, loaded);
@@ -147,12 +151,70 @@
     textApi.render(preview, String(box.value || ''));
   }
 
+  function rememberSelection() {
+    var box = $('question_text');
+    if (!box || typeof box.selectionStart !== 'number' || typeof box.selectionEnd !== 'number') return;
+    savedSelection = { start: box.selectionStart, end: box.selectionEnd };
+  }
+
+  function rememberSelectionForToolbar() {
+    var box = $('question_text');
+    if (!box || typeof box.selectionStart !== 'number' || typeof box.selectionEnd !== 'number') return;
+    if (box.selectionEnd > box.selectionStart || !savedSelection || savedSelection.end <= savedSelection.start) {
+      savedSelection = { start: box.selectionStart, end: box.selectionEnd };
+    }
+  }
+
+  function replaceRange(box, start, end, replacement, selectionStart, selectionEnd) {
+    if (typeof box.focus === 'function') box.focus();
+    if (typeof box.setSelectionRange === 'function') box.setSelectionRange(start, end);
+    var doc = box.ownerDocument || (typeof document !== 'undefined' ? document : null);
+    var nativeEdit = false;
+    if (doc && typeof doc.execCommand === 'function') {
+      try {
+        nativeEdit = doc.execCommand('insertText', false, replacement) === true;
+      } catch (error) {
+        nativeEdit = false;
+      }
+    }
+    if (!nativeEdit) {
+      if (typeof box.setRangeText === 'function') {
+        box.setRangeText(replacement, start, end, 'end');
+      } else {
+        box.value = String(box.value || '').slice(0, start) + replacement + String(box.value || '').slice(end);
+      }
+      if (typeof box.dispatchEvent === 'function' && typeof Event === 'function') {
+        box.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+    if (typeof box.setSelectionRange === 'function') box.setSelectionRange(selectionStart, selectionEnd);
+    savedSelection = { start: selectionStart, end: selectionEnd };
+    updatePreview();
+  }
+
+  function selectionTouchesMarker(value, start, end) {
+    var markers = ['<u>', '</u>'];
+    for (var m = 0; m < markers.length; m++) {
+      var marker = markers[m];
+      var at = value.indexOf(marker);
+      while (at !== -1) {
+        if (start < at + marker.length && end > at) return true;
+        at = value.indexOf(marker, at + marker.length);
+      }
+    }
+    return false;
+  }
+
   function wrapUnderline() {
     var box = $('question_text');
     if (!box) return false;
     var value = String(box.value || '');
     var start = typeof box.selectionStart === 'number' ? box.selectionStart : 0;
     var end = typeof box.selectionEnd === 'number' ? box.selectionEnd : start;
+    if (start === end && savedSelection && savedSelection.end > savedSelection.start) {
+      start = savedSelection.start;
+      end = savedSelection.end;
+    }
     if (start === end) {
       hint('Select the words to underline first, then press Ctrl+U.');
       if (typeof box.focus === 'function') box.focus();
@@ -161,27 +223,32 @@
     var selected = value.slice(start, end);
     var already = value.slice(Math.max(0, start - 3), start) === '<u>'
       && value.slice(end, end + 4) === '</u>';
-    var next;
-    var from;
+    var openBefore = value.lastIndexOf('<u>', start);
+    var closeBefore = value.lastIndexOf('</u>', start);
+    if (!already && (openBefore > closeBefore || selectionTouchesMarker(value, start, end))) {
+      hint('Select the entire underlined text to remove it; overlapping underline markers are not allowed.');
+      if (typeof box.focus === 'function') box.focus();
+      return false;
+    }
     if (already) {
-      next = value.slice(0, start - 3) + selected + value.slice(end + 4);
-      from = start - 3;
+      replaceRange(box, start - 3, end + 4, selected, start - 3, start - 3 + selected.length);
       hint('Underline removed.');
     } else {
-      next = value.slice(0, start) + '<u>' + selected + '</u>' + value.slice(end);
-      from = start + 3;
+      replaceRange(box, start, end, '<u>' + selected + '</u>', start + 3, end + 3);
       hint('Underlined. Press Ctrl+U on it again to remove the underline.');
     }
-    box.value = next;
-    if (typeof box.setSelectionRange === 'function') box.setSelectionRange(from, from + selected.length);
     if (typeof box.focus === 'function') box.focus();
-    updatePreview();
     return true;
   }
 
   function fillForm(item) {
     applyMetadata();
-    $('question_text').value = item.question || '';
+    var questionBox = $('question_text');
+    questionBox.value = item.question || '';
+    savedSelection = null;
+    if (typeof questionBox.setSelectionRange === 'function') {
+      questionBox.setSelectionRange(questionBox.value.length, questionBox.value.length);
+    }
     var options = resolvedOptions(item, loaded.answerKey[String(item.num)]);
     $('option_a').value = options.a;
     $('option_b').value = options.b;
@@ -222,35 +289,36 @@
       loaded.pendingSubmission = null;
       persist();
       note('Question ' + savedNum + ' saved. The next question is loaded.');
-      return;
+      return 'success';
     }
     if (errorEl) {
       loaded.pendingSubmission = null;
       persist();
       warn('The server rejected that save. The same question is still loaded; fix it and save again.');
-      return;
+      return 'error';
     }
     var pendingNum = item && item.num !== null && item.num !== undefined ? item.num : '?';
     loaded.pendingSubmission = null;
     persist();
     warn('Could not confirm whether question ' + pendingNum
       + ' saved. Check Recently Added Questions before saving again. Nothing was retried or advanced.');
+    return 'ambiguous';
   }
 
   var panel = document.createElement('div');
-  panel.className = 'admin-field owner-tool';
-  panel.id = 'owner_tool';
+  panel.className = 'admin-field owner-tool' + (editMode ? ' owner-tool-format-only' : '');
+  panel.id = editMode ? 'owner_format_tool' : 'owner_tool';
   panel.innerHTML = ''
-    + '<div class="owner-tool-head"><strong>Owner tool</strong>'
-    + '<span>Paste one block: questions, contexts, and the answer key.</span></div>'
-    + '<div id="owner_tool_input">'
-    + '<label for="owner_tool_text">OCR paste</label>'
-    + '<textarea id="owner_tool_text" rows="8"></textarea>'
-    + '<button type="button" class="admin-btn" id="owner_tool_load">Load</button>'
-    + '</div>'
-    + '<div id="owner_tool_status" class="admin-note"></div>'
-    + '<div id="owner_tool_flags" class="owner-tool-flags"></div>'
-    + '<div id="owner_tool_warning" class="admin-alert admin-error" hidden></div>'
+    + '<div class="owner-tool-head"><strong>' + (editMode ? 'Question formatting' : 'Owner tool') + '</strong>'
+    + '<span>' + (editMode ? 'Underline selected question text and review the candidate preview.' : 'Paste one block: questions, contexts, and the answer key.') + '</span></div>'
+    + (editMode ? '' : '<div id="owner_tool_input">'
+      + '<label for="owner_tool_text">OCR paste</label>'
+      + '<textarea id="owner_tool_text" rows="8"></textarea>'
+      + '<button type="button" class="admin-btn" id="owner_tool_load">Load</button>'
+      + '</div>'
+      + '<div id="owner_tool_status" class="admin-note"></div>'
+      + '<div id="owner_tool_flags" class="owner-tool-flags"></div>'
+      + '<div id="owner_tool_warning" class="admin-alert owner-tool-error" hidden></div>')
     + '<div class="owner-tool-format">'
     + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_underline" title="Underline the selected text (Ctrl+U)">Underline</button>'
     + '<span id="owner_tool_hint" class="owner-tool-hint"></span>'
@@ -259,11 +327,11 @@
     + '<span class="owner-tool-hint">Preview (options stay plain):</span>'
     + '<div id="owner_tool_preview" class="owner-tool-preview"></div>'
     + '</div>'
-    + '<div class="owner-tool-actions">'
-    + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_show">Show Paste</button>'
-    + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_skip">Skip</button>'
-    + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_reset">Reset</button>'
-    + '</div>';
+    + (editMode ? '' : '<div class="owner-tool-actions">'
+      + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_show">Show Paste</button>'
+      + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_skip">Skip</button>'
+      + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_reset">Reset</button>'
+      + '</div>');
   form.before(panel);
 
   function showPaste(show) {
@@ -280,7 +348,7 @@
     var skipButton = $('owner_tool_skip');
     if (skipButton) skipButton.hidden = !item;
     var resetButton = $('owner_tool_reset');
-    if (resetButton) resetButton.hidden = !total;
+    if (resetButton) resetButton.hidden = !(total || blocked);
     var showButton = $('owner_tool_show');
     if (showButton) showButton.hidden = !item;
 
@@ -332,6 +400,10 @@
     var key = parsed.key || {};
     var items = parsed.items || [];
     if (keyOnly) {
+      if (blocked) {
+        warn('Saved state cannot accept a replacement key. Paste the full block again, or press Reset first.');
+        return;
+      }
       if (!Object.keys(key).length) {
         warn('No answer key found in that paste. The queue was not changed.');
         return;
@@ -373,11 +445,16 @@
   }
 
   function reset() {
-    loaded.items = [];
-    loaded.currentIndex = 0;
-    loaded.pendingSubmission = null;
-    loaded.queueId = stateApi.makeQueueId();
+    if (blocked) {
+      loaded = stateApi.emptyState(parserVersion, stateApi.makeQueueId());
+    } else {
+      loaded.items = [];
+      loaded.currentIndex = 0;
+      loaded.pendingSubmission = null;
+      loaded.queueId = stateApi.makeQueueId();
+    }
     blocked = false;
+    savedSelection = null;
     persist();
     warn('');
     render();
@@ -387,8 +464,12 @@
   if (questionBox) {
     questionBox.addEventListener('input', function () {
       updatePreview();
+      rememberSelection();
       hint('');
     });
+    questionBox.addEventListener('select', rememberSelectionForToolbar);
+    questionBox.addEventListener('click', rememberSelection);
+    questionBox.addEventListener('keyup', rememberSelection);
     questionBox.addEventListener('keydown', function (event) {
       if (!event || !(event.ctrlKey || event.metaKey)) return;
       if (String(event.key || '').toLowerCase() !== 'u') return;
@@ -397,19 +478,37 @@
     });
   }
   form.addEventListener('reset', function () {
-    setTimeout(updatePreview, 0);
+    setTimeout(function () {
+      updatePreview();
+      rememberSelection();
+    }, 0);
   });
 
-  $('owner_tool_underline').onclick = wrapUnderline;
+  var underlineButton = $('owner_tool_underline');
+  underlineButton.addEventListener('mousedown', function (event) {
+    rememberSelectionForToolbar();
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+  });
+  underlineButton.addEventListener('touchstart', rememberSelectionForToolbar);
+  underlineButton.onclick = wrapUnderline;
+  updatePreview();
+  rememberSelection();
+
+  if (editMode) {
+    window.CBTOwnerTool = { version: TOOL_VERSION, parserVersion: parserVersion, formattingOnly: true };
+    return;
+  }
+
   $('owner_tool_load').onclick = loadPaste;
   $('owner_tool_skip').onclick = skip;
   $('owner_tool_reset').onclick = reset;
   $('owner_tool_show').onclick = function () {
     showPaste(!pasteVisible);
-    render();
+    render(true);
   };
 
   form.addEventListener('submit', function () {
+    if (blocked) return;
     saveMetadata();
     var item = blocked ? null : currentItem();
     loaded.pendingSubmission = item ? {
@@ -438,6 +537,6 @@
   if (legacy.length) {
     warn('Old bookmarklet state found (' + legacy.join(', ') + '). It was not imported or deleted; reset it in your browser if you want a clean start.');
   }
-  resolvePending();
-  render();
+  var pendingResult = resolvePending();
+  render(pendingResult === 'error' || Boolean(document.querySelector('.admin-error')));
 })();

@@ -25,7 +25,8 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 49 fixtures: 47 PASS, 2 PENDING; `node tests/unit.js` is 140 PASS; `node tests/owner-tool.js` is 25 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 49 fixtures: 47 PASS, 2 PENDING; `node tests/unit.js` is 143 PASS; `node tests/owner-tool.js` is 33 PASS.
+- PHP renderer check: `php tests/php-render.php`; also run `php -l` on every changed file under `deployed/` on the target PHP runtime.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
@@ -47,7 +48,7 @@
 ## Fixtures
 
 - `fixtures/expected/*.json` were transcribed from docs, never generated from the parser. Do not regenerate or weaken assertions to make a test pass; mark doc-unsupported fields/inputs `PENDING` instead.
-- Every expected spec needs `input_origin`: `bank`, `anomaly`, `doc`, or `synthetic`. Every `fixtures/inputs/*.txt` needs an expected spec or the runner fails it as `[ORPHAN]`. Schema is `schema_version: 1`; kinds are `questions`, `question`, `key`; statuses are `CONFIRMED`, `PENDING`. Unknown keys or wrong types fail.
+- Every expected spec needs `input_origin`: `bank`, `anomaly`, `doc`, `synthetic`, or `user_sample`. Every `fixtures/inputs/*.txt` needs an expected spec or the runner fails it as `[ORPHAN]`. Schema is `schema_version: 1`; kinds are `questions`, `question`, `key`; statuses are `CONFIRMED`, `PENDING`. Unknown keys or wrong types fail.
 - The harness is parser-only: it does not exercise DOM, storage, `fillForm`, `tick`, or save behavior. No browser test suite exists.
 - Subject assertions use the archived live `<select>` at `archive/live-sources/subjects-select-2026-10-23.html`; category assertions use the `exam_category_id` select in `archive/live-sources/admin_questions.html`.
 

@@ -415,6 +415,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($formValues as $key => $defaultValue) {
             if ($key === 'is_active') {
                 $formValues[$key] = isset($_POST['is_active']) ? '1' : '0';
+            } elseif ($key === 'question_text' && isset($_POST[$key]) && is_scalar($_POST[$key])) {
+                $formValues[$key] = str_replace(["\r\n", "\r"], "\n", (string) $_POST[$key]);
             } elseif (isset($_POST[$key]) && is_scalar($_POST[$key])) {
                 $formValues[$key] = trim((string) $_POST[$key]);
             }
@@ -443,7 +445,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pageError = 'Please choose a valid subject and exam category.';
         } elseif ($examYear === false || $examYear < 1900 || $examYear > 2100) {
             $pageError = 'Please enter a valid exam year between 1900 and 2100.';
-        } elseif ($questionText === '') {
+        } elseif (trim($questionText) === '') {
             $pageError = 'Please enter the question text.';
         } elseif (strlen($questionText) > 60000) {
             $pageError = 'The question text is too long.';
@@ -1042,11 +1044,11 @@ if (is_file(__DIR__ . '/header.php')) {
 </div>
 </main>
 
-<link rel="stylesheet" href="src/owner-tool/style.css">
-<script src="src/parser/core.js"></script>
-<script src="src/owner-tool/state.js"></script>
-<script src="src/owner-tool/render.js"></script>
-<script src="src/owner-tool/controller.js"></script>
+<link rel="stylesheet" href="src/owner-tool/style.css?v=2.1.0">
+<script src="src/parser/core.js?v=2.1.0"></script>
+<script src="src/owner-tool/state.js?v=2.1.0"></script>
+<script src="src/owner-tool/render.js?v=2.1.0"></script>
+<script src="src/owner-tool/controller.js?v=2.1.0"></script>
 
 
 <?php if (is_file(__DIR__ . '/footer.php')) { include __DIR__ . '/footer.php'; } ?>

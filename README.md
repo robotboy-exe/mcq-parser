@@ -81,6 +81,12 @@ tools/bank-slices.json source hash, anchors, counts, and output hashes
 - Reads the header from the questions or the answer key and fills the year,
   subject (including CRS/Christian Religious Studies), and exam category
   (JAMB/UTME, POST UTME, SSCE, and related names).
+- Accepts exam years 1900–2099 and keeps 19xx/20xx answer-title lines out of the
+  final option.
+- Folds OCR wrap lines in stems while preserving blank-line paragraphs; options
+  remain single-line.
+- Formats only balanced exact `<u>...</u>` markers through shared browser/PHP
+  renderers; every other tag or malformed marker stays literal and escaped.
 - Splits off an answer key by divider, header, structure, or key-only paste.
 - One exam year per paste. Multi-year bank text is split with
   `tools/extract-bank.js`, not pasted whole.

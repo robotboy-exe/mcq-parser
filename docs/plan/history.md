@@ -92,3 +92,18 @@ deployed source was changed, and no commit was made.
 | OT08 | not started |
 | OT09 | not started |
 | OT10 | blocked pending prior packages/local PHP/staging |
+
+## OT04 Source Arrival and Fix — 2026-11-02
+
+The owner supplied `answer_details.php` before OT04 handoff. Its SHA-256 is
+`680cfd697ba61b3c21e07c0f9e2cb4d6780ea2100ceae8e78fd4e492aa7368bf`;
+the byte-identical archive is
+`archive/live-sources/answer_details-2026-11-02.php`.
+
+An implementation handoff from another machine arrived as commits `83b11ba`
+and `1c56b58`. Review found that stale package files had replaced the completed
+OT03 handoff and that parser/state/PRG boundary cases were untested. The OT04 fix
+session restored OT03 exactly, retained the useful Release A implementation,
+added regression evidence, and assigned first-time detail integration to OT04.
+OT10 now owns independent Release A verification. OT04 remains blocked on
+target-PHP and Brave/Android acceptance; OT05 has not started.
