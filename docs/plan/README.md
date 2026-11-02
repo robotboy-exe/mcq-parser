@@ -9,13 +9,13 @@ Last updated: 2026-11-02.
 ## Current state
 
 - Active cycle: `owner-tool-2026-11`.
-- Product work: OT00-OT03 complete; OT04 implementation and detail-source
-  integration are in place on the fix branch.
-- Next package: OT04 remains blocked only on Brave/Android acceptance evidence;
-  OT05 must not start.
+- Product work: OT00-OT04 implementation complete; Brave/Android staging
+  verification is owner-deferred to OT10.
+- Next action: rigorous OT04 review in a fresh session. OT05 must not start until
+  that review settles and its database gate clears.
 - Current `main` parser baseline: 25 PASS, 0 FAIL, 0 PENDING.
 - OT04 fix baseline: 47 runner PASS + 2 PENDING, 143 unit PASS,
-  33 owner-tool PASS, 7 bank slices OK; final Android smoke pending.
+  33 owner-tool PASS, 7 bank slices OK; staging/mobile verification is in OT10.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
@@ -44,7 +44,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 2 | OT01 | [Evidence and Fixtures](owner-tool/ot-01-evidence-and-fixtures.md) | OT00 | done | none |
 | 3 | OT02 | [Production Parser Core](owner-tool/ot-02-production-parser-core.md) | OT01 | done | none |
 | 4 | OT03 | [Owner Tool Replacement](owner-tool/ot-03-owner-tool-replacement.md) | OT02 | done | satisfied (helper archived 2026-11-01) |
-| 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | blocked | Brave/Android acceptance |
+| 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | done | none; staging/mobile deferred to OT10 |
 | 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review | blocked | redacted DB config, DDL, versions |
 | 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | blocked | practice writer and reader/writer audit |
 | 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | not started | inherited server contract |
@@ -88,7 +88,7 @@ verifies the detail path with the rest of Release A.
 |---|---|---|---|
 | phase 1 close | OT00 integration baseline | rigorous | pending |
 | phases 2-4 | OT01-OT03 | light at next Gate 1 | pending |
-| phase 5 close | OT04 Release A implementation and detail-source integration | rigorous | pending external checks |
+| phase 5 close | OT04 Release A implementation and detail-source integration | rigorous | pending review |
 | phases 6-7 | OT05-OT06 | light at next Gate 1 | pending |
 | phase 8 close | OT07 Release B | rigorous | pending |
 | phase 9 | OT08 | light at OT09 Gate 1 | pending |

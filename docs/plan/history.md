@@ -105,5 +105,7 @@ and `1c56b58`. Review found that stale package files had replaced the completed
 OT03 handoff and that parser/state/PRG boundary cases were untested. The OT04 fix
 session restored OT03 exactly, retained the useful Release A implementation,
 added regression evidence, and assigned first-time detail integration to OT04.
-OT10 now owns independent Release A and target-PHP verification. OT04 remains
-blocked only on Brave/Android acceptance; OT05 has not started.
+OT10 now owns independent Release A, target-PHP, staging, and Brave/Android
+verification. On 2026-11-02 the owner deferred the unavailable staging/mobile
+smoke to OT10 and accepted OT04 implementation as complete. OT05 has not started
+and remains blocked by the OT04 rigorous review plus its own database gate.

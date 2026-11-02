@@ -8,9 +8,10 @@ Last updated: 2026-11-02.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Current package: OT04, Underline and Multiline. Implementation and supplied
-  `answer_details.php` integration are complete on the fix branch;
-  Brave/Android acceptance remains.
+- Current package: OT04, Underline and Multiline, implementation complete.
+  Brave/Android staging verification is owner-deferred to OT10 because no
+  staging copy is currently available.
+- Next action: rigorous OT04 review in a fresh session; OT05 remains gated.
 - Product implementation: parser 2.1.0, exact underline rendering, multiline
   stems, Add/Edit formatting, and native PRG preservation are in place.
 
@@ -49,7 +50,6 @@ is not installed; `tests/php-render.php` is ready for the target runtime.
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| Brave/Android staging smoke | OT04 | Verify selection, underline, undo, paragraphs, candidate/result/detail/print |
 | Redacted `cbt_db.php` | OT05 | Confirm charset, PDO mode, and transaction setup |
 | DDL for `questions`, `subjects`, `exam_category` | OT05 | Define exact migration types, keys, engine, and charset |
 | Practice-question writer/importer | OT06 | Preserve the `practice_title` contract |
@@ -66,7 +66,8 @@ instead of performing first-time integration.
   and detail-page formatting; OT10 independently verifies the release.
 - Release B: OT05-OT07, manual shared-context persistence and delivery.
 - Release C: OT08-OT09, comprehension and cloze OCR automation.
-- OT10 performs final release verification and human-developer handoff.
+- OT10 performs final release verification, Brave/Android staging smoke, and
+  human-developer handoff.
 
 ## Source of truth
 

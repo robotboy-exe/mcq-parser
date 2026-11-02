@@ -916,9 +916,9 @@ presentation without a rich-text editor or unrestricted stored HTML.
 **Risk.** Direct marker editing can still produce literal malformed text, which
 is intentionally safer than repairing or interpreting it. PHP and browser
 implementations must stay aligned through the shared vector corpus. Mobile
-selection behavior remains OT04 release evidence. PHP 8.3 is the safe application
-target; runtime lint/vector execution remains OT10 evidence rather than a fact
-inferred from the Node harness.
+Desktop selection behavior is OT04 evidence. PHP 8.3 is the safe application
+target; target-PHP and Brave/Android staging checks remain OT10 evidence rather
+than facts inferred from the Node/desktop harnesses.
 
 ## Auto-Save verification notes
 

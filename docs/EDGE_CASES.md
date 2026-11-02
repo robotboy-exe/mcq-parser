@@ -198,8 +198,8 @@ closed by the archived PHP/HTML sources:
 - EC-87, EC-88, and EC-89 are CONFIRMED by the P13 fixtures and unit checks for
   the shared table, marker fallback, and image-plan gate.
 - EC-90 through EC-94 are CONFIRMED by the OT04 parser/owner-tool regressions
-  and desktop Chromium harness; PHP runtime verification is deferred to OT10,
-  while Brave/Android remains OT04 acceptance evidence.
+  and desktop Chromium harness; PHP runtime and Brave/Android staging
+  verification are owner-deferred to OT10.
 
 ## Counts
 

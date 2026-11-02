@@ -1,9 +1,9 @@
 # OT04 — Underline and Multiline
 
-- **Status:** blocked
+- **Status:** done
 - **Depends on:** OT03
 - **Blocks:** OT06, OT08, OT09
-- **External gate:** Brave/Android formatting smoke
+- **External gate:** none; Brave/Android staging verification deferred to OT10 by owner
 - **Release:** A implementation
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -70,7 +70,7 @@ without introducing a rich-text editor or the deferred math palette.
 | PRG preservation | Validation errors keep posted edits; ambiguous reload is never mistaken for rejection |
 | PHP baseline | Uses PHP 8.3-compatible syntax; runtime lint/vectors repeat in OT10 staging |
 | Math palette | Absent and explicitly deferred |
-| Browser | Desktop Chromium and Brave/Android formatting smoke recorded |
+| Browser | Desktop Chromium recorded; Brave/Android staging verification explicitly deferred to OT10 |
 
 ## Guardrails
 
@@ -116,7 +116,7 @@ verification rather than first-time integration.
 
 ```text
 Date: 2026-11-02
-Result: BLOCKED only on Brave/Android acceptance evidence
+Result: PASS with owner-approved Brave/Android staging deferral to OT10
 Formatting syntax/security rule:
   - Only balanced lowercase <u>...</u> pairs format text.
   - Every other tag, attribute, encoded marker, unmatched marker, or nested
@@ -141,7 +141,8 @@ Desktop/mobile evidence:
     retained selection, Edit formatting-only mode, XSS vectors, ambiguous PRG,
     and validation-error preservation PASS; no console warning/error except the
     harness favicon request.
-  - Brave/Android staging smoke: PENDING.
+  - Brave/Android staging smoke: deferred to OT10 because no staging copy is
+    currently available; this is no longer an OT04 completion gate.
 PHP renderer evidence:
   - tests/php-render.php contains 9 parity/security vectors.
   - Safe application target: PHP 8.3. The phpMyAdmin PHP 8.4.27 export header is
@@ -170,8 +171,8 @@ Key hashes:
   - tests/owner-tool.js 53694310bcd9c4a51b7c6ae2b47aea57ca831309069303df5faa7ab97c6349e0
   - tests/php-render.php 78f6074e01745ded3ce6fa58e3ec605fbae36d965ce3aaf27f57050eb55c8494
 Open questions:
-  - Record the Brave/Android staging smoke before rigorous review.
-Review: fix session complete; rigorous Release A review waits for Brave/Android evidence
-Commit: deferred
-Next: OT04 remains blocked; do not start OT05
+  - None for OT04 implementation; OT10 retains staging/mobile verification.
+Review: pending rigorous Release A implementation review
+Commit: user-authorized and pushed on branch ot04-fix; see branch history
+Next: rigorous OT04 review; OT05 remains blocked until that review settles and its DB gate clears
 ```
