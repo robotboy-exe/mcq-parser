@@ -20,6 +20,7 @@ Last updated: 2026-11-02.
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
 - Current status summary: [`../STATUS.md`](../STATUS.md).
+- Continuation checklist: [`owner-tool/next-steps.md`](owner-tool/next-steps.md).
 - Historical P01-P09 and shelved-cycle record: [`history.md`](history.md).
 
 ## Product direction
