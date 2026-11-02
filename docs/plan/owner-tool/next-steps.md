@@ -18,9 +18,10 @@ Recorded: 2026-11-02.
 
 - [x] Rigorous OT04 review and re-review passed; records are under
   `docs/plan/reviews/owner-tool-2026-11-phase-5*.md`.
-- [ ] Merge `ot04-fix` into
-  `owner-tool-integration` using the normal non-destructive Git workflow.
-- [ ] Do not start OT05 before that merge is complete.
+- [x] Merge `ot04-fix` into
+  `owner-tool-integration` using the normal non-destructive Git workflow
+  (fast-forward `83de4bc`..`ad84269`, 2026-11-02).
+- [x] Do not start OT05 before that merge is complete.
 
 ## OT05 Database Preparation
 
