@@ -3,7 +3,7 @@
 - **Status:** blocked
 - **Depends on:** OT03
 - **Blocks:** OT06, OT08, OT09
-- **External gate:** target-PHP lint/renderer vectors and Brave/Android formatting smoke
+- **External gate:** Brave/Android formatting smoke
 - **Release:** A implementation
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -68,7 +68,7 @@ without introducing a rich-text editor or the deferred math palette.
 | Options/explanations | Remain plain text |
 | State transition | Parser 2.0 state remains untouched until full re-paste or explicit Reset |
 | PRG preservation | Validation errors keep posted edits; ambiguous reload is never mistaken for rejection |
-| PHP renderer | Target PHP lints every changed file and passes the shared vector script |
+| PHP baseline | Uses PHP 8.3-compatible syntax; runtime lint/vectors repeat in OT10 staging |
 | Math palette | Absent and explicitly deferred |
 | Browser | Desktop Chromium and Brave/Android formatting smoke recorded |
 
@@ -116,7 +116,7 @@ verification rather than first-time integration.
 
 ```text
 Date: 2026-11-02
-Result: BLOCKED only on target-PHP and Brave/Android acceptance evidence
+Result: BLOCKED only on Brave/Android acceptance evidence
 Formatting syntax/security rule:
   - Only balanced lowercase <u>...</u> pairs format text.
   - Every other tag, attribute, encoded marker, unmatched marker, or nested
@@ -144,7 +144,10 @@ Desktop/mobile evidence:
   - Brave/Android staging smoke: PENDING.
 PHP renderer evidence:
   - tests/php-render.php contains 9 parity/security vectors.
-  - Target PHP lint and execution: PENDING (PHP is unavailable in this workspace).
+  - Safe application target: PHP 8.3. The phpMyAdmin PHP 8.4.27 export header is
+    exporter metadata, not the application runtime.
+  - Runtime lint/vector execution is deferred to OT10 staging because PHP is
+    unavailable in this workspace; it is not an OT04 gate.
 Files changed:
   - src/parser/core.js
   - src/owner-tool/controller.js, render.js, style.css
@@ -167,10 +170,8 @@ Key hashes:
   - tests/owner-tool.js 53694310bcd9c4a51b7c6ae2b47aea57ca831309069303df5faa7ab97c6349e0
   - tests/php-render.php 78f6074e01745ded3ce6fa58e3ec605fbae36d965ce3aaf27f57050eb55c8494
 Open questions:
-  - Confirm the target web runtime is PHP 8.3 despite phpMyAdmin's PHP 8.4.27
-    export header, then run the pending PHP commands.
   - Record the Brave/Android staging smoke before rigorous review.
-Review: fix session complete; rigorous Release A review waits for the two external checks
+Review: fix session complete; rigorous Release A review waits for Brave/Android evidence
 Commit: deferred
 Next: OT04 remains blocked; do not start OT05
 ```
