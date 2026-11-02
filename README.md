@@ -100,13 +100,16 @@ tools/bank-slices.json source hash, anchors, counts, and output hashes
   under the Save button; it never blocks saving.
 - Flags numbering gaps on the following question, e.g. `question 10 missing
   (numbering gap)` when the paste goes from Q9 to Q11.
-- Loaded queues can jump to a book question number with "Go to question".
-- Persists the queue, header metadata, and key in `localStorage` under
-  `ocrQueue`, `ocrMeta`, and `ansKey`; the key survives reloads.
-- Draft auto-save is the default and saves inactive; active mode is opt-in and
-  never persisted. Manual saves stay active.
-- Does not read, write, or delete the legacy `ocrSubmitted` key.
-- Never changes the PHP, the CSRF token, or the server field names.
+- Fills the native Add form one question at a time; saves stay manual through
+  the existing PRG flow and advance only on the exact success flash.
+- Persists the queue, header metadata, and key in versioned `cbtOwnerTool:v1`
+  state; legacy `ocrQueue`, `ocrMeta`, and `ansKey` are detected but never
+  imported or deleted.
+- Refuses a stale parser version or corrupt state without deleting it; only a
+  full re-paste or explicit Reset replaces state.
+- Never forces `is_active`; the administrator keeps the native checkbox.
+- Uses the existing native form, CSRF token, and server field names; no
+  Auto-Save, forced active saves, or `ocrSubmitted` access.
 
 Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
@@ -118,7 +121,7 @@ remaining live checks are tracked in
 [`docs/plan/11-remaining-verification.md`](docs/plan/11-remaining-verification.md).
 
 The behavior baseline is `trusted-variant-C.js` (the merged one-box artifact);
-see [`docs/BASELINE_COMPARISON.md`](docs/BASELINE_COMPARISON.md). After updating
-the bookmarklet, press Reset Queue and re-paste rather than trusting an old
-`ocrQueue` (EC-62/INV-56). Live deletes and cleanup are owner-only; see
+see [`docs/BASELINE_COMPARISON.md`](docs/BASELINE_COMPARISON.md). After changing
+parser or owner-tool code, press Reset and re-paste rather than trusting old
+`cbtOwnerTool:v1` state (EC-62/INV-56). Live deletes and cleanup are owner-only; see
 [`docs/LIVE-SAFETY.md`](docs/LIVE-SAFETY.md).

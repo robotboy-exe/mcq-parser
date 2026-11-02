@@ -151,7 +151,7 @@ Status definitions:
 | INV-97 | Only balanced exact lowercase `<u>...</u>` pairs format text. All content is escaped first; uppercase, attributed, encoded, nested, overlapping, or unmatched markers remain literal/safe. PHP and browser renderers must follow the same vectors. | AT_RISK | D-66; `tests/owner-tool.js`; `tests/php-render.php` deferred to OT10 PHP 8.3 staging |
 | INV-98 | Add mode provides importer plus formatting; Edit mode provides formatting only and performs no owner-state write. Underline retains selection and is one-step undoable. | AT_RISK | D-66; Node and desktop Chromium evidence; Brave/Android pending |
 | INV-99 | Candidate, result, print, detail, and admin-summary paths share the exact-marker rules; options and explanations stay plain. | AT_RISK | D-66; static/desktop evidence; PHP/staging verification deferred to OT10 |
-| INV-100 | Year inference and answer-title removal accept 1900–2099 while rejecting 1899/2100. | VERIFIED | D-66; fixture `header-year-1994`; `tests/unit.js` |
+| INV-100 | Year inference and answer-title removal accept 1900–2099 while rejecting 1899/2100. | VERIFIED | D-66; fixture `header-year-1994`; 1900/2099/1899/2100 cases in `tests/unit.js` |
 
 ## Counts
 

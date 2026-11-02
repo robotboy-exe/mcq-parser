@@ -205,6 +205,13 @@
     return false;
   }
 
+  function underlineDepthBefore(value, position) {
+    var before = value.slice(0, position);
+    var opens = (before.match(/<u>/g) || []).length;
+    var closes = (before.match(/<\/u>/g) || []).length;
+    return opens - closes;
+  }
+
   function wrapUnderline() {
     var box = $('question_text');
     if (!box) return false;
@@ -221,7 +228,8 @@
       return false;
     }
     var selected = value.slice(start, end);
-    var already = value.slice(Math.max(0, start - 3), start) === '<u>'
+    var already = underlineDepthBefore(value, start) === 1
+      && value.slice(Math.max(0, start - 3), start) === '<u>'
       && value.slice(end, end + 4) === '</u>';
     var openBefore = value.lastIndexOf('<u>', start);
     var closeBefore = value.lastIndexOf('</u>', start);
@@ -283,6 +291,12 @@
       && stateApi.fingerprint(item) === pending.fingerprint;
     var flash = successFlash();
     var errorEl = document.querySelector('.admin-error');
+    if (errorEl) {
+      loaded.pendingSubmission = null;
+      persist();
+      warn('The server rejected that save. The same question is still loaded; fix it and save again.');
+      return 'error';
+    }
     if (matches && SUCCESS_FLASH.test(flash)) {
       var savedNum = item.num === null || item.num === undefined ? '?' : item.num;
       loaded.currentIndex += 1;
@@ -290,12 +304,6 @@
       persist();
       note('Question ' + savedNum + ' saved. The next question is loaded.');
       return 'success';
-    }
-    if (errorEl) {
-      loaded.pendingSubmission = null;
-      persist();
-      warn('The server rejected that save. The same question is still loaded; fix it and save again.');
-      return 'error';
     }
     var pendingNum = item && item.num !== null && item.num !== undefined ? item.num : '?';
     loaded.pendingSubmission = null;
@@ -423,12 +431,10 @@
       return;
     }
     blocked = false;
+    loaded = stateApi.emptyState(parserVersion, stateApi.makeQueueId());
     loaded.items = items;
-    loaded.currentIndex = 0;
     loaded.answerKey = key;
     loaded.metadata = inferMetadata(parsed);
-    loaded.queueId = stateApi.makeQueueId();
-    loaded.pendingSubmission = null;
     if (!persist()) return;
     warn('');
     showPaste(false);

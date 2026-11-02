@@ -8,6 +8,7 @@ const ROOT = path.resolve(__dirname, '..');
 const STATE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/state.js'), 'utf8');
 const CONTROLLER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/controller.js'), 'utf8');
 const RENDER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/render.js'), 'utf8');
+const STYLE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/style.css'), 'utf8');
 const ADMIN_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/admin_questions.php'), 'utf8');
 const CBT_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt.php'), 'utf8');
 const PRACTICE_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt_practice.php'), 'utf8');
@@ -538,6 +539,21 @@ test('a server error keeps the current item and the server-rendered edits', () =
   assertEqual(next.radioIndex(), 1, 'posted answer preserved');
 });
 
+test('a rejected save never advances on a stale success flash', () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  env.submit();
+  const next = env.reload({
+    success: 'Question saved successfully (Question ID: 5040).',
+    error: 'Question text is required.',
+  });
+  assertEqual(next.state().currentIndex, 0, 'no advance when the server rejected the save');
+  assertEqual(next.state().pendingSubmission, null, 'in-flight state cleared');
+  assert(next.text('owner_tool_warning').indexOf('rejected') > -1, 'rejection warning shown');
+  assertEqual(next.state().items[0].question, 'Who was the father of faith in the Bible?', 'same queue item remains');
+});
+
 test('an ambiguous reload keeps the item and never retries', () => {
   const env = createEnv();
   env.paste(FULL_PASTE);
@@ -649,6 +665,24 @@ test('stale-parser state cannot be re-versioned by a key paste or native submit'
   assertEqual(env.state().items.length, 0, 'Reset discards stale items');
 });
 
+test('a full re-paste replaces stale state instead of re-versioning it', () => {
+  const stale = stateApi.emptyState('2.0.0', 'q-old');
+  stale.items = [{ num: 1, question: 'Old flattened stem', a: 'A', b: 'B', c: 'C', d: 'D', e: '', f: '', flags: [] }];
+  stale.answerKey = { 1: 'A' };
+  stale.contexts = [{ id: 'old-context' }];
+  stale.unknownExtension = { keep: false };
+  const env = createEnv({ storage: { [stateApi.KEY]: JSON.stringify(stale) } });
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  const state = env.state();
+  assertEqual(state.parserVersion, parser.version, 're-paste stamps the current parser');
+  assertEqual(state.queueId === 'q-old', false, 'new queue identity');
+  assertEqual(state.contexts.length, 0, 'old contexts are discarded');
+  assertEqual(state.unknownExtension, undefined, 'unknown fields are discarded');
+  assertEqual(state.items.length, 2, 'items are replaced');
+  assertEqual(state.answerKey['1'], 'D', 'key is replaced');
+});
+
 test('corrupt state warns without crashing or deleting', () => {
   const env = createEnv({ storage: { [stateApi.KEY]: '{not json' } });
   assert(env.text('owner_tool_warning').indexOf('could not be used') > -1, 'corrupt warning shown');
@@ -741,6 +775,22 @@ test('every deployed question-text sink uses the shared renderer', () => {
     'detail explanation stays plain text');
 });
 
+test('critical owner-tool warnings have distinct non-server styling', () => {
+  assert(/\.owner-tool-error\s*\{[^}]*background:[^}]*color:[^}]*border:[^}]*\}/.test(STYLE_SOURCE),
+    'owner-tool-error defines background, color, and border');
+  assert(STYLE_SOURCE.indexOf('#fff4e5') > -1, 'warning styling is distinct from the server error red');
+});
+
+test('PHP preserves leading newlines and posted values before CSRF rejection', () => {
+  assert(ADMIN_SOURCE.indexOf('required><?php echo "\\n" . h($formValues[\'question_text\']); ?></textarea>') > -1,
+    'question textarea emits one sacrificial newline');
+  const hydrateAt = ADMIN_SOURCE.indexOf('foreach ($formValues as $key => $defaultValue)');
+  const csrfAt = ADMIN_SOURCE.indexOf('if (!valid_csrf())');
+  assert(hydrateAt > -1 && csrfAt > hydrateAt, 'posted values hydrate before CSRF rejection');
+  assertEqual((ADMIN_SOURCE.match(/foreach \(\$formValues as \$key => \$defaultValue\)/g) || []).length, 1,
+    'post hydration is not duplicated');
+});
+
 test('underline refuses to create nested or overlapping marker pairs', () => {
   const env = createEnv();
   env.type('<u>abcdef</u>');
@@ -748,6 +798,17 @@ test('underline refuses to create nested or overlapping marker pairs', () => {
   env.click('owner_tool_underline');
   assertEqual(env.field('question_text'), '<u>abcdef</u>', 'partial inner selection is unchanged');
   assert(env.text('owner_tool_hint').indexOf('entire underlined text') > -1, 'owner receives a useful instruction');
+});
+
+test('underline refuses to remove markers from a nested boundary', () => {
+  const env = createEnv();
+  const value = '<u>outer <u>inner</u>';
+  env.type(value);
+  const start = value.indexOf('inner');
+  env.select(start, start + 'inner'.length);
+  env.click('owner_tool_underline');
+  assertEqual(env.field('question_text'), value, 'malformed nested text is unchanged');
+  assert(env.text('owner_tool_hint').indexOf('overlapping') > -1, 'overlap guidance shown');
 });
 
 test('underline retains the last non-empty selection when toolbar focus collapses it', () => {

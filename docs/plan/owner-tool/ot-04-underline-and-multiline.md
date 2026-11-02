@@ -176,3 +176,77 @@ Review: pending rigorous Release A implementation review
 Commit: user-authorized and pushed on branch ot04-fix; see branch history
 Next: rigorous OT04 review; OT05 remains blocked until that review settles and its DB gate clears
 ```
+
+## Fix Session 2026-11-02 — Phase 5 Review Findings
+
+Result: addressed BLOCK-1, BLOCK-2, BLOCK-3, FIX-1, FIX-2, NOTE-1, and
+NOTE-2. Re-review is required.
+
+Changes:
+  - `src/owner-tool/controller.js`: server errors now dominate a stale success
+    flash; a full re-paste builds fresh parser state instead of re-versioning
+    stale state; underline removal requires marker depth 1 and refuses nested
+    or malformed boundaries.
+  - `deployed/admin_questions.php`: posted question values and the edit id are
+    hydrated before CSRF rejection; the question textarea emits one sacrificial
+    LF so leading newlines survive HTML parsing.
+  - `src/owner-tool/style.css`: distinct `.owner-tool-error` warning styling.
+  - `tests/owner-tool.js`: regressions for BLOCK-1/2, FIX-1/2, and the PHP
+    newline/CSRF pattern.
+  - `tests/unit.js`: 1900/2099 accepted and 1899/2100 rejected for header and
+    answer-title consumers.
+  - `docs/INVARIANTS.md`: INV-100 evidence names the boundary cases.
+  - `README.md`: owner-tool PRG/state summary replaces the legacy
+    bookmarklet/Auto-Save claims.
+
+Evidence:
+  - `node tests/runner.js` -> 49 fixtures: 47 PASS, 0 FAIL, 2 PENDING
+  - `node tests/unit.js` -> 145 PASS, 0 FAIL
+  - `node tests/owner-tool.js` -> 38 PASS, 0 FAIL
+  - `node tools/extract-bank.js --check` -> 7 slices OK
+  - `node --check` on changed JS/test files -> PASS
+  - `git diff --check` -> PASS
+  - PHP 8.3.16 was available during the phase-5 re-review: all five
+    `deployed/*.php` files lint clean and `tests/php-render.php` passes its
+    9 renderer vectors. Deployed staging execution remains OT10 evidence.
+
+Hashes:
+  - src/owner-tool/controller.js e65b46430097e638c72e73409c5e8486aebe79d6a9aa4597b8ac545582a02193
+  - src/owner-tool/style.css 0b270f797437fc83b05de6bf5601309698c96d60dbc20306b5ae054cdcc6efcd
+  - deployed/admin_questions.php 5a38fd64598778df533009711d8de8f84349d80e2b39659ac783310bd8d0597c
+  - tests/owner-tool.js 395afc98e7b7cbbd938cec81b63b949de789f64415bbbe72bac2ca373e73067b
+  - tests/unit.js f33e4ff12f8b26ebf3e81a30ea7c5b36ecb1e62be7c47a0f7efe6f47804a297d
+
+Review: PASS on phase-5 re-review
+(`docs/plan/reviews/owner-tool-2026-11-phase-5-re-review.md`); BLOCK-1..3,
+FIX-1..2, and NOTE-1..2 closed; NOTE-3..5 non-blocking
+Commit: deferred
+Next: OT05 Gate 1; blocked until the redacted DB config and DDL are supplied.
+Do not start OT05 implementation or OT06.
+
+## Closeout 2026-11-02 — Phase-5 Review PASS Accepted
+
+Result: docs-only closeout; no product or test changes.
+
+Changes:
+  - `AGENTS.md`, `docs/STATUS.md`, `docs/plan/README.md`: current baseline
+    counts updated to 145 unit and 38 owner-tool.
+  - `docs/plan/README.md`: phase-5 review checkpoint set to pass and next action
+    set to OT05 Gate 1.
+  - `docs/plan/prompts/phase-map.md`: cycle and OT04 rows reflect review PASS.
+  - This handoff: PHP-availability evidence corrected; review/next lines updated.
+
+Evidence:
+  - `node tests/runner.js` -> 49 fixtures: 47 PASS, 0 FAIL, 2 PENDING
+  - `node tests/unit.js` -> 145 PASS, 0 FAIL
+  - `node tests/owner-tool.js` -> 38 PASS, 0 FAIL
+  - `node tools/extract-bank.js --check` -> 7 slices OK
+  - `git diff --check` -> PASS
+
+Open questions:
+  - NOTE-3: a leading newline may still be lost when `answer_explanation` is
+    re-rendered. It is outside OT04 scope and recorded for a future package.
+
+Review: PASS (phase-5 re-review)
+Commit: deferred; the phase-boundary commit requires a separate explicit request
+Next: OT05 Gate 1; blocked until the redacted DB config and DDL are supplied

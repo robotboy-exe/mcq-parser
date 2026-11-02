@@ -8,10 +8,11 @@ Last updated: 2026-11-02.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Current package: OT04, Underline and Multiline, implementation complete.
-  Brave/Android staging verification is owner-deferred to OT10 because no
-  staging copy is currently available.
-- Next action: rigorous OT04 review in a fresh session; OT05 remains gated.
+- Current package: OT04, Underline and Multiline, implementation complete and
+  rigorous re-review PASS. Brave/Android staging verification is owner-deferred
+  to OT10 because no staging copy is currently available.
+- Next action: OT05 Gate 1. It remains blocked until the redacted DB config and
+  DDL are supplied; do not start OT05 implementation.
 - Product implementation: parser 2.1.0, exact underline rendering, multiline
   stems, Add/Edit formatting, and native PRG preservation are in place.
 
@@ -21,7 +22,7 @@ Last updated: 2026-11-02.
 |---|---|---|
 | `main` at `e5dec50` | `node tests/runner.js` | 25 PASS, 0 FAIL, 0 PENDING |
 | clean experiments commit `d5a62f0` | `node tests/runner.js` & `tests/unit.js` | 43 PASS runner, 140 PASS unit |
-| OT04 fix branch | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js` | 47 PASS, 0 FAIL, 2 PENDING runner; 143 unit; 33 owner-tool |
+| OT04 fix branch | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js` | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 38 owner-tool |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save

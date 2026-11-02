@@ -11,11 +11,11 @@ Last updated: 2026-11-02.
 - Active cycle: `owner-tool-2026-11`.
 - Product work: OT00-OT04 implementation complete; Brave/Android staging
   verification is owner-deferred to OT10.
-- Next action: rigorous OT04 review in a fresh session. OT05 must not start until
-  that review settles and its database gate clears.
+- Next action: OT05 Gate 1. It remains blocked until the redacted DB config and
+  DDL are supplied; do not start OT05 implementation.
 - Current `main` parser baseline: 25 PASS, 0 FAIL, 0 PENDING.
-- OT04 fix baseline: 47 runner PASS + 2 PENDING, 143 unit PASS,
-  33 owner-tool PASS, 7 bank slices OK; staging/mobile verification is in OT10.
+- OT04 fix baseline: 47 runner PASS + 2 PENDING, 145 unit PASS,
+  38 owner-tool PASS, 7 bank slices OK; staging/mobile verification is in OT10.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
@@ -88,7 +88,7 @@ verifies the detail path with the rest of Release A.
 |---|---|---|---|
 | phase 1 close | OT00 integration baseline | rigorous | pending |
 | phases 2-4 | OT01-OT03 | light at next Gate 1 | pending |
-| phase 5 close | OT04 Release A implementation and detail-source integration | rigorous | pending review |
+| phase 5 close | OT04 Release A implementation and detail-source integration | rigorous | pass |
 | phases 6-7 | OT05-OT06 | light at next Gate 1 | pending |
 | phase 8 close | OT07 Release B | rigorous | pending |
 | phase 9 | OT08 | light at OT09 Gate 1 | pending |

@@ -351,6 +351,21 @@ $formValues = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
 
+    if (in_array($action, ['save_question', 'update_question'], true) && !empty($_SESSION['cbt_admin_logged_in'])) {
+        $editingQuestionId = $action === 'update_question'
+            ? (int) filter_var($_POST['question_id'] ?? 0, FILTER_VALIDATE_INT)
+            : 0;
+        foreach ($formValues as $key => $defaultValue) {
+            if ($key === 'is_active') {
+                $formValues[$key] = isset($_POST['is_active']) ? '1' : '0';
+            } elseif ($key === 'question_text' && isset($_POST[$key]) && is_scalar($_POST[$key])) {
+                $formValues[$key] = str_replace(["\r\n", "\r"], "\n", (string) $_POST[$key]);
+            } elseif (isset($_POST[$key]) && is_scalar($_POST[$key])) {
+                $formValues[$key] = trim((string) $_POST[$key]);
+            }
+        }
+    }
+
     if (!valid_csrf()) {
         $pageError = 'Your session token is invalid or expired. Please refresh the page and try again.';
     } elseif ($action === 'login') {
@@ -409,19 +424,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } elseif (in_array($action, ['save_question', 'update_question'], true) && !empty($_SESSION['cbt_admin_logged_in'])) {
-        $editingQuestionId = $action === 'update_question'
-            ? (int) filter_var($_POST['question_id'] ?? 0, FILTER_VALIDATE_INT)
-            : 0;
-        foreach ($formValues as $key => $defaultValue) {
-            if ($key === 'is_active') {
-                $formValues[$key] = isset($_POST['is_active']) ? '1' : '0';
-            } elseif ($key === 'question_text' && isset($_POST[$key]) && is_scalar($_POST[$key])) {
-                $formValues[$key] = str_replace(["\r\n", "\r"], "\n", (string) $_POST[$key]);
-            } elseif (isset($_POST[$key]) && is_scalar($_POST[$key])) {
-                $formValues[$key] = trim((string) $_POST[$key]);
-            }
-        }
-
         $subjectId = filter_var($formValues['subject_id'], FILTER_VALIDATE_INT);
         $categoryId = filter_var($formValues['exam_category_id'], FILTER_VALIDATE_INT);
         $examYear = filter_var($formValues['exam_year'], FILTER_VALIDATE_INT);
@@ -808,7 +810,7 @@ if (is_file(__DIR__ . '/header.php')) {
                     <div class="admin-grid question-entry-grid">
                         <div class="admin-field">
                             <label for="question_text">Question</label>
-                            <textarea id="question_text" name="question_text" maxlength="60000" required><?php echo h($formValues['question_text']); ?></textarea>
+                            <textarea id="question_text" name="question_text" maxlength="60000" required><?php echo "\n" . h($formValues['question_text']); ?></textarea>
                         </div>
                         <div class="admin-field">
                             <label for="question_image">Question Picture / Diagram (optional)</label>

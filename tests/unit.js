@@ -247,6 +247,40 @@ test('splitSections removes a 19xx answer title without extending option D', () 
   eq(parsed.key, { 1: 'A' });
 });
 
+test('year inference accepts 1900 and 2099 and rejects 1899 and 2100', () => {
+  const parseYear = year => parser.parsePaste([
+    'CRS ' + year + ' JAMB',
+    '1. Which statement is correct today?',
+    'A. One',
+    'B. Two',
+    'C. Three',
+    'D. Four'
+  ].join('\n')).header.year;
+  eq(parseYear('1900'), '1900');
+  eq(parseYear('2099'), '2099');
+  eq(parseYear('1899'), null);
+  eq(parseYear('2100'), null);
+});
+
+test('answer-title removal uses the same 1900-2099 boundaries', () => {
+  const boundary = year => parser.splitSections([
+    'CRS ' + year + ' JAMB',
+    '1. Which statement is correct today?',
+    'A. One',
+    'B. Two',
+    'C. Three',
+    'D. Four',
+    '',
+    'WASSCE C.R.K. ' + year,
+    'OBJECTIVE ANSWERS',
+    '1.A'
+  ].join('\n')).boundary;
+  eq(boundary('1900'), 'WASSCE C.R.K. 1900\nOBJECTIVE ANSWERS');
+  eq(boundary('2099'), 'WASSCE C.R.K. 2099\nOBJECTIVE ANSWERS');
+  eq(boundary('1899'), 'OBJECTIVE ANSWERS');
+  eq(boundary('2100'), 'OBJECTIVE ANSWERS');
+});
+
 test('applyStimulusFlags orders stimuli and records missing targets', () => {
   const items = [
     { num: 13, stimuli: [{ sourceNum: 13, nums: [14, 16], marker: '[image]', text: '', source: 'marker' }] },

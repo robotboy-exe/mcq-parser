@@ -25,7 +25,7 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 49 fixtures: 47 PASS, 2 PENDING; `node tests/unit.js` is 143 PASS; `node tests/owner-tool.js` is 33 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 49 fixtures: 47 PASS, 2 PENDING; `node tests/unit.js` is 145 PASS; `node tests/owner-tool.js` is 38 PASS.
 - PHP renderer check: `php tests/php-render.php`; also run `php -l` on every changed file under `deployed/` on the target PHP runtime.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
