@@ -32,7 +32,7 @@ node -e "const p=require('./src/parser/core.js'); console.log(p.parsePaste('1. W
 ```text
 src/
   parser/
-    core.js            canonical pure parser (dual Node/Browser export, v2.0.0)
+    core.js            canonical pure parser (dual Node/Browser export, v2.1.0)
     parser.js          legacy parser + auto-save helper module (re-exports core)
   ui/
     ui.js              legacy bookmarklet UI and DOM driver
@@ -42,6 +42,7 @@ src/
   owner-tool/
     controller.js      production owner-tool controller (native PRG saves)
     state.js           versioned cbtOwnerTool:v1 state store
+    render.js          safe shared text renderer (exact <u> markers only)
     style.css          owner-tool panel styles
 docs/
   STATUS.md            current checks, build hash, and live-test state

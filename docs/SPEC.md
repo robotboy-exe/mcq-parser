@@ -226,7 +226,9 @@ word or option. The UI and the runner call `splitSectionsWithSalvage(raw)`:
    between them. A visible number suppresses the warning; the text is never
    split inline.
 9. Stem = text before the first mark. Each option = text from its mark to the
-   next mark (last runs to end).
+   next mark (last runs to end). The stem keeps blank-line paragraph breaks and
+   folds single wrapped lines into one space (`cleanBlock`); every option value
+   is folded to a single line (D-66).
 10. Compute flags (below).
 
 The baseline has **no** absorbed-option post-processor. The `[^\S\n]*` after
@@ -270,7 +272,8 @@ block from the question text.
   section boundary, and the answer section. The question header wins; later
   sources fill only fields it did not set. A key-only paste uses the boundary
   and answer-section header.
-- Year: first `20\d\d` in the 3-line header → `exam_year`.
+- Year: the first `19\d\d` or `20\d\d` value in the 3-line header →
+  `exam_year` (1900–2099; D-66).
 - Subject step 1: a CRK / CRS / `C.R.K.` / `C.R.S.` / `CHRISTIAN RELIGIOUS
   [STUDIES]` header selects the first option containing `CRS` or
   `CHRISTIAN RELIGIOUS`.
@@ -555,5 +558,26 @@ cleared, the same manual save proceeds normally (Fix 2).
 
 All server-derived text is rendered with `textContent` or created nodes, never
 `innerHTML`. Option sizes are compared in UTF-8 bytes.
+
+## 8. Formatting and multiline text
+
+- Stored question and context text may contain exactly two formatting markers,
+  `<u>` and `</u>`; nothing else is formatting (D-66).
+- Stems keep blank-line paragraph breaks; single wrapped lines fold into one
+  space. Option values are always folded to one line, and explanations stay
+  plain text in this release.
+- Rendering escapes first and restores only the exact markers.
+  `src/owner-tool/render.js` provides `format()` (escaped HTML with the two
+  tags restored), `render()` (text nodes plus real `<u>` elements) and
+  `strip()` (plain text for summaries); `deployed/render.php` provides the same
+  rules server-side as `cbt_format_text()` and `cbt_strip_formatting()`. Never
+  use permissive `strip_tags`.
+- `<u class=…>`, `<U>`, other tags, encoded `&lt;u&gt;`, and an unmatched
+  `</u>` stay literal text. A second `<u>` inside an open underline also stays
+  literal.
+- Question stems and the result table render with `white-space: pre-wrap`, so
+  manual newlines and OCR paragraph breaks survive; the admin list summary is
+  truncated after stripping the markers.
+- Header year inference accepts 1900–2099.
 
 See `docs/INVARIANTS.md` for the full rule list and which items are unverified.

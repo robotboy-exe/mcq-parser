@@ -7,8 +7,10 @@ const vm = require('vm');
 const ROOT = path.resolve(__dirname, '..');
 const STATE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/state.js'), 'utf8');
 const CONTROLLER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/controller.js'), 'utf8');
+const RENDER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/render.js'), 'utf8');
 const parser = require('../src/parser/core.js');
 const stateApi = require('../src/owner-tool/state.js');
+const textApi = require('../src/owner-tool/render.js');
 
 const FULL_PASTE = [
   'CRS 2021 JAMB',
@@ -102,6 +104,21 @@ function createElement(doc, tag, props) {
     querySelectorAll(selector) { return doc.queryAll(this, selector); }
   };
   Object.assign(el, props || {});
+  const initialText = typeof el.textContent === 'string' ? el.textContent : '';
+  let ownText = initialText;
+  Object.defineProperty(el, 'textContent', {
+    configurable: true,
+    get() {
+      let out = ownText;
+      (this.children || []).forEach(child => { out += String(child.textContent == null ? '' : child.textContent); });
+      return out;
+    },
+    set(value) {
+      ownText = String(value == null ? '' : value);
+      (this.children || []).forEach(child => { child.parentNode = null; });
+      this.children = [];
+    },
+  });
   return el;
 }
 
@@ -147,6 +164,11 @@ function createDocument(options) {
     createElement(tag) {
       return createElement(this, tag);
     },
+    createTextNode(text) {
+      const node = createElement(this, '#text', { textContent: String(text) });
+      node.nodeType = 3;
+      return node;
+    },
     query(scope, selector) {
       if (selector === 'input[name=action][value=save_question]') return this.actionInput;
       if (selector === 'input[name=correct_option]') return doc.radios[0] || null;
@@ -186,7 +208,17 @@ function createForm(doc) {
       { text: 'JAMB', value: '8' },
     ], '2'),
     exam_year: createElement(doc, 'input', { id: 'exam_year', name: 'exam_year', value: '2021' }),
-    question_text: createElement(doc, 'textarea', { id: 'question_text', name: 'question_text', value: '' }),
+    question_text: createElement(doc, 'textarea', {
+      id: 'question_text',
+      name: 'question_text',
+      value: '',
+      selectionStart: 0,
+      selectionEnd: 0,
+      setSelectionRange(start, end) {
+        this.selectionStart = start;
+        this.selectionEnd = end;
+      },
+    }),
     option_a: createElement(doc, 'input', { id: 'option_a', name: 'option_a', value: '' }),
     option_b: createElement(doc, 'input', { id: 'option_b', name: 'option_b', value: '' }),
     option_c: createElement(doc, 'input', { id: 'option_c', name: 'option_c', value: '' }),
@@ -252,6 +284,7 @@ function createEnv(options) {
   sandbox.window = sandbox;
   vm.createContext(sandbox);
   vm.runInContext(STATE_SOURCE, sandbox, { filename: 'src/owner-tool/state.js' });
+  vm.runInContext(RENDER_SOURCE, sandbox, { filename: 'src/owner-tool/render.js' });
   sandbox.OCRParser = parser;
   vm.runInContext(CONTROLLER_SOURCE, sandbox, { filename: 'src/owner-tool/controller.js' });
 
@@ -283,6 +316,33 @@ function createEnv(options) {
     paste(text) {
       doc.getElementById('owner_tool_text').value = text;
     },
+    select(start, end) {
+      const box = form.elements.question_text;
+      box.selectionStart = start;
+      box.selectionEnd = end == null ? start : end;
+    },
+    type(text) {
+      form.elements.question_text.value = text;
+      form.elements.question_text.dispatch('input');
+    },
+    keydown(init) {
+      form.elements.question_text.dispatch('keydown', init);
+    },
+    reset() {
+      Object.keys(form.elements).forEach(name => {
+        const el = form.elements[name];
+        if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+        else if (el.tagName !== 'SELECT') el.value = '';
+      });
+      form.dispatch('reset');
+    },
+    underlined(id) {
+      const el = doc.getElementById(id);
+      if (!el) return [];
+      return (el.children || [])
+        .filter(child => String(child.tagName) === 'U')
+        .map(child => String(child.textContent));
+    },
     radioIndex() {
       return doc.radios.findIndex(radio => radio.checked);
     },
@@ -307,16 +367,10 @@ function createEnv(options) {
 
 let passed = 0;
 let failed = 0;
+const queue = [];
 
 function test(name, fn) {
-  try {
-    fn();
-    console.log('[PASS] ' + name);
-    passed++;
-  } catch (error) {
-    console.log('[FAIL] ' + name + ' - ' + error.message);
-    failed++;
-  }
+  queue.push({ name, fn });
 }
 
 function assert(condition, message) {
@@ -342,7 +396,7 @@ test('full paste fills the native fields and stores a versioned state', () => {
   assertEqual(env.field('exam_category_id'), '2', 'inferred category');
   const state = env.state();
   assertEqual(state.version, 1, 'state version');
-  assertEqual(state.parserVersion, '2.0.0', 'parser version');
+  assertEqual(state.parserVersion, '2.1.0', 'parser version');
   assertEqual(state.items.length, 2, 'queue length');
   assertEqual(state.answerKey['1'], 'D', 'answer key');
   assert(state.queueId.indexOf('q-') === 0, 'queue id is generated');
@@ -514,16 +568,128 @@ test('corrupt state warns without crashing or deleting', () => {
   assertEqual(env.raw.get(stateApi.KEY), '{not json', 'corrupt value preserved');
 });
 
+test('underline wraps the selected words with the exact markers', () => {
+  const env = createEnv();
+  env.type('The signs are ominous rather than encouraging.');
+  env.select(14, 21);
+  env.click('owner_tool_underline');
+  assertEqual(env.field('question_text'), 'The signs are <u>ominous</u> rather than encouraging.', 'markers wrapped');
+  const box = env.form.elements.question_text;
+  assertEqual(box.selectionStart, 17, 'selection starts inside the tags');
+  assertEqual(box.selectionEnd, 24, 'the same words stay selected');
+  assertEqual(env.underlined('owner_tool_preview').join('|'), 'ominous', 'only the marked words are underlined');
+  assert(env.text('owner_tool_preview').indexOf('<u>') === -1, 'the preview shows no literal markers');
+});
+
+test('Ctrl+U underlines, and the same shortcut removes it', () => {
+  const env = createEnv();
+  env.type('The signs are ominous rather than encouraging.');
+  env.select(14, 21);
+  let prevented = false;
+  env.keydown({ ctrlKey: true, key: 'u', preventDefault() { prevented = true; } });
+  assert(prevented, 'the browser default for Ctrl+U is suppressed');
+  assertEqual(env.field('question_text'), 'The signs are <u>ominous</u> rather than encouraging.', 'wrapped by shortcut');
+  env.keydown({ ctrlKey: true, key: 'u', preventDefault() {} });
+  assertEqual(env.field('question_text'), 'The signs are ominous rather than encouraging.', 'second press unwraps');
+});
+
+test('an empty selection inserts no markup and keeps the caret', () => {
+  const env = createEnv();
+  env.type('The signs are ominous rather than encouraging.');
+  env.select(4, 4);
+  env.click('owner_tool_underline');
+  assertEqual(env.field('question_text'), 'The signs are ominous rather than encouraging.', 'text unchanged');
+  const box = env.form.elements.question_text;
+  assertEqual(box.selectionStart, 4, 'caret stays put');
+  assertEqual(box.selectionEnd, 4, 'no selection is invented');
+  assert(env.text('owner_tool_hint').indexOf('Select the words') > -1, 'the owner is told what to select');
+});
+
+test('the preview keeps paragraphs and renders markers, not markup', () => {
+  const env = createEnv();
+  env.type('Ominous rather than <u>encouraging</u>.\n\nA second paragraph.');
+  assertEqual(env.text('owner_tool_preview'), 'Ominous rather than encouraging.\n\nA second paragraph.', 'paragraph break kept');
+  assertEqual(env.underlined('owner_tool_preview').join('|'), 'encouraging', 'one underlined run');
+});
+
+test('scripts, attributes, other tags, and encoded markers stay text', () => {
+  const env = createEnv();
+  env.type('<script>alert(1)</script> <u onclick="x">click</u> <b>bold</b> &lt;u&gt; <U>upper</U> </u>');
+  const preview = env.text('owner_tool_preview');
+  assert(preview.indexOf('<script>') > -1, 'the script tag is literal text');
+  assert(preview.indexOf('<u onclick') > -1, 'the attribute form is literal text');
+  assertEqual(env.underlined('owner_tool_preview').length, 0, 'no underline element is created');
+});
+
+test('format() restores only the exact markers', () => {
+  assertEqual(textApi.format('<u>a</u>'), '<u>a</u>', 'exact markers restored');
+  assertEqual(textApi.format('&lt;u&gt;'), '&amp;lt;u&amp;gt;', 'encoded markers stay text');
+  assertEqual(textApi.format('<u class="x">a</u>'), '&lt;u class=&quot;x&quot;&gt;a&lt;/u&gt;', 'attributes stay text');
+  assertEqual(textApi.format('a < b'), 'a &lt; b', 'a lone angle bracket is escaped');
+  assertEqual(textApi.format('<script>alert(1)</script>'), '&lt;script&gt;alert(1)&lt;/script&gt;', 'scripts are escaped');
+  assertEqual(textApi.format('<u>one <u>two</u>'), '<u>one &lt;u&gt;two</u>', 'a nested opener stays text');
+  assertEqual(textApi.strip('a <u>b</u> c'), 'a b c', 'strip removes only exact markers');
+  assertEqual(textApi.strip('a &lt;u&gt; b'), 'a &lt;u&gt; b', 'strip leaves encoded markers alone');
+});
+
+test('the preview refreshes after a programmatic fill and a native reset', async () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  assert(env.text('owner_tool_preview').indexOf('father of faith') > -1, 'fill updates the preview');
+  env.reset();
+  await new Promise(resolve => setTimeout(resolve, 10));
+  assertEqual(env.text('owner_tool_preview'), '', 'reset clears the preview');
+});
+
+test('stems keep paragraphs while option values fold to one line', () => {
+  const item = parser.parseQuestion({
+    num: 1,
+    text: 'Stem line\ncontinues here\n\nsecond paragraph.\nA. first option\ncontinued line\nB. two\nC. three\nD. four',
+  });
+  assertEqual(item.question, 'Stem line continues here\n\nsecond paragraph.', 'single wrap folds, blank line remains');
+  assertEqual(item.a, 'first option continued line', 'option value is one line');
+});
+
+test('underlining never changes the native submit path', () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  env.setField('question_text', '<u>Underlined</u> stem\n\nSecond paragraph.');
+  env.submit();
+  const state = env.state();
+  assertEqual(state.pendingSubmission.index, 0, 'marker recorded');
+  assertEqual(env.form.elements.is_active.checked, false, 'active checkbox still untouched');
+  const next = env.reload({ success: 'Question saved successfully (Question ID: 5041).' });
+  assertEqual(next.state().currentIndex, 1, 'the exact flash still advances the queue');
+});
+
 test('excluded behavior is absent from the production controller', () => {
   ['fetch(', 'autosave', 'ocrQueue', 'ocrMeta', 'ansKey', 'ocrSubmitted', 'dry run', 'image plan', 'batch history']
     .forEach(term => assert(CONTROLLER_SOURCE.toLowerCase().indexOf(term.toLowerCase()) === -1,
       'controller must not contain ' + term));
-  assert(CONTROLLER_SOURCE.indexOf('preventDefault') === -1, 'native submit is never intercepted');
+  const submitAt = CONTROLLER_SOURCE.indexOf("addEventListener('submit'");
+  assert(submitAt > -1, 'the native submit listener exists');
+  const submitBody = CONTROLLER_SOURCE.slice(submitAt, submitAt + 400);
+  assert(submitBody.indexOf('preventDefault') === -1, 'native submit is never intercepted');
+  assertEqual((CONTROLLER_SOURCE.match(/\.preventDefault\(/g) || []).length, 1, 'the only preventDefault call is the underline shortcut');
   assert(CONTROLLER_SOURCE.indexOf('is_active') === -1, 'active checkbox is never forced');
 });
 
-console.log('\nSummary');
-console.log('  PASS: ' + passed);
-console.log('  FAIL: ' + failed);
-console.log('  state fixture: ' + stateApi.KEY + ' v' + stateApi.STATE_VERSION);
-process.exit(failed === 0 ? 0 : 1);
+(async () => {
+  for (const entry of queue) {
+    try {
+      await entry.fn();
+      console.log('[PASS] ' + entry.name);
+      passed++;
+    } catch (error) {
+      console.log('[FAIL] ' + entry.name + ' - ' + error.message);
+      failed++;
+    }
+  }
+  console.log('\nSummary');
+  console.log('  PASS: ' + passed);
+  console.log('  FAIL: ' + failed);
+  console.log('  state fixture: ' + stateApi.KEY + ' v' + stateApi.STATE_VERSION);
+  process.exit(failed === 0 ? 0 : 1);
+})();

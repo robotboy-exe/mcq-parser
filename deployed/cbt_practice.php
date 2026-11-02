@@ -237,6 +237,12 @@ include __DIR__ . '/header.php';
     line-height: 1.55;
     font-weight: 700;
     margin: 0 0 22px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.result-question-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 .question-diagram-wrap {
     margin: 0 0 22px;
@@ -607,6 +613,7 @@ include __DIR__ . '/header.php';
 </main>
 
 <?php if ($examStarted): ?>
+<script src="src/owner-tool/render.js"></script>
 <script>
 // Questions are randomly selected from MySQL for the chosen subject/category.
 // JSON_HEX_* prevents question text from breaking the script context.
@@ -647,7 +654,7 @@ function renderQuestion() {
 
     let html = `
         <div class="question-number">Question ${current + 1}</div>
-        <p class="question-text">${escapeHtml(q.question)}</p>
+        <p class="question-text">${formatQuestionText(q.question)}</p>
     `;
 
     // The diagram is optional, so questions without one remain unchanged.
@@ -774,7 +781,8 @@ function submitTest(forceSubmit = false) {
 
         const questionCell = document.createElement("td");
         const questionLabel = document.createElement("div");
-        questionLabel.textContent = q.question;
+        questionLabel.className = "result-question-text";
+        renderQuestionText(questionLabel, q.question);
         questionCell.appendChild(questionLabel);
         if (q.image) {
             const questionImage = document.createElement("img");
@@ -857,6 +865,16 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+// Only the exact <u> markers are formatting; everything else stays text.
+const formatQuestionText = (value) => (window.CBTText ? window.CBTText.format(value) : escapeHtml(value));
+const renderQuestionText = (element, value) => {
+    if (window.CBTText) {
+        window.CBTText.render(element, value);
+        return;
+    }
+    element.textContent = String(value);
+};
 
 renderQuestion();
 renderQuestionNumbers();

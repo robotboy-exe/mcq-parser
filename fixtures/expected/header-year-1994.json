@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "header-year-1994",
+  "source": [
+    "sample-passages.txt lines 1-2 (U. M. E. JAMB USE OF ENGLISH / COMPREHENSION 1994)",
+    "INTENT.md Formatting intent (infer exam years from 1900 through 2099)"
+  ],
+  "provenance": "The header is transcribed from the supplied passage sample; the single question is synthetic (dotted A-D) so the year inference is the only thing under test.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/header-year-1994.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 1,
+    "header": {
+      "year": 1994
+    }
+  },
+  "must_not": [
+    "Year left null for a 19xx header",
+    "Year inferred from the question text"
+  ],
+  "notes": [
+    "20xx headers stay covered by the bank-* fixtures."
+  ],
+  "discrepancies": []
+}

@@ -26,8 +26,12 @@ historical regression testing, not the production delivery path.
 
 ## Production path (owner tool)
 
-`src/owner-tool/controller.js`, `src/owner-tool/state.js`, and
-`src/owner-tool/style.css` are the shipping tool loaded by `admin_questions.php`.
+`src/owner-tool/controller.js`, `src/owner-tool/state.js`,
+`src/owner-tool/render.js`, and `src/owner-tool/style.css` are the shipping tool
+loaded by `admin_questions.php`. `render.js` is also loaded by both CBT pages,
+and `deployed/render.php` is its server-side twin; both escape first and restore
+only the exact `<u>`/`</u>` markers (D-66). Never render stored question text
+with permissive `strip_tags` or unrestricted `innerHTML`.
 They are readable source files with no build step: edit them directly, then run
 `node tests/owner-tool.js`. The bookmarklet sections below describe the legacy
 artifact, which is retained as evidence and is not a production deliverable.
@@ -48,8 +52,10 @@ delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
 2. **Do not refactor for style.** The docs repeatedly say the code is a working
    baseline, not a refactor target (qwen-2 H08). Make only changes you can
    test.
-3. **Do not modify the PHP, the database, `ocr_helper.js`, or the server
-   contract.** CSRF handling, upload handling, the PRG flow, field names
+3. **Do not modify the PHP server contract, the database, or `ocr_helper.js`.**
+   The `deployed/` copies are working copies: a package may change rendering,
+   asset includes, and style there only when that package says so, and never the
+   contract below. CSRF handling, upload handling, the PRG flow, field names
    (`save_question`, `correct_option`, `option_a`–`option_d`), the four-option
    rule, and the success flash text are off-limits (qwen-2 H03; INV-06).
 4. **Do not change `localStorage` key names or shapes.** `ocrQueue`,

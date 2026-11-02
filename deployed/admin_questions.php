@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 session_start();
 
+require_once __DIR__ . '/render.php';
+
 if (empty($_SESSION['cbt_admin_csrf'])) {
     $_SESSION['cbt_admin_csrf'] = bin2hex(random_bytes(32));
 }
@@ -957,7 +959,7 @@ if (is_file(__DIR__ . '/header.php')) {
                         <?php foreach ($recentQuestions as $item): ?>
                             <tr>
                                 <td><?php echo (int) $item['id']; ?></td>
-                                <td><?php echo h(short_text((string) $item['question_text'], 140)); ?></td>
+                                <td><?php echo h(short_text(cbt_strip_formatting((string) $item['question_text']), 140)); ?></td>
                                 <td><?php echo h($item['subject_name']); ?></td>
                                 <td><?php echo h($item['category_name']); ?></td>
                                 <td><?php echo (int) $item['exam_year']; ?></td>
@@ -1043,6 +1045,7 @@ if (is_file(__DIR__ . '/header.php')) {
 <link rel="stylesheet" href="src/owner-tool/style.css">
 <script src="src/parser/core.js"></script>
 <script src="src/owner-tool/state.js"></script>
+<script src="src/owner-tool/render.js"></script>
 <script src="src/owner-tool/controller.js"></script>
 
 

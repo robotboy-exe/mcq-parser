@@ -8,9 +8,10 @@
 
   var stateApi = window.CBTOwnerState;
   var parser = window.OCRParser;
-  if (!stateApi || !parser) {
+  var textApi = window.CBTText;
+  if (!stateApi || !parser || !textApi) {
     if (window.console && window.console.warn) {
-      window.console.warn('Owner tool: parser core or state module is not loaded.');
+      window.console.warn('Owner tool: the parser, state, or renderer module is not loaded.');
     }
     return;
   }
@@ -49,6 +50,11 @@
     if (!el) return;
     el.textContent = text || '';
     el.hidden = !text;
+  }
+
+  function hint(text) {
+    var el = $('owner_tool_hint');
+    if (el) el.textContent = text || '';
   }
 
   function currentItem() {
@@ -134,6 +140,45 @@
     return { a: a, b: b, c: c, d: d, tick: -1 };
   }
 
+  function updatePreview() {
+    var box = $('question_text');
+    var preview = $('owner_tool_preview');
+    if (!box || !preview) return;
+    textApi.render(preview, String(box.value || ''));
+  }
+
+  function wrapUnderline() {
+    var box = $('question_text');
+    if (!box) return false;
+    var value = String(box.value || '');
+    var start = typeof box.selectionStart === 'number' ? box.selectionStart : 0;
+    var end = typeof box.selectionEnd === 'number' ? box.selectionEnd : start;
+    if (start === end) {
+      hint('Select the words to underline first, then press Ctrl+U.');
+      if (typeof box.focus === 'function') box.focus();
+      return false;
+    }
+    var selected = value.slice(start, end);
+    var already = value.slice(Math.max(0, start - 3), start) === '<u>'
+      && value.slice(end, end + 4) === '</u>';
+    var next;
+    var from;
+    if (already) {
+      next = value.slice(0, start - 3) + selected + value.slice(end + 4);
+      from = start - 3;
+      hint('Underline removed.');
+    } else {
+      next = value.slice(0, start) + '<u>' + selected + '</u>' + value.slice(end);
+      from = start + 3;
+      hint('Underlined. Press Ctrl+U on it again to remove the underline.');
+    }
+    box.value = next;
+    if (typeof box.setSelectionRange === 'function') box.setSelectionRange(from, from + selected.length);
+    if (typeof box.focus === 'function') box.focus();
+    updatePreview();
+    return true;
+  }
+
   function fillForm(item) {
     applyMetadata();
     $('question_text').value = item.question || '';
@@ -144,6 +189,7 @@
     $('option_d').value = options.d;
     clearRadios();
     tick(options.tick);
+    updatePreview();
   }
 
   function refreshTick() {
@@ -205,6 +251,14 @@
     + '<div id="owner_tool_status" class="admin-note"></div>'
     + '<div id="owner_tool_flags" class="owner-tool-flags"></div>'
     + '<div id="owner_tool_warning" class="admin-alert admin-error" hidden></div>'
+    + '<div class="owner-tool-format">'
+    + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_underline" title="Underline the selected text (Ctrl+U)">Underline</button>'
+    + '<span id="owner_tool_hint" class="owner-tool-hint"></span>'
+    + '</div>'
+    + '<div class="owner-tool-preview-wrap">'
+    + '<span class="owner-tool-hint">Preview (options stay plain):</span>'
+    + '<div id="owner_tool_preview" class="owner-tool-preview"></div>'
+    + '</div>'
     + '<div class="owner-tool-actions">'
     + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_show">Show Paste</button>'
     + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_skip">Skip</button>'
@@ -329,6 +383,24 @@
     render();
   }
 
+  var questionBox = $('question_text');
+  if (questionBox) {
+    questionBox.addEventListener('input', function () {
+      updatePreview();
+      hint('');
+    });
+    questionBox.addEventListener('keydown', function (event) {
+      if (!event || !(event.ctrlKey || event.metaKey)) return;
+      if (String(event.key || '').toLowerCase() !== 'u') return;
+      if (typeof event.preventDefault === 'function') event.preventDefault();
+      wrapUnderline();
+    });
+  }
+  form.addEventListener('reset', function () {
+    setTimeout(updatePreview, 0);
+  });
+
+  $('owner_tool_underline').onclick = wrapUnderline;
   $('owner_tool_load').onclick = loadPaste;
   $('owner_tool_skip').onclick = skip;
   $('owner_tool_reset').onclick = reset;

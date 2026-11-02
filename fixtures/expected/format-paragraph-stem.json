@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "format-paragraph-stem",
+  "source": [
+    "INTENT.md Formatting intent (store exact <u> markers, keep blank-line paragraphs)",
+    "admin-needs.txt lines 1-2 (underline words; render stems on multiple lines)",
+    "sample-underline.txt lines 7-8 (literal <u> markers in a stem)"
+  ],
+  "provenance": "Synthetic paste written from the formatting intent, not from parser output. Question 1 wraps a single line, has one blank-line paragraph break, and carries a literal <u> marker; question 2 is a plain control.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/format-paragraph-stem.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [1, 2],
+    "questions": [
+      {
+        "num": 1,
+        "question": "The process begins with <u>respiration</u> in the cell and continues into the next stage.\n\nThe second paragraph explains why this matters.",
+        "a": "It releases energy",
+        "b": "It stores water",
+        "c": "It copies DNA",
+        "d": "It stops growth",
+        "flags": []
+      },
+      {
+        "num": 2,
+        "question": "Which stage follows respiration?",
+        "a": "Digestion",
+        "b": "Circulation",
+        "c": "Excretion",
+        "d": "Reproduction",
+        "flags": []
+      }
+    ]
+  },
+  "must_not": [
+    "Blank-line paragraph collapsed into the same line",
+    "Single wrap line kept as a newline",
+    "<u> markers stripped or altered",
+    "Paragraph break applied to an option value"
+  ],
+  "notes": [
+    "Wrap folding and paragraph retention apply to the stem only; options stay single-line."
+  ],
+  "discrepancies": []
+}

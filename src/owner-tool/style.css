@@ -48,3 +48,37 @@
 .owner-tool-actions .admin-btn {
   margin: 0;
 }
+
+.owner-tool-format {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.owner-tool-format .admin-btn {
+  margin: 0;
+}
+
+.owner-tool-hint {
+  color: #536273;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.owner-tool-preview-wrap {
+  margin-top: 10px;
+}
+
+.owner-tool-preview {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px dashed #d5dfe9;
+  border-radius: 8px;
+  background: #fff;
+  color: #263445;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

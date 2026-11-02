@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.0.0
+// Version: 2.1.0
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.0.0";
+const PARSER_VERSION = "2.1.0";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -25,7 +25,7 @@ const STIMULUS_INTRO_RANGE = /\bquestions?\s+\d{1,3}\s*(?:and|to|[-–—])\s*\d
 function parseHeader(text) {
   const header = text.split('\n').slice(0, 3).join(' ').toUpperCase();
   let year = null;
-  const ym = header.match(/\b(20\d{2})\b/);
+  const ym = header.match(/\b((?:19|20)\d{2})\b/);
   if (ym) year = ym[1];
   return { year, header };
 }
@@ -456,10 +456,7 @@ function extractStimulusMarkers(raw, num) {
   });
   const cleaned = [];
   for (let i = 0; i < lines.length; i++) {
-    if (removed.has(i)) {
-      cleaned.push('');
-      continue;
-    }
+    if (removed.has(i)) continue;
     let line = lines[i];
     for (const mk of markers) {
       if (mk.inline && mk.line === i) {
@@ -552,7 +549,23 @@ function parseQuestion({ num, text }) {
   const normalized = text.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
   const extracted = extractStimuli(normalized, num);
   const raw = extracted.text.replace(/\n{3,}/g, '\n\n');
+  // Options stay one line; stems keep blank-line paragraphs and fold single wraps.
   const clean = s => s.replace(/\s+/g, ' ').trim();
+  const cleanBlock = s => s
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map(line => line.replace(/[^\S\n]+/g, ' ').trim())
+    .reduce((paragraphs, line) => {
+      if (!line) {
+        if (paragraphs.open.length) {
+          paragraphs.done.push(paragraphs.open.join(' '));
+          paragraphs.open = [];
+        }
+        return paragraphs;
+      }
+      paragraphs.open.push(line);
+      return paragraphs;
+    }, { done: [], open: [] });
   const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
   const matches = optionLabelMatches(raw, scanRaw);
   const best = bestOptionCandidate(matches);
@@ -587,9 +600,10 @@ function parseQuestion({ num, text }) {
     }
   }
   const marks = Object.entries(pos).sort((a, b) => a[1].start - b[1].start);
+  const stem = cleanBlock(raw.slice(0, marks[0]?.[1].start ?? raw.length));
   const q = {
     num,
-    question: clean(raw.slice(0, marks[0]?.[1].start ?? raw.length)),
+    question: stem.done.concat(stem.open.length ? [stem.open.join(' ')] : []).join('\n\n'),
     a: '', b: '', c: '', d: '', e: '', f: '',
     flags: []
   };
