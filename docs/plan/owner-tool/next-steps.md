@@ -8,7 +8,8 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03.
   `f3dd42a`.
 - [x] `ot04-fix` is merged into `owner-tool-integration` using the normal
   non-destructive Git workflow (fast-forward `83de4bc`..`ad84269`, 2026-11-02;
-  later integration commits are `f5566d7` and `405439b`).
+  later integration commits are `f5566d7` and `405439b`; the 2026-11-03 docs
+  reconciliation follows).
 - [x] Application target is PHP 8.3.
 - [x] Database version is MySQL 8.0.41.
 - [x] Tables use InnoDB and `utf8mb4_unicode_ci`.

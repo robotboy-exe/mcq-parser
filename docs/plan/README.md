@@ -21,7 +21,7 @@ Last updated: 2026-11-03.
 - Current `main` parser baseline at `58af90e`: 47 PASS, 0 FAIL, 2 PENDING
   runner; 5 bank slices. That line has no `tests/unit.js` or
   `tests/owner-tool.js`.
-- OT04 merged baseline on `owner-tool-integration` at `405439b`: 47 runner PASS
+- OT04 merged code baseline on `owner-tool-integration` at `405439b`: 47 runner PASS
   + 2 PENDING, 145 unit PASS, 38 owner-tool PASS, 7 bank slices OK;
   staging/mobile verification is in OT10.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
