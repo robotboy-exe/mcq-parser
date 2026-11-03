@@ -1,7 +1,8 @@
 # Pending — English Shared-Passage and Cloze Support
 
 - **Status:** deferred pending representative OCR samples
-- **Target:** site-owner tool on `main`
+- **Target:** owner tool on the active `owner-tool-integration` line
+  (published baseline: `main`)
 - **Reason:** parsing rules cannot be defined safely without real source layouts
 
 ## Need
