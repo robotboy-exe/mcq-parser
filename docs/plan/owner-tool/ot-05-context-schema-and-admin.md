@@ -1,11 +1,42 @@
 # OT05 — Context Schema and Admin
 
 - **Status:** blocked
-- **Depends on:** OT04 and its settled rigorous review
+- **Depends on:** OT04 and its settled rigorous review (satisfied)
 - **Blocks:** OT06, OT07
-- **External gate:** redacted `cbt_db.php`, DDL for `questions`, `subjects`, and
-  `exam_category`, plus PHP and database versions
+- **External gate:** exact SQL DDL bytes for `questions`, `subjects`, and
+  `exam_category`, placed unchanged in the workspace. No `.sql` export currently
+  exists in the worktree or Git history.
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
+
+## Gate
+
+Confirmed facts, not blockers:
+
+- Application target is PHP 8.3; database is MySQL 8.0.41 with InnoDB and
+  `utf8mb4_unicode_ci`.
+- Root `db_conn.php` supplies the connection contract: charset `utf8mb4`, PDO
+  exception mode, associative fetches, and native prepares. The full
+  credential-bearing `cbt_db.php` is not required.
+- The supplied export's `exam_category2` identifier is corrected to
+  `exam_category` when building the working DDL copy. Keep the original export as
+  evidence.
+- OT04's rigorous review passed and `ot04-fix` is merged into
+  `owner-tool-integration`.
+
+Outstanding dependency:
+
+- The exact supplied DDL bytes. The checklist names `questions.sql`,
+  `subjects.sql`, and `exam_category.sql`, but none exists in the worktree or
+  anywhere in Git history. This is one missing-artifact problem, not several
+  independent blockers.
+
+Deferred to OT10:
+
+- PHP lint, `php tests/php-render.php`, migration preflight/forward/rerun/rollback
+  execution, Chromium checks, and Brave/Android staging checks.
+
+Do not start OT05 implementation until the exact DDL bytes are present. Do not
+substitute the archived migration docs or `db_conn.php` for the DDL.
 
 ## Goal
 
@@ -36,7 +67,9 @@ The exact SQL types must be copied from the supplied DDL. The intended model is:
 
 ## Work
 
-1. Archive the redacted DB contract and record server versions/charset/engine.
+1. Archive the supplied exact DDL bytes unchanged with hashes, record the
+   confirmed server versions/engine/charset, and apply the settled
+   `exam_category2` → `exam_category` correction only to the working copy.
 2. Write forward migration, preflight checks, backup instructions, and a safe
    rollback procedure that never destroys populated context data silently.
 3. Add a side-effect-free shared PHP helper for context validation and queries.
@@ -49,31 +82,39 @@ The exact SQL types must be copied from the supplied DDL. The intended model is:
 8. Validate activation atomically: expected count, unique order, required slots,
    four options/correct answer on every member, and matching pool metadata.
 9. Add clear status labels and audit-friendly server messages.
-10. Test on a disposable database using the user's local PHP machine.
+10. Write the migration preflight, forward migration, rerun behavior, backup
+    instructions, and non-destructive rollback; OT10 executes them on the target
+    runtime.
 
 ## Acceptance
 
 | Check | Expected |
 |---|---|
-| Migration preflight | Exact target schema/version/engine/charset confirmed |
-| Migration | Applies once to a disposable production-shaped database |
-| Existing questions | Remain unchanged and selectable |
+| Migration preflight | Exact target schema/version/engine/charset confirmed from the supplied DDL |
+| Migration artifacts | Forward migration, preflight, rerun behavior, backup instructions, and non-destructive rollback written and reviewed |
+| Existing questions | Remain unchanged and selectable by reviewed design |
 | Context create/edit | Native CSRF + PRG flow; fields round-trip exactly |
 | Link validation | Wrong pool, duplicate position, invalid slot/ID rejected |
-| Incomplete context | Cannot activate or reach candidate queries |
-| Complete context | Activates atomically after full validation |
+| Incomplete context | Cannot activate or reach candidate queries by design review |
+| Complete context | Activates atomically after full validation by design review |
 | Member mutation | Context deactivates and requires review |
 | Delete | Restricted with linked members; no cascade surprise |
-| Legacy rollback safety | Linked rows remain hidden from old candidate query |
-| PHP | Every changed/new PHP file passes `php -l` locally |
+| Legacy rollback safety | Linked rows remain hidden from the old candidate query |
+| PHP syntax | Deferred to OT10: every changed/new PHP file passes `php -l` on the target runtime |
+| Migration execution | Deferred to OT10: preflight, forward, rerun, and rollback proven on a disposable production-shaped database |
 
 ## Guardrails
 
+- Do not start OT05 until the exact DDL bytes are present in the workspace.
+- Do not treat `cbt_db.php`, the PHP/database/engine/charset versions, or the
+  `exam_category2` naming question as open gates; they are settled.
 - Do not guess SQL types, foreign keys, charset, or `practice_title` behavior.
 - Do not use subject display text as a capability switch.
 - Do not allow incomplete groups to become active.
 - Do not duplicate context text into every question row.
 - Do not add context media in this package.
+- Do not run or require PHP, migration, or staging verification in OT05; that is
+  OT10's scope.
 - Do not start OT06.
 
 ## Handoff template
@@ -81,11 +122,12 @@ The exact SQL types must be copied from the supplied DDL. The intended model is:
 ```text
 Date:
 Result:
-Production schema/version evidence:
+Exact DDL files and hashes:
+Confirmed schema/version/engine/charset:
 Migration and rollback paths:
 Context/question contract:
 Activation validation:
-Local PHP/DB tests:
+Runtime verification: deferred to OT10
 Files changed:
 Hashes:
 Open questions:

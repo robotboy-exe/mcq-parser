@@ -11,6 +11,7 @@
 ## Session scope
 
 - Execute one `docs/plan/` package per session unless the user explicitly asks to continue. Stop after the package handoff.
+- Active work happens on `owner-tool-integration`; `main` is the published baseline and the remote default. See `docs/plan/README.md` for branch strategy and OT05's single gate: the exact supplied SQL DDL bytes.
 - Do not archive the active phase map when the last phase stops; archive only when the user confirms the cycle is complete or asks to shelve it.
 - Commit only at a phase boundary: at the start of a new phase, after the previous phase's review settles. Do not commit current-phase work; commit the final phase before archiving the cycle.
 - Rigorous reviews are separate sessions using `docs/plan/prompts/review-session.md`; they may write only `docs/plan/reviews/` and never commit.

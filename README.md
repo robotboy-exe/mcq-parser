@@ -116,9 +116,14 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 ## Status
 
 Current test counts, build hash and size, and live-test state are in
-[`docs/STATUS.md`](docs/STATUS.md). The fixture runner is the regression gate;
-remaining live checks are tracked in
-[`docs/plan/11-remaining-verification.md`](docs/plan/11-remaining-verification.md).
+[`docs/STATUS.md`](docs/STATUS.md). Current work state, package gates, and branch
+strategy are in [`docs/plan/README.md`](docs/plan/README.md). OT05 is blocked only
+on the exact supplied SQL DDL bytes; runtime/staging verification is deferred to
+OT10.
+
+Active work happens on `owner-tool-integration`. `main` is the published baseline
+and the remote default; do not start new implementation there. The fixture runner
+is the regression gate.
 
 The behavior baseline is `trusted-variant-C.js` (the merged one-box artifact);
 see [`docs/BASELINE_COMPARISON.md`](docs/BASELINE_COMPARISON.md). After changing

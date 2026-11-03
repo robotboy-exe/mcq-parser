@@ -1,6 +1,7 @@
 # Active Cycle — owner-tool-2026-11
 
-Status: active; OT04 review PASS; OT05 blocked pending the DB contract.
+Status: active; OT04 review PASS; OT05 blocked only pending the exact SQL DDL
+bytes. Runtime/staging verification is deferred to OT10.
 
 Intent: [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -11,7 +12,7 @@ Intent: [`../../../INTENT.md`](../../../INTENT.md)
 | 3 | OT02 — Production Parser Core | [`../owner-tool/ot-02-production-parser-core.md`](../owner-tool/ot-02-production-parser-core.md) | done |
 | 4 | OT03 — Owner Tool Replacement | [`../owner-tool/ot-03-owner-tool-replacement.md`](../owner-tool/ot-03-owner-tool-replacement.md) | done |
 | 5 | OT04 — Underline and Multiline | [`../owner-tool/ot-04-underline-and-multiline.md`](../owner-tool/ot-04-underline-and-multiline.md) | done; rigorous review PASS |
-| 6 | OT05 — Context Schema and Admin | [`../owner-tool/ot-05-context-schema-and-admin.md`](../owner-tool/ot-05-context-schema-and-admin.md) | blocked: DB contract required |
+| 6 | OT05 — Context Schema and Admin | [`../owner-tool/ot-05-context-schema-and-admin.md`](../owner-tool/ot-05-context-schema-and-admin.md) | blocked: exact SQL DDL bytes missing |
 | 7 | OT06 — Candidate Group Delivery | [`../owner-tool/ot-06-candidate-group-delivery.md`](../owner-tool/ot-06-candidate-group-delivery.md) | blocked: practice writer/search audit required |
 | 8 | OT07 — Owner Context Workflow | [`../owner-tool/ot-07-owner-context-workflow.md`](../owner-tool/ot-07-owner-context-workflow.md) | not started |
 | 9 | OT08 — Comprehension OCR | [`../owner-tool/ot-08-comprehension-ocr.md`](../owner-tool/ot-08-comprehension-ocr.md) | not started |

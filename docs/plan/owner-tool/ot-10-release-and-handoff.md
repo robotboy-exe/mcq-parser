@@ -13,6 +13,10 @@ Audit the complete owner-tool/context release, prove its migration and rollback
 on production-shaped local data, verify the supported browsers, and produce a
 concise human-developer deployment and maintenance handoff.
 
+OT05 writes the migration, preflight, and rollback artifacts. This package
+executes and proves them. Do not make OT05 completion depend on PHP, migration,
+or staging checks owned here.
+
 ## Work
 
 1. Audit every changed PHP/JS/CSS/SQL file for readability, duplication, dead

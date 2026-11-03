@@ -108,4 +108,37 @@ added regression evidence, and assigned first-time detail integration to OT04.
 OT10 now owns independent Release A, target-PHP, staging, and Brave/Android
 verification. On 2026-11-02 the owner deferred the unavailable staging/mobile
 smoke to OT10 and accepted OT04 implementation as complete. OT05 has not started
-and remains blocked by the OT04 rigorous review plus its own database gate.
+and remains blocked by the OT04 rigorous review plus its own database gate. This
+was the 2026-11-02 state; the 2026-11-03 reconciliation below narrows the gate to
+the missing exact DDL bytes.
+
+## OT05 Gate Reconciliation — 2026-11-03
+
+A documentation and branch audit reconciled the active cycle with the agreed
+rescope. No application code, parser behavior, PHP contract, or fixture changed.
+
+Confirmed and removed from the blocker list:
+
+- PHP 8.3 is the application target; MySQL 8.0.41, InnoDB, and
+  `utf8mb4_unicode_ci` are settled.
+- Root `db_conn.php` supplies the PDO connection contract. A redacted or full
+  `cbt_db.php` is not required.
+- Runtime/staging verification belongs to OT10, not OT05.
+- The `exam_category2` → `exam_category` correction is settled.
+
+The remaining OT05 dependency is one missing artifact: the exact supplied SQL DDL
+bytes for `questions`, `subjects`, and `exam_category`. The checklist names
+`questions.sql`, `subjects.sql`, and `exam_category.sql`, but no `.sql` file
+exists in the worktree or anywhere in Git history. OT05 is therefore blocked
+only on obtaining and placing those bytes.
+
+Branch decisions:
+
+- `owner-tool-integration` is the authoritative work branch and contains `main`
+  plus all owner-tool work through OT04.
+- `main` remains the published baseline and remote default; it is advanced only
+  at a reviewed release boundary or cycle close.
+- `ot04-fix` and `ot04-review` are fully merged into
+  `owner-tool-integration` and retired.
+- Implementation returns to `owner-tool-integration`; review sessions stay
+  read-only and write only their review records.

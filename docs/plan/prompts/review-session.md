@@ -10,6 +10,8 @@ review record under `docs/plan/reviews/`.
 
 - Resolve `review phase N`, a package ID, or an explicitly approved phase range
   through the active map.
+- Review the read-only `owner-tool-integration` worktree. Do not create, switch,
+  merge, or move branches in a review session.
 - Read the intent, coordinator, package, handoff, implementation, tests, and
   prior review records.
 - Stop if the package is not done or the target record already exists without

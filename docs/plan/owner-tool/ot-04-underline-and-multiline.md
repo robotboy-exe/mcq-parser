@@ -221,8 +221,9 @@ Review: PASS on phase-5 re-review
 (`docs/plan/reviews/owner-tool-2026-11-phase-5-re-review.md`); BLOCK-1..3,
 FIX-1..2, and NOTE-1..2 closed; NOTE-3..5 non-blocking
 Commit: deferred
-Next: OT05 Gate 1; blocked until the redacted DB config and DDL are supplied.
-Do not start OT05 implementation or OT06.
+Next: OT05 Gate 1; blocked until the exact SQL DDL bytes are supplied.
+Reconciled 2026-11-03: the redacted DB config is no longer required. Do not start
+OT05 implementation or OT06.
 
 ## Closeout 2026-11-02 — Phase-5 Review PASS Accepted
 
@@ -249,4 +250,5 @@ Open questions:
 
 Review: PASS (phase-5 re-review)
 Commit: deferred; the phase-boundary commit requires a separate explicit request
-Next: OT05 Gate 1; blocked until the redacted DB config and DDL are supplied
+Next: OT05 Gate 1; blocked until the exact SQL DDL bytes are supplied.
+Reconciled 2026-11-03: the redacted DB config is no longer required.

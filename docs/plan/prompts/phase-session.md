@@ -16,14 +16,17 @@ continues into the next package.
    three to five acceptance probes. Never trust a handoff without evidence.
 6. Check required review records and ensure no unresolved `BLOCK` or rejected
    finding remains.
-7. Inspect both worktrees and identify unrelated changes. Never modify or clean
-   the dirty experiments worktree.
-8. Run the package's baseline commands. Before OT00 establishes the integration
+7. Inspect the worktrees and identify unrelated changes. Never modify or clean
+   the retired dirty experiments worktree.
+8. Confirm the worktree is on `owner-tool-integration`, the authoritative work
+   branch. Do not create a branch unless the package explicitly requires
+   isolation; `main` is only for reviewed releases.
+9. Run the package's baseline commands. Before OT00 establishes the integration
    baseline, run only commands that exist on the current line and report both
    lines separately.
-9. State commit readiness, but do not stage or commit. A commit requires an
-   explicit user request separate from this protocol.
-10. State scope, non-goals, acceptance, external gates, live actions, and stop
+10. State commit readiness, but do not stage or commit. A commit requires an
+    explicit user request separate from this protocol.
+11. State scope, non-goals, acceptance, external gates, live actions, and stop
     conditions.
 
 End Gate 1 with exactly:
