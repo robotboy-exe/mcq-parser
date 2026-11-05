@@ -11,7 +11,7 @@
 ## Session scope
 
 - Execute one `docs/plan/` package per session unless the user explicitly asks to continue. Stop after the package handoff.
-- Active work happens on `owner-tool-integration`; `main` is the published baseline and the remote default. See `docs/plan/README.md` for branch strategy and OT05's single gate: the exact supplied SQL DDL bytes.
+- Active work happens on `owner-tool-integration`; `main` is the published baseline and the remote default. See `docs/plan/README.md` for branch strategy. The accepted Phase 6 fixes and third re-review are complete; `BLOCK-3`/`BLOCK-6` are closed under the frozen lifecycle, and the owner rejected `BLOCK-8` on 2026-11-05 because authoritative `questions.sql` and the corroborating `questions1.sql` export are unpartitioned and partitioning requires an out-of-contract schema change. `NOTE-4` is non-blocking. Phase 6 is review-settled and included in the 2026-11-05 boundary commit. OT06 remains blocked only on the main-question reader/writer audit; `cbt_practice.php` and `practice_title` are outside the remaining cycle scope.
 - Do not archive the active phase map when the last phase stops; archive only when the user confirms the cycle is complete or asks to shelve it.
 - Commit only at a phase boundary: at the start of a new phase, after the previous phase's review settles. Do not commit current-phase work; commit the final phase before archiving the cycle.
 - Rigorous reviews are separate sessions using `docs/plan/prompts/review-session.md`; they may write only `docs/plan/reviews/` and never commit.
@@ -26,8 +26,9 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 49 fixtures: 47 PASS, 2 PENDING; `node tests/unit.js` is 145 PASS; `node tests/owner-tool.js` is 38 PASS.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 49 fixtures: 47 PASS, 2 PENDING; `node tests/unit.js` is 145 PASS; `node tests/owner-tool.js` is 38 PASS; `node tests/context-migration.js` is 13 static OT05 probes; `php tests/context-lib.php` is 13 helper-behavior tests; `php tests/context-admin.php` is 19 context request/real-transaction/render tests; `php tests/context-preflight.php` is 6 real contract/inspector/CLI-failure tests when PHP 8.3 is available.
 - PHP renderer check: `php tests/php-render.php`; also run `php -l` on every changed file under `deployed/` on the target PHP runtime.
+- Context migration artifacts: `tools/context-migration-preflight.php` and `deployed/sql/01-context-migration.sql` are executed only against a disposable database in OT10. Do not run them against production.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
 - Bank extractor: `node tools/extract-bank.js --check` verifies the source, slices, counts, and output hashes.
 - Parser probe: `node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions('1. Hello world'))"`.
@@ -58,3 +59,4 @@
 - 2026-10-27 incident: a live AS-12 test cleanup deleted six Active Accounting questions (#3795-#3800). A first-match delete selector submitted the Recent Questions form instead of the edited row and bypassed the confirm dialog. Only truncated stems were recovered from a Playwright snapshot; options and answers were not. Test rows #3841-#3846 remain. See `docs/LIVE-SAFETY.md`; do not attempt live deletion.
 - Live V1-V3 checks ran on 2026-10-25: the current bookmarklet parsed `bank-2021` and `anomaly-block2` on the admin page, a controlled manual save was accepted and deleted (no `practice_title` schema error), and a stale queue without a batch identity loaded but auto-save was blocked. There is still no new live OCR paste beyond the archived bank/anomaly blocks. The unfiltered admin list did not show the new rows while a filtered list did; the site owner confirmed this is intended list behavior. `ocrQueue` still has no version marker; reset and re-paste after parser/UI changes.
 - Do not promote `UNVERIFIED`/`AT_RISK`/`CONFLICTED` items to defects without reproduction; see `docs/EDGE_CASES.md` and `docs/INVARIANTS.md`.
+- OT05 context schema is written but not executed: the forward migration, rollback, and successful preflight run only in OT10 on a disposable production-shaped database. `questions.practice_title` remains `NOT NULL` with no default while the admin INSERT omits it; it is an out-of-scope legacy field and must not be changed or used as an OT06 gate in this cycle. The admin context PRG flow has no browser runtime test; helper behavior is covered by `php tests/context-lib.php`, real question/context transactions and rendering by `php tests/context-admin.php`, and exact metadata plus connector failure behavior by `php tests/context-preflight.php`.

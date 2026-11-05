@@ -19,6 +19,10 @@ so it can be tested without a browser and reused across browser and server conte
 node tests/runner.js
 node tests/unit.js
 node tests/owner-tool.js
+node tests/context-migration.js
+php tests/context-lib.php
+php tests/context-admin.php
+php tests/context-preflight.php
 
 # Verify the archived bank slices and their hashes
 node tools/extract-bank.js --check
@@ -117,9 +121,15 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 Current test counts, build hash and size, and live-test state are in
 [`docs/STATUS.md`](docs/STATUS.md). Current work state, package gates, and branch
-strategy are in [`docs/plan/README.md`](docs/plan/README.md). OT05 is blocked only
-on the exact supplied SQL DDL bytes; runtime/staging verification is deferred to
-OT10.
+strategy are in [`docs/plan/README.md`](docs/plan/README.md). OT05 and its latest
+accepted Phase 6 fixes and third re-review are complete in the working tree. The
+owner rejected `BLOCK-8` on 2026-11-05 because authoritative `questions.sql` and
+the corroborating `questions1.sql` export are unpartitioned and no supported
+application path changes table partitioning. Phase 6 is review-settled and
+included in the 2026-11-05 boundary commit; `NOTE-4` is non-blocking. The owner
+removed `cbt_practice.php` and `practice_title` from the remaining cycle scope.
+OT06 targets `cbt.php` and remains blocked only on the main-question
+reader/writer audit. Runtime/staging verification is deferred to OT10.
 
 Active work happens on `owner-tool-integration`. `main` is the published baseline
 and the remote default; do not start new implementation there. The fixture runner

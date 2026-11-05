@@ -2,6 +2,10 @@
 
 Approved: 2026-10-31.
 
+Scope amended: 2026-11-05. Shared-context candidate delivery targets `cbt.php`
+only. `cbt_practice.php` and `practice_title` are outside the remaining
+owner-tool cycle scope and retain their existing behavior unchanged.
+
 This file is the behavior tie-breaker for the `owner-tool-2026-11` cycle. The
 package files own implementation detail. If a package conflicts with this file,
 stop and ask instead of silently changing the product direction.
@@ -45,8 +49,10 @@ stop and ask instead of silently changing the product direction.
 - Keep an incomplete context unavailable to candidates.
 - Randomize standalone questions and complete context groups as units. Never
   split or scatter a selected group; retain member order inside the group.
-- Show the same open, collapsible context card above every linked candidate
-  question in both `cbt.php` and `cbt_practice.php`.
+- Show an open, collapsible context card above every linked candidate question
+  in `cbt.php`.
+- Do not add shared-context behavior to `cbt_practice.php` or change
+  `practice_title` in this cycle.
 - Highlight the active cloze slot using a safe token such as `[[gap:71]]`.
 - Text contexts are the initial scope; shared-context media is deferred.
 
@@ -70,6 +76,31 @@ stop and ask instead of silently changing the product direction.
 - Import the experiments work-package methodology: one package per session,
   read-only Gate 1, explicit `go`, acceptance evidence, status update, handoff,
   independent reviews at release boundaries, and cycle close.
+- This cycle is externalize-first. From the recorded package base, each existing
+  production file may receive at most 100 added lines by `git diff --numstat`,
+  and each new production module may contain at most 250 readable lines. Any
+  excess requires explicit owner approval at Gate 1 naming the exact file,
+  measured excess, and justification.
+- Put cohesive new behavior in focused modules/includes with one clear
+  responsibility and an explicit deployment path. Existing entry points retain
+  only imports/includes, dispatch, narrow wiring, and unavoidable local
+  transaction hooks.
+- Acceptance evidence must execute the real production modules and paths.
+  Copied SQL, copied control flow, or reimplemented behavior is not executable
+  production-path evidence.
+- The coordinator's externalize-first contract owns Gate 1, handoff, review,
+  anti-gaming, and excluded-artifact reporting for this intent.
+- Every review finding has a finite closure contract: the exact defect,
+  supported operating preconditions, closure criteria, required evidence, and
+  explicit non-goals or deferred checks. Once the owner authorizes a fix, that
+  contract is frozen unless the owner explicitly changes the requirement.
+- Original reviews may explore broadly. Re-reviews verify the named frozen
+  closure contracts and regressions; they do not broaden an existing finding
+  ID. A newly discovered defect receives a new ID and proportional severity.
+- An unresolved blocker requires an explicit owner disposition: fix, reject
+  with rationale, accept the risk, defer it to a named package, or change the
+  requirement. A re-review that discovers a new blocker does not automatically
+  start another fix loop.
 - Do not commit unless the user explicitly asks.
 - Do not edit archived source snapshots.
 - New decisions begin at D-66; D-61 through D-65 remain reserved for the

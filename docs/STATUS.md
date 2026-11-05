@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-03.
+Last updated: 2026-11-05.
 
 ## Active cycle
 
@@ -8,17 +8,23 @@ Last updated: 2026-11-03.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Last completed package: OT04, Underline and Multiline, implementation complete
-  and rigorous re-review PASS. Brave/Android staging verification is
-  owner-deferred to OT10 because no staging copy is currently available.
-- Next package: OT05, Context Schema and Admin. Gate 1 is **blocked only** until
-  the exact supplied SQL DDL bytes for `questions`, `subjects`, and
-  `exam_category` are placed in the workspace. No `.sql` export currently exists
-  in the worktree or in Git history.
-- Do not start OT05 implementation until that single artifact is available.
-  Connection, runtime, and identifier questions are settled (see below).
+- Last completed package: OT05, Context Schema and Admin, including the accepted
+  Phase 6 repairs. The third re-review is complete. Its repaired direction/CHECK
+  and post-`ALTER` relock vectors close `BLOCK-3` and `BLOCK-6` under the frozen
+  lifecycle. On 2026-11-05 the owner rejected `BLOCK-8`: authoritative
+  `questions.sql` and the corroborating `questions1.sql` export are
+  unpartitioned, and partitioning requires an out-of-contract schema change
+  rather than a supported admin-form write. Reconnect after failure of the
+  mandatory write freeze remains non-blocking `NOTE-4`.
+- Phase 6 is review-settled and included in the 2026-11-05 boundary commit.
+  OT06's OT05 dependency is satisfied. The owner removed `cbt_practice.php` and
+  `practice_title` from the remaining cycle scope; OT06 targets `cbt.php` and is
+  blocked only pending the main-question reader/writer search audit.
+  Target-runtime migration/preflight/rollback execution and browser/admin PRG
+  checks remain deferred to OT10.
 - Product implementation: parser 2.1.0, exact underline rendering, multiline
-  stems, Add/Edit formatting, and native PRG preservation are in place.
+  stems, Add/Edit formatting, native PRG preservation, and the shared-context
+  schema/admin workflow are in place.
 - Working branch: `owner-tool-integration`; `main` is the published baseline.
   See [`plan/README.md`](plan/README.md#branch-strategy).
 
@@ -41,9 +47,10 @@ Last updated: 2026-11-03.
 
 | Line | Evidence | Status |
 |---|---|---|
-| `main` at `58af90e` | `node tests/runner.js` and `node tools/extract-bank.js --check` on 2026-11-03 | 47 PASS, 0 FAIL, 2 PENDING runner; 5 bank slices OK. This line has no `tests/unit.js` or `tests/owner-tool.js`. |
+| `main` at `002483b` (parser baseline measured at `58af90e`; `002483b` adds supplied SQL/PHP files only) | `node tests/runner.js` and `node tools/extract-bank.js --check` on 2026-11-03 | 47 PASS, 0 FAIL, 2 PENDING runner; 5 bank slices OK. This line has no `tests/unit.js` or `tests/owner-tool.js`. |
 | clean experiments commit `d5a62f0` | recorded `node tests/runner.js` and `tests/unit.js` | 43 PASS runner, 140 PASS unit |
 | `owner-tool-integration` code baseline at `405439b` (OT04 merged; docs-only commits follow) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, and `node tools/extract-bank.js --check` on 2026-11-03 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 38 owner-tool; 7 bank slices OK |
+| OT05 working tree after the focused `BLOCK-3`/`BLOCK-6` fix (uncommitted, exact package base `cd2e6c9`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `php tests/context-lib.php`, `php tests/context-admin.php`, `php tests/context-preflight.php`, `php tests/php-render.php`, and `php -l` on 2026-11-04 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 38 owner-tool; 13 context-migration; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; PHP lint PASS |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -55,8 +62,13 @@ are shelved rather than repaired in this cycle.
 
 - `deployed/admin_questions.php` (OT03 replaced the helper include here)
 - `deployed/cbt.php`
-- `deployed/cbt_practice.php`
+- `deployed/cbt_practice.php` (retained OT04 evidence; no remaining cycle work)
 - `db_conn.php` (PDO connection contract; added in commit `405439b`)
+- `questions.sql`, `subjects.sql`, `exam_category.sql` (exact DDL supplied in
+  `main` commit `002483b`; copied to `owner-tool-integration` 2026-11-03)
+- `questions1.sql` (older corroborating `questions1` export with the same column,
+  index, engine, and collation shape as `questions.sql`; also unpartitioned;
+  `questions.sql` remains authoritative)
 - `admin-needs.txt`
 - `sample-underline.txt`
 - `sample-passages.txt`
@@ -65,26 +77,42 @@ are shelved rather than repaired in this cycle.
 - Runtime baseline: PHP 8.3 application target and MySQL 8.0.41. The PHP 8.4.27
   schema-export header describes phpMyAdmin's runtime, not the website runtime.
 
-OT01/OT04 recorded archival hashes and provenance; `deployed/` is the working
-copy. Changed PHP has not been linted or executed in this workspace because PHP
-is not installed; that execution is deferred to OT10. `tests/php-render.php` is
-ready for the target runtime.
+OT01/OT04/OT05 recorded archival hashes and provenance; `deployed/` is the
+working copy. The Phase 6 fixes add focused input/activation validation and real
+question-mutation modules, keep `deployed/admin_questions.php` as narrow wiring,
+split exact preflight contract/inspection from its CLI wrapper, reject extra
+schema objects, descending index parts, and unexpected checks, and reacquire the
+context-table lock after rollback's `ALTER TABLE` boundary. Local PHP 8.3.16
+checks pass; target-runtime execution is still deferred to OT10.
 
-The OT05 checklist names three SQL exports (`questions.sql`, `subjects.sql`,
-`exam_category.sql`), but no `.sql` file exists in the worktree or anywhere in
-Git history. That is one missing-artifact problem, not several independent
-blockers.
+The supplied SQL exports are archived unchanged at
+`archive/sql/2026-11-03-supplied/` with hashes. `exam_category.sql` still uses
+`exam_category2` in its `CREATE TABLE` and `ALTER TABLE` statements; the original
+file remains unchanged, and only `deployed/sql/base-schema.working.sql` applies
+the settled rename.
+
+Supplied DDL SHA-256:
+
+- `questions.sql` `e12e4d9fcb2a15b13bd2fff6885ca8c286006b80e58cfa62c91b434fc4c8834e`
+- `subjects.sql` `bd0e1a11c0371ddb1fd0252ebc55bcb949c605a858a33e59c917bfddc10449af`
+- `exam_category.sql` `05720e31e2365cfe2500222e9f615962e769ff06466eeeaf1512e605c4357cb1`
 
 ## External gates
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| Exact SQL DDL bytes for `questions`, `subjects`, and `exam_category` | OT05 | Define exact migration types, keys, engine, and charset; currently absent from the worktree and Git history |
-| Practice-question writer/importer | OT06 | Preserve the `practice_title` contract |
-| Search list for question readers/writers | OT06 | Find every affected renderer and write path |
+| Main-question reader/writer inventory | OT06 | Find every `cbt.php` read path and every writer that can mutate linked questions |
 | Representative context paste with answer key | OT08/OT09 final acceptance | Prove the one-box key workflow on the new families |
 
-These are **not** OT05 gates: a redacted or full `cbt_db.php` (the connection
+OT05 implementation, accepted fixes, third re-review, and `BLOCK-8` owner
+disposition are complete. The owner rejected `BLOCK-8` for the authoritative,
+unpartitioned target contract; the unsupported out-of-band partition case
+remains visible in immutable review evidence. OT05 has no remaining external
+gate and Phase 6 is included in the authorized 2026-11-05 boundary commit. The
+exact DDL was supplied in `main` commit `002483b` and copied to
+`owner-tool-integration` on 2026-11-03.
+
+These were **not** OT05 gates: a redacted or full `cbt_db.php` (the connection
 contract is supplied by `db_conn.php`), another PHP/database/engine/charset
 confirmation (settled above), or another `exam_category` export for the
 `exam_category2` naming question (correction rule settled).
@@ -95,8 +123,9 @@ instead of performing first-time integration.
 
 ## Deferred to OT10
 
-OT05 writes the migration, preflight, and rollback artifacts. OT10 executes and
-proves them. OT10 also owns:
+OT05 wrote the migration, preflight, and rollback artifacts, and the local
+static/helper checks pass. OT10 executes and proves them on the target runtime.
+OT10 also owns:
 
 - `php -l` on every changed/new PHP file;
 - `php tests/php-render.php`;
@@ -105,13 +134,14 @@ proves them. OT10 also owns:
 - desktop Chromium and Brave/Android staging checks; and
 - the deployment manifest and final human-developer handoff.
 
-None of these is an OT05 completion gate.
+These checks are not OT05 completion gates.
 
 ## Delivery stages
 
 - Release A: OT03-OT04 implement the owner-tool replacement, underline/multiline,
   and detail-page formatting; OT10 independently verifies the release.
-- Release B: OT05-OT07, manual shared-context persistence and delivery.
+- Release B: OT05-OT07, manual shared-context persistence and delivery in
+  `cbt.php`; `cbt_practice.php` and `practice_title` are excluded.
 - Release C: OT08-OT09, comprehension and cloze OCR automation.
 - OT10 performs final release verification, target-PHP checks, Brave/Android
   staging smoke, and human-developer handoff.

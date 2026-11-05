@@ -13,9 +13,9 @@ Audit the complete owner-tool/context release, prove its migration and rollback
 on production-shaped local data, verify the supported browsers, and produce a
 concise human-developer deployment and maintenance handoff.
 
-OT05 writes the migration, preflight, and rollback artifacts. This package
-executes and proves them. Do not make OT05 completion depend on PHP, migration,
-or staging checks owned here.
+OT05 wrote the migration, preflight, and rollback artifacts. This package
+executes and proves them on the target runtime. Do not make OT05 completion
+depend on PHP, migration, or staging checks owned here.
 
 ## Work
 
@@ -24,17 +24,25 @@ or staging checks owned here.
 2. Run all Node parser/UI tests, fixture runner, bank extractor, link checks,
    syntax checks, and security/adversarial probes.
 3. On the local PHP machine, run `php -l` on every PHP file and apply migration
-   preflight/forward/rollback tests against a disposable production-shaped DB.
+   preflight/forward/rerun/rollback tests against a disposable production-shaped
+   DB. Include wrong connection collation, wrong column type, extra/trailing,
+   wrongly ordered, or descending indexes, unexpected enforced checks,
+   extra/cascading FKs, position-only data, slot-only data, rollback writer
+   contention across the `ALTER TABLE` lock-release/reacquisition boundary under
+   the required maintenance freeze, and two-connection context/question mutation
+   vectors.
 4. Verify OT04's supplied-detail integration and Release A behavior
    independently: owner tool, native PRG, underline, paragraphs, result/detail
    rendering, and legacy-state warning.
 5. Verify Release B behavior independently: context CRUD, activation safety,
-   complete-group random selection, both CBT paths, and rollback hiding.
+   complete-group random selection in `cbt.php`, and rollback hiding. Do not add
+   `cbt_practice.php` or `practice_title` to the release gate.
 6. Verify Release C behavior independently: singular/multiple comprehension,
    cloze, standalone mixing, same-paste key, ambiguity fallback, and zero
    automatic writes.
-7. Run desktop Chromium and Brave/Android checks on staging; record exact
-   browser versions, fixtures, and outcomes.
+7. Run desktop Chromium and Brave/Android checks on staging, including a context
+   textarea whose stored value starts with LF; record exact browser versions,
+   fixtures, and outcomes.
 8. Prepare a deployment manifest with upload order, file hashes, DB backup,
    migration command, smoke checks, cache-busting step, rollback order, and
    explicit stop conditions.

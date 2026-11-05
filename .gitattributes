@@ -1,0 +1,4 @@
+/questions.sql -text -diff -merge
+/subjects.sql -text -diff -merge
+/exam_category.sql -text -diff -merge
+/archive/sql/2026-11-03-supplied/*.sql -text -diff -merge

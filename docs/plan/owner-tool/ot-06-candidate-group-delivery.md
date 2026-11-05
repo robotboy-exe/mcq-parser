@@ -3,15 +3,15 @@
 - **Status:** blocked
 - **Depends on:** OT05
 - **Blocks:** OT07, OT10
-- **External gate:** practice-question writer/importer and search results for
-  every `question_text`, `INSERT INTO questions`, and `UPDATE questions`
-  consumer
+- **External gate:** search results for the main `cbt.php` question-read path and
+  every writer that can mutate linked `questions` rows
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal
 
-Deliver complete shared-context groups safely in both candidate paths without
-abandoning random selection or duplicating rendering/selection logic.
+Deliver complete shared-context groups safely in the main `cbt.php` candidate
+path without abandoning random selection. `cbt_practice.php` and
+`practice_title` are outside this cycle's remaining scope.
 
 ## Selection rule
 
@@ -27,15 +27,14 @@ abandoning random selection or duplicating rendering/selection logic.
 
 ## Work
 
-1. Audit every current question reader/writer and the practice-title authoring
-   path before changing queries.
-2. Add a shared, small PHP selection helper used by both CBT pages; do not copy
-   group-selection code between pages.
+1. Audit the main `cbt.php` question-read path and every writer that can mutate
+   linked question rows before changing queries.
+2. Add a small, focused PHP selection helper used by `cbt.php`.
 3. Query lightweight eligibility fields, assemble/shuffle units in PHP, then
    fetch full selected rows in final order.
-4. Preserve main-CBT limits and practice-title filters.
-5. Update subject/category/year/practice option lookups so active contexts make
-   their pools available.
+4. Preserve main-CBT limits and filters.
+5. Update subject/category/year option lookups so active contexts make their
+   pools available.
 6. Send contexts once in a browser context map and reference them by ID from
    question objects.
 7. Render an open, collapsible context card above every linked question on
@@ -44,7 +43,7 @@ abandoning random selection or duplicating rendering/selection logic.
 9. Keep context questions consecutive in navigation and results without
    repeating full context text in every JSON question object.
 10. Add deterministic unit tests for random unit selection and local browser
-   tests for both candidate pages.
+    tests for `cbt.php`.
 
 ## Acceptance
 
@@ -56,7 +55,6 @@ abandoning random selection or duplicating rendering/selection logic.
 | Mixed pool | Standalone and groups both vary between seeded runs |
 | Limit boundary | Oversize group skipped; actual total shown consistently |
 | Main CBT | Subject/category/year filtering works |
-| Practice CBT | `practice_title` and category behavior preserved |
 | Context UI | Open/collapsible above every linked question; mobile usable |
 | Cloze | Active slot highlighted accessibly |
 | Payload | Context text emitted once per context |
@@ -67,7 +65,7 @@ abandoning random selection or duplicating rendering/selection logic.
 - Do not return to `ORDER BY RAND() LIMIT N` for grouped rows.
 - Do not select one member as a proxy for a whole group.
 - Do not match a special subject by display name.
-- Do not duplicate helper logic across both candidate pages.
+- Do not modify `cbt_practice.php` or `practice_title`.
 - Do not expose correct-answer or context data beyond existing application
   behavior without documenting the impact.
 - Do not start OT07.
@@ -80,7 +78,7 @@ Result:
 Reader/writer audit:
 Selection helper/API:
 Deterministic selection tests:
-Main/practice browser evidence:
+Main CBT browser evidence:
 Rollback probe:
 Files changed:
 Hashes:

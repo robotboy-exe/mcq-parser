@@ -7,26 +7,55 @@ external gates, review checkpoints, and the next action are maintained in
 ## Build session
 
 Use [`phase-session.md`](phase-session.md) with `phase N` or a package ID. The
-first response is read-only and ends with `WAITING FOR GO`. After an explicit
-`go`, execute only that package and stop after its handoff.
+first response is read-only, includes `WAITING FOR GO`, and ends with
+`NEXT COMMAND: go` when the gate passes. After an explicit `go`, execute only
+that package and stop after its handoff.
 
 ## Review session
 
 Use [`review-session.md`](review-session.md) with `review phase N`, a package ID,
 or an approved range. A review changes only its review record and never fixes or
-commits product work.
+commits product work. Original reviews are exploratory; re-reviews verify frozen
+finding closure criteria and regressions. A new defect receives a new ID rather
+than broadening an accepted finding.
 
 ## Fix session
 
 Use [`fix-session.md`](fix-session.md) with a review record or finding IDs. It
 repairs only accepted findings, reruns package acceptance, updates the handoff,
-and stops without committing.
+and stops without committing. Gate 1 restates the finite closure matrix and
+waits for `go`; implementation and re-review may not expand it.
+
+## Finding disposition
+
+Use [`finding-disposition.md`](finding-disposition.md) with a phase/package and
+exact finding IDs. It records an explicit owner decision without editing review
+evidence or product files.
+
+The owner explicitly chooses `fix`, `reject` with rationale, `accept risk`,
+`defer` to a named package, or `change requirement`. A new blocker found during
+re-review, or another proposed fix after a second or later re-review, stops for
+owner disposition instead of automatically continuing the loop. This does not
+force a pass or hide unresolved risk.
 
 ## Cycle close
 
 Use [`cycle-close.md`](cycle-close.md) only after OT10 is done and its rigorous
 review is settled. Cycle close may commit only with explicit user approval and
 does not archive the cycle automatically.
+
+## Response terminator
+
+Every gate, early stop, handoff, review, fix, and cycle-close response must end
+with exactly one final line:
+
+```text
+NEXT COMMAND: <exact copy-paste command>
+```
+
+Write nothing after it. Supply an exact command, not a description or
+placeholder. Use `NEXT COMMAND: NONE - <reason>` only when no safe command
+exists. This output rule does not authorize the command or bypass its gate.
 
 ## Commit rule
 

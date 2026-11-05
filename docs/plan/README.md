@@ -4,26 +4,43 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-03.
+Last updated: 2026-11-05.
 
 ## Current state
 
 - Active cycle: `owner-tool-2026-11`.
-- Product work: OT00-OT04 implementation complete; Brave/Android staging
-  verification is owner-deferred to OT10.
-- Next action: OT05 Gate 1. It is blocked only until the exact supplied SQL DDL
-  bytes for `questions`, `subjects`, and `exam_category` are placed in the
-  workspace. No `.sql` export exists in the worktree or Git history; do not start
-  OT05 implementation without those bytes.
+- Product work: OT00-OT05 implementation and the latest focused Phase 6 fixes complete;
+  Brave/Android staging and target-runtime migration execution are owner-deferred
+  to OT10.
+- Phase 6 review and disposition are settled. The 2026-11-05 lifecycle
+  correction closes `BLOCK-3`/`BLOCK-6` against their frozen vectors and assigns
+  the newly discovered partition scenario to `BLOCK-8`. The owner rejected
+  `BLOCK-8` on 2026-11-05 because authoritative `questions.sql` and the older
+  corroborating `questions1.sql` export are unpartitioned, while partitioning
+  requires an out-of-contract schema change rather than a supported admin-form
+  write. The immutable review's out-of-band partition risk remains recorded.
+- `NOTE-4` remains non-blocking. OT05 is review-settled and included in the
+  authorized 2026-11-05 boundary commit. OT06's OT05 dependency is satisfied.
+  The owner removed `cbt_practice.php` and `practice_title` from the remaining
+  cycle scope; OT06 targets `cbt.php` and remains blocked only on the
+  main-question reader/writer search audit. Do not start its product work until
+  that audit settles.
 - Working branch: `owner-tool-integration` is the authoritative integration and
   implementation line. `main` is the published baseline, not the current work
   branch. See [Branch strategy](#branch-strategy).
-- Current `main` parser baseline at `58af90e`: 47 PASS, 0 FAIL, 2 PENDING
-  runner; 5 bank slices. That line has no `tests/unit.js` or
-  `tests/owner-tool.js`.
+- Current `main` parser baseline at `002483b` (measured at `58af90e` before the
+  supplied SQL/PHP files were added): 47 PASS, 0 FAIL, 2 PENDING runner; 5 bank
+  slices. That line has no `tests/unit.js` or `tests/owner-tool.js`.
 - OT04 merged code baseline on `owner-tool-integration` at `405439b`: 47 runner PASS
   + 2 PENDING, 145 unit PASS, 38 owner-tool PASS, 7 bank slices OK;
   staging/mobile verification is in OT10.
+- OT05 evidence recorded after the latest focused Phase 6 fix and before the
+  boundary commit: 47 runner PASS + 2
+  PENDING, 145 unit PASS, 38 owner-tool PASS, 13 context-migration PASS, 13
+  context-lib PASS, 19 context-admin PASS, 6 context-preflight PASS, 9 PHP renderer PASS; local PHP 8.3.16
+  lint PASS. The known Windows/CRLF
+  `extract-bank` pre-2026 output-hash mismatch remains a pre-existing baseline
+  artifact, not an OT05 regression. Target-runtime migration execution is OT10.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
@@ -40,8 +57,97 @@ Last updated: 2026-11-03.
 - Release A: owner tool plus underline/multiline.
 - Release B: manual shared-context persistence and complete-group delivery.
 - Release C: comprehension and cloze OCR automation.
+- Release B candidate delivery targets `cbt.php` only. Existing
+  `cbt_practice.php`/`practice_title` behavior remains unchanged and outside the
+  remaining cycle scope.
 
 `INTENT.md` is authoritative when package prose is ambiguous.
+
+## Externalize-first contract
+
+This contract applies cycle-wide to every product package, fix session, review,
+and cycle close.
+
+- Record an exact package-base Git ref before implementation. A fix session
+  inherits the original package base and does not reset its line counters.
+- For each production file that exists at the package base, the additions column
+  from `git diff --numstat <package-base> -- <file>` must not exceed 100 for the
+  package. Deletions do not offset additions.
+- A new production module may contain at most 250 readable lines in its final,
+  unminified source form.
+- Any excess requires explicit owner approval at Gate 1. The approval must name
+  the exact file, measured excess, and justification; `go`, package acceptance,
+  or approval of another file does not imply an exception.
+- Cohesive new behavior belongs in focused modules/includes. Existing entry
+  points retain only imports/includes, dispatch, narrow wiring, and unavoidable
+  local transaction hooks.
+- Each module has one clear responsibility and an explicit deployment path.
+- Tests must execute the real production modules and paths. Copied SQL, copied
+  control flow, or reimplemented production behavior does not count as
+  executable evidence for that path.
+- Do not game the limits with minification, compressed statements, generated
+  code, generic dumping-ground helpers, or unnecessary file fragmentation.
+- Supplied snapshots, archives, and generated artifacts are excluded from the
+  limits, but every excluded file must be identified and reported separately.
+- Gate 1 reports every planned production file, its baseline lines and bytes,
+  expected additions, extraction boundary, and direct production-path test. It
+  also identifies each excluded artifact separately.
+- The handoff reports, per production file, additions/deletions from the package
+  base, final lines/bytes, responsibility, deployment inclusion, and the test
+  evidence that executes its production path. It reports excluded artifacts in
+  a separate list.
+- A review independently reproduces the measurements, verifies module
+  responsibility and deployment inclusion, and confirms that claimed tests run
+  the production paths. An unapproved limit breach, monolithic production
+  addition, or copied-path test claim is a `BLOCK`.
+
+## Finding lifecycle contract
+
+Reviews are rigorous without creating a moving target:
+
+- Every `BLOCK` and `FIX` records an exact defect, supported operating
+  preconditions, a finite closure checklist, required evidence, and explicit
+  non-goals or deferred checks. Broad labels such as "exact schema" or "safe
+  rollback" are not closure criteria by themselves.
+- Once the owner authorizes a fix, its closure contract is frozen. A fix Gate 1
+  must restate it before offering `go`. Only the owner may broaden it or change
+  the underlying requirement.
+- An original review is exploratory. A re-review is closure-focused: it verifies
+  the named closure checklist, tests regressions from the fix, and runs an
+  adversarial probe derived from that checklist. It does not search unrelated
+  dimensions merely to satisfy the adversarial-probe requirement.
+- A named finding closes when its frozen checklist passes. A different defect
+  discovered during re-review receives the next unused ID in its severity
+  namespace across all package review records; it never keeps the old ID open.
+- A new re-review finding is a `BLOCK` only when it demonstrates an unmet package
+  acceptance requirement, a material regression introduced by the fix, or a
+  reproducible security/data-loss risk on a supported path under documented
+  preconditions. A scenario that requires violating a mandatory operating
+  precondition is normally hardening or residual risk, not a blocker, unless
+  the package explicitly promises protection after that violation or the
+  precondition cannot realistically be verified or enforced.
+- The owner disposition for a finding is one of: `fix`, `reject` with rationale,
+  `accept risk`, `defer` to a named package, or `change requirement`. Record the
+  exact finding IDs, rationale, and destination in the package and coordinator.
+  No agent may infer a disposition from `go`, silence, or package acceptance.
+- An unresolved `BLOCK` still prevents commit readiness and dependent work. A
+  non-fix owner disposition resolves the workflow decision without rewriting
+  immutable review evidence; a `fix` disposition remains unresolved until its
+  frozen checklist passes re-review.
+- Every review finding requiring an owner choice hands off to the disposition
+  session first. A review never treats a recommended fix command as a recorded
+  `fix` disposition.
+- If a re-review discovers a new `BLOCK`, or a second or later re-review would
+  prescribe another fix session, stop for owner disposition instead of
+  automatically issuing another fix command. This is an escalation rule, not
+  an automatic pass; genuine unresolved risk remains visible.
+- Owner decisions use
+  [`prompts/finding-disposition.md`](prompts/finding-disposition.md), which
+  records the decision in current-facing package/coordinator documents without
+  altering immutable review evidence.
+- For review records written before this contract, the frozen checklist is the
+  concrete reproduced defect, named vectors, required fix, and evidence stated
+  in the accepted review and fix Gate 1. Any ambiguity stops for owner decision.
 
 ## Package states
 
@@ -54,8 +160,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 3 | OT02 | [Production Parser Core](owner-tool/ot-02-production-parser-core.md) | OT01 | done | none |
 | 4 | OT03 | [Owner Tool Replacement](owner-tool/ot-03-owner-tool-replacement.md) | OT02 | done | satisfied (helper archived 2026-11-01) |
 | 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | done | none; staging/mobile deferred to OT10 |
-| 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review (settled) | blocked | exact SQL DDL bytes; no `.sql` files in workspace or history |
-| 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | blocked | practice writer and reader/writer audit |
+| 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review (settled) | done; `BLOCK-8` rejected, review/disposition settled, boundary commit authorized | none; runtime migration deferred to OT10 |
+| 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | blocked | main-question reader/writer audit |
 | 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | not started | inherited server contract |
 | 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | not started | answer-key sample for final acceptance |
 | 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | not started | answer-key sample for final acceptance |
@@ -64,16 +170,15 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 The active map duplicates these statuses for session resolution. Update both
 files in the same package handoff; a mismatch blocks the next Gate 1.
 
-## External artifact request
+## External artifacts
 
 | Artifact | One-line justification |
 |---|---|
 | Current production `ocr_helper.js` | Defines the exact behavior and state being replaced |
-| Exact DDL bytes for `questions`, `subjects`, `exam_category` | Supplies exact types, keys, engine, and charset for migration; the three exports named in the checklist are not in the workspace or Git history |
+| Exact DDL bytes for `questions`, `subjects`, `exam_category` | Supplied 2026-11-03 in `main` commit `002483b` and copied to `owner-tool-integration` |
 | `answer_details.php` | Supplied and archived 2026-11-02; integrated in OT04 and independently verified again in OT10 |
 | PHP and database versions | Satisfied: PHP 8.3 application target; MySQL 8.0.41 from schema exports |
-| Practice-question writer/importer | Preserves the existing `practice_title` contract |
-| Search list for question readers/writers | Finds every affected output and persistence path |
+| Main-question reader/writer inventory | Finds every affected `cbt.php` read path and linked-question mutation path |
 
 The connection contract is settled by root `db_conn.php` (charset `utf8mb4`,
 PDO exceptions, associative fetches, native prepares). Do not request a redacted
@@ -82,17 +187,10 @@ or full `cbt_db.php`.
 The `exam_category2` → `exam_category` correction is settled. Keep the original
 export as evidence and apply the correction only to the working DDL copy.
 
-The checklist says `questions.sql`, `subjects.sql`, and `exam_category.sql` were
-supplied, but no `.sql` file exists in the worktree or anywhere in Git history.
-Treat this as one missing-artifact problem, not multiple blockers. If no DDL file
-exists, request only:
-
-```sql
-SELECT VERSION();
-SHOW CREATE TABLE questions;
-SHOW CREATE TABLE subjects;
-SHOW CREATE TABLE exam_category;
-```
+The supplied SQL exports are archived unchanged at
+`archive/sql/2026-11-03-supplied/` with recorded hashes. `exam_category.sql`
+still uses `exam_category2`; the original stays unchanged, and only
+`deployed/sql/base-schema.working.sql` applies the settled rename.
 
 Secrets, credentials, cookies, and production data are not required.
 
@@ -103,7 +201,7 @@ verifies the detail path with the rest of Release A.
 ## Branch strategy
 
 - `owner-tool-integration` is the authoritative work branch. It contains `main`
-  and all owner-tool work through OT04. Start OT05 and later implementation here.
+  and all owner-tool work through OT05. Start OT06 and later implementation here.
 - `main` is the published baseline and the remote default. It is not the current
   work branch. Advance it only at a reviewed release boundary or cycle close, by
   fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite
@@ -128,34 +226,66 @@ verifies the detail path with the rest of Release A.
 | phases 2-4 | OT01-OT03 | light at next Gate 1 | pending |
 | phase 5 close | OT04 Release A implementation and detail-source integration | rigorous | pass |
 | phases 6-7 | OT05-OT06 | light at next Gate 1 | pending |
+| OT05 remediation | OT05-EXT-01 plus accepted Phase 6 fixes | rigorous | settled; `BLOCK-8` rejected by owner, boundary commit authorized |
 | phase 8 close | OT07 Release B | rigorous | pending |
 | phase 9 | OT08 | light at OT09 Gate 1 | pending |
 | phase 10 close | OT09 Release C | rigorous | pending |
 | phase 11 close | OT10 final release | rigorous | pending |
 
-The pending rows above are historical process debt; they do not block OT05.
-OT05's only start gate is the exact SQL DDL artifact.
+OT05 implementation and its accepted Phase 6 fixes are complete. The third
+re-review remains immutable evidence. `BLOCK-3` and `BLOCK-6` are closed against
+their frozen vectors; the owner rejected `BLOCK-8` because the authoritative and
+corroborating supplied table shapes are unpartitioned and partitioning is outside
+the supported target contract. The technical risk on an out-of-band partitioned
+target remains recorded rather than rewriting the review. Reconnect hardening
+remains non-blocking `NOTE-4`. OT06's OT05 dependency is satisfied. The owner subsequently removed
+`cbt_practice.php`/`practice_title` from the remaining cycle scope and authorized
+the Phase 6 boundary commit. OT06 remains blocked only on the main-question
+reader/writer audit.
+
+Current workflow stop:
+
+```text
+NEXT COMMAND: audit the available production question readers and writers for OT06
+```
 
 Rigorous reviews use [`prompts/review-session.md`](prompts/review-session.md)
-and write only one record per package under [`reviews/`](reviews/README.md).
-`BLOCK` findings require a fix session and re-review. Accepted `FIX` findings
-follow the review record's exact next action.
+and write immutable records under [`reviews/`](reviews/README.md). An unresolved
+`BLOCK` requires its recorded owner disposition; a `fix` disposition requires a
+fix session and re-review. Other explicit dispositions follow the finding
+lifecycle contract above. Accepted `FIX` findings follow the review record's
+exact next action.
 
 ## Session protocol
 
 1. Execute one package per session using
    [`prompts/phase-session.md`](prompts/phase-session.md).
 2. Gate 1 is read-only. Resolve status, dependencies, external gates, review
-   state, worktree scope, and baseline evidence, then wait for explicit `go`.
+   state, worktree scope, baseline evidence, and the externalize-first plan, then
+   wait for explicit `go`.
 3. A `blocked` package stops at Gate 1. Do not skip to dependent product work.
 4. After `go`, execute only that package and do not preview/start the next one.
 5. Add failing evidence before behavior changes where the package requires it.
 6. Run every acceptance check. Never mark a package done on partial evidence.
 7. Update this table, the active map, current status, package handoff, and
-   history where required.
-8. Stop after the handoff with `Commit: deferred`.
+   history where required. Include the externalize-first handoff measurements.
+8. Stop after the handoff with `Commit: deferred` and the required exact next
+   command.
 9. Commit only when the user explicitly asks. Never amend, rebase, force-push,
    or bundle unrelated changes.
+
+## Response contract
+
+Every workflow gate, early stop, handoff, review, fix, and cycle-close response
+must end with exactly one final line in this form:
+
+```text
+NEXT COMMAND: <exact copy-paste command>
+```
+
+Nothing may follow that line. The command must be directly executable or
+sendable, not a description or placeholder. Use
+`NEXT COMMAND: NONE - <reason>` only when no safe command exists.
 
 ## Definition of done
 
@@ -167,10 +297,17 @@ Every package must satisfy all applicable items:
 - no unrelated or user-owned worktree change was reverted or bundled;
 - current-facing docs match implemented behavior;
 - package status and active-map status agree;
+- the externalize-first Gate 1 plan and handoff measurements are complete, every
+  production file is within its limit or has the exact Gate 1 owner approval,
+  and each focused module has a verified deployment path;
+- tests claimed as executable evidence run the real production modules and
+  paths rather than copied SQL, control flow, or behavior;
 - handoff records exact files, commands/results, hashes, open questions, review
   status, and deferred commit state;
 - required PHP/browser/staging checks are not replaced with assumptions;
-- no orphan fixture or failing baseline remains.
+- no orphan fixture or failing baseline remains;
+- the handoff response ends with the response contract's exact
+  `NEXT COMMAND:` line.
 
 ## Baseline commands
 
@@ -189,12 +326,18 @@ Owner-tool integration line adds:
 ```sh
 node tests/unit.js
 node tests/owner-tool.js
+node tests/context-migration.js
+php tests/context-lib.php
+php tests/context-admin.php
+php tests/context-preflight.php
+php tests/php-render.php
 ```
 
-OT05 writes the migration, preflight, and rollback artifacts. OT10 runs the PHP
-and migration commands on the user's local PHP environment; exact runtime
-commands are defined from the supplied DDL and target environment. Do not make
-OT05 completion depend on those runtime checks.
+OT05 wrote the migration, preflight, and rollback artifacts, and the local
+static/helper checks pass. OT10 runs the MySQL migration and target-PHP commands
+on the user's environment; exact runtime commands are defined from the supplied
+DDL and target environment. Do not make OT05 completion depend on those runtime
+checks.
 
 ## Branch and worktree safety
 

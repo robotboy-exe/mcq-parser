@@ -37,8 +37,7 @@ one shared cloze context plus one editable linked MCQ per gap.
 5. Generate an editable stem such as `Choose the option that best fills gap
    71.` and assign context position/slot.
 6. Parse same-paste keys by printed row number and preserve manual correction.
-7. Render all slots safely and highlight only the current slot in both CBT
-   pages.
+7. Render all slots safely and highlight only the current slot in `cbt.php`.
 8. Add adversarial fixtures: wrapped multiword cells, long cells, missing
    column, mismatched gaps/rows, tabs/spaces, and a table-like non-cloze block.
 9. Integrate output with OT07's manual context/question workflow; save nothing

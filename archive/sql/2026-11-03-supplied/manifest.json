@@ -1,0 +1,31 @@
+{
+  "captured_at": "2026-11-03",
+  "source_commit": "002483b",
+  "source_note": "Exact SQL bytes supplied by the developer; copied here unchanged as evidence.",
+  "application_target": "PHP 8.3",
+  "database_version": "MySQL 8.0.41",
+  "storage_engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci",
+  "correction": "exam_category2 is renamed to exam_category only in deployed/sql/base-schema.working.sql; the archived and root exports stay unchanged.",
+  "files": {
+    "questions.sql": {
+      "root_path": "questions.sql",
+      "archive_path": "archive/sql/2026-11-03-supplied/questions.sql",
+      "bytes": 2615,
+      "sha256": "e12e4d9fcb2a15b13bd2fff6885ca8c286006b80e58cfa62c91b434fc4c8834e"
+    },
+    "subjects.sql": {
+      "root_path": "subjects.sql",
+      "archive_path": "archive/sql/2026-11-03-supplied/subjects.sql",
+      "bytes": 1670,
+      "sha256": "bd0e1a11c0371ddb1fd0252ebc55bcb949c605a858a33e59c917bfddc10449af"
+    },
+    "exam_category.sql": {
+      "root_path": "exam_category.sql",
+      "archive_path": "archive/sql/2026-11-03-supplied/exam_category.sql",
+      "bytes": 1711,
+      "sha256": "05720e31e2365cfe2500222e9f615962e769ff06466eeeaf1512e605c4357cb1"
+    }
+  }
+}
