@@ -17,6 +17,33 @@
     return typeof value === 'number' && isFinite(value) && Math.floor(value) === value && value >= 0;
   }
 
+  function positiveInt(value) {
+    var number = Number(value);
+    if (!isFinite(number) || Math.floor(number) !== number || number < 1) return null;
+    return number;
+  }
+
+  function contextProblem(context) {
+    if (!isObject(context)) return 'context is not an object';
+    if (typeof context.localId !== 'string' || !context.localId) return 'context local id is missing';
+    if (context.contextType !== 'comprehension' && context.contextType !== 'cloze') return 'context type is invalid';
+    if (typeof context.title !== 'string' || typeof context.text !== 'string') return 'context text fields are invalid';
+    if (!Array.isArray(context.targets)) return 'context targets are not a list';
+    for (var t = 0; t < context.targets.length; t++) {
+      if (positiveInt(context.targets[t]) === null) return 'context target is invalid';
+    }
+    var expected = positiveInt(context.expectedCount);
+    if (expected === null || expected > 500) return 'context expected count is invalid';
+    if (typeof context.subjectId !== 'string' || typeof context.examCategoryId !== 'string' || typeof context.examYear !== 'string') {
+      return 'context pool fields are invalid';
+    }
+    if (context.serverId !== null && context.serverId !== undefined && positiveInt(context.serverId) === null) {
+      return 'context server id is invalid';
+    }
+    if (typeof context.stale !== 'boolean') return 'context stale flag is invalid';
+    return '';
+  }
+
   function emptyState(parserVersion, queueId) {
     return {
       version: STATE_VERSION,
@@ -38,7 +65,18 @@
     if (typeof state.queueId !== 'string' || !state.queueId) return 'queue id is missing';
     if (!isObject(state.metadata)) return 'metadata is not an object';
     if (!Array.isArray(state.contexts)) return 'contexts is not a list';
+    for (var c = 0; c < state.contexts.length; c++) {
+      var contextIssue = contextProblem(state.contexts[c]);
+      if (contextIssue) return contextIssue;
+    }
     if (!Array.isArray(state.items)) return 'items is not a list';
+    for (var i = 0; i < state.items.length; i++) {
+      var item = state.items[i];
+      if (!isObject(item)) return 'question item is not an object';
+      if (item.contextRef !== undefined && typeof item.contextRef !== 'string') return 'question context reference is invalid';
+      if (item.contextPosition !== undefined && typeof item.contextPosition !== 'string') return 'question context position is invalid';
+      if (item.contextSlot !== undefined && typeof item.contextSlot !== 'string') return 'question context slot is invalid';
+    }
     if (!isObject(state.answerKey)) return 'answer key is not an object';
     if (!isIndex(state.currentIndex)) return 'current index is not a valid position';
     if (state.pendingSubmission !== null) {
@@ -47,6 +85,16 @@
       if (typeof pending.queueId !== 'string') return 'pending queue id is missing';
       if (!isIndex(pending.index)) return 'pending index is invalid';
       if (typeof pending.fingerprint !== 'string') return 'pending fingerprint is missing';
+      if (pending.kind !== undefined
+        && pending.kind !== 'question'
+        && pending.kind !== 'context-create'
+        && pending.kind !== 'context-update') {
+        return 'pending submission kind is invalid';
+      }
+      if ((pending.kind === 'context-create' || pending.kind === 'context-update')
+        && (typeof pending.localId !== 'string' || !pending.localId)) {
+        return 'pending context id is missing';
+      }
     }
     return '';
   }

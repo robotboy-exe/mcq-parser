@@ -27,8 +27,13 @@ historical regression testing, not the production delivery path.
 ## Production path (owner tool)
 
 `src/owner-tool/controller.js`, `src/owner-tool/state.js`,
-`src/owner-tool/render.js`, and `src/owner-tool/style.css` are the shipping tool
-loaded by `admin_questions.php`. `render.js` is also loaded by both CBT pages,
+`src/owner-tool/contexts.js`, `src/owner-tool/context-form.js`,
+`src/owner-tool/context-card.js`, `src/owner-tool/context-panel.js`,
+`src/owner-tool/render.js`, `src/owner-tool/style.css`, and
+`src/owner-tool/context-workflow.css` are the shipping tool loaded by
+`admin_questions.php`. The context modules support manual native-form review;
+they must never create, update, activate, or save automatically. `render.js` is
+also loaded by both CBT pages,
 and `deployed/render.php` is its server-side twin; both escape first and restore
 only the exact `<u>`/`</u>` markers (D-66). Never render stored question text
 with permissive `strip_tags` or unrestricted `innerHTML`.
@@ -177,8 +182,14 @@ Commands:
 node tests/runner.js
 node tests/unit.js
 node tests/owner-tool.js
+node tests/context-migration.js
+node tests/cbt-context.js
 node tools/extract-bank.js --check
+php tests/context-lib.php
+php tests/context-admin.php
+php tests/context-preflight.php
 php tests/php-render.php
+php tests/cbt-candidate.php
 ```
 
 The fixture harness is parser-only; it does not execute DOM, storage,

@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var TOOL_VERSION = '1.1.0';
+  var TOOL_VERSION = '1.2.0';
   var SUCCESS_FLASH = /^Question saved successfully \(Question ID: \d+\)\.$/;
   var META_FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   var OPTION_FIELDS = ['option_a', 'option_b', 'option_c', 'option_d'];
@@ -9,6 +9,10 @@
   var stateApi = window.CBTOwnerState;
   var parser = window.OCRParser;
   var textApi = window.CBTText;
+  var contextModel = window.CBTOwnerContexts;
+  var contextFormApi = window.CBTOwnerContextForm;
+  var contextCardApi = window.CBTOwnerContextCard;
+  var contextPanelApi = window.CBTOwnerContextPanel;
   if (!stateApi || !parser || !textApi) {
     if (window.console && window.console.warn) {
       window.console.warn('Owner tool: the parser, state, or renderer module is not loaded.');
@@ -30,6 +34,7 @@
   var blocked = decision.status !== 'ok' && decision.status !== 'empty';
   var pasteVisible = false;
   var savedSelection = null;
+  var contextPanel = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -112,6 +117,17 @@
       var el = $(id);
       if (el) loaded.metadata[id] = String(el.value === null || el.value === undefined ? '' : el.value);
     });
+  }
+
+  function clearQuestionForm() {
+    META_FIELDS.concat(['question_text', 'option_a', 'option_b', 'option_c', 'option_d',
+      'answer_explanation', 'context_id', 'context_position', 'context_slot']).forEach(function (id) {
+      var el = $(id);
+      if (el) el.value = '';
+    });
+    clearRadios();
+    var preview = $('owner_tool_preview');
+    if (preview) textApi.render(preview, '');
   }
 
   function clearRadios() {
@@ -265,6 +281,7 @@
     clearRadios();
     tick(options.tick);
     updatePreview();
+    if (contextPanel) contextPanel.fillQuestion(item);
   }
 
   function refreshTick() {
@@ -291,6 +308,16 @@
       && stateApi.fingerprint(item) === pending.fingerprint;
     var flash = successFlash();
     var errorEl = document.querySelector('.admin-error');
+    if (contextPanel) {
+      var contextResult = contextPanel.resolvePending(flash, Boolean(errorEl));
+      if (contextResult) return contextResult;
+    }
+    if (pending.kind === 'context-create' || pending.kind === 'context-update') {
+      loaded.pendingSubmission = null;
+      persist();
+      warn('Could not confirm the context save. Check Shared Contexts before continuing.');
+      return 'ambiguous';
+    }
     if (errorEl) {
       loaded.pendingSubmission = null;
       persist();
@@ -335,12 +362,24 @@
     + '<span class="owner-tool-hint">Preview (options stay plain):</span>'
     + '<div id="owner_tool_preview" class="owner-tool-preview"></div>'
     + '</div>'
+    + (editMode ? '' : '<div id="owner_context_panel" class="owner-context-panel"></div>')
     + (editMode ? '' : '<div class="owner-tool-actions">'
       + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_show">Show Paste</button>'
       + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_skip">Skip</button>'
       + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_reset">Reset</button>'
       + '</div>');
   form.before(panel);
+
+  if (!editMode && contextPanelApi && contextModel && contextFormApi && contextCardApi) {
+    contextPanel = contextPanelApi.create({
+      model: contextModel,
+      root: $('owner_context_panel'),
+      getState: function () { return loaded; },
+      persist: persist,
+      formApi: contextFormApi,
+      cardApi: contextCardApi
+    });
+  }
 
   function showPaste(show) {
     pasteVisible = Boolean(show);
@@ -349,6 +388,7 @@
   }
 
   function render(keepForm) {
+    if (contextPanel && !blocked) contextPanel.render();
     var item = blocked ? null : currentItem();
     var total = blocked ? 0 : loaded.items.length;
     var input = $('owner_tool_input');
@@ -451,16 +491,11 @@
   }
 
   function reset() {
-    if (blocked) {
-      loaded = stateApi.emptyState(parserVersion, stateApi.makeQueueId());
-    } else {
-      loaded.items = [];
-      loaded.currentIndex = 0;
-      loaded.pendingSubmission = null;
-      loaded.queueId = stateApi.makeQueueId();
-    }
+    loaded = stateApi.emptyState(parserVersion, stateApi.makeQueueId());
     blocked = false;
     savedSelection = null;
+    clearQuestionForm();
+    if (contextPanel) contextPanel.clear();
     persist();
     warn('');
     render();
@@ -516,8 +551,10 @@
   form.addEventListener('submit', function () {
     if (blocked) return;
     saveMetadata();
+    if (contextPanel && !contextPanel.canSaveQuestion()) return;
     var item = blocked ? null : currentItem();
     loaded.pendingSubmission = item ? {
+      kind: 'question',
       queueId: loaded.queueId,
       index: loaded.currentIndex,
       fingerprint: stateApi.fingerprint(item),

@@ -7,9 +7,10 @@ corroborating supplied table shapes are unpartitioned and partitioning requires
 an out-of-contract schema change. `NOTE-4` is non-blocking. Phase 6 is
 review-settled and included in the authorized 2026-11-05 boundary commit. OT06's
 OT05 dependency is satisfied. `cbt_practice.php` and `practice_title` are outside
-the remaining cycle scope; OT06 targets `cbt.php` and remains blocked only on the
-main-question reader/writer audit. Runtime/staging and target-database
-verification are deferred to OT10.
+the remaining cycle scope. The available-source reader/writer audit passed on
+2026-11-05. OT06 passed its light review at OT07 Gate 1. OT07 is implemented on
+the branch and awaits the rigorous Release B review. Runtime/staging and
+target-database verification are deferred to OT10.
 
 Intent: [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -21,8 +22,8 @@ Intent: [`../../../INTENT.md`](../../../INTENT.md)
 | 4 | OT03 — Owner Tool Replacement | [`../owner-tool/ot-03-owner-tool-replacement.md`](../owner-tool/ot-03-owner-tool-replacement.md) | done |
 | 5 | OT04 — Underline and Multiline | [`../owner-tool/ot-04-underline-and-multiline.md`](../owner-tool/ot-04-underline-and-multiline.md) | done; rigorous review PASS |
 | 6 | OT05 — Context Schema and Admin | [`../owner-tool/ot-05-context-schema-and-admin.md`](../owner-tool/ot-05-context-schema-and-admin.md) | done; `BLOCK-8` rejected, review/disposition settled, boundary commit authorized; `NOTE-4` non-blocking; runtime migration deferred to OT10 |
-| 7 | OT06 — Candidate Group Delivery | [`../owner-tool/ot-06-candidate-group-delivery.md`](../owner-tool/ot-06-candidate-group-delivery.md) | blocked: main-question reader/writer audit required; `cbt.php` only |
-| 8 | OT07 — Owner Context Workflow | [`../owner-tool/ot-07-owner-context-workflow.md`](../owner-tool/ot-07-owner-context-workflow.md) | not started |
+| 7 | OT06 — Candidate Group Delivery | [`../owner-tool/ot-06-candidate-group-delivery.md`](../owner-tool/ot-06-candidate-group-delivery.md) | done; light review PASS at OT07 Gate 1; `cbt.php` only |
+| 8 | OT07 — Owner Context Workflow | [`../owner-tool/ot-07-owner-context-workflow.md`](../owner-tool/ot-07-owner-context-workflow.md) | done; pending rigorous Release B review |
 | 9 | OT08 — Comprehension OCR | [`../owner-tool/ot-08-comprehension-ocr.md`](../owner-tool/ot-08-comprehension-ocr.md) | not started |
 | 10 | OT09 — Cloze OCR | [`../owner-tool/ot-09-cloze-ocr.md`](../owner-tool/ot-09-cloze-ocr.md) | not started |
 | 11 | OT10 — Release and Handoff | [`../owner-tool/ot-10-release-and-handoff.md`](../owner-tool/ot-10-release-and-handoff.md) | blocked: prior packages required |

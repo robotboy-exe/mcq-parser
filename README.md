@@ -106,6 +106,11 @@ tools/bank-slices.json source hash, anchors, counts, and output hashes
   (numbering gap)` when the paste goes from Q9 to Q11.
 - Fills the native Add form one question at a time; saves stay manual through
   the existing PRG flow and advance only on the exact success flash.
+- Reviews shared contexts as editable local cards, prefills the native context
+  form, binds returned IDs only on exact PRG success, and blocks linked saves
+  while a saved context draft is stale.
+- Keeps context creation, question saves, and final activation as separate
+  explicit native administrator actions; none is posted automatically.
 - Persists the queue, header metadata, and key in versioned `cbtOwnerTool:v1`
   state; legacy `ocrQueue`, `ocrMeta`, and `ansKey` are detected but never
   imported or deleted.
@@ -128,8 +133,10 @@ the corroborating `questions1.sql` export are unpartitioned and no supported
 application path changes table partitioning. Phase 6 is review-settled and
 included in the 2026-11-05 boundary commit; `NOTE-4` is non-blocking. The owner
 removed `cbt_practice.php` and `practice_title` from the remaining cycle scope.
-OT06 targets `cbt.php` and remains blocked only on the main-question
-reader/writer audit. Runtime/staging verification is deferred to OT10.
+The available-source reader/writer audit passed on 2026-11-05. OT06 targets
+`cbt.php` and passed its light review at OT07 Gate 1. OT07 is implemented and
+awaits the rigorous Release B review. Runtime/staging verification is deferred
+to OT10.
 
 Active work happens on `owner-tool-integration`. `main` is the published baseline
 and the remote default; do not start new implementation there. The fixture runner

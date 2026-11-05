@@ -107,10 +107,10 @@ session restored OT03 exactly, retained the useful Release A implementation,
 added regression evidence, and assigned first-time detail integration to OT04.
 OT10 now owns independent Release A, target-PHP, staging, and Brave/Android
 verification. On 2026-11-02 the owner deferred the unavailable staging/mobile
-smoke to OT10 and accepted OT04 implementation as complete. OT05 has not started
-and remains blocked by the OT04 rigorous review plus its own database gate. This
-was the 2026-11-02 state; the 2026-11-03 reconciliation below narrows the gate to
-the missing exact DDL bytes.
+smoke to OT10 and accepted OT04 implementation as complete. OT05 had not started and was then
+blocked by the OT04 rigorous review plus its own database gate. That was the
+2026-11-02 state; the 2026-11-03 reconciliation below narrowed the gate to the
+missing exact DDL bytes, which arrived later that day (see below).
 
 ## OT05 Gate Reconciliation — 2026-11-03
 
@@ -126,19 +126,115 @@ Confirmed and removed from the blocker list:
 - Runtime/staging verification belongs to OT10, not OT05.
 - The `exam_category2` → `exam_category` correction is settled.
 
-The remaining OT05 dependency is one missing artifact: the exact supplied SQL DDL
-bytes for `questions`, `subjects`, and `exam_category`. The checklist names
-`questions.sql`, `subjects.sql`, and `exam_category.sql`, but no `.sql` file
-exists in the worktree or anywhere in Git history. OT05 is therefore blocked
-only on obtaining and placing those bytes.
+At the time of the audit, the remaining OT05 dependency was one missing
+artifact: the exact supplied SQL DDL bytes for `questions`, `subjects`, and
+`exam_category`. No `.sql` file existed in the worktree or anywhere in Git
+history then. OT05 was therefore blocked only on obtaining and placing those
+bytes. Later on 2026-11-03 the owner supplied them; see below.
 
 Branch decisions:
 
-- `owner-tool-integration` is the authoritative work branch and contains `main`
-  plus all owner-tool work through OT04.
+- `owner-tool-integration` is the authoritative work branch and contained `main`
+  plus all owner-tool work through OT04 at that time.
 - `main` remains the published baseline and remote default; it is advanced only
   at a reviewed release boundary or cycle close.
 - `ot04-fix` and `ot04-review` are fully merged into
   `owner-tool-integration` and retired.
 - Implementation returns to `owner-tool-integration`; review sessions stay
   read-only and write only their review records.
+
+## OT05 DDL Arrival — 2026-11-03
+
+The owner supplied the missing schema artifacts in `main` commit `002483b`
+("provided more deployment files"). The commit adds `questions.sql`,
+`subjects.sql`, `exam_category.sql`, plus root copies of the deployment PHP files.
+
+The three SQL files were copied to `owner-tool-integration` without merging the
+root PHP copies, because those root PHP files differ from the OT04 working copies
+under `deployed/`. The SQL exports are the evidence OT05 needed; the root PHP
+files are not part of this step.
+
+`exam_category.sql` still uses `exam_category2` in its `CREATE TABLE` and
+`ALTER TABLE` statements. The developer's settled instruction is to replace every
+`exam_category2` identifier with `exam_category` in the working DDL copy while
+keeping the supplied file unchanged as evidence.
+
+OT05 then had no remaining external gate; its Gate 1 session began the next day
+(see the 2026-11-04 implementation entry below).
+
+The accompanying documentation duplicate audit found no exact or
+whitespace-normalized duplicate Markdown files under `docs/`. Historical records
+such as `Active.md`, `Auto-Save-Spec.md`, and the `plan/11-19` notes are retained
+as evidence; no docs were deleted.
+
+## OT05 Implementation Complete - 2026-11-04
+
+OT05 was implemented on `owner-tool-integration` without committing. The working
+tree now includes:
+
+- `archive/sql/2026-11-03-supplied/` with unchanged supplied DDL and hashes;
+- `deployed/sql/base-schema.working.sql`, forward migration, guarded rollback,
+  and a disposable-database runbook;
+- `deployed/context_lib.php` and context create/edit/link/activate/deactivate/
+  delete actions in `deployed/admin_questions.php`;
+- `tools/context-migration-preflight.php`;
+- `tests/context-migration.js` and `tests/context-lib.php`; and
+- updated `AGENTS.md`, package status/handoff, and continuation docs.
+
+OT05 chose a separate `question_contexts` table with ordered membership columns
+on `questions`. Linked questions are forced inactive; context activation is the
+OT06 publication switch, while legacy candidate queries remain unchanged.
+
+Local checks on PHP 8.3.16: 47 runner PASS + 2 PENDING, 145 unit PASS, 38
+owner-tool PASS, 8 context-migration PASS, 12 context-lib PASS, 9 PHP renderer
+PASS, and `php -l` PASS. The known Windows/CRLF `extract-bank` pre-2026 output
+hash mismatch is pre-existing and not part of OT05. Target-runtime migration,
+preflight, rollback, and browser/admin PRG checks remain deferred to OT10.
+
+OT06 Gate 1 remains blocked on the practice writer/importer and reader/writer
+search audit. No commit was made.
+
+The earlier 2026-11-03 note that OT05 "remains not started" records the state
+before this implementation session.
+
+## OT06 — Candidate Group Delivery (2026-11-05)
+
+Gate 1 passed on base `8f1d7e5`. Implemented whole-unit selection and context
+hydration in `deployed/cbt_candidate_selection.php` and
+`deployed/cbt_candidate_repository.php`, wired the `cbt.php` question reads to
+the repository, and rendered open context cards with active-slot cloze
+highlighting via `src/cbt/context-render.js` and `src/cbt/context.css`.
+
+Local evidence: 7 `cbt-candidate` PASS, 4 `cbt-context` PASS, 47/0/2 runner,
+145 unit, 38 owner-tool, 13 context-migration (the obsolete OT05 `cbt.php`
+untouched guard was updated to the OT06 delegation boundary), 13 context-lib,
+19 context-admin, 6 context-preflight, 9 PHP renderer, and PHP lint PASS. The
+isolated Chromium/CDP harness showed an exam total of 4 with one open card and
+one active mark, and mixed results with total 6, four open cards, two active
+marks, two standalone detail links, and context text once in the payload.
+
+Target MySQL/staging execution remains OT10. No live/staging DB write was used.
+No commit was made; review is pending at OT07 Gate 1.
+
+## OT07 — Owner Context Workflow (2026-11-05)
+
+OT06 passed its light review at OT07 Gate 1 with no material findings. OT07 was
+then implemented on package base `8f1d7e5` without committing. The owner tool
+now keeps editable local context cards, prefills the native context form, binds
+server IDs only after exact create/update PRG success, marks edited saved drafts
+stale, fills linked question context fields, clears them for standalone items,
+and leaves creation, question save, and activation as explicit native actions.
+
+The additive `cbtOwnerTool:v1` state keeps `contexts[]`, per-item context links,
+and pending action kinds without a version bump. Reset now creates a fresh empty
+owner state and clears native form fields while leaving legacy `ocrQueue`,
+`ocrMeta`, and `ansKey` untouched.
+
+Local evidence: 47/0/2 runner, 145 unit, 47 owner-tool, 13 context-migration,
+4 cbt-context, 13 context-lib, 19 context-admin, 6 context-preflight, 9 PHP
+renderer, 7 cbt-candidate, and PHP 8.3 lint PASS. Every existing production file
+stayed below 100 additions and every new JavaScript module stayed within 250
+readable lines. No live/staging write or browser runtime check was used. The
+known Windows/CRLF bank-extractor hash mismatch remains pre-existing. The owner
+then requested a machine-transfer checkpoint commit before the rigorous Release
+B review.

@@ -70,6 +70,7 @@ const preflightContract = read('tools/context-migration-contract.php');
 const preflightInspector = read('tools/context-migration-inspector.php');
 const cbt = read('deployed/cbt.php');
 const practice = read('deployed/cbt_practice.php');
+const candidateRepository = read('deployed/cbt_candidate_repository.php');
 
 test('supplied DDL is archived byte-for-byte with recorded hashes', () => {
   const names = ['questions.sql', 'subjects.sql', 'exam_category.sql'];
@@ -310,10 +311,11 @@ test('question mutation module locks and deactivates inside its transactions', (
   assertContains(contextActions, 'cbt_context_members($pdo, $editingContextId, true)', 'context update member locks');
 });
 
-test('legacy candidate delivery still selects only active questions', () => {
-  assertContains(cbt, 'WHERE is_active = 1', 'CBT candidate filter');
+test('candidate delivery remains active-only after OT06 delegation', () => {
+  assertContains(cbt, 'cbt_candidate_delivery(', 'CBT delegates context-aware delivery');
+  assertNotContains(cbt, 'ORDER BY RAND()', 'CBT no longer randomizes raw question rows');
+  assertContains(candidateRepository, 'WHERE is_active = 1', 'repository candidate filter');
   assertContains(practice, 'WHERE is_active = 1', 'practice candidate filter');
-  assertNotContains(cbt, 'context_id', 'CBT delivery is not changed in OT05');
   assertNotContains(practice, 'context_id', 'practice delivery is not changed in OT05');
 });
 

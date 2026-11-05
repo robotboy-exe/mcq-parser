@@ -9,9 +9,9 @@ Last updated: 2026-11-05.
 ## Current state
 
 - Active cycle: `owner-tool-2026-11`.
-- Product work: OT00-OT05 implementation and the latest focused Phase 6 fixes complete;
-  Brave/Android staging and target-runtime migration execution are owner-deferred
-  to OT10.
+- Product work: OT00-OT07 implementation is complete; Brave/Android staging and
+  target-runtime migration execution are owner-deferred to OT10. OT07 awaits
+  the rigorous Release B review.
 - Phase 6 review and disposition are settled. The 2026-11-05 lifecycle
   correction closes `BLOCK-3`/`BLOCK-6` against their frozen vectors and assigns
   the newly discovered partition scenario to `BLOCK-8`. The owner rejected
@@ -22,9 +22,9 @@ Last updated: 2026-11-05.
 - `NOTE-4` remains non-blocking. OT05 is review-settled and included in the
   authorized 2026-11-05 boundary commit. OT06's OT05 dependency is satisfied.
   The owner removed `cbt_practice.php` and `practice_title` from the remaining
-  cycle scope; OT06 targets `cbt.php` and remains blocked only on the
-  main-question reader/writer search audit. Do not start its product work until
-  that audit settles.
+  cycle scope. The available-source main-question reader/writer audit passed on
+  2026-11-05. OT06 passed its light review at OT07 Gate 1. OT07 is implemented
+  on the branch and awaits the rigorous Release B review.
 - Working branch: `owner-tool-integration` is the authoritative integration and
   implementation line. `main` is the published baseline, not the current work
   branch. See [Branch strategy](#branch-strategy).
@@ -41,6 +41,10 @@ Last updated: 2026-11-05.
   lint PASS. The known Windows/CRLF
   `extract-bank` pre-2026 output-hash mismatch remains a pre-existing baseline
   artifact, not an OT05 regression. Target-runtime migration execution is OT10.
+- OT07 evidence: 47 runner PASS + 2 PENDING, 145 unit PASS, 47 owner-tool PASS,
+  13 context-migration PASS, 4 cbt-context PASS, 13 context-lib PASS, 19
+  context-admin PASS, 6 context-preflight PASS, 9 PHP renderer PASS, 7
+  cbt-candidate PASS, and PHP 8.3 lint PASS. No live/staging write was used.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
@@ -161,8 +165,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 4 | OT03 | [Owner Tool Replacement](owner-tool/ot-03-owner-tool-replacement.md) | OT02 | done | satisfied (helper archived 2026-11-01) |
 | 5 | OT04 | [Underline and Multiline](owner-tool/ot-04-underline-and-multiline.md) | OT03 | done | none; staging/mobile deferred to OT10 |
 | 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review (settled) | done; `BLOCK-8` rejected, review/disposition settled, boundary commit authorized | none; runtime migration deferred to OT10 |
-| 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | blocked | main-question reader/writer audit |
-| 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | not started | inherited server contract |
+| 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | done; light review PASS at OT07 Gate 1 | satisfied: [reader/writer audit](owner-tool/ot-06-reader-writer-audit.md) |
+| 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | done; pending rigorous Release B review | inherited server contract |
 | 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | not started | answer-key sample for final acceptance |
 | 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | not started | answer-key sample for final acceptance |
 | 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked | local PHP, staging, all prior artifacts |
@@ -178,7 +182,7 @@ files in the same package handoff; a mismatch blocks the next Gate 1.
 | Exact DDL bytes for `questions`, `subjects`, `exam_category` | Supplied 2026-11-03 in `main` commit `002483b` and copied to `owner-tool-integration` |
 | `answer_details.php` | Supplied and archived 2026-11-02; integrated in OT04 and independently verified again in OT10 |
 | PHP and database versions | Satisfied: PHP 8.3 application target; MySQL 8.0.41 from schema exports |
-| Main-question reader/writer inventory | Finds every affected `cbt.php` read path and linked-question mutation path |
+| [Main-question reader/writer inventory](owner-tool/ot-06-reader-writer-audit.md) | Satisfied 2026-11-05; finds every available affected `cbt.php` read path and linked-question mutation path |
 
 The connection contract is settled by root `db_conn.php` (charset `utf8mb4`,
 PDO exceptions, associative fetches, native prepares). Do not request a redacted
@@ -201,7 +205,8 @@ verifies the detail path with the rest of Release A.
 ## Branch strategy
 
 - `owner-tool-integration` is the authoritative work branch. It contains `main`
-  and all owner-tool work through OT05. Start OT06 and later implementation here.
+  and all owner-tool work through OT07. Continue later implementation here only
+  after the required review gates pass.
 - `main` is the published baseline and the remote default. It is not the current
   work branch. Advance it only at a reviewed release boundary or cycle close, by
   fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite
@@ -225,7 +230,7 @@ verifies the detail path with the rest of Release A.
 | phase 1 close | OT00 integration baseline | rigorous | pending |
 | phases 2-4 | OT01-OT03 | light at next Gate 1 | pending |
 | phase 5 close | OT04 Release A implementation and detail-source integration | rigorous | pass |
-| phases 6-7 | OT05-OT06 | light at next Gate 1 | pending |
+| phases 6-7 | OT05-OT06 | light at next Gate 1 | pass at OT07 Gate 1 |
 | OT05 remediation | OT05-EXT-01 plus accepted Phase 6 fixes | rigorous | settled; `BLOCK-8` rejected by owner, boundary commit authorized |
 | phase 8 close | OT07 Release B | rigorous | pending |
 | phase 9 | OT08 | light at OT09 Gate 1 | pending |
@@ -240,13 +245,17 @@ the supported target contract. The technical risk on an out-of-band partitioned
 target remains recorded rather than rewriting the review. Reconnect hardening
 remains non-blocking `NOTE-4`. OT06's OT05 dependency is satisfied. The owner subsequently removed
 `cbt_practice.php`/`practice_title` from the remaining cycle scope and authorized
-the Phase 6 boundary commit. OT06 remains blocked only on the main-question
-reader/writer audit.
+the Phase 6 boundary commit. The available-source reader/writer audit passed on
+2026-11-05. OT06 passed its light review at OT07 Gate 1. OT07 is implemented;
+its manual context cards, native context-form adapter, exact PRG binding, stale
+draft guard, linked question fields, and full Reset behavior have local JS/PHP
+evidence. Target-runtime execution remains OT10. The audit carries forward the
+archived legacy-writer deployment check as an OT10 constraint.
 
 Current workflow stop:
 
 ```text
-NEXT COMMAND: audit the available production question readers and writers for OT06
+NEXT COMMAND: @docs/plan/prompts/review-session.md review phase 8
 ```
 
 Rigorous reviews use [`prompts/review-session.md`](prompts/review-session.md)

@@ -55,8 +55,9 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-05.
 - [x] Remove `cbt_practice.php` and `practice_title` from the remaining cycle
   scope. Preserve existing behavior unchanged; OT06 targets `cbt.php` only.
 - [x] Authorize the 2026-11-05 Phase 6 boundary commit.
-- [ ] OT06 Gate 1 remains blocked on the main-question reader/writer search
-  audit. Do not start OT06 product work until it clears.
+- [x] Audit every available main-question reader and writer. The 2026-11-05
+  inventory covers all seven `cbt.php` question reads and the current atomic
+  insert/update/delete helper; OT06 is ready for Gate 1.
 
 ## OT05 Database Preparation
 
@@ -124,10 +125,15 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-05.
 
 ## OT06 And Later Inputs
 
-- [ ] Obtain a production-wide filename/search list for the main `cbt.php`
-  question-read path and every writer that can mutate linked `questions` rows.
-- [ ] Implement complete-group candidate delivery in OT06 only after OT05.
-- [ ] Implement the manual owner context workflow in OT07 only after OT06.
+- [x] Record the available-source filename/search inventory for the main
+  `cbt.php` read path and every current writer that can mutate linked
+  `questions` rows in `ot-06-reader-writer-audit.md`.
+- [ ] At OT10, verify the deployment manifest installs the current context-aware
+  admin writer and exposes no archived or alternate question writer.
+- [x] Implement complete-group candidate delivery in OT06; light review passed
+  at OT07 Gate 1.
+- [x] Implement the manual owner context workflow in OT07; local acceptance
+  passes and the rigorous Release B review is next.
 - [ ] Obtain source-backed answer keys for comprehension Q11-Q15 and cloze
   Q71-Q80 before final OT08/OT09 acceptance.
 

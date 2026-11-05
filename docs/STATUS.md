@@ -8,7 +8,7 @@ Last updated: 2026-11-05.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Last completed package: OT05, Context Schema and Admin, including the accepted
+- Last review-settled package: OT05, Context Schema and Admin, including the accepted
   Phase 6 repairs. The third re-review is complete. Its repaired direction/CHECK
   and post-`ALTER` relock vectors close `BLOCK-3` and `BLOCK-6` under the frozen
   lifecycle. On 2026-11-05 the owner rejected `BLOCK-8`: authoritative
@@ -18,13 +18,15 @@ Last updated: 2026-11-05.
   mandatory write freeze remains non-blocking `NOTE-4`.
 - Phase 6 is review-settled and included in the 2026-11-05 boundary commit.
   OT06's OT05 dependency is satisfied. The owner removed `cbt_practice.php` and
-  `practice_title` from the remaining cycle scope; OT06 targets `cbt.php` and is
-  blocked only pending the main-question reader/writer search audit.
-  Target-runtime migration/preflight/rollback execution and browser/admin PRG
-  checks remain deferred to OT10.
+  `practice_title` from the remaining cycle scope. The available-source
+  reader/writer audit passed on 2026-11-05. OT06 passed its light review at OT07
+  Gate 1. OT07 is implemented on the branch and awaits the rigorous
+  Release B review. Target-runtime migration/preflight/rollback execution and
+  browser/admin PRG checks remain deferred to OT10.
 - Product implementation: parser 2.1.0, exact underline rendering, multiline
-  stems, Add/Edit formatting, native PRG preservation, and the shared-context
-  schema/admin workflow are in place.
+  stems, Add/Edit formatting, native PRG preservation, shared-context
+  schema/admin/candidate delivery, and the manual owner context workflow are in
+  place.
 - Working branch: `owner-tool-integration`; `main` is the published baseline.
   See [`plan/README.md`](plan/README.md#branch-strategy).
 
@@ -51,6 +53,8 @@ Last updated: 2026-11-05.
 | clean experiments commit `d5a62f0` | recorded `node tests/runner.js` and `tests/unit.js` | 43 PASS runner, 140 PASS unit |
 | `owner-tool-integration` code baseline at `405439b` (OT04 merged; docs-only commits follow) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, and `node tools/extract-bank.js --check` on 2026-11-03 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 38 owner-tool; 7 bank slices OK |
 | OT05 working tree after the focused `BLOCK-3`/`BLOCK-6` fix (uncommitted, exact package base `cd2e6c9`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `php tests/context-lib.php`, `php tests/context-admin.php`, `php tests/context-preflight.php`, `php tests/php-render.php`, and `php -l` on 2026-11-04 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 38 owner-tool; 13 context-migration; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; PHP lint PASS |
+| OT06 implementation snapshot (base `8f1d7e5`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `php tests/context-lib.php`, `php tests/context-admin.php`, `php tests/context-preflight.php`, `php tests/php-render.php`, `php tests/cbt-candidate.php`, `node tests/cbt-context.js`, isolated Chromium/CDP, and `php -l` on 2026-11-05 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 38 owner-tool; 13 context-migration; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; 4 cbt-context; browser PASS; PHP lint PASS |
+| OT07 implementation snapshot (base `8f1d7e5`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `node tests/cbt-context.js`, `php tests/context-lib.php`, `php tests/context-admin.php`, `php tests/context-preflight.php`, `php tests/php-render.php`, `php tests/cbt-candidate.php`, and `php -l deployed/admin_questions.php` on 2026-11-05 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 47 owner-tool; 13 context-migration; 4 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP lint PASS |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -101,7 +105,7 @@ Supplied DDL SHA-256:
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| Main-question reader/writer inventory | OT06 | Find every `cbt.php` read path and every writer that can mutate linked questions |
+| Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | OT08/OT09 final acceptance | Prove the one-box key workflow on the new families |
 
 OT05 implementation, accepted fixes, third re-review, and `BLOCK-8` owner
@@ -116,6 +120,13 @@ These were **not** OT05 gates: a redacted or full `cbt_db.php` (the connection
 contract is supplied by `db_conn.php`), another PHP/database/engine/charset
 confirmation (settled above), or another `exam_category` export for the
 `exam_category2` naming question (correction rule settled).
+
+The OT06 audit accounts for every direct `questions` SQL site in the available
+production source. OT10 must still verify the deployment manifest contains the
+current context-aware admin writer and no alternate legacy writer. OT06
+suppresses the dead `answer_details.php` link for inactive linked members and
+passed its light review at OT07 Gate 1. OT07 now supplies the manual context
+card/native-form workflow and awaits the rigorous Release B review.
 
 `header.php`, `footer.php`, and `cbt_exam_attempts` are not requested up front.
 The supplied detail page is part of OT04; OT10 repeats Release A acceptance
