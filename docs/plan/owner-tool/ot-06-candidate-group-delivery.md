@@ -110,11 +110,14 @@ Files changed: deployed/cbt.php, deployed/cbt_candidate_selection.php,
   deployed/cbt_candidate_repository.php, src/cbt/context-render.js,
   src/cbt/context.css, tests/cbt-candidate.php, tests/cbt-context.js,
   tests/context-migration.js
-Hashes: cbt.php 1e093cc44aaaa0b437b4f116b4bcc00c3aa57056357b233eea7a5f5efac9e409;
+Hashes: cbt.php 8b08b6e5656a8d6bda60a6f3051bd452520e50fdbdf87c32dfbb2fcfadfce35f;
   selection 8786578a817998a7955562e87ec72dd0feb58f214c42cc407bc258ee5727ce6f;
   repository 21254c1c38f1a86bac0b821666eaa116ee782fecb316bd4f03800d3d2cb9c450;
   context-render 5a01e8cbd79e7fd5388966751a9f7eb8c895128bfaafbfd264e69f9008f4096d;
   context.css 429fb27e8c9c727f34d9003142f69800d1f4c6ad064dd0e935edca642eab8a82
+Hash basis: LF `git show b23d7dd:<path>` output measured with `wc -lc` and
+  `sha256sum`; FIX-1 replaced the CRLF-derived cbt.php value (45573 /
+  `1e093cc4...`) with the committed LF hash
 Open questions: target MySQL/staging execution remains OT10; no live/staging DB
   or destructive live write was used
 Review: light verification PASS at OT07 Gate 1; no material findings

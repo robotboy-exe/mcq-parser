@@ -134,9 +134,11 @@ application path changes table partitioning. Phase 6 is review-settled and
 included in the 2026-11-05 boundary commit; `NOTE-4` is non-blocking. The owner
 removed `cbt_practice.php` and `practice_title` from the remaining cycle scope.
 The available-source reader/writer audit passed on 2026-11-05. OT06 targets
-`cbt.php` and passed its light review at OT07 Gate 1. OT07 is implemented and
-awaits the rigorous Release B review. Runtime/staging verification is deferred
-to OT10.
+`cbt.php` and passed its light review at OT07 Gate 1. OT07 is implemented; its
+rigorous Release B review returned PASS WITH ACCEPTED FINDINGS, and `FIX-1`
+(handoff hash/byte accuracy) was closed by the 2026-11-06 closure-focused
+re-review, so phase 8 is review-settled and OT08 is next. Runtime/staging
+verification is deferred to OT10.
 
 Active work happens on `owner-tool-integration`. `main` is the published baseline
 and the remote default; do not start new implementation there. The fixture runner

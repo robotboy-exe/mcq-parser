@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-05.
+Last updated: 2026-11-06.
 
 ## Active cycle
 
@@ -20,9 +20,12 @@ Last updated: 2026-11-05.
   OT06's OT05 dependency is satisfied. The owner removed `cbt_practice.php` and
   `practice_title` from the remaining cycle scope. The available-source
   reader/writer audit passed on 2026-11-05. OT06 passed its light review at OT07
-  Gate 1. OT07 is implemented on the branch and awaits the rigorous
-  Release B review. Target-runtime migration/preflight/rollback execution and
-  browser/admin PRG checks remain deferred to OT10.
+  Gate 1. OT07 is implemented; its rigorous Release B review returned PASS WITH
+  ACCEPTED FINDINGS, and `FIX-1` (handoff hash/byte accuracy) was fixed and
+  closed by the closure-focused re-review on 2026-11-06. Phase 8 is
+  review-settled and included in the 2026-11-06 boundary commit; OT08 is next.
+  Target-runtime migration/preflight/rollback execution and browser/admin PRG
+  checks remain deferred to OT10.
 - Product implementation: parser 2.1.0, exact underline rendering, multiline
   stems, Add/Edit formatting, native PRG preservation, shared-context
   schema/admin/candidate delivery, and the manual owner context workflow are in
@@ -126,7 +129,9 @@ production source. OT10 must still verify the deployment manifest contains the
 current context-aware admin writer and no alternate legacy writer. OT06
 suppresses the dead `answer_details.php` link for inactive linked members and
 passed its light review at OT07 Gate 1. OT07 now supplies the manual context
-card/native-form workflow and awaits the rigorous Release B review.
+card/native-form workflow; its rigorous Release B review returned PASS WITH
+ACCEPTED FINDINGS and `FIX-1` (handoff hash/byte accuracy) was fixed and closed
+by the closure-focused re-review on 2026-11-06.
 
 `header.php`, `footer.php`, and `cbt_exam_attempts` are not requested up front.
 The supplied detail page is part of OT04; OT10 repeats Release A acceptance

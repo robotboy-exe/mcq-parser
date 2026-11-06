@@ -1,6 +1,6 @@
 # Owner Tool Next Steps
 
-Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-05.
+Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-06.
 
 ## Confirmed Starting Point
 
@@ -133,7 +133,11 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-05.
 - [x] Implement complete-group candidate delivery in OT06; light review passed
   at OT07 Gate 1.
 - [x] Implement the manual owner context workflow in OT07; local acceptance
-  passes and the rigorous Release B review is next.
+  passes and the rigorous Release B review returned PASS WITH ACCEPTED
+  FINDINGS (`FIX-1` handoff hash/byte accuracy; `NOTE-1` docs).
+- [x] Apply the authorized OT07 `FIX-1` correction and complete its
+  closure-focused re-review (2026-11-06); `FIX-1` is closed and phase 8 is
+  review-settled. Next is OT08 Gate 1.
 - [ ] Obtain source-backed answer keys for comprehension Q11-Q15 and cloze
   Q71-Q80 before final OT08/OT09 acceptance.
 
