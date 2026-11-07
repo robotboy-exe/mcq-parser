@@ -23,10 +23,22 @@ Last updated: 2026-11-06.
   Gate 1. OT07 is implemented; its rigorous Release B review returned PASS WITH
   ACCEPTED FINDINGS, and `FIX-1` (handoff hash/byte accuracy) was fixed and
   closed by the closure-focused re-review on 2026-11-06. Phase 8 is
-  review-settled and included in the 2026-11-06 boundary commit; OT08 is next.
+  review-settled and included in the 2026-11-06 boundary commit. OT08 is
+  implemented with parser 2.2.0 and passed its light review at OT09 Gate 1. OT09
+  cloze OCR is implemented with parser 2.3.1; its rigorous Release C review
+  returned `BLOCK` on 2026-11-07 (`BLOCK-1`: unapproved 274-line new module;
+  `FIX-1`: silent partial cloze group on duplicate numbering), the owner
+  authorized `fix` for both under their frozen closure contracts, and the
+  2026-11-07 fix applied both (`cloze.js` 242 lines; colliding groups refused;
+  parser 2.3.1). The first independent re-review closed both findings and
+  recorded `FIX-2` (two cloze groups sharing numbering lose the later group's
+  options) in its first review round, so it routes to a fix session under the
+  two-round lifecycle. Phase 10 is not commit-ready and OT10 is blocked. The
+  external same-paste answer-key samples are still open.
   Target-runtime migration/preflight/rollback execution and browser/admin PRG
   checks remain deferred to OT10.
-- Product implementation: parser 2.1.0, exact underline rendering, multiline
+- Product implementation: parser 2.3.1 (comprehension and cloze contexts), exact
+  underline rendering, multiline
   stems, Add/Edit formatting, native PRG preservation, shared-context
   schema/admin/candidate delivery, and the manual owner context workflow are in
   place.
@@ -58,6 +70,9 @@ Last updated: 2026-11-06.
 | OT05 working tree after the focused `BLOCK-3`/`BLOCK-6` fix (uncommitted, exact package base `cd2e6c9`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `php tests/context-lib.php`, `php tests/context-admin.php`, `php tests/context-preflight.php`, `php tests/php-render.php`, and `php -l` on 2026-11-04 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 38 owner-tool; 13 context-migration; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; PHP lint PASS |
 | OT06 implementation snapshot (base `8f1d7e5`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `php tests/context-lib.php`, `php tests/context-admin.php`, `php tests/context-preflight.php`, `php tests/php-render.php`, `php tests/cbt-candidate.php`, `node tests/cbt-context.js`, isolated Chromium/CDP, and `php -l` on 2026-11-05 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 38 owner-tool; 13 context-migration; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; 4 cbt-context; browser PASS; PHP lint PASS |
 | OT07 implementation snapshot (base `8f1d7e5`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `node tests/cbt-context.js`, `php tests/context-lib.php`, `php tests/context-admin.php`, `php tests/context-preflight.php`, `php tests/php-render.php`, `php tests/cbt-candidate.php`, and `php -l deployed/admin_questions.php` on 2026-11-05 | 47 PASS, 0 FAIL, 2 PENDING runner; 145 unit; 47 owner-tool; 13 context-migration; 4 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP lint PASS |
+| OT08 implementation snapshot (base `224957e`, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `node tests/cbt-context.js`, and `node tools/extract-bank.js --check` on 2026-11-06 | 52 PASS, 0 FAIL, 1 PENDING runner (cloze); 151 unit; 51 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; PHP absent |
+| OT09 implementation snapshot (same tree, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `node tests/cbt-context.js`, and `node tools/extract-bank.js --check` on 2026-11-06 | 59 PASS, 0 FAIL, 0 PENDING runner; 158 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; PHP absent |
+| OT09 `BLOCK-1`/`FIX-1` fix snapshot (same tree, uncommitted, parser 2.3.1) | the same six commands plus `node --check` on the changed JS and `wc -l src/parser/cloze.js` on 2026-11-07 | 59 PASS, 0 FAIL, 0 PENDING runner; 160 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; cloze.js 242 lines; PHP absent |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save

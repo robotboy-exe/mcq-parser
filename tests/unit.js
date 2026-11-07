@@ -5,6 +5,8 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const parser = require('../src/parser/parser.js');
+const comprehension = require('../src/parser/comprehension.js');
+const cloze = require('../src/parser/cloze.js');
 const uiHarness = require('./ui-harness.js');
 
 const INPUT_DIR = path.resolve(__dirname, '../fixtures/inputs');
@@ -245,6 +247,234 @@ test('splitSections removes a 19xx answer title without extending option D', () 
   eq(parsed.sections.boundary, 'WASSCE C.R.K. 1994\nOBJECTIVE ANSWERS');
   eq(parsed.items[0].d, 'Four');
   eq(parsed.key, { 1: 'A' });
+});
+
+test('parsePaste returns the comprehension contract for a recognized passage', () => {
+  const parsed = parser.parsePaste(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
+  eq(parsed.version, '2.3.1', 'parser version');
+  eq(parsed.contexts.length, 1, 'one context');
+  eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
+  eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');
+  eq(parsed.contexts[0].expectedCount, 5, 'expected member count');
+  eq(parsed.contexts[0].linkedCount, 5, 'linked member count');
+  eq(parsed.items[0].a, 'best used in politics', 'transcribed option A');
+  eq(parsed.items[0].contextRef, 'ctx-1', 'linked reference');
+  eq(parsed.items[0].contextPosition, '1', 'ordered position');
+  eq(parsed.key, null, 'no key');
+  eq(parsed.keyConflicts.length, 0, 'no key conflicts');
+  eq(parsed.sectionEvidence.how, 'none', 'section evidence keeps the split mode');
+  eq(parsed.sectionEvidence.contexts.length, 1, 'section evidence records the context');
+  eq(parsed.warnings.length, 0, 'no warnings');
+});
+
+test('parsePaste keeps the legacy shape when no passage is recognized', () => {
+  const parsed = parser.parsePaste([
+    'CRS 1994 JAMB',
+    '1. Which statement is correct today?',
+    'A. One',
+    'B. Two',
+    'C. Three',
+    'D. Four'
+  ].join('\n'));
+  eq(parsed.contexts.length, 0, 'no contexts');
+  eq(parsed.warnings.length, 0, 'no warnings');
+  eq(parsed.sectionEvidence.contexts.length, 0, 'no context evidence');
+  eq(parsed.items[0].a, 'One', 'options unchanged');
+  eq(parsed.items[0].contextRef, undefined, 'no context reference');
+});
+
+test('parsePaste reads an instruction range as the expected member count', () => {
+  const parsed = parser.parsePaste([
+    'Read the following passage and answer questions 41 to 42.',
+    'PASSAGE VII',
+    'Mango trees lose their leaves in the dry season.',
+    '',
+    '41. Mango trees lose their leaves in',
+    '(a) the rainy season',
+    '(b) the dry season',
+    '(c) winter',
+    '(d) autumn',
+    '',
+    '42. The passage is about',
+    '(a) mango trees',
+    '(b) rivers',
+    '(c) rocks',
+    '(d) roads'
+  ].join('\n'));
+  eq(parsed.contexts.length, 1, 'one context');
+  eq(parsed.contexts[0].expectedCount, 2, 'instruction count');
+  eq(parsed.contexts[0].evidence.source, 'instruction', 'instruction evidence');
+  eq(parsed.warnings.length, 0, 'no warnings');
+});
+
+test('parsePaste warns about a key conflict and a missing key entry', () => {
+  const parsed = parser.parsePaste([
+    'PASSAGE IX',
+    'Clean water matters for health.',
+    '',
+    '31. Clean water matters for',
+    '(a) health',
+    '(b) wealth',
+    '(c) speed',
+    '(d) height',
+    '',
+    '32. Water should be',
+    '(a) wasted',
+    '(b) stored',
+    '(c) boiled',
+    '(d) sold',
+    '',
+    'ANSWERS',
+    '31. A',
+    '31. C'
+  ].join('\n'));
+  eq(parsed.contexts.length, 1, 'context survives the key section');
+  eq(parsed.keyConflicts.length, 1, 'one key conflict');
+  eq(parsed.keyConflicts[0].num, 31, 'conflict number');
+  assert(parsed.warnings.some(w => w.includes('more than one letter')), 'conflict warning');
+  assert(parsed.warnings.some(w => w.includes('no answer-key entry for question 32')), 'missing key warning');
+});
+
+test('detect builds one cloze context and ten linked rows from the supplied table', () => {
+  const detected = cloze.detect(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-cloze-section6.txt'), 'utf8'));
+  eq(detected.contexts.length, 1, 'one cloze context');
+  eq(detected.contexts[0].type, 'cloze', 'cloze type');
+  eq(detected.contexts[0].title, 'SECTION 6', 'section title');
+  eq(detected.contexts[0].targets.join(','), '71,72,73,74,75,76,77,78,79,80', 'targets');
+  eq(detected.contexts[0].text.indexOf('.........'), -1, 'no dotted run survives');
+  eq((detected.contexts[0].text.match(/\[\[gap:\d+\]\]/g) || []).length, 10, 'ten gap tokens');
+  eq(detected.contexts[0].text.split('\n\n').length, 2, 'two paragraphs');
+  eq(detected.items.length, 10, 'ten synthesized items');
+  eq(detected.items[0].question, 'Choose the option that best fills gap 71.', 'generated stem');
+  eq([detected.items[7].a, detected.items[7].b, detected.items[7].c, detected.items[7].d],
+    ['a vow', 'an oath', 'an allegiance', 'a pledge'], 'wrapped multiword row');
+  eq(detected.warnings.length, 0, 'no warnings');
+});
+
+test('detect refuses a table with a missing option column', () => {
+  const detected = cloze.detect(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-cloze-missing-column.txt'), 'utf8'));
+  eq(detected.contexts.length, 0, 'no context');
+  eq(detected.items.length, 0, 'no synthesized items');
+  assert(detected.warnings.some(w => w.includes('missing the D option for gap 32')), 'names the missing column');
+});
+
+test('detect refuses rows whose numbers do not match the passage gaps', () => {
+  const detected = cloze.detect(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-cloze-mismatch.txt'), 'utf8'));
+  eq(detected.contexts.length, 0, 'no context');
+  assert(detected.warnings.some(w => w.includes('does not match the passage gaps 41-42')), 'mismatch warning');
+});
+
+test('detect leaves a table-like block alone without numbered gaps', () => {
+  const detected = cloze.detect(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-cloze-not-cloze.txt'), 'utf8'));
+  eq(detected.contexts.length, 0, 'no context');
+  assert(detected.warnings.some(w => w.includes('has no numbered gaps in the passage')), 'gap-free warning');
+});
+
+test('detect refuses an overlong option before any native save', () => {
+  const detected = cloze.detect(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-cloze-long-cell.txt'), 'utf8'));
+  eq(detected.contexts.length, 0, 'no context');
+  assert(detected.warnings.some(w => w.includes('longer than 500 characters at gap 51')), 'limit warning');
+});
+
+test('detect reads tab-separated rows by expanded column starts', () => {
+  const detected = cloze.detect(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-cloze-tabs.txt'), 'utf8'));
+  eq(detected.contexts.length, 1, 'one context');
+  eq(detected.items.map(item => item.d).join(','), 'flood,lose,pay', 'column D per row');
+  eq(detected.warnings.length, 0, 'no warnings');
+});
+
+test('a cloze row number colliding with an ordinary question refuses that group', () => {
+  const instruction = 'In the following passage the numbered gaps indicate missing words. '
+    + 'Four options are given in columns lettered A to D.';
+  const parsed = parser.parsePaste([
+    '71. Standalone question about something?',
+    '',
+    instruction,
+    '',
+    'Workers were ......... 71. .......... last month and were ....... 72. ......... in court.',
+    '',
+    'A    B    C    D',
+    '71. aa    bb    cc    dd',
+    '72. ee    ff    gg    hh'
+  ].join('\n'));
+  eq(parsed.contexts.length, 0, 'no cloze context');
+  eq(parsed.items.some(item => item.contextRef), false, 'no item linked to a cloze context');
+  assert(parsed.warnings.some(w => w.includes('numbered gap rows 71') && w.includes('collide')), 'names the collision');
+  assert(parsed.items.some(item => item.num === 71), 'the ordinary question survives');
+  assert(parsed.items.some(item => item.num === 72), 'the refused rows stay in the paste');
+});
+
+test('a colliding cloze group leaves a second cloze group intact', () => {
+  const first = 'In the following passage the numbered gaps indicate missing words. '
+    + 'Four options are given in columns lettered A to D.';
+  const parsed = parser.parsePaste([
+    '71. Standalone question about something?',
+    '',
+    first,
+    '',
+    'Workers were ......... 71. .......... last month and were ....... 72. ......... in court.',
+    '',
+    'A    B    C    D',
+    '71. aa    bb    cc    dd',
+    '72. ee    ff    gg    hh',
+    '',
+    'In the following passage the numbered gaps indicate missing words. '
+      + 'Four options are given in columns lettered A to D.',
+    '',
+    'Prices rose ......... 81. .......... and fell ....... 82. ......... again.',
+    '',
+    'A    B    C    D',
+    '81. ii    jj    kk    ll',
+    '82. mm    nn    oo    pp'
+  ].join('\n'));
+  eq(parsed.contexts.length, 1, 'only the colliding group is refused');
+  eq(parsed.contexts[0].targets.join(','), '81,82', 'second group targets');
+  eq(parsed.contexts[0].linkedCount, 2, 'second group fully linked');
+  eq(parsed.items.filter(item => item.contextRef).map(item => item.num).join(','), '81,82', 'linked items');
+  assert(parsed.warnings.some(w => w.includes('numbered gap rows 71')), 'collision warning kept');
+});
+
+test('parsePaste keeps a comprehension and a cloze context apart in one paste', () => {
+  const parsed = parser.parsePaste(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-cloze-mixed.txt'), 'utf8'));
+  eq(parsed.contexts.map(context => context.type).join(','), 'comprehension,cloze', 'context order');
+  eq(parsed.contexts[1].targets.join(','), '81,82', 'cloze targets');
+  eq(parsed.items.map(item => item.num).join(','), '11,12,81,82', 'paste order');
+  eq(parsed.items[2].contextRef, 'ctx-2', 'second context reference');
+  eq(parsed.warnings.length, 0, 'no warnings');
+});
+
+test('splitOptions accepts only one complete ordered parenthesized set', () => {
+  eq(comprehension.splitOptions('Stem (a) one (b) two (c) three (d) four').question, 'Stem', 'stem');
+  eq(comprehension.splitOptions('Stem (a) one (b) two (c) three (d) four').options[3], 'four', 'last option');
+  eq(comprehension.splitOptions('Stem (a) one (b) two (c) three'), null, 'incomplete set');
+  eq(comprehension.splitOptions('Stem (b) two (a) one (c) three (d) four'), null, 'out of order');
+  eq(comprehension.splitOptions('Stem a) one b) two c) three d) four'), null, 'bare labels');
+  eq(comprehension.splitOptions('Stem (a) one (a) two (c) three (d) four'), null, 'duplicate label');
+});
+
+test('detect warns instead of inventing a context for one candidate', () => {
+  const detected = comprehension.detect([
+    'PASSAGE IV',
+    'This note has one question.',
+    '',
+    '6. Which statement is true?',
+    '(a) one',
+    '(b) two',
+    '(c) three',
+    '(d) four'
+  ].join('\n'));
+  eq(detected.contexts.length, 0, 'no context');
+  eq(detected.warnings.length, 1, 'one warning');
+  assert(detected.warnings[0].includes('fewer than two'), 'warning text');
+  assert(detected.text.includes('PASSAGE IV'), 'fallback text is unchanged');
 });
 
 test('year inference accepts 1900 and 2099 and rejects 1899 and 2100', () => {

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-comprehension-key",
+  "source": [
+    "Authored for OT08 (comprehension paste with its own answer key)"
+  ],
+  "provenance": "Synthetic paste proving same-paste key parsing and its association with a recognized passage; this is not the external same-paste key evidence gate.",
+  "status": "CONFIRMED",
+  "kind": "questions",
+  "input_file": "fixtures/inputs/sample-comprehension-key.txt",
+  "expected": {
+    "queue_count": 2,
+    "nums": [21, 22],
+    "contexts": [
+      {
+        "order": 1,
+        "type": "comprehension",
+        "title": "PASSAGE VI",
+        "text": "Rice is grown in paddy fields. It needs plenty of water. Harvesting is done by hand in many places.",
+        "targets": [21, 22],
+        "expected_count": 2
+      }
+    ],
+    "key": {
+      "21": "B",
+      "22": "C"
+    },
+    "questions": [
+      {
+        "num": 21,
+        "question": "Rice is grown in",
+        "a": "dry uplands",
+        "b": "paddy fields",
+        "c": "deserts",
+        "d": "forests",
+        "flags": [],
+        "context_ref": "ctx-1",
+        "context_position": "1"
+      },
+      {
+        "num": 22,
+        "question": "Rice needs plenty of",
+        "a": "sand",
+        "b": "salt",
+        "c": "water",
+        "d": "snow",
+        "flags": [],
+        "context_ref": "ctx-1",
+        "context_position": "2"
+      }
+    ],
+    "warnings": []
+  },
+  "must_not": [
+    "Key letters tick the wrong linked member",
+    "Context recognition lost when a key section is present"
+  ]
+}

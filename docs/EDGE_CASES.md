@@ -40,6 +40,11 @@ Status definitions:
 | EC-21 | Non-sequential/gapped numbering | `n <= last` or `n > last + 5` | Candidate marker skipped; text absorbed into previous chunk | CONFIRMED | qwen-2-reconciled E13; claude-migration §3 (case 19) |
 | EC-22 | Header-only preamble | Fewer than 2 option matches in head | No pseudo-question chunk | CONFIRMED | qwen-2-reconciled E14 |
 | EC-23 | Continuation instruction before number | `According to Matthew...` before `12.` | Stays at the end of the previous chunk | CONFIRMED | qwen-2-reconciled E30 |
+| EC-95 | Comprehension prose before the first stem | `PASSAGE III` plus paragraphs, then `11.` | Prose becomes the context text and never an option or pseudo-question | CONFIRMED | OT08; `sample-comprehension-passage3` |
+| EC-96 | Dotted initials and A.D. in passage prose | `J. A. Adeyemi`, `1960 A.D.` | Remain context text; no letter option, no extra item | CONFIRMED | OT08; `sample-comprehension-incomplete` |
+| EC-97 | Incomplete parenthesized option set | `(a) one (b) two (c) three` | Stays in the stem with a warning; `(a)`-`(d)` parsed only as a complete ordered set | CONFIRMED | OT08; `sample-comprehension-incomplete`; `tests/unit.js` |
+| EC-98 | Heading with one linked candidate | `PASSAGE IV` + one question | Warning, no context, legacy parse unchanged | CONFIRMED | OT08; `sample-comprehension-ambiguous` |
+| EC-99 | Several passages plus standalone items | Two headings with items before and between | One context per heading with its own targets; standalone items keep no reference | CONFIRMED | OT08; `sample-comprehension-multi` |
 
 ## B. Answer-key section
 
@@ -153,6 +158,12 @@ this table during review.
 | EC-88 | Marker placement fallback | `[image]`/`[[image]]` appears before, after, inside, alone, inline, or far from a table | A standalone marker uses an adjacent block first, then the nearest block in the same question chunk forward/backward; an inline marker removes only itself. The eight-question fixture yields 8 stimuli, `needsImage` `[2,3,4,6,7,8]`, and Q8 keeps `Some explanatory paragraph that stays.` | CONFIRMED | D-59; `fixtures/inputs/stimulus-marker-placements.txt`; `tests/unit.js`; `tests/runner.js` 2026-10-28 |
 | EC-89 | Image plan gate | A detected block has no file/range, a range names a number outside the paste, or a `needsImage` question is not covered | Auto-save blocks with `stimulus-unassigned`, `stimulus-range`, or `image-required`; a generic row cannot satisfy a detected block; a ready covering row clears the gate | CONFIRMED | D-60; `tests/unit.js` 2026-10-28 |
 | EC-94 | Paragraph next to removed stimulus | A real blank-line paragraph surrounds a marker/table, or an inline table has no blank boundary | Real boundary remains; removing an inline block does not invent a paragraph | CONFIRMED | D-66; `tests/unit.js` |
+| EC-100 | Supplied cloze table | SECTION 6 instruction, ten gap runs, A–D header, ten option rows | One cloze context with ten `[[gap:N]]` tokens and ten linked items carrying the transcribed options | CONFIRMED | D-68; `sample-cloze-section6`; `tests/unit.js` |
+| EC-101 | Columns disagree with the header | Row labels shift the data starts, or an overlong cell runs into the next column | Column starts come from row evidence; the overflowing cell keeps both words instead of being cut | CONFIRMED | D-68; `sample-cloze-section6` row 78; `tests/unit.js` |
+| EC-102 | Incomplete or mismatched cloze table | A row lacks an option, or the row numbers differ from the passage gaps | Warning names the problem and the whole table stays on the legacy path; no partial context or guessed option | CONFIRMED | D-68; `sample-cloze-missing-column`; `sample-cloze-mismatch`; `tests/unit.js` |
+| EC-103 | Cloze option limits | A cell is empty or longer than the 500-character server column | The group is refused with a warning before any native save | CONFIRMED | D-68; `sample-cloze-long-cell`; `tests/unit.js` |
+| EC-104 | Tabs or mixed context families | Rows use tabs, or a cloze table is pasted with a comprehension passage | Tabs expand to column stops; both contexts coexist as `ctx-1…` in paste order with no numbering-gap flag between them | CONFIRMED | D-68; `sample-cloze-tabs`; `sample-cloze-mixed`; `tests/unit.js` |
+| EC-105 | Cloze row number repeats an ordinary question | The paste carries an ordinary question numbered the same as a table row | Warning names the colliding numbers; the whole group stays legacy with its rows parsed as ordinary questions; no partial context, no optionless member, and any other cloze group keeps its links | CONFIRMED | D-69; `tests/unit.js` collision tests |
 
 Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
 
@@ -200,10 +211,17 @@ closed by the archived PHP/HTML sources:
 - EC-90 through EC-94 are CONFIRMED by the OT04 parser/owner-tool regressions
   and desktop Chromium harness; PHP runtime and Brave/Android staging
   verification are owner-deferred to OT10.
+- EC-95 through EC-99 are CONFIRMED by the OT08 comprehension fixtures and
+  owner-tool tests; the real same-paste key evidence remains open.
+- EC-100 through EC-104 are CONFIRMED by the OT09 cloze fixtures, unit checks,
+  and owner-tool tests; the real same-paste cloze key evidence remains open.
+- EC-105 is CONFIRMED by the 2026-11-07 `FIX-1` unit tests; the observed
+  two-cloze-groups-with-identical-numbering case is recorded as `FIX-2` in its
+  first review round and awaits its fix session.
 
 ## Counts
 
-- Total: 94
-- CONFIRMED: 90
+- Total: 105
+- CONFIRMED: 101
 - UNVERIFIED: 4
 - CONFLICTED: 0

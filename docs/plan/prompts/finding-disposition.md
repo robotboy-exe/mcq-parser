@@ -20,7 +20,10 @@ with nothing after it.
    supported preconditions, and residual risk without adding new review scope.
 3. Identify whether the finding is unresolved, fixed but not re-reviewed, or
    awaiting owner disposition after re-review escalation.
-4. If the owner has not explicitly selected a disposition, present exactly these
+4. Confirm the finding has gone through two review rounds without resolution. If
+   it has not, owner disposition is premature: record no choice and name
+   `fix-session.md` with the exact finding ID as the next action.
+5. If the owner has not explicitly selected a disposition, present exactly these
    choices and stop without editing:
    - `fix`: authorize only the frozen closure criteria;
    - `reject`: require a rationale showing why the finding is incorrect or out
@@ -29,7 +32,7 @@ with nothing after it.
    - `defer`: require a named destination package and its acceptance gate;
    - `change requirement`: require the exact replacement requirement and every
      authoritative document it changes.
-5. Never infer a disposition from `go`, silence, frustration, package
+6. Never infer a disposition from `go`, silence, frustration, package
    acceptance, or approval of a different finding.
 
 When a choice is still required, end with:

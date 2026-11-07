@@ -21,6 +21,15 @@ const parser = require('../src/parser/core.js');
 const stateApi = require('../src/owner-tool/state.js');
 const textApi = require('../src/owner-tool/render.js');
 
+const COMPREHENSION_PASTE = fs.readFileSync(
+  path.join(ROOT, 'fixtures/inputs/sample-comprehension-passage3.txt'), 'utf8');
+const COMPREHENSION_KEY_PASTE = fs.readFileSync(
+  path.join(ROOT, 'fixtures/inputs/sample-comprehension-key.txt'), 'utf8');
+const COMPREHENSION_AMBIGUOUS_PASTE = fs.readFileSync(
+  path.join(ROOT, 'fixtures/inputs/sample-comprehension-ambiguous.txt'), 'utf8');
+const CLOZE_PASTE = fs.readFileSync(
+  path.join(ROOT, 'fixtures/inputs/sample-cloze-section6.txt'), 'utf8');
+
 const FULL_PASTE = [
   'CRS 2021 JAMB',
   '1. Who was the father of faith in the Bible?',
@@ -511,7 +520,7 @@ test('full paste fills the native fields and stores a versioned state', () => {
   assertEqual(env.field('exam_category_id'), '2', 'inferred category');
   const state = env.state();
   assertEqual(state.version, 1, 'state version');
-  assertEqual(state.parserVersion, '2.1.0', 'parser version');
+  assertEqual(state.parserVersion, '2.3.1', 'parser version');
   assertEqual(state.items.length, 2, 'queue length');
   assertEqual(state.answerKey['1'], 'D', 'answer key');
   assert(state.queueId.indexOf('q-') === 0, 'queue id is generated');
@@ -833,6 +842,110 @@ test('a rejected context save clears its marker without binding or advancing', (
   assert(next.text('owner_context_warning').indexOf('rejected') > -1, 'rejection warning shown');
 });
 
+test('a comprehension paste fills the context card and the native options', () => {
+  const env = createEnv();
+  env.paste(COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  const state = env.state();
+  assertEqual(state.contexts.length, 1, 'one context card');
+  assertEqual(state.contexts[0].title, 'PASSAGE III', 'context title');
+  assertEqual(state.contexts[0].contextType, 'comprehension', 'context type');
+  assertEqual(state.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');
+  assertEqual(state.contexts[0].expectedCount, 5, 'expected member count');
+  assertEqual(state.contexts[0].serverId, null, 'parsed context is not saved');
+  assertEqual(state.items.length, 5, 'queue length');
+  assertEqual(state.items[0].contextRef, state.contexts[0].localId, 'first question linked');
+  assertEqual(state.items[0].contextPosition, '1', 'first position');
+  assertEqual(state.items[4].contextPosition, '5', 'last position');
+  assertEqual(env.field('question_text'),
+    'According to the author, electioneering campaign is the approach', 'stem');
+  assertEqual(env.field('option_a'), 'best used in politics', 'option a');
+  assertEqual(env.field('option_d'), 'currently in use.', 'option d');
+  assertEqual(env.byId('owner_context_0_title').value, 'PASSAGE III', 'card title is editable');
+  assertEqual(env.byId('owner_context_0_text').value,
+    state.contexts[0].text, 'card text is editable');
+  assertEqual(env.text('owner_tool_warning'), '', 'no warning');
+  assertEqual(state.pendingSubmission, null, 'nothing is submitted');
+});
+
+test('a cloze paste fills a cloze card, slots, and the native options', () => {
+  const env = createEnv();
+  env.paste(CLOZE_PASTE);
+  env.click('owner_tool_load');
+  const state = env.state();
+  assertEqual(state.contexts.length, 1, 'one context card');
+  assertEqual(state.contexts[0].title, 'SECTION 6', 'context title');
+  assertEqual(state.contexts[0].contextType, 'cloze', 'cloze type');
+  assertEqual(state.contexts[0].targets.join(','), '71,72,73,74,75,76,77,78,79,80', 'targets');
+  assertEqual(state.contexts[0].expectedCount, 10, 'expected members');
+  assertEqual(state.contexts[0].serverId, null, 'parsed context is not saved');
+  assert(state.contexts[0].text.indexOf('[[gap:71]]') > -1, 'card text carries gap tokens');
+  assertEqual(state.items.length, 10, 'queue length');
+  assertEqual(state.items[0].contextRef, state.contexts[0].localId, 'first question linked');
+  assertEqual(state.items[0].contextPosition, '1', 'first position');
+  assertEqual(state.items[0].contextSlot, '71', 'first slot');
+  assertEqual(state.items[9].contextPosition, '10', 'last position');
+  assertEqual(state.items[9].contextSlot, '80', 'last slot');
+  assertEqual(env.field('question_text'), 'Choose the option that best fills gap 71.', 'stem');
+  assertEqual(env.field('option_a'), 'captured', 'option a');
+  assertEqual(env.field('option_d'), 'caught', 'option d');
+  assertEqual(env.text('owner_tool_warning'), '', 'no warning');
+  assertEqual(state.pendingSubmission, null, 'nothing is submitted');
+});
+
+test('a same-paste cloze key ticks rows by printed number and never posts', () => {
+  const env = createEnv();
+  let submits = 0;
+  const dispatch = env.form.dispatch;
+  env.form.dispatch = function (type, event) {
+    if (type === 'submit') submits += 1;
+    return dispatch.call(this, type, event);
+  };
+  env.paste(CLOZE_PASTE + '\n\nANSWERS\n71. B\n72. C\n');
+  env.click('owner_tool_load');
+  assertEqual(env.state().answerKey['71'], 'B', 'same-paste key parsed');
+  assertEqual(env.field('question_text'), 'Choose the option that best fills gap 71.', 'first stem');
+  assertEqual(env.radioIndex(), 1, 'key B ticks the second radio');
+  env.click('owner_tool_skip');
+  assertEqual(env.field('question_text'), 'Choose the option that best fills gap 72.', 'second stem');
+  assertEqual(env.radioIndex(), 2, 'key C ticks the third radio');
+  assertEqual(submits, 0, 'loading and skipping never submit the form');
+  assertEqual(env.state().pendingSubmission, null, 'no submission is armed');
+});
+
+test('a same-paste comprehension key ticks the linked member and never posts', () => {
+  const env = createEnv();
+  let submits = 0;
+  const dispatch = env.form.dispatch;
+  env.form.dispatch = function (type, event) {
+    if (type === 'submit') submits += 1;
+    return dispatch.call(this, type, event);
+  };
+  env.paste(COMPREHENSION_KEY_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.state().answerKey['21'], 'B', 'same-paste key parsed');
+  assertEqual(env.field('question_text'), 'Rice is grown in', 'first stem');
+  assertEqual(env.field('option_b'), 'paddy fields', 'option b');
+  assertEqual(env.radioIndex(), 1, 'key B ticks the second radio');
+  env.click('owner_tool_skip');
+  assertEqual(env.field('question_text'), 'Rice needs plenty of', 'second stem');
+  assertEqual(env.radioIndex(), 2, 'key C ticks the third radio');
+  assertEqual(submits, 0, 'loading and skipping never submit the form');
+  assertEqual(env.state().pendingSubmission, null, 'no submission is armed');
+});
+
+test('an ambiguous passage warns and keeps the legacy parse', () => {
+  const env = createEnv();
+  env.paste(COMPREHENSION_AMBIGUOUS_PASTE);
+  env.click('owner_tool_load');
+  const state = env.state();
+  assertEqual(state.contexts.length, 0, 'no invented context');
+  assertEqual(state.items.length, 1, 'question still loaded');
+  assertEqual(state.items[0].contextRef || '', '', 'standalone question has no context');
+  assert(env.text('owner_tool_warning').indexOf('fewer than two') > -1, 'fallback warning shown');
+  assertEqual(env.visible('owner_tool_warning'), true, 'warning is visible');
+});
+
 test('key-only paste keeps the queue and context cards', () => {
   const env = createEnv();
   env.paste(FULL_PASTE);
@@ -1054,6 +1167,17 @@ test('every deployed question-text sink uses the shared renderer', () => {
     'detail page formats question text');
   assert(DETAIL_SOURCE.indexOf("answer_h($question['answer_explanation'])") > -1,
     'detail explanation stays plain text');
+});
+
+test('the admin page loads the context modules before the parser engine', () => {
+  const comprehensionAt = ADMIN_SOURCE.indexOf('src/parser/comprehension.js');
+  const clozeAt = ADMIN_SOURCE.indexOf('src/parser/cloze.js');
+  assert(clozeAt > -1, 'cloze module is loaded');
+  const coreAt = ADMIN_SOURCE.indexOf('src/parser/core.js');
+  assert(comprehensionAt > -1, 'comprehension module is loaded');
+  assert(coreAt > -1, 'parser engine is loaded');
+  assert(comprehensionAt < coreAt, 'comprehension module loads first');
+  assert(clozeAt < coreAt, 'cloze module loads first');
 });
 
 test('critical owner-tool warnings have distinct non-server styling', () => {

@@ -920,6 +920,112 @@ Desktop selection behavior is OT04 evidence. PHP 8.3 is the safe application
 target; target-PHP and Brave/Android staging checks remain OT10 evidence rather
 than facts inferred from the Node/desktop harnesses.
 
+## D-67 — Comprehension contexts recognized before question splitting
+
+**Choice.** Parser API `2.2.0` returns `contexts`, `keyConflicts`,
+`sectionEvidence`, and `warnings` from the pure `parsePaste()` orchestration.
+Recognition needs a heading line matching `PASSAGE|COMPREHENSION|EXTRACT` plus a
+number or Roman label **and** at least two question stems in the same block; a
+block with one candidate, no prose, or no heading stays on the legacy path and
+adds a visible warning instead of an invented relationship. The prose between
+the heading and the first stem is removed before `splitQuestions`, so passage
+text and dotted initials cannot become options or pseudo-questions. Bounding
+stops at the next heading, a divider-only `===` line, a key heading, or two
+consecutive key lines. Paragraph breaks survive as single blank lines.
+
+The scoped `(a)`–`(d)` parser accepts only one complete, ordered, non-empty set
+inside a **linked** question; it is not part of `OPTION` and bare `a)` labels
+remain unparsed. An incomplete set stays in the stem and raises
+`question N has no complete (a)-(d) option set`. Linked items carry
+`contextRef`, `contextPosition`, and `contextSlot`; standalone items keep none.
+
+`src/parser/comprehension.js` owns detection and the scoped option split;
+`src/parser/core.js` only orchestrates. The admin page loads `comprehension.js`
+before `core.js`. The owner tool turns parsed contexts into editable draft cards
+(`serverId: null`), shows parser warnings in the panel alert, and never submits
+them; contexts are created or updated only through the native form.
+
+**Why.** Readable comprehension pastes were the remaining structural gap:
+legacy splitting dropped the heading but let prose leak into option D of the
+question before the passage, and the supplied PASSAGE III kept `(a)`-`(d)` in
+its stems. Bounding at recognized headings fixes both without weakening the
+global option regex or the numbering guard, and a paste with no such heading is
+unchanged (all 47 pre-OT08 fixtures still pass through the same orchestration).
+
+**Risk.** Heading heuristics can miss OCR-damaged headings; the fallback is the
+legacy parse plus a warning, never a guessed context. The external gate remains
+open: `sample-passages.txt` carries no answer key, so the "same-paste key"
+acceptance row is proven only by the synthetic `sample-comprehension-key`
+fixture and the owner-tool tick test. A representative real same-paste key
+sample is still required before final package acceptance. Parser `2.2.0` also
+refuses an existing `2.1.0` owner queue, so the owner re-pastes after deploy.
+
+## D-68 — Cloze contexts come from evidenced gap passages and aligned rows
+
+**Choice.** Parser API `2.3.0` adds `src/parser/cloze.js` to the pure
+`parsePaste()` orchestration. A cloze group needs all four evidences: an
+instruction line naming numbered gaps and A–D options, at least two
+`.... N. ....` gap runs in the passage between the instruction and the table, an
+`A B C D` header line, and at least two sequential numbered option rows. The
+four data-column starts are inferred from the mode of the row-of-cells starts
+(segments split on runs of two or more spaces) and must each win at least half
+the rows; the header's own indent is never used, because the row labels shift
+it. Boundaries that fall inside a word snap right to the next word edge, so an
+overlong cell that runs into the next column (`an allegiance a pledge`) keeps
+both values instead of being cut. Tabs expand to 8-column stops before any of
+this runs, and no column work happens after a global whitespace collapse.
+
+Each detected gap run becomes the exact token `[[gap:N]]`, keeping the source
+numbering and paragraph breaks; the table and instruction are removed from the
+text handed to `splitSections`, and one editable item per row is synthesized
+with the stem `Choose the option that best fills gap N.`, the four transcribed
+cells, `contextRef`, `contextPosition`, and an empty `contextSlot` that the
+owner tool fills from the token order.
+
+Any doubt refuses the **whole** group with a warning and leaves the rows on the
+legacy path: a row with an empty cell, an option over the 500-character server
+column, a table without stable four-column alignment, row numbers that differ
+from the passage gap numbers, or fewer than two numbered gaps. A table-like
+block with an A–D header but no gap markers is never interpreted as cloze. No
+partial context, no guessed option, and no numbering-gap flag for the space
+between two context families is created.
+
+**Why.** The supplied SECTION 6 family is a fixed-column OCR table where the
+prose gaps, the visual header, and the row labels disagree by a few columns;
+slicing by the header loses the first characters of every option, and slicing
+after collapsing spaces loses the column boundaries entirely. Row evidence plus
+word-safe boundaries parses the supplied table without weakening the legacy
+option regex, the numbering guard, or the comprehension engine.
+
+**Risk.** The mode vote needs repeated alignment: a two-row table with one
+ragged row is refused rather than guessed, and a heavily OCR-damaged table can
+fall back to the legacy parse. The external gate is unchanged and still open:
+the real same-paste cloze key sample does not exist, so the key row is proven
+only by the synthetic row-key test and the owner-tool tick test. Parser `2.3.0`
+refuses an existing `2.2.0` owner queue, so the owner re-pastes after deploy.
+
+## D-69 — A cloze row number that collides with an ordinary question keeps the group legacy
+
+**Choice.** `parsePaste()` compares every synthesized cloze item number with the
+ordinary item numbers parsed from the remaining text. A collision refuses that
+whole cloze group: `cloze.detect(source, blocked)` leaves the table in the source
+text, its rows are parsed as ordinary questions, no cloze context or synthesized
+item is added, and one warning names the colliding numbers (`numbered gap rows
+71 collide with an ordinary question; read as ordinary questions.`). Other cloze
+groups in the paste keep their contexts and links; a second-order collision
+blocks every remaining cloze group rather than emitting a partial one. Parser
+API `2.3.1`.
+
+**Why.** Before this rule the merge step deduplicated by question number, so an
+ordinary question numbered like a table row silently discarded that row and the
+owner-tool model linked the unrelated question to the cloze card with a slot,
+losing the four transcribed options (phase-10 `FIX-1`).
+
+**Risk.** The refusal costs the automated cloze interpretation for that group;
+the owner separates the families or fills the options manually, which is the same
+degradation every other refusal uses. Two cloze groups that share numbering with
+each other, without an ordinary question, remain a separate unresolved vector.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

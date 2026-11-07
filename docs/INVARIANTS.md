@@ -152,11 +152,19 @@ Status definitions:
 | INV-98 | Add mode provides importer plus formatting; Edit mode provides formatting only and performs no owner-state write. Underline retains selection and is one-step undoable. | AT_RISK | D-66; Node and desktop Chromium evidence; Brave/Android pending |
 | INV-99 | Candidate, result, print, detail, and admin-summary paths share the exact-marker rules; options and explanations stay plain. | AT_RISK | D-66; static/desktop evidence; PHP/staging verification deferred to OT10 |
 | INV-100 | Year inference and answer-title removal accept 1900–2099 while rejecting 1899/2100. | VERIFIED | D-66; fixture `header-year-1994`; 1900/2099/1899/2100 cases in `tests/unit.js` |
+| INV-101 | A context needs strong heading evidence and at least two linked stems; passage prose is bounded before splitting and never invents ranges or numbers. | VERIFIED | D-67; `sample-comprehension-passage3/multi/ambiguous`; `tests/unit.js` |
+| INV-102 | Parenthesized `(a)`-`(d)` parsing is scoped to linked questions and requires one complete ordered set; global `OPTION`, `splitQuestions`, and the numbering guard are unchanged. | VERIFIED | D-67; `sample-comprehension-incomplete`; `tests/unit.js` |
+| INV-103 | `parsePaste()` adds `contexts`, `keyConflicts`, `sectionEvidence`, and `warnings` without renaming existing fields; a paste with no recognized context returns the legacy result unchanged. | VERIFIED | D-67; 47 pre-OT08 fixtures; `tests/unit.js` |
+| INV-104 | A cloze group requires all four evidences (instruction, two or more gap runs, A–D header, two or more sequential rows) and column starts derived from repeated row alignment and each covering at least half the rows; the header indent is never used. | VERIFIED | D-68; `sample-cloze-section6`; `sample-cloze-tabs`; `tests/unit.js` |
+| INV-105 | Each evidenced gap becomes exactly `[[gap:N]]` with source numbering (1–999) and paragraph breaks; the row cells become the four option values and the generated stem is `Choose the option that best fills gap N.`. | VERIFIED | D-68; `sample-cloze-section6` 43-check fixture; `tests/unit.js` |
+| INV-106 | An empty cell, an option over 500 characters, unstable alignment, unmatched row/gap numbers, or fewer than two gaps refuses the whole group with a warning; no partial context, no guessed option, and no cloze interpretation of a table without gap markers. | VERIFIED | D-68; `sample-cloze-missing-column`; `sample-cloze-mismatch`; `sample-cloze-long-cell`; `sample-cloze-not-cloze` |
+| INV-107 | Cloze blocks are isolated before `splitSections`; comprehension and cloze contexts coexist and are numbered `ctx-1…` in paste order; synthesized items merge in number order without numbering-gap flags between families, and no context or item is posted automatically. | VERIFIED | D-68; `sample-cloze-mixed`; `tests/owner-tool.js` |
+| INV-108 | A cloze row number that collides with an ordinary question number refuses that whole group with a warning naming the colliding numbers, leaves its rows on the legacy path, and never yields a partial context or optionless member; a second, non-colliding group in the same paste keeps its context and links. | VERIFIED | D-69; `tests/unit.js` collision tests |
 
 ## Counts
 
-- Total: 100
-- VERIFIED: 88
+- Total: 108
+- VERIFIED: 96
 - AT_RISK: 12
 - CONFLICTED: 0
 

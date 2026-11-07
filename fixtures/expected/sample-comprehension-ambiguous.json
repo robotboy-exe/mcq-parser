@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-comprehension-ambiguous",
+  "source": [
+    "Authored for OT08 (heading with a single following question)"
+  ],
+  "provenance": "Synthetic paste whose PASSAGE IV heading has only one linked candidate; recognition must fall back and warn.",
+  "status": "CONFIRMED",
+  "kind": "questions",
+  "input_file": "fixtures/inputs/sample-comprehension-ambiguous.txt",
+  "expected": {
+    "queue_count": 1,
+    "nums": [6],
+    "contexts": [],
+    "questions": [
+      {
+        "num": 6,
+        "question": "Which statement is true? (a) one (b) two (c) three (d) four",
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": "",
+        "flags": [
+          "option A missing",
+          "option B missing",
+          "option C missing",
+          "option D missing"
+        ],
+        "context_ref": ""
+      }
+    ],
+    "warnings": [
+      "PASSAGE IV links fewer than two questions"
+    ]
+  },
+  "must_not": [
+    "An invented context for PASSAGE IV",
+    "Options parsed from a single-candidate passage"
+  ]
+}

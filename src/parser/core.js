@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.1.0
+// Version: 2.3.1
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.1.0";
+const PARSER_VERSION = "2.3.1";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -774,27 +774,166 @@ function parseKey(t) {
 }
 
 
-function parsePaste(raw) {
-  const salvage = splitSectionsWithSalvage(raw || "");
+function comprehensionEngine() {
+  if (typeof module !== "undefined" && module.exports) return require("./comprehension.js");
+  return typeof window !== "undefined" ? window.OCRComprehension : null;
+}
+
+function clozeEngine() {
+  if (typeof module !== "undefined" && module.exports) return require("./cloze.js");
+  return typeof window !== "undefined" ? window.OCRCloze : null;
+}
+
+function mergeClozeItems(items, extra) {
+  if (!extra.length) return items;
+  const seen = new Set(items.map(item => item.num));
+  const merged = items.slice();
+  for (const item of extra) {
+    if (seen.has(item.num)) continue;
+    seen.add(item.num);
+    merged.push(item);
+  }
+  const rank = item => (item.num == null ? Infinity : item.num);
+  return merged.sort((a, b) => rank(a) - rank(b));
+}
+
+function renumberContexts(contexts, items) {
+  const ids = new Map();
+  contexts.forEach((context, index) => ids.set(context.id, "ctx-" + (index + 1)));
+  contexts.forEach((context, index) => {
+    context.id = ids.get(context.id);
+    context.order = index + 1;
+  });
+  for (const item of items) {
+    if (item && item.contextRef && ids.has(item.contextRef)) item.contextRef = ids.get(item.contextRef);
+  }
+}
+
+function linkComprehension(contexts, items, warnings, engine) {
+  const byNum = new Map();
+  for (const item of items) {
+    if (item && Number.isInteger(item.num) && !byNum.has(item.num)) byNum.set(item.num, item);
+  }
+  for (const context of contexts) {
+    if (context.type === "cloze") continue;
+    let linked = 0;
+    context.targets.forEach((num, index) => {
+      const item = byNum.get(num);
+      if (!item) {
+        warnings.push(`question ${num} for ${context.title} was not parsed`);
+        return;
+      }
+      if (item.contextRef) {
+        warnings.push(`question ${num} is claimed by more than one passage`);
+        return;
+      }
+      const split = engine.splitOptions(item.question);
+      if (split) {
+        item.question = split.question;
+        item.a = split.options[0];
+        item.b = split.options[1];
+        item.c = split.options[2];
+        item.d = split.options[3];
+        item.flags = item.flags.filter(flag => !/^option [ABCD] missing$/.test(flag));
+      } else if (/\(a\)/i.test(item.question)) {
+        warnings.push(`question ${num} has no complete (a)-(d) option set`);
+      }
+      item.contextRef = context.id;
+      item.contextPosition = String(index + 1);
+      item.contextSlot = "";
+      linked++;
+    });
+    context.linkedCount = linked;
+  }
+}
+
+function keyWarnings(key, conflicts, contexts, warnings) {
+  for (const conflict of conflicts) {
+    warnings.push(`answer key gives question ${conflict.num} more than one letter`);
+  }
+  if (!key) return;
+  for (const context of contexts) {
+    for (const num of context.targets) {
+      if (!key[num]) warnings.push(`no answer-key entry for question ${num}`);
+    }
+  }
+}
+
+function parseBody(text) {
+  const salvage = splitSectionsWithSalvage(text);
   const sections = salvage.parts;
-  const fixed = FIXES.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), sections.questions);
+  const fixed = FIXES.reduce((body, [pattern, replacement]) => body.replace(pattern, replacement), sections.questions);
   const header = parseHeader(fixed);
-  const rawItems = splitQuestionItems(fixed);
-  let items = rawItems.map(item => parseQuestion(item));
+  let items = splitQuestionItems(fixed).map(item => parseQuestion(item));
   items = flagNumberingGaps(items);
   items = applyStimulusFlags(items);
+  return { salvage, sections, header, items };
+}
+
+function detectContexts(source, engine, cloze, blocked) {
+  const table = cloze ? cloze.detect(source, blocked) : { text: source, contexts: [], items: [], warnings: [] };
+  const passage = engine ? engine.detect(table.text) : { text: table.text, contexts: [], warnings: [] };
+  return {
+    text: passage.text,
+    contexts: passage.contexts.concat(table.contexts),
+    clozeItems: table.items || [],
+    warnings: table.warnings.concat(passage.warnings || [])
+  };
+}
+
+function collidingNumbers(clozeItems, items) {
+  const seen = new Set(items.map(item => item.num));
+  return Array.from(new Set(clozeItems.filter(item => seen.has(item.num)).map(item => item.num)));
+}
+
+function parsePaste(raw) {
+  const source = raw || "";
+  const engine = comprehensionEngine();
+  const cloze = clozeEngine();
+  let detected = detectContexts(source, engine, cloze, null);
+  let parsed = parseBody(detected.text);
+  if (cloze) {
+    let clash = collidingNumbers(detected.clozeItems, parsed.items);
+    if (clash.length) {
+      detected = detectContexts(source, engine, cloze, new Set(clash));
+      parsed = parseBody(detected.text);
+      const again = collidingNumbers(detected.clozeItems, parsed.items);
+      if (again.length) {
+        const all = detected.clozeItems.map(item => item.num).concat(again);
+        detected = detectContexts(source, engine, cloze, new Set(all));
+        parsed = parseBody(detected.text);
+        clash = Array.from(new Set(clash.concat(again)));
+      }
+      detected.warnings.push("numbered gap rows " + clash.join(", ")
+        + " collide with an ordinary question; read as ordinary questions.");
+    }
+  }
+  const { salvage, sections, header } = parsed;
+  let items = mergeClozeItems(parsed.items, detected.clozeItems);
   if (salvage.salvaged) {
     items.forEach(item => {
       item.flags.push("OCR boundaries repaired; verify question and option split");
     });
   }
-  const key = sections.answers ? parseKey(sections.answers) : null;
+  const keyInfo = sections.answers ? parseKeyDetailed(sections.answers) : { key: null, conflicts: [] };
+  const warnings = detected.warnings.slice();
+  if (engine) linkComprehension(detected.contexts, items, warnings, engine);
+  renumberContexts(detected.contexts, items);
+  keyWarnings(keyInfo.key, keyInfo.conflicts, detected.contexts, warnings);
   return {
     version: PARSER_VERSION,
     sections,
     header,
+    contexts: detected.contexts,
     items,
-    key
+    key: keyInfo.key,
+    keyConflicts: keyInfo.conflicts,
+    sectionEvidence: {
+      how: sections.how,
+      boundary: sections.boundary,
+      contexts: detected.contexts.map(context => context.evidence)
+    },
+    warnings
   };
 }
 
@@ -825,7 +964,10 @@ const OCRParserCore = {
   keyPairs,
   parseKeyDetailed,
   parseKey,
-  parsePaste
+  parsePaste,
+  comprehensionEngine,
+  clozeEngine,
+  linkComprehension
 };
 
 if (typeof module !== "undefined" && module.exports) {

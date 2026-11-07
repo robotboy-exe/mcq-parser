@@ -1079,11 +1079,11 @@ if (is_file(__DIR__ . '/header.php')) {
 </div>
 </main>
 
-<link rel="stylesheet" href="src/owner-tool/style.css?v=2.2.0">
-<link rel="stylesheet" href="src/owner-tool/context-workflow.css?v=2.2.0">
-<script src="src/parser/core.js?v=2.2.0"></script><script src="src/owner-tool/state.js?v=2.2.0"></script><script src="src/owner-tool/render.js?v=2.2.0"></script>
-<script src="src/owner-tool/contexts.js?v=2.2.0"></script><script src="src/owner-tool/context-form.js?v=2.2.0"></script><script src="src/owner-tool/context-card.js?v=2.2.0"></script>
-<script src="src/owner-tool/context-panel.js?v=2.2.0"></script><script src="src/owner-tool/controller.js?v=2.2.0"></script>
+<link rel="stylesheet" href="src/owner-tool/style.css?v=2.3.1">
+<link rel="stylesheet" href="src/owner-tool/context-workflow.css?v=2.3.1">
+<script src="src/parser/comprehension.js?v=2.3.1"></script><script src="src/parser/cloze.js?v=2.3.1"></script><script src="src/parser/core.js?v=2.3.1"></script><script src="src/owner-tool/state.js?v=2.3.1"></script><script src="src/owner-tool/render.js?v=2.3.1"></script>
+<script src="src/owner-tool/contexts.js?v=2.3.1"></script><script src="src/owner-tool/context-form.js?v=2.3.1"></script><script src="src/owner-tool/context-card.js?v=2.3.1"></script>
+<script src="src/owner-tool/context-panel.js?v=2.3.1"></script><script src="src/owner-tool/controller.js?v=2.3.1"></script>
 
 
 <?php if (is_file(__DIR__ . '/footer.php')) { include __DIR__ . '/footer.php'; } ?>

@@ -33,9 +33,10 @@ exact finding IDs. It records an explicit owner decision without editing review
 evidence or product files.
 
 The owner explicitly chooses `fix`, `reject` with rationale, `accept risk`,
-`defer` to a named package, or `change requirement`. A new blocker found during
-re-review, or another proposed fix after a second or later re-review, stops for
-owner disposition instead of automatically continuing the loop. This does not
+`defer` to a named package, or `change requirement`. A finding escalates to
+owner disposition only after two review rounds without resolution: it is still
+open, or needs another fix, at the review round after the one that recorded it.
+A first-round finding routes directly to a fix session instead. This does not
 force a pass or hide unresolved risk.
 
 ## Cycle close

@@ -137,9 +137,27 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-06.
   FINDINGS (`FIX-1` handoff hash/byte accuracy; `NOTE-1` docs).
 - [x] Apply the authorized OT07 `FIX-1` correction and complete its
   closure-focused re-review (2026-11-06); `FIX-1` is closed and phase 8 is
-  review-settled. Next is OT08 Gate 1.
+  review-settled.
+- [x] Implement OT08 comprehension OCR: parser 2.2.0 detects and bounds
+  passages, parses one complete `(a)`-`(d)` set per linked question, and fills
+  editable OT07 draft cards with zero automatic posts (2026-11-06). Its light
+  review passed at OT09 Gate 1.
+- [x] Implement OT09 cloze OCR: parser 2.3.1 recognizes the evidenced numbered
+  gap passage and A-D table, emits one shared cloze context with `[[gap:N]]`
+  tokens, and synthesizes ten editable linked questions with slots in the same
+  zero-post draft workflow (2026-11-06).
+- [x] Apply the owner-authorized OT09 `fix` for `BLOCK-1` and `FIX-1` under the
+  frozen closure contracts in
+  [`../reviews/owner-tool-2026-11-phase-10.md`](../reviews/owner-tool-2026-11-phase-10.md)
+  (2026-11-07): `cloze.js` is 242 lines and a colliding cloze group is refused
+  with a warning (parser 2.3.1). The re-review closed both findings.
+- [ ] Fix `FIX-2`, recorded in its first review round by
+  [`../reviews/owner-tool-2026-11-phase-10-re-review.md`](../reviews/owner-tool-2026-11-phase-10-re-review.md),
+  under the two-round lifecycle; phase 10 is not commit-ready and OT10 stays
+  blocked until it is fixed and re-reviewed.
 - [ ] Obtain source-backed answer keys for comprehension Q11-Q15 and cloze
-  Q71-Q80 before final OT08/OT09 acceptance.
+  Q71-Q80 before final OT08/OT09 acceptance. Both same-paste mechanics are
+  proven synthetically; the representative real samples are still missing.
 
 ## OT10 Deferred Verification
 

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-cloze-not-cloze",
+  "source": [
+    "synthetic table-like non-cloze block added at OT09"
+  ],
+  "provenance": "Synthetic adversarial paste with a cloze instruction and A-D table but no numbered gaps in the passage.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/sample-cloze-not-cloze.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 3,
+    "nums": [61, 62, 63],
+    "contexts": [],
+    "warnings": [
+      "has no numbered gaps in the passage",
+      "read as ordinary questions"
+    ]
+  },
+  "must_not": [
+    "Arbitrary numbered A-D table interpreted as a cloze exercise",
+    "Cloze context without evidenced numbered gaps"
+  ],
+  "notes": [
+    "An A-D table alone is never enough; the passage gap markers are the evidence."
+  ]
+}

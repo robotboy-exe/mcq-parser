@@ -36,7 +36,9 @@ node -e "const p=require('./src/parser/core.js'); console.log(p.parsePaste('1. W
 ```text
 src/
   parser/
-    core.js            canonical pure parser (dual Node/Browser export, v2.1.0)
+    core.js            canonical pure parser (dual Node/Browser export, v2.3.1)
+    comprehension.js   pure passage detection + scoped (a)-(d) options
+    cloze.js           pure gap/table detection + generated cloze questions
     parser.js          legacy parser + auto-save helper module (re-exports core)
   ui/
     ui.js              legacy bookmarklet UI and DOM driver
@@ -137,8 +139,14 @@ The available-source reader/writer audit passed on 2026-11-05. OT06 targets
 `cbt.php` and passed its light review at OT07 Gate 1. OT07 is implemented; its
 rigorous Release B review returned PASS WITH ACCEPTED FINDINGS, and `FIX-1`
 (handoff hash/byte accuracy) was closed by the 2026-11-06 closure-focused
-re-review, so phase 8 is review-settled and OT08 is next. Runtime/staging
-verification is deferred to OT10.
+re-review, so phase 8 is review-settled. OT08 is implemented and passed its
+light review at OT09 Gate 1. OT09 cloze OCR is implemented with parser 2.3.1;
+its rigorous Release C review returned `BLOCK` on 2026-11-07 (`BLOCK-1`,
+`FIX-1`), the owner authorized `fix` for both, and the fix was applied on
+2026-11-07 (`cloze.js` 242 lines; a colliding cloze group is refused with a
+warning); the re-review closed both and recorded `FIX-2` in its first review
+round, so a first-round fix session is pending. Runtime/staging verification is
+deferred to OT10.
 
 Active work happens on `owner-tool-integration`. `main` is the published baseline
 and the remote default; do not start new implementation there. The fixture runner

@@ -18,11 +18,12 @@ line, with nothing after it.
 4. Stop if the package is done, blocked, ambiguous, or already in progress.
 5. Verify every dependency from its status row, handoff, actual files, and
    three to five acceptance probes. Never trust a handoff without evidence.
-6. Check required review records and ensure no unresolved `BLOCK` or
-   undispositioned required finding remains. Treat a finding as
-   owner-dispositioned only when the package and coordinator name its exact ID,
-   disposition, rationale, and any deferred destination; never infer acceptance
-   from `go` or silence.
+6. Check required review records and ensure no unresolved `BLOCK` or unsettled
+   required finding remains. A required finding is settled only when its frozen
+   closure contract passes re-review or, after two review rounds without
+   resolution, the package and coordinator name its exact ID, disposition,
+   rationale, and any deferred destination; never infer acceptance from `go` or
+   silence.
 7. Inspect the worktrees and identify unrelated changes. Never modify or clean
    the retired dirty experiments worktree.
 8. Confirm the worktree is on `owner-tool-integration`, the authoritative work

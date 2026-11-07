@@ -272,6 +272,74 @@ block from the question text.
   blank lines inside the removed block leave with it. This preserves real
   paragraphs without inventing breaks where a block was inline.
 
+### Stage 3c — Comprehension contexts (`detect` / `parsePaste`)
+
+`src/parser/comprehension.js` runs before section splitting and removes only
+recognized passage blocks from the text handed to `splitSections`.
+
+- **Heading evidence:** a line matching `PASSAGE`, `COMPREHENSION`,
+  `COMPREHENSION PASSAGE`, or `EXTRACT` followed by a Roman label or 1–3 digits,
+  optionally with `:`/`.`/`-` and a title. A headline containing `?` is not a
+  heading.
+- **Link evidence:** at least two question-start lines between the heading and
+  the block boundary (next heading, divider-only `===`, key heading, or two
+  consecutive key lines). Fewer candidates, or an empty prose block, produces a
+  warning and no context; the paste stays on the legacy path.
+- **Prose:** every line between the heading and the first stem, trimmed, with
+  runs of blank lines collapsed to one. An instruction line immediately above
+  the heading (matching `read|study|use|refer to|the following` plus a
+  `questions N to M` range) supplies `expectedCount` and is removed with the
+  block.
+- **Targets:** the actual stem numbers in the block, in order. A named range
+  that does not match them, or non-contiguous targets, raises a warning.
+- **Result:** `contexts[]` entries carry `id` (`ctx-1`…), `order`, `type`
+  (`comprehension`), `title`, `text`, `targets`, `expectedCount`, `linkedCount`,
+  and `evidence` (`heading`, 1-based `startLine`, `questionStartLine`,
+  `questionEndLine`, `source`). `sectionEvidence` repeats the evidence plus the
+  section split's `how`/`boundary`; `warnings` collects every advisory above.
+- **Scoped options:** for linked questions only, one complete ordered set of
+  `(a)`–`(d)` becomes the four option values and is removed from the stem. Any
+  other count or order stays in the stem with a warning. `OPTION`,
+  `splitQuestions`, and the numbering guard are untouched.
+- **Keys:** the same-paste key is parsed by the existing rules;
+  `keyConflicts` reports duplicate letters and missing entries for linked
+  targets raise warnings. A key-only paste keeps the queue and contexts.
+
+### Stage 3d — Cloze contexts (`cloze.detect` / `parsePaste`)
+
+`src/parser/cloze.js` runs before the comprehension engine and removes only
+fully evidenced cloze blocks from the text handed on to `splitSections`.
+
+- **Recognition evidence (all four required):** an instruction line containing
+  `numbered gap(s)` and an A–D options phrase; at least two `.... N. ....` gap
+  runs in the passage between the instruction and the table; an `A B C D`
+  header line (two or more spaces between letters); at least two consecutive
+  numbered option rows after the header.
+- **Column starts:** rows are split on runs of two or more spaces; the four
+  start offsets are the per-column modes and each must cover at least half the
+  rows. The header indent is ignored. A boundary inside a word snaps right to
+  the next word edge, so an overflowing cell keeps its last words. Tabs expand
+  to 8-column stops before any measurement.
+- **Gap tokens:** every `.... N. ....` run becomes exactly `[[gap:N]]`, keeping
+  source numbering (1–999), the two paragraphs as single blank lines, and the
+  remaining prose trimmed per line.
+- **Synthesis:** one item per row with `num`, the stem
+  `Choose the option that best fills gap N.`, the four cells as `a`–`d`,
+  `contextRef` (`ctx-N`), `contextPosition`, and empty `contextSlot`; the owner
+  tool fills the slot from the token order.
+- **Refusal:** an empty cell, an option over 500 characters, no stable
+  alignment, row numbers that differ from the passage gap numbers, or fewer
+  than two gaps warns and leaves the block on the legacy path. No partial
+  context or guessed option is created.
+- **Number collisions:** when a table row number equals a number already
+  carried by an ordinary question in the same paste, the whole group is refused
+  with a warning naming the colliding numbers and its rows stay on the legacy
+  path. No partial group, optionless member, or silently dropped row is
+  produced; other cloze groups in the paste keep their contexts and links.
+- **Composition:** a paste may carry comprehension, cloze, and standalone
+  groups. Contexts are renumbered `ctx-1…` in paste order and items are merged
+  in number order without numbering-gap flags between families.
+
 ### Stage 4 — Header inference
 
 - The UI reads three header sources in order: the question part, the dropped

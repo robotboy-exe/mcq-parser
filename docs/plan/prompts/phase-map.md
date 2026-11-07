@@ -12,8 +12,13 @@ the remaining cycle scope. The available-source reader/writer audit passed on
 its rigorous Release B review returned PASS WITH ACCEPTED FINDINGS, and the
 owner authorized `FIX-1`, which was fixed and closed by the closure-focused
 re-review on 2026-11-06. Phase 8 is review-settled and included in the
-2026-11-06 boundary commit; OT08 is next.
-Runtime/staging and target-database verification are deferred to OT10.
+2026-11-06 boundary commit. OT08 passed its light review at OT09 Gate 1, and
+OT09 cloze OCR is implemented (parser 2.3.1); its rigorous Release C review
+returned `BLOCK` on 2026-11-07 (`BLOCK-1`, `FIX-1`) and the owner authorized
+`fix` for both, which was applied on 2026-11-07; the first independent re-review
+closed both and recorded `FIX-2` in its first review round, so it routes to a fix
+session under the two-round lifecycle. Runtime/staging and target-database
+verification are deferred to OT10.
 
 Intent: [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -27,8 +32,8 @@ Intent: [`../../../INTENT.md`](../../../INTENT.md)
 | 6 | OT05 — Context Schema and Admin | [`../owner-tool/ot-05-context-schema-and-admin.md`](../owner-tool/ot-05-context-schema-and-admin.md) | done; `BLOCK-8` rejected, review/disposition settled, boundary commit authorized; `NOTE-4` non-blocking; runtime migration deferred to OT10 |
 | 7 | OT06 — Candidate Group Delivery | [`../owner-tool/ot-06-candidate-group-delivery.md`](../owner-tool/ot-06-candidate-group-delivery.md) | done; light review PASS at OT07 Gate 1; `cbt.php` only |
 | 8 | OT07 — Owner Context Workflow | [`../owner-tool/ot-07-owner-context-workflow.md`](../owner-tool/ot-07-owner-context-workflow.md) | done; Release B review PASS WITH ACCEPTED FINDINGS; `FIX-1` closed by re-review 2026-11-06; phase 8 boundary committed; `NOTE-1` non-blocking |
-| 9 | OT08 — Comprehension OCR | [`../owner-tool/ot-08-comprehension-ocr.md`](../owner-tool/ot-08-comprehension-ocr.md) | not started |
-| 10 | OT09 — Cloze OCR | [`../owner-tool/ot-09-cloze-ocr.md`](../owner-tool/ot-09-cloze-ocr.md) | not started |
+| 9 | OT08 — Comprehension OCR | [`../owner-tool/ot-08-comprehension-ocr.md`](../owner-tool/ot-08-comprehension-ocr.md) | done 2026-11-06; light review PASS at OT09 Gate 1; external key sample open |
+| 10 | OT09 — Cloze OCR | [`../owner-tool/ot-09-cloze-ocr.md`](../owner-tool/ot-09-cloze-ocr.md) | done 2026-11-06; parser 2.3.1; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` first-round fix pending; external key sample open |
 | 11 | OT10 — Release and Handoff | [`../owner-tool/ot-10-release-and-handoff.md`](../owner-tool/ot-10-release-and-handoff.md) | blocked: prior packages required |
 
 Run one phase per implementation session. A blocked phase stops at Gate 1; do

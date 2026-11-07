@@ -136,7 +136,7 @@
         render();
         prepare(current());
       };
-      add(head, 'span', { className: 'owner-context-hint' }, 'Manual cards only. Create and update them with the native context form.');
+      add(head, 'span', { className: 'owner-context-hint' }, 'Paste or add a card, then create and update it with the native context form.');
       var list = add(root, 'div', { className: 'owner-context-list' });
       data.contexts.forEach(function (card, index) {
         cards.render(card, index, list, {

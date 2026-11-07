@@ -13,9 +13,10 @@ early-stop, and fix-handoff response must end with the exact terminal
 
 Each accepted `BLOCK` or `FIX` has an immutable closure contract: exact defect,
 supported operating preconditions, finite closure criteria, required evidence,
-and explicit non-goals or deferred checks. Once the owner chooses `fix`, neither
-the fix session nor re-review may broaden that contract. A newly noticed defect
-requires a separate review ID and owner disposition.
+and explicit non-goals or deferred checks. Once a fix is authorized, neither the
+fix session nor re-review may broaden that contract. A newly noticed defect
+requires a separate review ID; in its first review round it routes to a fix
+session like any other finding.
 
 For findings written before this rule, use only the concrete reproduced defect,
 named vectors, requested fix, and required evidence in the accepted review and
@@ -27,8 +28,10 @@ title.
 1. Read the review record, package, handoff, intent, coordinator, and active map.
 2. Require stable finding IDs and extract each frozen closure contract. Stop if
    an ID, criterion, precondition, or deferred boundary is ambiguous.
-3. Confirm the owner disposition is `fix`; an unresolved `BLOCK` alone does not
-   authorize broadening its scope.
+3. Confirm the fix authority: the accepted review record's recommended fix for a
+   finding in its first review round, or a recorded `fix` disposition for a
+   finding that survived its first re-review. Neither authorizes broadening the
+   frozen closure contract.
 4. Restate a closure matrix mapping every finding ID to its exact criteria,
    planned production path, required evidence, and non-goals before offering
    `go`.
@@ -59,10 +62,12 @@ NEXT COMMAND: go
 4. Rerun package acceptance and the current baseline. Executable evidence must
    run the real production modules and paths, not copied SQL, control flow, or
    reimplemented behavior.
-5. Append a fix note to the package handoff and keep `Commit: deferred`. Map
-   every frozen closure criterion to the exact implementation and evidence, and
-   report per production file additions/deletions from the original package base,
-   final lines/bytes, responsibility, deployment inclusion, and direct
+5. Update the package header, coordinator, current status, active map, and
+   continuation checklist with the accepted finding and its status. Append a fix
+   note to the package handoff and keep `Commit: deferred`. Map every frozen
+   closure criterion to the exact implementation and evidence, and report per
+   production file additions/deletions from the original package base, final
+   lines/bytes, responsibility, deployment inclusion, and direct
    production-path test evidence; list excluded artifacts separately.
 6. Do not edit the review record, start another package, or commit.
 7. Require re-review after a fixed `BLOCK` or behavior change. A rejected,

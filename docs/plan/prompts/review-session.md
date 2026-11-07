@@ -73,7 +73,8 @@ with nothing after it.
   is promised or the precondition cannot realistically be enforced. Verdict
   `BLOCK`; not commit-ready.
 - `FIX-N`: real defect or missing evidence with core behavior present. Verdict
-  `PASS WITH ACCEPTED FINDINGS`; the owner records a lifecycle disposition.
+  `PASS WITH ACCEPTED FINDINGS`; it routes to a fix session in its first review
+  round and escalates to owner disposition only under the two-round rule below.
 - `NOTE-N`: documentation issue or residual risk that does not invalidate the
   package.
 
@@ -99,20 +100,23 @@ production-path test evidence, approvals, and excluded-artifact list.
   acceptance requirement, a material regression introduced by the fix, or a
   reproducible security/data-loss defect on a supported path. Other new concerns
   are `FIX`, `NOTE`, or explicitly deferred evidence.
-- If a re-review discovers a new `BLOCK`, or a second or later re-review would
-  recommend another fix session, the exact next action is owner disposition:
-  `fix`, `reject`, `accept risk`, `defer` to a named package, or
-  `change requirement`. Hand off to `finding-disposition.md` with the exact
-  phase/package and finding IDs; do not automatically prescribe another fix
-  session.
+- A finding reaches owner disposition only after two review rounds without
+  resolution: the review that recorded it left it open, and the next review
+  round still leaves it open or recommends another fix. The exact next action is
+  then owner disposition: `fix`, `reject`, `accept risk`, `defer` to a named
+  package, or `change requirement`. Hand off to `finding-disposition.md` with
+  the exact phase/package and finding IDs.
+- A first-round finding never escalates. Whether the original review or a
+  re-review recorded it, the exact next action is `fix-session.md` with its exact
+  ID and frozen closure contract.
 - Owner disposition never edits immutable review evidence. It is recorded in
   the package and coordinator before dependent work or commit readiness changes.
 - These rules do not force a pass. A genuinely unresolved blocker remains
-  visible until the owner records a disposition.
+  visible until it is fixed and settled by re-review, or the owner records a
+  disposition after two review rounds.
 
 The final review response must use that recommended action as an exact
-copy-paste `NEXT COMMAND:`. Every `BLOCK` or `FIX` requiring an owner choice names
-the disposition-session prompt with every exact finding ID. Only a recorded
-`fix` disposition may lead to `fix-session.md`; a review recommendation alone is
-not that disposition. Never offer a dependent package while an unresolved
-blocker remains.
+copy-paste `NEXT COMMAND:`. A first-round `BLOCK` or `FIX` names
+`fix-session.md` with every exact finding ID; only a finding that has survived
+its first re-review names the disposition-session prompt. Never offer a
+dependent package while an unresolved blocker remains.

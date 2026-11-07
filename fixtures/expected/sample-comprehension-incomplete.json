@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-comprehension-incomplete",
+  "source": [
+    "Authored for OT08 (complete and incomplete (a)-(d) sets in one passage)"
+  ],
+  "provenance": "Synthetic paste: question 7 has only (a)-(c), question 8 has the complete set, and the passage keeps dotted initials and A.D. prose.",
+  "status": "CONFIRMED",
+  "kind": "questions",
+  "input_file": "fixtures/inputs/sample-comprehension-incomplete.txt",
+  "expected": {
+    "queue_count": 2,
+    "nums": [7, 8],
+    "contexts": [
+      {
+        "order": 1,
+        "type": "comprehension",
+        "title": "PASSAGE V",
+        "text": "Earlier officials such as J. A. Adeyemi served from 1960 A.D. and kept records.",
+        "targets": [7, 8],
+        "expected_count": 2
+      }
+    ],
+    "questions": [
+      {
+        "num": 7,
+        "question": "The passage is mainly about (a) one record (b) two records (c) three records",
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": "",
+        "flags": [
+          "option A missing",
+          "option B missing",
+          "option C missing",
+          "option D missing"
+        ],
+        "context_ref": "ctx-1",
+        "context_position": "1"
+      },
+      {
+        "num": 8,
+        "question": "The passage keeps which details?",
+        "a": "alpha",
+        "b": "beta",
+        "c": "gamma",
+        "d": "delta",
+        "flags": [],
+        "context_ref": "ctx-1",
+        "context_position": "2"
+      }
+    ],
+    "warnings": [
+      "question 7 has no complete (a)-(d) option set"
+    ]
+  },
+  "must_not": [
+    "Dotted initials become options or pseudo-questions",
+    "A partial (a)-(c) set parsed as options"
+  ]
+}

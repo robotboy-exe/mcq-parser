@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-cloze-mixed",
+  "source": [
+    "synthetic mixed context paste added at OT09"
+  ],
+  "provenance": "Synthetic paste containing one comprehension passage with questions 11-12 and one cloze table with gaps 81-82.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/sample-cloze-mixed.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 4,
+    "nums": [11, 12, 81, 82],
+    "contexts": [
+      {
+        "order": 1,
+        "type": "comprehension",
+        "title": "COMPREHENSION PASSAGE I",
+        "text": "The heavy rain had fallen for three days. When the villagers finally reached the river,\nthey found the bridge gone and the water still rising.",
+        "targets": [11, 12],
+        "expected_count": 2
+      },
+      {
+        "order": 2,
+        "type": "cloze",
+        "title": "SECTION 9",
+        "text": "The nurse [[gap:81]] the patient's temperature and [[gap:82]] the doctor immediately.",
+        "targets": [81, 82],
+        "expected_count": 2
+      }
+    ],
+    "warnings": [],
+    "questions": [
+      {
+        "num": 11,
+        "question": "Why had the rain fallen for three days?",
+        "a": "To fill the river",
+        "b": "To flood the village",
+        "c": "To block the road",
+        "d": "To ruin the harvest",
+        "flags": [],
+        "context_ref": "ctx-1",
+        "context_position": "1"
+      },
+      {
+        "num": 12,
+        "question": "What did the villagers find at the river?",
+        "a": "A new bridge",
+        "b": "A broken bridge",
+        "c": "A dry river bed",
+        "d": "A fishing boat",
+        "flags": [],
+        "context_ref": "ctx-1",
+        "context_position": "2"
+      },
+      {
+        "num": 81,
+        "question": "Choose the option that best fills gap 81.",
+        "a": "took",
+        "b": "measured",
+        "c": "checked",
+        "d": "wrote",
+        "flags": [],
+        "context_ref": "ctx-2",
+        "context_position": "1"
+      },
+      {
+        "num": 82,
+        "question": "Choose the option that best fills gap 82.",
+        "a": "called",
+        "b": "informed",
+        "c": "warned",
+        "d": "saw",
+        "flags": [],
+        "context_ref": "ctx-2",
+        "context_position": "2"
+      }
+    ]
+  },
+  "must_not": [
+    "Comprehension passage claiming the cloze rows",
+    "Cloze table swallowing the comprehension questions",
+    "Numbering-gap flags for the space between 12 and 81"
+  ],
+  "notes": [
+    "Each family keeps its own context; ordering follows the paste."
+  ]
+}

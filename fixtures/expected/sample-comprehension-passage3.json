@@ -6,16 +6,35 @@
     "sample-passages.txt lines 5-34"
   ],
   "provenance": "User supplied sample-passages.txt PASSAGE III comprehension passage with questions 11-15.",
-  "status": "PENDING",
+  "status": "CONFIRMED",
   "input_file": "fixtures/inputs/sample-comprehension-passage3.txt",
   "kind": "questions",
   "expected": {
     "queue_count": 5,
-    "nums": [11, 12, 13, 14, 15],
-    "context": {
-      "title": "PASSAGE III",
-      "text": "Politics in pre-colonial times did not involve the partisan type of electioneering campaign that we now have. The society was ruled by a king or an emir and his traditional chiefs or by the council of elders or clan heads. Where there existed the hierarchical system as in the Yoruba and Hausa kingdoms, succession to the throne was mainly patriarchal. A recorded exception was the case of, Queen Amina of the Zazzau Empire who ruled in the 15th century A.D.\n\nA host of unsung and unrecorded women regents and at times women village rulers abound, especially in the present Ondo State where some influential traditional female chiefs and regents still exist. In Ibadan, the famous Efunsetan Aniwura held political as well as economic sway and it took a lot of drive, brain work and political engineering for the then King and his council of chiefs to subdue her. The history of the various towns and villages of the period could boast of such women who were actively engaged in the running of government.\n\nIn the Igbo society, a rise to leadership position was through demonstrated ability in fostering societal survival rather than heritage. Women's voice in the politics of each clan is given focus either through the guild of wives, the guild of daughters, or the market women's guild. Women, through these organs, could make their feelings known on any issue affecting their community as a whole or females in particular. Thus, unpopular edicts or 'decrees' could be revoked or revised as a result of mounted pressure from any of these female associations. No decision was usually taken by the men without prior consultation with the leaders of the women's groups.\n\nIt must however be emphasized that the degree of women participation in politics was yet much limited when compared to that of men."
-    },
+    "nums": [
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "contexts": [
+      {
+        "order": 1,
+        "type": "comprehension",
+        "title": "PASSAGE III",
+        "text": "Politics in pre-colonial times did not involve the partisan type of electioneering campaign that we now have. The society was ruled by a king or an emir and his traditional chiefs or by the council of elders or clan heads. Where there existed the hierarchical system as in the Yoruba and Hausa kingdoms, succession to the throne was mainly patriarchal. A recorded exception was the case of, Queen Amina of the Zazzau Empire who ruled in the 15th century A.D.\n\nA host of unsung and unrecorded women regents and at times women village rulers abound, especially in the present Ondo State where some influential traditional female chiefs and regents still exist. In Ibadan, the famous Efunsetan Aniwura held political as well as economic sway and it took a lot of drive, brain work and political engineering for the then King and his council of chiefs to subdue her. The history of the various towns and villages of the period could boast of such women who were actively engaged in the running of government.\n\nIn the Igbo society, a rise to leadership position was through demonstrated ability in fostering societal survival rather than heritage. Women's voice in the politics of each clan is given focus either through the guild of wives, the guild of daughters, or the market women's guild. Women, through these organs, could make their feelings known on any issue affecting their community as a whole or females in particular. Thus, unpopular edicts or 'decrees' could be revoked or revised as a result of mounted pressure from any of these female associations. No decision was usually taken by the men without prior consultation with the leaders of the women's groups.\n\nIt must however be emphasized that the degree of women participation in politics was yet much limited when compared to that of men.",
+        "targets": [
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "expected_count": 5
+      }
+    ],
+    "warnings": [],
     "questions": [
       {
         "num": 11,
@@ -24,7 +43,9 @@
         "b": "used in pre-colonial politics",
         "c": "for choosing kings or emirs",
         "d": "currently in use.",
-        "flags": []
+        "flags": [],
+        "context_ref": "ctx-1",
+        "context_position": "1"
       },
       {
         "num": 12,
@@ -60,7 +81,8 @@
         "b": "Champions of women liberation",
         "c": "Great women of yesteryears",
         "d": "Electioneering campaigns.",
-        "flags": []
+        "flags": [],
+        "context_position": "5"
       }
     ]
   },
@@ -69,9 +91,7 @@
     "Lowercase (a)-(d) options left in question stems"
   ],
   "notes": [
-    "Marked PENDING pending OT08 comprehension context parsing."
+    "Promoted from PENDING by OT08; the parser recognizes PASSAGE III and the complete (a)-(d) sets."
   ],
-  "discrepancies": [
-    "Current parser does not recognize PASSAGE III as shared context or (a)-(d) as options."
-  ]
+  "discrepancies": []
 }

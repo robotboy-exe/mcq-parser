@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-cloze-mismatch",
+  "source": [
+    "synthetic mismatched cloze table added at OT09"
+  ],
+  "provenance": "Synthetic adversarial cloze paste whose passage gaps are 41-42 but whose option rows are 43-44.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/sample-cloze-mismatch.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [43, 44],
+    "contexts": [],
+    "warnings": [
+      "does not match the passage gaps 41-42",
+      "read as ordinary questions"
+    ]
+  },
+  "must_not": [
+    "Cloze context linking gap 41 to row 43",
+    "Cloze context built from a mismatched table"
+  ],
+  "notes": [
+    "Row numbers and passage gap numbers must correspond before a cloze context is created."
+  ]
+}

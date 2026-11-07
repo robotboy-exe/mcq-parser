@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-cloze-missing-column",
+  "source": [
+    "synthetic incomplete cloze table added at OT09"
+  ],
+  "provenance": "Synthetic adversarial cloze table where row 32 has no D option.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/sample-cloze-missing-column.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 3,
+    "nums": [31, 32, 33],
+    "contexts": [],
+    "warnings": [
+      "is missing the D option for gap 32",
+      "read as ordinary questions"
+    ]
+  },
+  "must_not": [
+    "Partial cloze context with guessed options",
+    "Two-option cloze question created for gap 32"
+  ],
+  "notes": [
+    "The whole table is refused; the numbered rows stay ordinary paste text so the owner sees the warning."
+  ]
+}

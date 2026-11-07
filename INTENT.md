@@ -97,10 +97,11 @@ stop and ask instead of silently changing the product direction.
 - Original reviews may explore broadly. Re-reviews verify the named frozen
   closure contracts and regressions; they do not broaden an existing finding
   ID. A newly discovered defect receives a new ID and proportional severity.
-- An unresolved blocker requires an explicit owner disposition: fix, reject
-  with rationale, accept the risk, defer it to a named package, or change the
-  requirement. A re-review that discovers a new blocker does not automatically
-  start another fix loop.
+- Owner disposition is an escalation after two review rounds without resolution,
+  not a first step: fix, reject with rationale, accept the risk, defer it to a
+  named package, or change the requirement. A first-round finding, including one
+  newly recorded in a re-review, starts one fix session against its frozen
+  closure contract instead.
 - Do not commit unless the user explicitly asks.
 - Do not edit archived source snapshots.
 - New decisions begin at D-66; D-61 through D-65 remain reserved for the

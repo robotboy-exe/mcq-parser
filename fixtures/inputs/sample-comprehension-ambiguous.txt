@@ -1,0 +1,8 @@
+PASSAGE IV
+This note has a heading but only one following question.
+
+6. Which statement is true?
+(a) one
+(b) two
+(c) three
+(d) four

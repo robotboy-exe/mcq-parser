@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-06.
+Last updated: 2026-11-07.
 
 ## Current state
 
@@ -29,7 +29,13 @@ Last updated: 2026-11-06.
   its rigorous Release B review returned PASS WITH ACCEPTED FINDINGS and the
   owner authorized `FIX-1`, which was applied and closed by re-review on
   2026-11-06. Phase 8 is review-settled and included in the 2026-11-06 boundary
-  commit; OT08 is next.
+  commit. OT08 passed its light review at OT09 Gate 1, and OT09 cloze OCR is
+  implemented (parser 2.3.1). Its rigorous Release C review returned `BLOCK` on
+  2026-11-07 (`BLOCK-1`, `FIX-1`), the owner authorized `fix` for both, and the
+  2026-11-07 fix applied both under their frozen closure contracts. The first
+  independent re-review closed `BLOCK-1` and `FIX-1` and recorded one new
+  finding, `FIX-2`, in its first review round, so it routes to a fix session
+  under the two-round lifecycle rather than to owner disposition.
 - Working branch: `owner-tool-integration` is the authoritative integration and
   implementation line. `main` is the published baseline, not the current work
   branch. See [Branch strategy](#branch-strategy).
@@ -50,6 +56,11 @@ Last updated: 2026-11-06.
   13 context-migration PASS, 4 cbt-context PASS, 13 context-lib PASS, 19
   context-admin PASS, 6 context-preflight PASS, 9 PHP renderer PASS, 7
   cbt-candidate PASS, and PHP 8.3 lint PASS. No live/staging write was used.
+- OT08 evidence (uncommitted, base `224957e`): 52 runner PASS + 1 PENDING
+  (cloze), 151 unit PASS, 51 owner-tool PASS, 13 context-migration PASS, 4
+  cbt-context PASS, 7 bank slices OK. PHP is absent on this host, so no PHP
+  lint/suite ran; no live/staging or browser write was used. The external
+  same-paste key sample remains open.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
@@ -143,13 +154,18 @@ Reviews are rigorous without creating a moving target:
   non-fix owner disposition resolves the workflow decision without rewriting
   immutable review evidence; a `fix` disposition remains unresolved until its
   frozen checklist passes re-review.
-- Every review finding requiring an owner choice hands off to the disposition
-  session first. A review never treats a recommended fix command as a recorded
-  `fix` disposition.
-- If a re-review discovers a new `BLOCK`, or a second or later re-review would
-  prescribe another fix session, stop for owner disposition instead of
-  automatically issuing another fix command. This is an escalation rule, not
-  an automatic pass; genuine unresolved risk remains visible.
+- Owner disposition is an escalation, not the first step. A review round is one
+  recorded review or re-review. A finding escalates only after two review rounds
+  without resolution: the review that recorded it left it open, and the next
+  review round still leaves it open or prescribes another fix. A
+  first-round `BLOCK` or `FIX` routes directly to
+  [`prompts/fix-session.md`](prompts/fix-session.md) against its frozen closure
+  contract; the review record, not an inferred owner disposition, authorizes
+  that one fix.
+- A defect recorded for the first time in a re-review is also in its first
+  review round and routes to a fix session the same way; it escalates only if
+  its own re-review leaves it unresolved. This is an escalation rule, not an
+  automatic pass; genuine unresolved risk remains visible.
 - Owner decisions use
   [`prompts/finding-disposition.md`](prompts/finding-disposition.md), which
   records the decision in current-facing package/coordinator documents without
@@ -172,8 +188,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review (settled) | done; `BLOCK-8` rejected, review/disposition settled, boundary commit authorized | none; runtime migration deferred to OT10 |
 | 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | done; light review PASS at OT07 Gate 1 | satisfied: [reader/writer audit](owner-tool/ot-06-reader-writer-audit.md) |
 | 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | done; Release B review PASS WITH ACCEPTED FINDINGS; `FIX-1` closed by re-review 2026-11-06; phase 8 boundary committed; `NOTE-1` non-blocking | inherited server contract |
-| 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | not started | answer-key sample for final acceptance |
-| 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | not started | answer-key sample for final acceptance |
+| 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | done; parser 2.2.0; light review PASS at OT09 Gate 1 | answer-key sample for final acceptance (open) |
+| 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.1; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` first-round fix pending | answer-key sample for final acceptance (open) |
 | 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked | local PHP, staging, all prior artifacts |
 
 The active map duplicates these statuses for session resolution. Update both
@@ -238,8 +254,8 @@ verifies the detail path with the rest of Release A.
 | phases 6-7 | OT05-OT06 | light at next Gate 1 | pass at OT07 Gate 1 |
 | OT05 remediation | OT05-EXT-01 plus accepted Phase 6 fixes | rigorous | settled; `BLOCK-8` rejected by owner, boundary commit authorized |
 | phase 8 close | OT07 Release B | rigorous | pass; review PASS WITH ACCEPTED FINDINGS, `FIX-1` closed by re-review 2026-11-06, boundary committed |
-| phase 9 | OT08 | light at OT09 Gate 1 | pending |
-| phase 10 close | OT09 Release C | rigorous | pending |
+| phase 9 | OT08 | light at OT09 Gate 1 | pass at OT09 Gate 1 |
+| phase 10 close | OT09 Release C | rigorous | implementation done 2026-11-06; review `BLOCK` 2026-11-07 (`BLOCK-1`, `FIX-1`); `fix` applied 2026-11-07; re-review 2026-11-07 closed both and recorded `FIX-2` in its first review round; first-round fix pending |
 | phase 11 close | OT10 final release | rigorous | pending |
 
 OT05 implementation and its accepted Phase 6 fixes are complete. The third
@@ -255,25 +271,46 @@ the Phase 6 boundary commit. The available-source reader/writer audit passed on
 implemented and its rigorous Release B review returned PASS WITH ACCEPTED
 FINDINGS; `FIX-1` (handoff hash/byte accuracy) was fixed and closed by the
 closure-focused re-review on 2026-11-06. Phase 8 is review-settled and
-included in the 2026-11-06 boundary commit, so OT08 is next. Its manual
+included in the 2026-11-06 boundary commit. OT08 is implemented: parser 2.2.0
+recognizes bounded comprehension contexts, parses one complete `(a)`-`(d)` set
+per linked question, returns `contexts`/`keyConflicts`/`sectionEvidence`/
+`warnings`, and fills editable OT07 draft cards without posting. Its manual
 context cards, native context-form adapter, exact PRG binding, stale draft
 guard, linked question fields, and full Reset behavior have local JS/PHP
-evidence. Target-runtime execution remains OT10. The audit carries forward the
-archived legacy-writer deployment check as an OT10 constraint.
+evidence. OT08's light review passed at OT09 Gate 1. Parser 2.3.0 added cloze
+recognition: the supplied gap passage and A-D table become one shared cloze
+context with `[[gap:N]]` tokens, ten editable linked questions, and the same
+zero-post draft workflow. OT09's rigorous Release C review returned `BLOCK` on
+2026-11-07: `BLOCK-1` is the unapproved 274-line `src/parser/cloze.js` against
+the 250-line new-module cap, and `FIX-1` is a silent partial cloze group when a
+cloze row number collides with an ordinary question. The owner authorized `fix`
+for both; the 2026-11-07 fix reduced `cloze.js` to 242 lines and refuses a
+colliding group instead of dropping its row (parser 2.3.1). The 2026-11-07
+re-review closed both findings and recorded `FIX-2` (two cloze groups sharing
+numbering silently lose the later group's options) as a new first-round
+finding; under the two-round lifecycle it routes to a fix session, not owner
+disposition. Phase 10 is not commit-ready. The external gate is still
+open: `sample-passages.txt` contains no answer key, so a representative
+same-paste key sample is required before final package acceptance. That phase 8
+paragraph's manual-card workflow is now fed by the parser; target-runtime
+execution remains OT10. The audit carries forward the archived legacy-writer
+deployment check as an OT10 constraint.
 
 Current workflow stop:
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 9
+NEXT COMMAND: @docs/plan/prompts/fix-session.md phase 10 OT09 FIX-2
 ```
 
 Rigorous reviews use [`prompts/review-session.md`](prompts/review-session.md)
-and write immutable records under [`reviews/`](reviews/README.md). An unresolved
-`BLOCK` requires its recorded owner disposition; a `fix` disposition requires a
-fix session and re-review. The OT07 `FIX-1` fix (2026-11-06) satisfied its
-frozen closure checklist, and the closure-focused re-review closed it. Other
-explicit dispositions follow the finding lifecycle contract above. Accepted
-`FIX` findings follow the review record's exact next action.
+and write immutable records under [`reviews/`](reviews/README.md). A first-round
+`BLOCK` or `FIX` requires a fix session and re-review; only a finding that
+survives its first re-review requires a recorded owner disposition. The OT07
+`FIX-1` fix (2026-11-06) satisfied its frozen closure checklist, and the
+closure-focused re-review closed it. The OT09 `BLOCK-1`/`FIX-1` fix is
+similarly closed, and the immutable phase-10 re-review's disposition
+recommendation for `FIX-2` is superseded on routing by the two-round lifecycle.
+Explicit dispositions follow the finding lifecycle contract above.
 
 ## Session protocol
 

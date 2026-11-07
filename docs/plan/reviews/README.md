@@ -25,11 +25,13 @@ Each record includes:
   namespace across the package's records, rather than broadened prior IDs;
 - recommended next action and pending user decision.
 
-Once the owner authorizes a fix, its closure contract is frozen. Re-review
-closes that finding when the frozen criteria pass. A newly discovered blocker or
-a second-or-later re-review proposing another fix requires owner disposition;
-the immutable record remains unchanged whichever disposition is chosen. Record
-that choice through `../prompts/finding-disposition.md`.
+Once a fix is authorized, its closure contract is frozen. Re-review closes that
+finding when the frozen criteria pass. A finding requires owner disposition only
+after two review rounds without resolution: it stays open, or needs another fix,
+at the review round after the one that recorded it. A first-round finding,
+including one newly recorded in a re-review, routes to a fix session instead.
+The immutable record remains unchanged whichever disposition is chosen; record
+the choice through `../prompts/finding-disposition.md`.
 
 Review sessions may change only their review record. They never edit source,
 tests, fixtures, package state, handoffs, or commits.

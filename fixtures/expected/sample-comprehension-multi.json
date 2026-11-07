@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-comprehension-multi",
+  "source": [
+    "Authored for OT08 (two explicit passages with standalone questions around them)"
+  ],
+  "provenance": "Synthetic multi-passage paste: question 1 stands alone, PASSAGE I links 2-3, and PASSAGE II links 4-5.",
+  "status": "CONFIRMED",
+  "kind": "questions",
+  "input_file": "fixtures/inputs/sample-comprehension-multi.txt",
+  "expected": {
+    "queue_count": 5,
+    "nums": [1, 2, 3, 4, 5],
+    "contexts": [
+      {
+        "order": 1,
+        "type": "comprehension",
+        "title": "PASSAGE I",
+        "text": "The elephant is the largest land animal. It lives in herds led by an older female. Its trunk is used for drinking and for lifting.",
+        "targets": [2, 3],
+        "expected_count": 2
+      },
+      {
+        "order": 2,
+        "type": "comprehension",
+        "title": "PASSAGE II",
+        "text": "Coral reefs grow in warm shallow water. They shelter many fish. Pollution and warming seas damage them.",
+        "targets": [4, 5],
+        "expected_count": 2
+      }
+    ],
+    "questions": [
+      {
+        "num": 1,
+        "question": "The capital city of Nigeria is",
+        "a": "Lagos",
+        "b": "Abuja",
+        "c": "Kano",
+        "d": "Ibadan",
+        "flags": [],
+        "context_ref": ""
+      },
+      {
+        "num": 2,
+        "question": "An elephant herd is usually led by",
+        "a": "the oldest male",
+        "b": "an older female",
+        "c": "the youngest calf",
+        "d": "a lone bull",
+        "flags": [],
+        "context_ref": "ctx-1",
+        "context_position": "1"
+      },
+      {
+        "num": 3,
+        "question": "An elephant uses its trunk for",
+        "a": "fighting only",
+        "b": "drinking and lifting",
+        "c": "sleeping",
+        "d": "hearing",
+        "flags": [],
+        "context_ref": "ctx-1",
+        "context_position": "2"
+      },
+      {
+        "num": 4,
+        "question": "Coral reefs grow best in",
+        "a": "deep cold water",
+        "b": "warm shallow water",
+        "c": "freshwater lakes",
+        "d": "dry deserts",
+        "flags": [],
+        "context_ref": "ctx-2",
+        "context_position": "1"
+      },
+      {
+        "num": 5,
+        "question": "Coral reefs are damaged by",
+        "a": "sand",
+        "b": "fish",
+        "c": "pollution and warming seas",
+        "d": "strong currents",
+        "flags": [],
+        "context_ref": "ctx-2",
+        "context_position": "2"
+      }
+    ],
+    "warnings": []
+  },
+  "must_not": [
+    "Standalone question 1 is linked to a context",
+    "PASSAGE II questions attached to the first context"
+  ]
+}

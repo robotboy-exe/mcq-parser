@@ -18,9 +18,10 @@ terminal `NEXT COMMAND:` line, with nothing after it.
 4. Verify that every package and fix has settled externalize-first measurements,
    approvals, deployment inclusion, and direct production-path evidence.
 5. Verify every `BLOCK` and required `FIX` cycle-wide. A fixed finding must pass
-   its frozen closure re-review; any other disposition must name the exact ID,
-   rationale, destination or accepted boundary, and readiness effect in the
-   package and coordinator. Stop for every unresolved or undispositioned finding.
+   its frozen closure re-review; a finding still unresolved after two review
+   rounds needs an owner disposition naming the exact ID, rationale, destination
+   or accepted boundary, and readiness effect in the package and coordinator.
+   Stop for every unresolved or unsettled finding.
 6. Confirm that every changed requirement is implemented and independently
    verified, or remains explicitly not-ready. A documentation-only requirement
    change never proves acceptance.

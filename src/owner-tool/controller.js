@@ -103,6 +103,34 @@
     return meta;
   }
 
+  function mapContexts(parsedContexts, items) {
+    if (!contextModel || !Array.isArray(parsedContexts) || !parsedContexts.length) return [];
+    var byParsedId = {};
+    var cards = parsedContexts.map(function (context) {
+      var card = contextModel.emptyContext(loaded.metadata);
+      card.contextType = context.type === 'cloze' ? 'cloze' : 'comprehension';
+      card.title = String(context.title || '');
+      card.text = String(context.text || '');
+      card.targets = Array.isArray(context.targets) ? context.targets.slice() : [];
+      card.expectedCount = context.expectedCount || card.targets.length || 1;
+      byParsedId[String(context.id || '')] = card.localId;
+      return card;
+    });
+    items.forEach(function (item) {
+      if (!item || !item.contextRef) return;
+      var localId = byParsedId[String(item.contextRef)];
+      if (localId) {
+        item.contextRef = localId;
+        item.contextSlot = '';
+        return;
+      }
+      item.contextRef = '';
+      item.contextPosition = '';
+      item.contextSlot = '';
+    });
+    return cards;
+  }
+
   function applyMetadata() {
     META_FIELDS.forEach(function (id) {
       var el = $(id);
@@ -475,8 +503,15 @@
     loaded.items = items;
     loaded.answerKey = key;
     loaded.metadata = inferMetadata(parsed);
+    loaded.contexts = mapContexts(parsed.contexts, loaded.items);
+    var warnings = Array.isArray(parsed.warnings) ? parsed.warnings.slice() : [];
+    if (contextModel && loaded.contexts.length) {
+      contextModel.syncLinks(loaded).forEach(function (number) {
+        warnings.push('question ' + number + ' is linked to more than one context');
+      });
+    }
     if (!persist()) return;
-    warn('');
+    warn(warnings.join(' '));
     showPaste(false);
     render();
   }

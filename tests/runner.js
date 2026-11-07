@@ -24,12 +24,11 @@ const CATEGORY_NAMES = CATEGORY_SELECT ? [...CATEGORY_SELECT[0]
   .filter(name => name && !name.startsWith('--')) : [];
 
 const INPUT_ORIGINS = new Set(['bank', 'anomaly', 'doc', 'synthetic', 'user_sample']);
-const SALVAGE_FLAG = 'OCR boundaries repaired; verify question and option split';
 
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
 const ASSERTED_KEYS = {
-  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'required_flags', 'forbidden_flags', 'needs_image', 'stimulus_count', 'stimuli'],
+  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'required_flags', 'forbidden_flags', 'needs_image', 'stimulus_count', 'stimuli', 'contexts', 'warnings'],
   question: ['a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'forbidden_flags', 'needs_image'],
   key: ['key']
 };
@@ -39,8 +38,9 @@ const UNASSERTED_KEYS = {
   key: ['ui_notes']
 };
 const HEADER_KEYS = ['year', 'subject_contains_any', 'category_contains_any'];
-const QUESTION_KEYS = ['num', 'index', 'a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'needs_image'];
+const QUESTION_KEYS = ['num', 'index', 'a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'needs_image', 'context_ref', 'context_position'];
 const STIMULUS_KEYS = ['order', 'source_num', 'nums', 'text_contains', 'missing'];
+const CONTEXT_KEYS = ['order', 'type', 'title', 'title_contains', 'text', 'text_contains', 'targets', 'expected_count'];
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -180,6 +180,43 @@ function validateExpected(spec) {
       }
     }
   }
+  if (has(expected, 'warnings')) {
+    if (!isStringArray(expected.warnings)) return 'expected.warnings must be an array of strings';
+  }
+  if (has(expected, 'contexts')) {
+    if (!Array.isArray(expected.contexts)) return 'expected.contexts must be an array';
+    for (let index = 0; index < expected.contexts.length; index++) {
+      const context = expected.contexts[index];
+      if (!context || typeof context !== 'object' || Array.isArray(context)) {
+        return `expected.contexts[${index}] must be an object`;
+      }
+      for (const key of Object.keys(context)) {
+        if (!CONTEXT_KEYS.includes(key)) {
+          return `unknown expected.contexts[${index}] key: ${show(key)}`;
+        }
+      }
+      if (has(context, 'order') && (!isInteger(context.order) || context.order < 1)) {
+        return `expected.contexts[${index}].order must be a positive integer`;
+      }
+      for (const key of ['type', 'title', 'text']) {
+        if (has(context, key) && typeof context[key] !== 'string') {
+          return `expected.contexts[${index}].${key} must be a string`;
+        }
+      }
+      for (const key of ['title_contains', 'text_contains']) {
+        if (has(context, key) && !isStringArray(context[key])) {
+          return `expected.contexts[${index}].${key} must be an array of strings`;
+        }
+      }
+      if (has(context, 'targets') &&
+          (!Array.isArray(context.targets) || !context.targets.every(isInteger))) {
+        return `expected.contexts[${index}].targets must be an array of integers`;
+      }
+      if (has(context, 'expected_count') && !isInteger(context.expected_count)) {
+        return `expected.contexts[${index}].expected_count must be an integer`;
+      }
+    }
+  }
   if (has(expected, 'form_behavior_no_key') &&
       (!expected.form_behavior_no_key ||
        typeof expected.form_behavior_no_key !== 'object' ||
@@ -246,6 +283,11 @@ function validateExpected(spec) {
       if (has(question, 'needs_image') && typeof question.needs_image !== 'boolean') {
         return `expected.questions[${index}].needs_image must be a boolean`;
       }
+      for (const field of ['context_ref', 'context_position']) {
+        if (has(question, field) && typeof question[field] !== 'string') {
+          return `expected.questions[${index}].${field} must be a string`;
+        }
+      }
     }
   }
 
@@ -254,17 +296,8 @@ function validateExpected(spec) {
 
 function parseFixture(spec, inputText) {
   if (spec.kind === 'questions') {
-    const salvage = parser.splitSectionsWithSalvage(inputText);
-    const sections = salvage.parts;
-    const fixed = parser.FIXES.reduce(
-      (text, [pattern, replacement]) => text.replace(pattern, replacement),
-      sections.questions
-    );
-    const items = parser.applyStimulusFlags(
-      parser.flagNumberingGaps(parser.splitQuestionItems(fixed).map(parser.parseQuestion))
-    );
-    if (salvage.salvaged) items.forEach(item => item.flags.push(SALVAGE_FLAG));
-    return { items, sections, header: parser.parseHeader(fixed) };
+    // The runner and the owner tool share the pure parsePaste orchestration.
+    return parser.parsePaste(inputText);
   }
 
   if (spec.kind === 'question') {
@@ -348,6 +381,92 @@ function checkQuestion(question, expected, label, checks) {
       Boolean(question.needsImage) === expected.needs_image,
       expected.needs_image,
       Boolean(question.needsImage)
+    ));
+  }
+
+  for (const field of ['context_ref', 'context_position']) {
+    if (Object.prototype.hasOwnProperty.call(expected, field)) {
+      const property = field === 'context_ref' ? 'contextRef' : 'contextPosition';
+      const value = question[property];
+      const actual = value === undefined || value === null ? '' : String(value);
+      checks.push(makeCheck(`${label}.${field}`, actual === expected[field], expected[field], actual));
+    }
+  }
+}
+
+function checkContexts(expected, actual, checks) {
+  checks.push(makeCheck(
+    'contexts count',
+    actual.length === expected.length,
+    expected.length,
+    actual.length
+  ));
+  for (let index = 0; index < expected.length; index++) {
+    const want = expected[index];
+    const context = actual[index];
+    const label = `contexts[${index}]`;
+    if (!context) {
+      checks.push(makeCheck(label, false, 'context present', 'not found'));
+      continue;
+    }
+    if (has(want, 'order')) {
+      checks.push(makeCheck(`${label}.order`, context.order === want.order, want.order, context.order));
+    }
+    if (has(want, 'type')) {
+      checks.push(makeCheck(`${label}.type`, context.type === want.type, want.type, context.type));
+    }
+    if (has(want, 'title')) {
+      checks.push(makeCheck(`${label}.title`, context.title === want.title, want.title, context.title));
+    }
+    if (Array.isArray(want.title_contains)) {
+      for (const needle of want.title_contains) {
+        checks.push(makeCheck(
+          `${label}.title contains ${show(needle)}`,
+          typeof context.title === 'string' && context.title.includes(needle),
+          true,
+          context.title
+        ));
+      }
+    }
+    if (has(want, 'text')) {
+      checks.push(makeCheck(`${label}.text`, context.text === want.text, want.text, context.text));
+    }
+    if (Array.isArray(want.text_contains)) {
+      for (const needle of want.text_contains) {
+        checks.push(makeCheck(
+          `${label}.text contains ${show(needle)}`,
+          typeof context.text === 'string' && context.text.includes(needle),
+          true,
+          context.text
+        ));
+      }
+    }
+    if (has(want, 'targets')) {
+      checks.push(makeCheck(`${label}.targets`, deepEqual(context.targets, want.targets), want.targets, context.targets));
+    }
+    if (has(want, 'expected_count')) {
+      checks.push(makeCheck(
+        `${label}.expected_count`,
+        context.expectedCount === want.expected_count,
+        want.expected_count,
+        context.expectedCount
+      ));
+    }
+  }
+}
+
+function checkWarnings(expected, actual, checks) {
+  const list = Array.isArray(actual) ? actual : [];
+  if (!expected.length) {
+    checks.push(makeCheck('no warnings', list.length === 0, [], list));
+    return;
+  }
+  for (const needle of expected) {
+    checks.push(makeCheck(
+      `warning contains ${show(needle)}`,
+      list.some(warning => typeof warning === 'string' && warning.includes(needle)),
+      true,
+      list
     ));
   }
 }
@@ -537,6 +656,14 @@ function runFixture(spec, inputText) {
     if (Object.prototype.hasOwnProperty.call(expected, 'key')) {
       const actualKey = parser.parseKey(actual.sections.answers);
       checks.push(makeCheck('key', deepEqual(actualKey, expected.key), expected.key, actualKey));
+    }
+
+    if (Array.isArray(expected.contexts)) {
+      checkContexts(expected.contexts, Array.isArray(actual.contexts) ? actual.contexts : [], checks);
+    }
+
+    if (Array.isArray(expected.warnings)) {
+      checkWarnings(expected.warnings, actual.warnings, checks);
     }
 
     checkForbiddenFlags(actual.items, expected.forbidden_flags, checks);

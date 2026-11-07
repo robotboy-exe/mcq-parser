@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "sample-cloze-long-cell",
+  "source": [
+    "synthetic overlong cloze cell added at OT09"
+  ],
+  "provenance": "Synthetic adversarial cloze table whose gap 51 D option is 501 characters, one more than the 500-character server limit.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/sample-cloze-long-cell.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [51, 52],
+    "contexts": [],
+    "warnings": [
+      "has an option longer than 500 characters at gap 51",
+      "read as ordinary questions"
+    ]
+  },
+  "must_not": [
+    "Overlong cloze option queued for native save",
+    "Partial cloze group saved without its long row"
+  ],
+  "notes": [
+    "The server column is varchar(500); the parser refuses the whole table before any native save."
+  ]
+}
