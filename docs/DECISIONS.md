@@ -1024,7 +1024,26 @@ losing the four transcribed options (phase-10 `FIX-1`).
 **Risk.** The refusal costs the automated cloze interpretation for that group;
 the owner separates the families or fills the options manually, which is the same
 degradation every other refusal uses. Two cloze groups that share numbering with
-each other, without an ordinary question, remain a separate unresolved vector.
+each other, without an ordinary question, are handled by D-70.
+
+## D-70 — A later duplicate cloze group is dropped whole with a naming warning
+
+**Choice.** `parsePaste()` keeps the first evidenced cloze group in paste order
+and drops every later group whose gap numbers share any number with an already
+kept cloze group. A dropped group contributes no context and no synthesized
+items, its source rows stay removed from the legacy text instead of becoming
+ordinary questions, and one warning names its gap numbers (`duplicate cloze
+group for gaps 71-72 ignored; kept the first occurrence.`). Parser API `2.3.2`.
+
+**Why.** Two passages with the same number range in one paste previously emitted
+a second context whose synthesized items were deduplicated away, leaving a
+zero-member card with no warning (phase-10 `FIX-2`). The owner's 2026-11-07
+requirement change chose keep-first deduplication: the administrator re-pastes
+the other passage separately when the warning appears.
+
+**Risk.** The dropped passage's options are not parsed in that paste; the warning
+tells the administrator to re-paste it. Groups with distinct numbering are
+unaffected and keep their contexts and links.
 
 ## Auto-Save verification notes
 

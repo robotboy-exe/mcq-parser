@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.3.1
+// Version: 2.3.2
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.3.1";
+const PARSER_VERSION = "2.3.2";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -886,6 +886,25 @@ function collidingNumbers(clozeItems, items) {
   return Array.from(new Set(clozeItems.filter(item => seen.has(item.num)).map(item => item.num)));
 }
 
+function dedupeCloze(contexts, clozeItems, warnings) {
+  const claimed = new Set(), dropped = new Set(), kept = [];
+  for (const context of contexts) {
+    if (context.type !== "cloze") { kept.push(context); continue; }
+    if (context.targets.some(num => claimed.has(num))) {
+      dropped.add(context.id);
+      const first = context.targets[0], last = context.targets[context.targets.length - 1];
+      const contiguous = context.targets.every((num, i) => i === 0 || num === context.targets[i - 1] + 1);
+      warnings.push("duplicate cloze group for gaps "
+        + (contiguous ? first + "-" + last : context.targets.join(", "))
+        + " ignored; kept the first occurrence.");
+      continue;
+    }
+    context.targets.forEach(num => claimed.add(num));
+    kept.push(context);
+  }
+  return { contexts: kept, items: clozeItems.filter(item => !dropped.has(item.contextRef)) };
+}
+
 function parsePaste(raw) {
   const source = raw || "";
   const engine = comprehensionEngine();
@@ -908,6 +927,9 @@ function parsePaste(raw) {
         + " collide with an ordinary question; read as ordinary questions.");
     }
   }
+  const deduped = dedupeCloze(detected.contexts, detected.clozeItems, detected.warnings);
+  detected.contexts = deduped.contexts;
+  detected.clozeItems = deduped.items;
   const { salvage, sections, header } = parsed;
   let items = mergeClozeItems(parsed.items, detected.clozeItems);
   if (salvage.salvaged) {

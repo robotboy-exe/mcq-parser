@@ -160,11 +160,12 @@ Status definitions:
 | INV-106 | An empty cell, an option over 500 characters, unstable alignment, unmatched row/gap numbers, or fewer than two gaps refuses the whole group with a warning; no partial context, no guessed option, and no cloze interpretation of a table without gap markers. | VERIFIED | D-68; `sample-cloze-missing-column`; `sample-cloze-mismatch`; `sample-cloze-long-cell`; `sample-cloze-not-cloze` |
 | INV-107 | Cloze blocks are isolated before `splitSections`; comprehension and cloze contexts coexist and are numbered `ctx-1…` in paste order; synthesized items merge in number order without numbering-gap flags between families, and no context or item is posted automatically. | VERIFIED | D-68; `sample-cloze-mixed`; `tests/owner-tool.js` |
 | INV-108 | A cloze row number that collides with an ordinary question number refuses that whole group with a warning naming the colliding numbers, leaves its rows on the legacy path, and never yields a partial context or optionless member; a second, non-colliding group in the same paste keeps its context and links. | VERIFIED | D-69; `tests/unit.js` collision tests |
+| INV-109 | When a later cloze group shares any gap number with an earlier kept group, the first group keeps its context and every member and the later group is dropped whole (no context, no synthesized items, its rows stay removed) with a warning naming its gap numbers; no zero-member context is emitted and nothing is posted automatically. | VERIFIED | D-70; `tests/unit.js` duplicate-group tests |
 
 ## Counts
 
-- Total: 108
-- VERIFIED: 96
+- Total: 109
+- VERIFIED: 97
 - AT_RISK: 12
 - CONFLICTED: 0
 

@@ -1,10 +1,10 @@
 # OT09 — Cloze OCR
 
-- **Status:** done 2026-11-06; rigorous Release C review returned `BLOCK` 2026-11-07 (`BLOCK-1`, `FIX-1`); `fix` applied 2026-11-07 (parser 2.3.1); re-review 2026-11-07 closed both and recorded `FIX-2` in its first review round, so a fix session is pending; external same-paste key sample open
+- **Status:** done 2026-11-06; parser 2.3.2; rigorous Release C review returned `BLOCK` 2026-11-07 (`BLOCK-1`, `FIX-1`), both fixed and closed by the first re-review; `FIX-2` recorded in that re-review, the owner changed its requirement on 2026-11-07 (keep the first group, drop later duplicates), the 2026-11-07 fix applied it, and the closure-focused second re-review returned `PASS` and closed `FIX-2` on 2026-11-08; phase 10 boundary committed 2026-11-08
 - **Depends on:** OT08
 - **Blocks:** OT10
-- **External gate:** representative same-paste answer-key evidence required for
-  final package acceptance
+- **External gate:** same-paste cloze answer key supplied 2026-11-08 in
+  `sample-passages.txt` (Q71-Q80); OT10 validates final coverage
 - **Release:** C
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -236,3 +236,119 @@ owner disposition. No review record is edited. Phase 10 stays not commit-ready
 and OT10 stays blocked until `FIX-2` is fixed and settled by re-review.
 
 `Commit: deferred`. Next: `@docs/plan/prompts/fix-session.md phase 10 OT09 FIX-2`
+
+## Owner Requirement Change - 2026-11-07 (`FIX-2`)
+
+The owner changed the `FIX-2` requirement before its fix session. This is an
+owner requirement change, not an escalation disposition: the immutable
+[`../reviews/owner-tool-2026-11-phase-10-re-review.md`](../reviews/owner-tool-2026-11-phase-10-re-review.md)
+record is unchanged, `FIX-2` remains unresolved, and phase 10 stays not
+commit-ready with OT10 blocked.
+
+**Replacement requirement (option A: keep first, drop later duplicates).**
+When two or more fully evidenced cloze groups share any gap number:
+
+- Keep the first group in paste order with its context and every member.
+- Drop every later colliding group as a whole: no cloze context, no synthesized
+  items, and its source rows are removed rather than re-parsed as ordinary
+  questions. Leaving those rows as ordinary questions would make them collide
+  with the kept group and trigger the `FIX-1` refusal.
+- Emit a warning naming the dropped group's gap numbers, for example
+  `duplicate cloze group for gaps 71-80 ignored; kept the first occurrence.`
+  The warning is what tells the administrator that the duplicate paste was
+  ignored.
+- No zero-member context may be emitted, and zero automatic posts or activation
+  remain mandatory.
+
+**Why option A.** The owner's realistic case is different passages or exam
+categories carrying the same number range in one paste, not identical text. The
+owner declined option B (keep the group with the most gap rows) as unnecessary
+engineering: every accepted cloze group already requires all four options per
+row, so option A keeps the first occurrence and the warning lets the
+administrator re-paste the other passage separately.
+
+**Effect.** The review's `FIX-2` "refuse the later group" criterion is replaced
+by this deduplication rule. The fix session must implement and evidence the
+replacement rule, then an independent re-review must settle `FIX-2`. `FIX-1`'s
+ordinary-question collision refusal is unchanged. `NOTE-1`-`NOTE-3` and the
+same-paste answer-key external gate are untouched.
+
+`Commit: deferred`. Next: `@docs/plan/prompts/fix-session.md phase 10 OT09 FIX-2`
+
+## `FIX-2` Fix Note - 2026-11-07
+
+Frozen finding `FIX-2` fixed under the owner's 2026-11-07 replacement
+requirement (keep the first evidenced group, drop later colliding groups whole
+with a naming warning). Parser API `2.3.2` (D-66: changed output bumps the
+version). The review record is unchanged and `FIX-2` is not closed until the
+independent re-review.
+
+| Production file | Additions/deletions (package base) | Final lines/bytes | Responsibility | Deployment / direct test |
+|---|---:|---:|---|---|
+| `src/parser/core.js` | +98 / -4 (OT09 package base; OT08 +76, `FIX-2` +22) | 1000 / 34520 | `parsePaste` composition, `FIX-1` collision refusal, keep-first cloze dedupe, `PARSER_VERSION` 2.3.2 | sha256 `12ee80337f3551e83ff0f3018f26ef360654ae54c618097a6edf0c4f307dbba9`; `tests/runner.js`; `tests/unit.js`; `tests/owner-tool.js` |
+| `deployed/admin_questions.php` | +5 / -5 cumulative | 1089 / 63924 | Load order unchanged; asset query `2.3.2` | sha256 `c41ca9d306d1e1ca943c18ae20a559d5e12b87b0eb9aba2e2af2dbe79f32ff49`; load-order probe; `php -l` unavailable on this host |
+| `src/parser/cloze.js` | +242 / -0 (unchanged by `FIX-2`) | 242 / 8639 | Recognition, columns, synthesis, blocked skip | sha256 `b9304a7d6ea1b2978c093354c15a7a2af1eff0c76e6fe62340d82271e75d2069`; runner; unit |
+| `src/owner-tool/controller.js` | +1 / -1 (unchanged by `FIX-2`) | 620 / 23208 | Context type map | sha256 `ac59e004c85bcb349bb8e814ee9b449bf4b9d790dfc6bebebc2da1fcaaf02c7b`; owner-tool 53 PASS |
+
+**Closure mapping.** `dedupeCloze` in `parsePaste` walks contexts in paste
+order, tracks every gap number claimed by a kept cloze context, and drops a
+later cloze context that shares any number with that set. A dropped group adds
+no context and no synthesized items (`clozeItems` are filtered by the dropped
+context id); its source rows were already removed from the legacy text by
+`cloze.detect`, so they do not return as ordinary questions. The warning is
+`duplicate cloze group for gaps 71-72 ignored; kept the first occurrence.` The
+first group keeps its context, `linkedCount`, and every member; no zero-member
+context is emitted. Groups with distinct numbering are untouched, and the
+`FIX-1` ordinary-question refusal path is unchanged.
+
+**Evidence.** New `tests/unit.js` cases:
+`two cloze groups that share numbering keep the first and drop the later`
+(one context, members 71-72, first group's options, warning names 71-72, no
+ordinary 71/72) and `two cloze groups with distinct numbering both survive`
+(two contexts, four members, zero warnings). `node tools/cloze-probe.js` on
+`tools/cloze-two-groups.txt` now exits 0: one card with two members and the
+naming warning, replacing the previous zero-member card. Version assertions at
+`tests/unit.js:255` and `tests/owner-tool.js:523` are `2.3.2`.
+
+**Regression.** runner 59 PASS / 0 FAIL / 0 PENDING; unit 162 PASS; owner-tool
+53 PASS; context-migration 13 PASS; cbt-context 4 PASS; `node --check` clean on
+the changed JS. `node tools/extract-bank.js --check` reproduces the known
+Windows/CRLF on-disk fixture mismatch, but all seven source/slice/extracted
+hashes match the manifest (verified independently), so it is the recorded
+pre-existing host artifact, not a regression.
+
+**Limitations.** PHP is absent on this host, so `php -l`, the PHP suites, and
+any dynamic candidate check did not run; OT10 still owns them. `NOTE-1`-`NOTE-3`
+and the same-paste answer-key external gate are untouched.
+
+**Excluded artifacts (separate list).** Supplied root SQL and archive copies;
+`db_conn.php`; `archive/`; the supplied sample text files except as fixture
+provenance; `deployed/cbt_practice.php` and `practice_title` (out of scope);
+legacy parser/UI/bookmarklet sources and the generated `src/bookmarklet.js`;
+OT06/OT07 delivery files; the OT08 tree files; `.cloud-attachments/`.
+
+`Commit: deferred`. Next: independent closure-focused re-review of `FIX-2`.
+
+## `FIX-2` Re-Review Closure - 2026-11-08
+
+The closure-focused second re-review
+[`../reviews/owner-tool-2026-11-phase-10-re-review-2.md`](../reviews/owner-tool-2026-11-phase-10-re-review-2.md)
+returned `PASS` and closed `FIX-2` against the owner's 2026-11-07 keep-first
+requirement. It reproduced 59 runner, 162 unit, 53 owner-tool, 13
+context-migration, and 4 cbt-context PASS, the cloze probe, and the zero-member
+sweep. No new finding was recorded; `NOTE-1`-`NOTE-3` remain non-blocking. The
+original review and first re-review are immutable and unchanged.
+
+The review measured HEAD `adaeb7c` plus the uncommitted fix. `core.js` is
++98/-4 from the OT09 package base (1000 lines / 34520 LF bytes), `cloze.js` is
+242 lines, and no file exceeds the externalize-first limit. Its Windows checkout
+bytes are larger only by the CRLF line count; the LF hashes match.
+
+The owner supplied same-paste answer keys in `sample-passages.txt` on
+2026-11-08: comprehension Q13-Q15 and cloze Q71-Q80. The comprehension key does
+not cover Q11-Q12, so OT10 must confirm whether the supplied sample satisfies
+final OT08 acceptance; the OT09 cloze key is complete. Parser mechanics remain
+proven synthetically by the fixtures and unit suite.
+
+`Commit: included in the 2026-11-08 phase 10 boundary commit.` Next: OT10 after
+the owner authorizes phase 11.

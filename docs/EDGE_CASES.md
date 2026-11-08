@@ -164,6 +164,7 @@ this table during review.
 | EC-103 | Cloze option limits | A cell is empty or longer than the 500-character server column | The group is refused with a warning before any native save | CONFIRMED | D-68; `sample-cloze-long-cell`; `tests/unit.js` |
 | EC-104 | Tabs or mixed context families | Rows use tabs, or a cloze table is pasted with a comprehension passage | Tabs expand to column stops; both contexts coexist as `ctx-1…` in paste order with no numbering-gap flag between them | CONFIRMED | D-68; `sample-cloze-tabs`; `sample-cloze-mixed`; `tests/unit.js` |
 | EC-105 | Cloze row number repeats an ordinary question | The paste carries an ordinary question numbered the same as a table row | Warning names the colliding numbers; the whole group stays legacy with its rows parsed as ordinary questions; no partial context, no optionless member, and any other cloze group keeps its links | CONFIRMED | D-69; `tests/unit.js` collision tests |
+| EC-106 | Two cloze groups share gap numbers | Two fully evidenced cloze groups in one paste repeat the same row numbers (for example both 71-72) | The first group keeps its context and every member; every later colliding group is dropped whole with a warning naming its gap numbers; no zero-member context, and the dropped rows do not become ordinary questions | CONFIRMED | D-70; `tests/unit.js` duplicate-group tests |
 
 Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
 
@@ -215,13 +216,15 @@ closed by the archived PHP/HTML sources:
   owner-tool tests; the real same-paste key evidence remains open.
 - EC-100 through EC-104 are CONFIRMED by the OT09 cloze fixtures, unit checks,
   and owner-tool tests; the real same-paste cloze key evidence remains open.
-- EC-105 is CONFIRMED by the 2026-11-07 `FIX-1` unit tests; the observed
-  two-cloze-groups-with-identical-numbering case is recorded as `FIX-2` in its
-  first review round and awaits its fix session.
+- EC-105 is CONFIRMED by the 2026-11-07 `FIX-1` unit tests.
+- EC-106 is CONFIRMED by the 2026-11-07 `FIX-2` unit tests: the owner replaced
+  the review's refuse-later criterion with keep-first deduplication, so the
+  first evidenced group survives and every later colliding group is dropped
+  whole with a warning naming its gap numbers.
 
 ## Counts
 
-- Total: 105
-- CONFIRMED: 101
+- Total: 106
+- CONFIRMED: 102
 - UNVERIFIED: 4
 - CONFLICTED: 0

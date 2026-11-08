@@ -1,6 +1,6 @@
 # Owner Tool Next Steps
 
-Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-06.
+Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-08.
 
 ## Confirmed Starting Point
 
@@ -142,7 +142,7 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-06.
   passages, parses one complete `(a)`-`(d)` set per linked question, and fills
   editable OT07 draft cards with zero automatic posts (2026-11-06). Its light
   review passed at OT09 Gate 1.
-- [x] Implement OT09 cloze OCR: parser 2.3.1 recognizes the evidenced numbered
+- [x] Implement OT09 cloze OCR: parser 2.3.2 recognizes the evidenced numbered
   gap passage and A-D table, emits one shared cloze context with `[[gap:N]]`
   tokens, and synthesizes ten editable linked questions with slots in the same
   zero-post draft workflow (2026-11-06).
@@ -151,13 +151,20 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-06.
   [`../reviews/owner-tool-2026-11-phase-10.md`](../reviews/owner-tool-2026-11-phase-10.md)
   (2026-11-07): `cloze.js` is 242 lines and a colliding cloze group is refused
   with a warning (parser 2.3.1). The re-review closed both findings.
-- [ ] Fix `FIX-2`, recorded in its first review round by
-  [`../reviews/owner-tool-2026-11-phase-10-re-review.md`](../reviews/owner-tool-2026-11-phase-10-re-review.md),
-  under the two-round lifecycle; phase 10 is not commit-ready and OT10 stays
-  blocked until it is fixed and re-reviewed.
-- [ ] Obtain source-backed answer keys for comprehension Q11-Q15 and cloze
-  Q71-Q80 before final OT08/OT09 acceptance. Both same-paste mechanics are
-  proven synthetically; the representative real samples are still missing.
+- [x] Fix `FIX-2` under the owner's 2026-11-07 requirement change: keep the
+  first evidenced cloze group and drop every later colliding group as a whole
+  with a warning naming the shared gap numbers (recorded in
+  [`ot-09-cloze-ocr.md`](ot-09-cloze-ocr.md)); the finding was recorded in its
+  first review round by
+  [`../reviews/owner-tool-2026-11-phase-10-re-review.md`](../reviews/owner-tool-2026-11-phase-10-re-review.md).
+  The 2026-11-07 fix dedupes cloze contexts in `parsePaste` (parser 2.3.2), and
+  the closure-focused second re-review returned `PASS` and closed `FIX-2` on
+  2026-11-08; phase 10 is review-settled and included in the 2026-11-08 boundary
+  commit.
+- [ ] Confirm final OT08 coverage. The owner supplied same-paste keys in
+  `sample-passages.txt` on 2026-11-08: comprehension Q13-Q15 and cloze Q71-Q80.
+  The cloze key is complete; comprehension Q11-Q12 are still missing. Both
+  same-paste mechanics are also proven synthetically.
 
 ## OT10 Deferred Verification
 

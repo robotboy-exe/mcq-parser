@@ -336,6 +336,13 @@ fully evidenced cloze blocks from the text handed on to `splitSections`.
   with a warning naming the colliding numbers and its rows stay on the legacy
   path. No partial group, optionless member, or silently dropped row is
   produced; other cloze groups in the paste keep their contexts and links.
+- **Duplicate cloze groups:** when a later cloze group shares any gap number
+  with an earlier kept group, the later group is dropped whole (no context, no
+  synthesized items, and its source rows stay removed rather than becoming
+  ordinary questions) and a warning names its gap numbers
+  (`duplicate cloze group for gaps 71-72 ignored; kept the first occurrence.`).
+  The first group keeps its context and every member; no zero-member context is
+  emitted.
 - **Composition:** a paste may carry comprehension, cloze, and standalone
   groups. Contexts are renumbered `ctx-1…` in paste order and items are merged
   in number order without numbering-gap flags between families.

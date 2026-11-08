@@ -520,7 +520,7 @@ test('full paste fills the native fields and stores a versioned state', () => {
   assertEqual(env.field('exam_category_id'), '2', 'inferred category');
   const state = env.state();
   assertEqual(state.version, 1, 'state version');
-  assertEqual(state.parserVersion, '2.3.1', 'parser version');
+  assertEqual(state.parserVersion, '2.3.2', 'parser version');
   assertEqual(state.items.length, 2, 'queue length');
   assertEqual(state.answerKey['1'], 'D', 'answer key');
   assert(state.queueId.indexOf('q-') === 0, 'queue id is generated');

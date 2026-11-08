@@ -13,7 +13,7 @@ features.
 ## Canonical parser core
 
 The pure, canonical parser implementation lives in `src/parser/core.js` (API
-version `2.3.1`). `src/parser/comprehension.js` holds the pure comprehension
+version `2.3.2`). `src/parser/comprehension.js` holds the pure comprehension
 context detection and the scoped `(a)`-`(d)` parser; `src/parser/cloze.js` holds
 the pure cloze gap/table detection, column inference, and synthesized cloze
 items. The browser admin page must load both before `core.js`, and Node resolves
@@ -101,7 +101,7 @@ delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
 | `OPTION` regex | Tightly coupled to inline options, dotless-newline options, and leading prose articles. Three separate regressions already occurred here. Never add `^` to the dotless branch; never remove the whitespace-prefixed dotted branch; never pre-collapse newlines (qwen-2 H05; R01–R04). Keep the `B.C.` abbreviation skip (D-48), the spaced-slash normalization (D-49), and the bounded missing-label repair (D-47) separate from the main regex. |
 | Blank `C.` / `[^\S\n]*` | The horizontal-whitespace class is what keeps a blank option from consuming the next label. Changing it can resurrect the "option D missing" bug (INV-23). |
 | Loose E/F (`LOOSE`) | Can mistake a continuation line such as `F = ma` for Option F. Do not broaden it (claude §5.3). |
-| `cloze.js` recognition and columns | Every refusal is deliberate. Column starts must stay row-derived (the header indent is shifted by the row labels), boundaries must stay word-safe, and no column work may follow a global whitespace collapse. A gap token is exactly `[[gap:N]]` with the source number; never renumber rows or keep dotted runs. Refuse the whole group on an empty cell, an option over 500 characters, unmatched row/gap numbers, fewer than two gaps, or unstable alignment (INV-104–INV-107, D-68). |
+| `cloze.js` recognition and columns | Every refusal is deliberate. Column starts must stay row-derived (the header indent is shifted by the row labels), boundaries must stay word-safe, and no column work may follow a global whitespace collapse. A gap token is exactly `[[gap:N]]` with the source number; never renumber rows or keep dotted runs. Refuse the whole group on an empty cell, an option over 500 characters, unmatched row/gap numbers, fewer than two gaps, or unstable alignment (INV-104–INV-107, D-68). A later cloze group that repeats an earlier group's gap numbers is dropped whole with a naming warning; keep the first group and never emit a zero-member context (INV-109, D-70). |
 | `splitSections` | Rule order (divider → key-only → header → structure) is fragile. A false positive splits a question; a miss leaves key lines in the question stream (claude §5.9). Divider-only runs of three or more equals signs (`========`) are section separators and are blanked before line slicing. Keep that predicate narrow (D-46). |
 | `splitQuestions` numbering guard | `n <= last || n > last + 5` drops repeats and large jumps. It can merge real questions after a restart or OCR digit error (INV-21, INV-24). |
 | `salvageNormalize` / `splitSectionsWithSalvage` | The repair must stay a no-op on bank text. The `inserts >= 2` trigger and the `after > before` chunk gate are mandatory; a repair that does not add questions must be discarded and the strict result kept byte-for-byte (INV-72). |

@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-06.
+Last updated: 2026-11-08.
 
 ## Active cycle
 
@@ -25,19 +25,25 @@ Last updated: 2026-11-06.
   closed by the closure-focused re-review on 2026-11-06. Phase 8 is
   review-settled and included in the 2026-11-06 boundary commit. OT08 is
   implemented with parser 2.2.0 and passed its light review at OT09 Gate 1. OT09
-  cloze OCR is implemented with parser 2.3.1; its rigorous Release C review
+  cloze OCR is implemented with parser 2.3.2; its rigorous Release C review
   returned `BLOCK` on 2026-11-07 (`BLOCK-1`: unapproved 274-line new module;
   `FIX-1`: silent partial cloze group on duplicate numbering), the owner
   authorized `fix` for both under their frozen closure contracts, and the
   2026-11-07 fix applied both (`cloze.js` 242 lines; colliding groups refused;
   parser 2.3.1). The first independent re-review closed both findings and
   recorded `FIX-2` (two cloze groups sharing numbering lose the later group's
-  options) in its first review round, so it routes to a fix session under the
-  two-round lifecycle. Phase 10 is not commit-ready and OT10 is blocked. The
-  external same-paste answer-key samples are still open.
-  Target-runtime migration/preflight/rollback execution and browser/admin PRG
-  checks remain deferred to OT10.
-- Product implementation: parser 2.3.1 (comprehension and cloze contexts), exact
+  options) in its first review round. On 2026-11-07 the owner changed the
+  `FIX-2` requirement to keep the first evidenced group and drop later colliding
+  groups with a warning naming the shared gap numbers; the 2026-11-07 fix
+  applied that rule (parser 2.3.2), and the closure-focused second re-review
+  returned `PASS` and closed `FIX-2` on 2026-11-08. Phase 10 is review-settled
+  and included in the 2026-11-08 boundary commit. The owner supplied same-paste
+  answer keys in `sample-passages.txt` on 2026-11-08 (comprehension Q13-Q15,
+  cloze Q71-Q80); the comprehension key does not cover Q11-Q12, so OT10 must
+  confirm final OT08 coverage. OT10 remains blocked on local PHP/staging
+  execution. Target-runtime migration/preflight/rollback execution and
+  browser/admin PRG checks remain deferred to OT10.
+- Product implementation: parser 2.3.2 (comprehension and cloze contexts), exact
   underline rendering, multiline
   stems, Add/Edit formatting, native PRG preservation, shared-context
   schema/admin/candidate delivery, and the manual owner context workflow are in
@@ -49,6 +55,12 @@ Last updated: 2026-11-06.
 
 - Application target: PHP 8.3.
 - Database: MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`.
+- Local Laragon binaries are present at
+  `C:\laragon\bin\php\php-8.3.16-Win32-vs16-x64\php.exe` and
+  `C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe` (not on PATH). They
+  were not executed for the phase-10 boundary; OT10 still requires the PHP 8.3
+  target and a disposable production-shaped database (the local MySQL is 8.4.3,
+  not the 8.0.41 target).
 - Connection contract: root `db_conn.php` supplies the PDO connection
   (charset `utf8mb4`, exception mode, associative fetches, native prepares). The
   full credential-bearing `cbt_db.php` is no longer required.
@@ -73,6 +85,7 @@ Last updated: 2026-11-06.
 | OT08 implementation snapshot (base `224957e`, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `node tests/cbt-context.js`, and `node tools/extract-bank.js --check` on 2026-11-06 | 52 PASS, 0 FAIL, 1 PENDING runner (cloze); 151 unit; 51 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; PHP absent |
 | OT09 implementation snapshot (same tree, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `node tests/cbt-context.js`, and `node tools/extract-bank.js --check` on 2026-11-06 | 59 PASS, 0 FAIL, 0 PENDING runner; 158 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; PHP absent |
 | OT09 `BLOCK-1`/`FIX-1` fix snapshot (same tree, uncommitted, parser 2.3.1) | the same six commands plus `node --check` on the changed JS and `wc -l src/parser/cloze.js` on 2026-11-07 | 59 PASS, 0 FAIL, 0 PENDING runner; 160 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; cloze.js 242 lines; PHP absent |
+| OT09 `FIX-2` fix and second re-review (phase 10 boundary, committed 2026-11-08, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `node tools/extract-bank.js --check`, and `node --check` on 2026-11-07; independent re-review reproduced them on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; cloze probe exit 0; all 7 source/slice/extracted bank hashes match (the CLI still reports the known Windows/CRLF on-disk fixture mismatch); cloze.js 242 lines; PHP not executed |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -124,7 +137,7 @@ Supplied DDL SHA-256:
 | Artifact | Required by | Reason |
 |---|---|---|
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
-| Representative context paste with answer key | OT08/OT09 final acceptance | Prove the one-box key workflow on the new families |
+| Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); OT10 validates the remaining Q11-Q12 coverage |
 
 OT05 implementation, accepted fixes, third re-review, and `BLOCK-8` owner
 disposition are complete. The owner rejected `BLOCK-8` for the authoritative,

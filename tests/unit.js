@@ -252,7 +252,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.3.1', 'parser version');
+  eq(parsed.version, '2.3.2', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');
@@ -439,6 +439,69 @@ test('a colliding cloze group leaves a second cloze group intact', () => {
   eq(parsed.contexts[0].linkedCount, 2, 'second group fully linked');
   eq(parsed.items.filter(item => item.contextRef).map(item => item.num).join(','), '81,82', 'linked items');
   assert(parsed.warnings.some(w => w.includes('numbered gap rows 71')), 'collision warning kept');
+});
+
+test('two cloze groups that share numbering keep the first and drop the later', () => {
+  const instruction = 'In the following passage the numbered gaps indicate missing words. '
+    + 'Four options are given in columns lettered A to D.';
+  const parsed = parser.parsePaste([
+    'SECTION A: CLOZE PASSAGE',
+    '',
+    instruction,
+    '',
+    'The head teacher ......... 71. .......... and the students ....... 72. ......... the hall.',
+    '',
+    'A    B    C    D',
+    '71. went    goes    gone    going',
+    '72. enter    enters    entered    entering',
+    '',
+    'SECTION B: CLOZE PASSAGE',
+    '',
+    instruction,
+    '',
+    'The nurse ......... 71. .......... and the doctor ....... 72. ......... the ward.',
+    '',
+    'A    B    C    D',
+    '71. wrote    writes    written    writing',
+    '72. visit    visits    visited    visiting'
+  ].join('\n'));
+  eq(parsed.contexts.length, 1, 'only the first group survives');
+  eq(parsed.contexts[0].targets.join(','), '71,72', 'kept group targets');
+  eq(parsed.items.filter(item => item.contextRef).map(item => item.num).join(','), '71,72', 'kept members');
+  eq(parsed.items.length, 2, 'dropped rows are not ordinary questions');
+  eq(parsed.items[0].a, 'went', 'first group options kept');
+  assert(parsed.warnings.some(w => w.includes('duplicate cloze group for gaps 71-72')
+    && w.includes('kept the first occurrence')), 'names the dropped group');
+});
+
+test('two cloze groups with distinct numbering both survive', () => {
+  const instruction = 'In the following passage the numbered gaps indicate missing words. '
+    + 'Four options are given in columns lettered A to D.';
+  const parsed = parser.parsePaste([
+    'SECTION A: CLOZE PASSAGE',
+    '',
+    instruction,
+    '',
+    'The head teacher ......... 71. .......... and the students ....... 72. ......... the hall.',
+    '',
+    'A    B    C    D',
+    '71. went    goes    gone    going',
+    '72. enter    enters    entered    entering',
+    '',
+    'SECTION B: CLOZE PASSAGE',
+    '',
+    instruction,
+    '',
+    'Prices rose ......... 81. .......... and fell ....... 82. ......... again.',
+    '',
+    'A    B    C    D',
+    '81. up    down    high    low',
+    '82. fast    slow    quick    late'
+  ].join('\n'));
+  eq(parsed.contexts.length, 2, 'both groups survive');
+  eq(parsed.contexts.map(context => context.targets.join(',')).join('|'), '71,72|81,82', 'targets');
+  eq(parsed.items.filter(item => item.contextRef).map(item => item.num).join(','), '71,72,81,82', 'all members');
+  eq(parsed.warnings.length, 0, 'no warnings');
 });
 
 test('parsePaste keeps a comprehension and a cloze context apart in one paste', () => {

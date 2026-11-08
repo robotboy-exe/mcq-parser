@@ -36,7 +36,7 @@ node -e "const p=require('./src/parser/core.js'); console.log(p.parsePaste('1. W
 ```text
 src/
   parser/
-    core.js            canonical pure parser (dual Node/Browser export, v2.3.1)
+    core.js            canonical pure parser (dual Node/Browser export, v2.3.2)
     comprehension.js   pure passage detection + scoped (a)-(d) options
     cloze.js           pure gap/table detection + generated cloze questions
     parser.js          legacy parser + auto-save helper module (re-exports core)
@@ -140,13 +140,19 @@ The available-source reader/writer audit passed on 2026-11-05. OT06 targets
 rigorous Release B review returned PASS WITH ACCEPTED FINDINGS, and `FIX-1`
 (handoff hash/byte accuracy) was closed by the 2026-11-06 closure-focused
 re-review, so phase 8 is review-settled. OT08 is implemented and passed its
-light review at OT09 Gate 1. OT09 cloze OCR is implemented with parser 2.3.1;
+light review at OT09 Gate 1. OT09 cloze OCR is implemented with parser 2.3.2;
 its rigorous Release C review returned `BLOCK` on 2026-11-07 (`BLOCK-1`,
 `FIX-1`), the owner authorized `fix` for both, and the fix was applied on
 2026-11-07 (`cloze.js` 242 lines; a colliding cloze group is refused with a
 warning); the re-review closed both and recorded `FIX-2` in its first review
-round, so a first-round fix session is pending. Runtime/staging verification is
-deferred to OT10.
+round, and the owner changed the `FIX-2` requirement on 2026-11-07 to keep the
+first cloze group and drop later colliding groups with a naming warning. The
+2026-11-07 fix session applied that rule (parser 2.3.2), and the closure-focused
+second re-review returned `PASS` and closed `FIX-2` on 2026-11-08, so phase 10
+is review-settled and included in the 2026-11-08 boundary commit. Same-paste
+answer keys were supplied in `sample-passages.txt` on 2026-11-08 (comprehension
+Q13-Q15, cloze Q71-Q80) for OT10 validation.
+Runtime/staging verification is deferred to OT10.
 
 Active work happens on `owner-tool-integration`. `main` is the published baseline
 and the remote default; do not start new implementation there. The fixture runner

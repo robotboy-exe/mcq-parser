@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-07.
+Last updated: 2026-11-08.
 
 ## Current state
 
@@ -30,12 +30,20 @@ Last updated: 2026-11-07.
   owner authorized `FIX-1`, which was applied and closed by re-review on
   2026-11-06. Phase 8 is review-settled and included in the 2026-11-06 boundary
   commit. OT08 passed its light review at OT09 Gate 1, and OT09 cloze OCR is
-  implemented (parser 2.3.1). Its rigorous Release C review returned `BLOCK` on
+  implemented (parser 2.3.2). Its rigorous Release C review returned `BLOCK` on
   2026-11-07 (`BLOCK-1`, `FIX-1`), the owner authorized `fix` for both, and the
   2026-11-07 fix applied both under their frozen closure contracts. The first
   independent re-review closed `BLOCK-1` and `FIX-1` and recorded one new
-  finding, `FIX-2`, in its first review round, so it routes to a fix session
-  under the two-round lifecycle rather than to owner disposition.
+  finding, `FIX-2`, in its first review round. On 2026-11-07 the owner changed
+  the `FIX-2` requirement: keep the first evidenced group and drop every later
+  colliding group as a whole with a warning naming the shared gap numbers,
+  instead of refusing the later group. The 2026-11-07 fix session implemented
+  that replacement rule (parser 2.3.2), and the closure-focused second re-review
+  returned `PASS` and closed `FIX-2` on 2026-11-08. Phase 10 is review-settled
+  and included in the 2026-11-08 boundary commit. Same-paste answer keys were
+  supplied in `sample-passages.txt` on 2026-11-08 (comprehension Q13-Q15, cloze
+  Q71-Q80); OT10 validates the remaining coverage. OT10 remains blocked on local
+  PHP/staging execution and is not started.
 - Working branch: `owner-tool-integration` is the authoritative integration and
   implementation line. `main` is the published baseline, not the current work
   branch. See [Branch strategy](#branch-strategy).
@@ -188,8 +196,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review (settled) | done; `BLOCK-8` rejected, review/disposition settled, boundary commit authorized | none; runtime migration deferred to OT10 |
 | 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | done; light review PASS at OT07 Gate 1 | satisfied: [reader/writer audit](owner-tool/ot-06-reader-writer-audit.md) |
 | 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | done; Release B review PASS WITH ACCEPTED FINDINGS; `FIX-1` closed by re-review 2026-11-06; phase 8 boundary committed; `NOTE-1` non-blocking | inherited server contract |
-| 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | done; parser 2.2.0; light review PASS at OT09 Gate 1 | answer-key sample for final acceptance (open) |
-| 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.1; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` first-round fix pending | answer-key sample for final acceptance (open) |
+| 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | done; parser 2.2.0; light review PASS at OT09 Gate 1 | key sample partially supplied 2026-11-08 (Q13-Q15; Q11-Q12 pending) |
+| 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed | cloze key supplied 2026-11-08 (OT10 validates) |
 | 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked | local PHP, staging, all prior artifacts |
 
 The active map duplicates these statuses for session resolution. Update both
@@ -255,7 +263,7 @@ verifies the detail path with the rest of Release A.
 | OT05 remediation | OT05-EXT-01 plus accepted Phase 6 fixes | rigorous | settled; `BLOCK-8` rejected by owner, boundary commit authorized |
 | phase 8 close | OT07 Release B | rigorous | pass; review PASS WITH ACCEPTED FINDINGS, `FIX-1` closed by re-review 2026-11-06, boundary committed |
 | phase 9 | OT08 | light at OT09 Gate 1 | pass at OT09 Gate 1 |
-| phase 10 close | OT09 Release C | rigorous | implementation done 2026-11-06; review `BLOCK` 2026-11-07 (`BLOCK-1`, `FIX-1`); `fix` applied 2026-11-07; re-review 2026-11-07 closed both and recorded `FIX-2` in its first review round; first-round fix pending |
+| phase 10 close | OT09 Release C | rigorous | pass; implementation done 2026-11-06; `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed |
 | phase 11 close | OT10 final release | rigorous | pending |
 
 OT05 implementation and its accepted Phase 6 fixes are complete. The third
@@ -289,17 +297,25 @@ colliding group instead of dropping its row (parser 2.3.1). The 2026-11-07
 re-review closed both findings and recorded `FIX-2` (two cloze groups sharing
 numbering silently lose the later group's options) as a new first-round
 finding; under the two-round lifecycle it routes to a fix session, not owner
-disposition. Phase 10 is not commit-ready. The external gate is still
-open: `sample-passages.txt` contains no answer key, so a representative
-same-paste key sample is required before final package acceptance. That phase 8
-paragraph's manual-card workflow is now fed by the parser; target-runtime
-execution remains OT10. The audit carries forward the archived legacy-writer
-deployment check as an OT10 constraint.
+disposition. On 2026-11-07 the owner replaced the `FIX-2` closure criterion with
+keep-first deduplication: keep the first evidenced group, drop every later
+colliding group as a whole with a warning naming the shared gap numbers, and let
+the administrator re-paste the other passage separately. The 2026-11-07 fix
+session implemented that rule (parser 2.3.2) with a dedupe in `parsePaste`, and
+the closure-focused second re-review returned `PASS` and closed `FIX-2` on
+2026-11-08. The immutable review record is unchanged. Phase 10 is review-settled
+and included in the 2026-11-08 boundary commit. The owner supplied same-paste
+answer keys in `sample-passages.txt` on 2026-11-08: comprehension Q13-Q15 and
+cloze Q71-Q80. The comprehension key does not cover Q11-Q12, so OT10 must
+confirm final OT08 coverage; the OT09 key is complete. That phase 8 paragraph's
+manual-card workflow is now fed by the parser; target-runtime execution remains
+OT10. The audit carries forward the archived legacy-writer deployment check as
+an OT10 constraint.
 
 Current workflow stop:
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/fix-session.md phase 10 OT09 FIX-2
+NEXT COMMAND: NONE - phase 11 deferred by owner
 ```
 
 Rigorous reviews use [`prompts/review-session.md`](prompts/review-session.md)
@@ -310,7 +326,11 @@ survives its first re-review requires a recorded owner disposition. The OT07
 closure-focused re-review closed it. The OT09 `BLOCK-1`/`FIX-1` fix is
 similarly closed, and the immutable phase-10 re-review's disposition
 recommendation for `FIX-2` is superseded on routing by the two-round lifecycle.
-Explicit dispositions follow the finding lifecycle contract above.
+The owner's 2026-11-07 requirement change replaced the review's `FIX-2`
+refuse-later criterion with keep-first deduplication without altering the review
+record; the 2026-11-07 fix applied that rule, and the second re-review settled
+`FIX-2` on 2026-11-08. Explicit dispositions follow the finding lifecycle
+contract above.
 
 ## Session protocol
 
