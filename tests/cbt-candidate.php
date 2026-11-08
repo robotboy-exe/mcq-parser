@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/deployed/cbt_candidate_selection.php';
-require_once dirname(__DIR__) . '/deployed/cbt_candidate_repository.php';
+require_once dirname(__DIR__) . '/deployed/cbt_candidate.php';
 
 $passed = 0;
 $failed = 0;

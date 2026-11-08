@@ -4,10 +4,7 @@ declare(strict_types=1);
 // OT05 admin integration tests. These execute the extracted context request
 // handlers against SQLite and render the production PHP fragments.
 
-require_once dirname(__DIR__) . '/deployed/context_lib.php';
-require_once dirname(__DIR__) . '/deployed/admin_context_data.php';
-require_once dirname(__DIR__) . '/deployed/admin_context_actions.php';
-require_once dirname(__DIR__) . '/deployed/admin_question_mutations.php';
+require_once dirname(__DIR__) . '/deployed/admin_context.php';
 
 $passed = 0;
 $failed = 0;
@@ -564,14 +561,6 @@ function h(mixed $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function admin_render(string $path, array $variables): string
-{
-    extract($variables, EXTR_SKIP);
-    ob_start();
-    include $path;
-    return (string) ob_get_clean();
-}
-
 function admin_assert_no_nested_forms(string $html): void
 {
     preg_match_all('/<\/?form\b[^>]*>/i', $html, $matches);
@@ -597,14 +586,14 @@ admin_test('rendered context forms keep selectors and never nest forms', functio
         'context_position' => '',
         'context_slot' => '',
     ], cbt_admin_context_default_values());
-    $fieldHtml = admin_render(dirname(__DIR__) . '/deployed/admin_question_context_fields.php', [
+    $fieldHtml = cbt_admin_render_question_context_fields([
         'contextSchemaAvailable' => true,
         'contexts' => $contexts,
         'formValues' => $formValues,
     ]);
     $_SESSION['cbt_admin_csrf'] = 'test-token';
     $_SERVER['SCRIPT_NAME'] = '/admin_questions.php';
-    $managementHtml = admin_render(dirname(__DIR__) . '/deployed/admin_context_management.php', [
+    $managementHtml = cbt_admin_render_context_management([
         'pdo' => $pdo,
         'editingContextId' => 0,
         'contextSchemaAvailable' => true,
@@ -639,7 +628,7 @@ admin_test('rendered context forms keep selectors and never nest forms', functio
     }
 
     $pdo->exec('UPDATE question_contexts SET is_active = 1 WHERE id = ' . $contextId);
-    $activeHtml = admin_render(dirname(__DIR__) . '/deployed/admin_context_management.php', [
+    $activeHtml = cbt_admin_render_context_management([
         'pdo' => $pdo,
         'editingContextId' => 0,
         'contextSchemaAvailable' => true,
@@ -658,7 +647,7 @@ admin_test('failed context rendering preserves selected pools and a leading newl
     ]));
     $_SESSION['cbt_admin_csrf'] = 'test-token';
     $_SERVER['SCRIPT_NAME'] = '/admin_questions.php';
-    $html = admin_render(dirname(__DIR__) . '/deployed/admin_context_management.php', [
+    $html = cbt_admin_render_context_management([
         'editingContextId' => 0,
         'contextSchemaAvailable' => true,
         'contextValues' => $contextValues,

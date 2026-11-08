@@ -5,8 +5,9 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const parser = require('../src/parser/parser.js');
-const comprehension = require('../src/parser/comprehension.js');
-const cloze = require('../src/parser/cloze.js');
+const core = require('../src/parser/core.js');
+const comprehension = core.comprehensionEngine();
+const cloze = core.clozeEngine();
 const uiHarness = require('./ui-harness.js');
 
 const INPUT_DIR = path.resolve(__dirname, '../fixtures/inputs');

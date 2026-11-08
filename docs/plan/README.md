@@ -42,7 +42,11 @@ Last updated: 2026-11-08.
   returned `PASS` and closed `FIX-2` on 2026-11-08. Phase 10 is review-settled
   and included in the 2026-11-08 boundary commit. Same-paste answer keys were
   supplied in `sample-passages.txt` on 2026-11-08 (comprehension Q13-Q15, cloze
-  Q71-Q80); OT10 validates the remaining coverage. OT10 remains blocked on local
+  Q71-Q80); OT10 validates the remaining coverage. OT09A production
+  consolidation is done and recorded; it changes the handoff file set, not the
+  OT10 gates. Its `FIX-1` documentation evidence gap was fixed and closed by the
+  closure-focused re-review on 2026-11-08, so phase 10A is review-settled and
+  included in the 2026-11-08 boundary commit. OT10 remains blocked on local
   PHP/staging execution and is not started.
 - Working branch: `owner-tool-integration` is the authoritative integration and
   implementation line. `main` is the published baseline, not the current work
@@ -69,6 +73,20 @@ Last updated: 2026-11-08.
   cbt-context PASS, 7 bank slices OK. PHP is absent on this host, so no PHP
   lint/suite ran; no live/staging or browser write was used. The external
   same-paste key sample remains open.
+- OT09A evidence (uncommitted, base `652c891`): 59 runner PASS, 0 PENDING; 162
+  unit PASS; 53 owner-tool PASS; 14 context-migration PASS; 5 cbt-context PASS;
+  13 context-lib PASS; 19 context-admin PASS; 6 context-preflight PASS; 9 PHP
+  renderer PASS; 7 cbt-candidate PASS; PHP 8.3 lint PASS. Handoff is 12
+  production files plus 2 ops; live-origin additions are +95, +53, +20, and +2.
+  The known Windows/CRLF `extract-bank` pre-2026 mismatch remains pre-existing.
+  No live/staging or browser write was used, and no commit was made.
+- OT09A `FIX-1` (2026-11-08, documentation only): the package handoff now
+  records the complete externalize-first table (base deltas, final lines and LF
+  bytes, SHA-256, responsibility, deployment inclusion, direct production-path
+  test) and a separate excluded-artifact list, reproduced from `652c891`. No
+  product, test, fixture, parser-version, state-key, or deployment change. The
+  closure-focused re-review returned `PASS` and closed `FIX-1` on 2026-11-08;
+  phase 10A is review-settled and included in the 2026-11-08 boundary commit.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
@@ -98,14 +116,15 @@ and cycle close.
 
 - Record an exact package-base Git ref before implementation. A fix session
   inherits the original package base and does not reset its line counters.
-- For each production file that exists at the package base, the additions column
-  from `git diff --numstat <package-base> -- <file>` must not exceed 100 for the
-  package. Deletions do not offset additions.
-- A new production module may contain at most 250 readable lines in its final,
-  unminified source form.
-- Any excess requires explicit owner approval at Gate 1. The approval must name
-  the exact file, measured excess, and justification; `go`, package acceptance,
-  or approval of another file does not imply an exception.
+- For each live-origin production file, the cumulative additions from its
+  archived live snapshot must not exceed 100 by `git diff --numstat`. Deletions
+  do not offset additions. This protects the original live files only.
+- New phase-cycle production modules have no fixed line cap. They must remain
+  cohesive, avoid unnecessary fragmentation, and have an explicit deployment
+  path.
+- A proposed live-origin excess requires explicit owner approval at Gate 1
+  naming the exact file, measured excess, and justification. `go`, package
+  acceptance, or approval of another file does not imply an exception.
 - Cohesive new behavior belongs in focused modules/includes. Existing entry
   points retain only imports/includes, dispatch, narrow wiring, and unavoidable
   local transaction hooks.
@@ -198,6 +217,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | done; Release B review PASS WITH ACCEPTED FINDINGS; `FIX-1` closed by re-review 2026-11-06; phase 8 boundary committed; `NOTE-1` non-blocking | inherited server contract |
 | 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | done; parser 2.2.0; light review PASS at OT09 Gate 1 | key sample partially supplied 2026-11-08 (Q13-Q15; Q11-Q12 pending) |
 | 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed | cloze key supplied 2026-11-08 (OT10 validates) |
+| 10A | OT09A | [Production Consolidation](owner-tool/ot-09a-production-consolidation.md) | OT09 boundary | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed | none; OT10 gates unchanged |
 | 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked | local PHP, staging, all prior artifacts |
 
 The active map duplicates these statuses for session resolution. Update both
@@ -315,7 +335,7 @@ an OT10 constraint.
 Current workflow stop:
 
 ```text
-NEXT COMMAND: NONE - phase 11 deferred by owner
+NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 11
 ```
 
 Rigorous reviews use [`prompts/review-session.md`](prompts/review-session.md)

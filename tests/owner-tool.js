@@ -5,20 +5,21 @@ const path = require('path');
 const vm = require('vm');
 
 const ROOT = path.resolve(__dirname, '..');
-const STATE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/state.js'), 'utf8');
-const CONTROLLER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/controller.js'), 'utf8');
+const OWNER_TOOL_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/owner-tool.js'), 'utf8');
+const CONTROLLER_SOURCE = (() => {
+  const start = OWNER_TOOL_SOURCE.indexOf('  function startOwnerTool() {');
+  const end = OWNER_TOOL_SOURCE.indexOf('\n  }\n\n  if (root) {', start);
+  if (start < 0 || end < 0) throw new Error('owner tool controller section not found');
+  return OWNER_TOOL_SOURCE.slice(start, end + 4);
+})();
 const RENDER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/render.js'), 'utf8');
-const STYLE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/style.css'), 'utf8');
-const CONTEXTS_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/contexts.js'), 'utf8');
-const CONTEXT_FORM_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/context-form.js'), 'utf8');
-const CONTEXT_CARD_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/context-card.js'), 'utf8');
-const CONTEXT_PANEL_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/context-panel.js'), 'utf8');
+const STYLE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/owner-tool.css'), 'utf8');
 const ADMIN_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/admin_questions.php'), 'utf8');
 const CBT_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt.php'), 'utf8');
 const PRACTICE_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt_practice.php'), 'utf8');
 const DETAIL_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/answer_details.php'), 'utf8');
 const parser = require('../src/parser/core.js');
-const stateApi = require('../src/owner-tool/state.js');
+const stateApi = require('../src/owner-tool/owner-tool.js').state;
 const textApi = require('../src/owner-tool/render.js');
 
 const COMPREHENSION_PASTE = fs.readFileSync(
@@ -384,15 +385,10 @@ function createEnv(options) {
     clearTimeout,
   };
   sandbox.window = sandbox;
-  vm.createContext(sandbox);
-  vm.runInContext(STATE_SOURCE, sandbox, { filename: 'src/owner-tool/state.js' });
-  vm.runInContext(RENDER_SOURCE, sandbox, { filename: 'src/owner-tool/render.js' });
-  vm.runInContext(CONTEXTS_SOURCE, sandbox, { filename: 'src/owner-tool/contexts.js' });
-  vm.runInContext(CONTEXT_FORM_SOURCE, sandbox, { filename: 'src/owner-tool/context-form.js' });
-  vm.runInContext(CONTEXT_CARD_SOURCE, sandbox, { filename: 'src/owner-tool/context-card.js' });
-  vm.runInContext(CONTEXT_PANEL_SOURCE, sandbox, { filename: 'src/owner-tool/context-panel.js' });
   sandbox.OCRParser = parser;
-  vm.runInContext(CONTROLLER_SOURCE, sandbox, { filename: 'src/owner-tool/controller.js' });
+  vm.createContext(sandbox);
+  vm.runInContext(RENDER_SOURCE, sandbox, { filename: 'src/owner-tool/render.js' });
+  vm.runInContext(OWNER_TOOL_SOURCE, sandbox, { filename: 'src/owner-tool/owner-tool.js' });
 
   const env = {
     doc,
@@ -1169,15 +1165,16 @@ test('every deployed question-text sink uses the shared renderer', () => {
     'detail explanation stays plain text');
 });
 
-test('the admin page loads the context modules before the parser engine', () => {
-  const comprehensionAt = ADMIN_SOURCE.indexOf('src/parser/comprehension.js');
-  const clozeAt = ADMIN_SOURCE.indexOf('src/parser/cloze.js');
-  assert(clozeAt > -1, 'cloze module is loaded');
+test('the admin page loads the consolidated parser, renderer, and owner tool in order', () => {
   const coreAt = ADMIN_SOURCE.indexOf('src/parser/core.js');
-  assert(comprehensionAt > -1, 'comprehension module is loaded');
+  const renderAt = ADMIN_SOURCE.indexOf('src/owner-tool/render.js');
+  const toolAt = ADMIN_SOURCE.indexOf('src/owner-tool/owner-tool.js');
   assert(coreAt > -1, 'parser engine is loaded');
-  assert(comprehensionAt < coreAt, 'comprehension module loads first');
-  assert(clozeAt < coreAt, 'cloze module loads first');
+  assert(renderAt > -1, 'shared renderer is loaded');
+  assert(toolAt > -1, 'owner tool bundle is loaded');
+  assert(coreAt < renderAt && renderAt < toolAt, 'core, renderer, and owner tool load in order');
+  ['src/parser/comprehension.js', 'src/parser/cloze.js', 'src/owner-tool/state.js', 'src/owner-tool/controller.js']
+    .forEach(relative => assert(ADMIN_SOURCE.indexOf(relative) === -1, relative + ' is consolidated away'));
 });
 
 test('critical owner-tool warnings have distinct non-server styling', () => {

@@ -76,11 +76,12 @@ stop and ask instead of silently changing the product direction.
 - Import the experiments work-package methodology: one package per session,
   read-only Gate 1, explicit `go`, acceptance evidence, status update, handoff,
   independent reviews at release boundaries, and cycle close.
-- This cycle is externalize-first. From the recorded package base, each existing
-  production file may receive at most 100 added lines by `git diff --numstat`,
-  and each new production module may contain at most 250 readable lines. Any
-  excess requires explicit owner approval at Gate 1 naming the exact file,
-  measured excess, and justification.
+- This cycle is externalize-first. For each live-origin production file, the
+  cumulative additions from its archived live snapshot must not exceed 100 by
+  `git diff --numstat`. This protects the original live files, not new
+  phase-cycle modules. New production modules have no fixed line cap; they must
+  stay cohesive, avoid unnecessary fragmentation, and have an explicit
+  deployment path.
 - Put cohesive new behavior in focused modules/includes with one clear
   responsibility and an explicit deployment path. Existing entry points retain
   only imports/includes, dispatch, narrow wiring, and unavoidable local

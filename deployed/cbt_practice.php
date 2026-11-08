@@ -613,7 +613,7 @@ include __DIR__ . '/header.php';
 </main>
 
 <?php if ($examStarted): ?>
-<script src="src/owner-tool/render.js?v=2.1.0"></script>
+<script src="src/owner-tool/render.js?v=2.3.2c"></script>
 <script>
 // Questions are randomly selected from MySQL for the chosen subject/category.
 // JSON_HEX_* prevents question text from breaking the script context.

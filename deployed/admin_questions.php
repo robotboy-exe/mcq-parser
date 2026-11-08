@@ -4,10 +4,7 @@ declare(strict_types=1);
 session_start();
 
 require_once __DIR__ . '/render.php';
-require_once __DIR__ . '/context_lib.php';
-require_once __DIR__ . '/admin_context_data.php';
-require_once __DIR__ . '/admin_context_actions.php';
-require_once __DIR__ . '/admin_question_mutations.php';
+require_once __DIR__ . '/admin_context.php';
 
 if (empty($_SESSION['cbt_admin_csrf'])) {
     $_SESSION['cbt_admin_csrf'] = bin2hex(random_bytes(32));
@@ -606,10 +603,6 @@ $recentQuestions = [];
 $totalQuestions = 0;
 $totalPages = 1;
 $questionOffset = 0;
-$contexts = [];
-$contextCategories = [];
-$contextSchemaAvailable = false;
-
 if ($isLoggedIn) {
     try {
         require_once __DIR__ . '/cbt_db.php';
@@ -700,26 +693,11 @@ if ($isLoggedIn) {
         $pageError = 'The question form could not load its database lists. Please check the database configuration.';
     }
 
-    try {
-        require_once __DIR__ . '/cbt_db.php';
-        $contextPage = cbt_admin_context_page_data(
-            $pdo,
-            $categories,
-            $_SERVER['REQUEST_METHOD'],
-            $_GET,
-            $editingContextId,
-            $contextValues
-        );
-        $contexts = $contextPage['contexts'];
-        $contextCategories = $contextPage['context_categories'];
-        $contextSchemaAvailable = $contextPage['schema_available'];
-        $editingContextId = $contextPage['editing_context_id'];
-        $contextValues = $contextPage['context_values'];
-        if ($contextPage['error'] !== '') {
-            $pageError = $contextPage['error'];
-        }
-    } catch (PDOException $e) {
-        error_log('Admin context page loading failed: ' . $e->getMessage());
+    extract(cbt_admin_load_context_page(
+        $pdo, $categories, $_SERVER['REQUEST_METHOD'], $_GET, $editingContextId, $contextValues
+    ));
+    if ($contextError !== '') {
+        $pageError = $contextError;
     }
 }
 
@@ -835,7 +813,7 @@ if (is_file(__DIR__ . '/header.php')) {
                         <p class="admin-note">Enter the year the exam question belongs to, for example 2024, 2025, or 2026.</p>
                     </div>
 
-                    <?php include __DIR__ . '/admin_question_context_fields.php'; ?>
+                    <?php echo cbt_admin_render_question_context_fields(get_defined_vars()); ?>
 
                     <div class="admin-grid question-entry-grid">
                         <div class="admin-field">
@@ -944,7 +922,7 @@ if (is_file(__DIR__ . '/header.php')) {
             <?php endif; ?>
         </section>
 
-        <?php include __DIR__ . '/admin_context_management.php'; ?>
+        <?php echo cbt_admin_render_context_management(get_defined_vars()); ?>
 
         <section class="admin-card">
             <div>
@@ -1079,11 +1057,8 @@ if (is_file(__DIR__ . '/header.php')) {
 </div>
 </main>
 
-<link rel="stylesheet" href="src/owner-tool/style.css?v=2.3.2">
-<link rel="stylesheet" href="src/owner-tool/context-workflow.css?v=2.3.2">
-<script src="src/parser/comprehension.js?v=2.3.2"></script><script src="src/parser/cloze.js?v=2.3.2"></script><script src="src/parser/core.js?v=2.3.2"></script><script src="src/owner-tool/state.js?v=2.3.2"></script><script src="src/owner-tool/render.js?v=2.3.2"></script>
-<script src="src/owner-tool/contexts.js?v=2.3.2"></script><script src="src/owner-tool/context-form.js?v=2.3.2"></script><script src="src/owner-tool/context-card.js?v=2.3.2"></script>
-<script src="src/owner-tool/context-panel.js?v=2.3.2"></script><script src="src/owner-tool/controller.js?v=2.3.2"></script>
+<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2c">
+<script src="src/parser/core.js?v=2.3.2c"></script><script src="src/owner-tool/render.js?v=2.3.2c"></script><script src="src/owner-tool/owner-tool.js?v=2.3.2c"></script>
 
 
 <?php if (is_file(__DIR__ . '/footer.php')) { include __DIR__ . '/footer.php'; } ?>

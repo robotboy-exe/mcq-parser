@@ -57,20 +57,14 @@ const migration = read('deployed/sql/01-context-migration.sql');
 const rollback = read('deployed/sql/02-context-rollback.sql');
 const runbook = read('deployed/sql/README.md');
 const contextLib = read('deployed/context_lib.php');
-const contextInput = read('deployed/context_input_validation.php');
-const contextActivation = read('deployed/context_activation_validation.php');
 const admin = read('deployed/admin_questions.php');
-const contextActions = read('deployed/admin_context_actions.php');
-const contextData = read('deployed/admin_context_data.php');
-const questionMutations = read('deployed/admin_question_mutations.php');
-const questionContextFields = read('deployed/admin_question_context_fields.php');
-const contextManagement = read('deployed/admin_context_management.php');
+const adminContext = read('deployed/admin_context.php');
 const preflight = read('tools/context-migration-preflight.php');
 const preflightContract = read('tools/context-migration-contract.php');
 const preflightInspector = read('tools/context-migration-inspector.php');
 const cbt = read('deployed/cbt.php');
 const practice = read('deployed/cbt_practice.php');
-const candidateRepository = read('deployed/cbt_candidate_repository.php');
+const candidate = read('deployed/cbt_candidate.php');
 
 test('supplied DDL is archived byte-for-byte with recorded hashes', () => {
   const names = ['questions.sql', 'subjects.sql', 'exam_category.sql'];
@@ -119,6 +113,17 @@ function assertEqual(actual, expected, label) {
   if (actual !== expected) {
     throw new Error(label + ': expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
   }
+}
+
+function liveAdditions(archive, live) {
+  const result = childProcess.spawnSync(
+    'git',
+    ['diff', '--no-index', '--numstat', archive, live],
+    { cwd: ROOT, encoding: 'utf8' }
+  );
+  assert(result.status === 0 || result.status === 1, 'git diff failed for ' + live);
+  const output = (result.stdout || '').trim();
+  return output === '' ? 0 : Number(output.split(/\s+/)[0]);
 }
 
 test('working base schema renames exam_category2 and keeps the supplied types', () => {
@@ -187,12 +192,10 @@ test('rollback refuses to destroy populated context data', () => {
 });
 
 test('shared context helper is side-effect-free and exposes validation/query functions', () => {
-  [contextLib, contextInput, contextActivation].forEach((source) => {
-    ['new PDO', 'session_start', 'header(', 'echo ', 'print ', '$_POST', '$_GET']
-      .forEach((term) => assertNotContains(source, term, 'helper must not contain ' + term));
-  });
-  assertContains(contextLib, "require_once __DIR__ . '/context_input_validation.php';", 'input validation include');
-  assertContains(contextLib, "require_once __DIR__ . '/context_activation_validation.php';", 'activation validation include');
+  ['new PDO', 'session_start', 'header(', 'echo ', 'print ', '$_POST', '$_GET']
+    .forEach((term) => assertNotContains(contextLib, term, 'helper must not contain ' + term));
+  assertNotContains(contextLib, "require_once __DIR__ . '/context_input_validation.php';", 'input validation is consolidated');
+  assertNotContains(contextLib, "require_once __DIR__ . '/context_activation_validation.php';", 'activation validation is consolidated');
   [
     'cbt_context_validate_activation',
     'cbt_context_question_link_errors',
@@ -203,30 +206,25 @@ test('shared context helper is side-effect-free and exposes validation/query fun
     'cbt_context_member_count',
     'cbt_context_slot_tokens',
     'cbt_context_status_label',
-  ].forEach((fn) => assertContains(contextLib + contextInput + contextActivation, 'function ' + fn + '(', 'helper function ' + fn));
+  ].forEach((fn) => assertContains(contextLib, 'function ' + fn + '(', 'helper function ' + fn));
 });
 
 test('admin adds CSRF/PRG context actions without changing the question contract', () => {
-  assertContains(admin, "require_once __DIR__ . '/context_lib.php';", 'helper include');
-  assertContains(admin, "require_once __DIR__ . '/admin_context_actions.php';", 'actions include');
-  assertContains(admin, "require_once __DIR__ . '/admin_context_data.php';", 'data include');
-  assertContains(admin, "require_once __DIR__ . '/admin_question_mutations.php';", 'question mutation include');
-  assertContains(admin, "include __DIR__ . '/admin_question_context_fields.php';", 'question fields include');
-  assertContains(admin, "include __DIR__ . '/admin_context_management.php';", 'context management include');
+  assertContains(admin, "require_once __DIR__ . '/admin_context.php';", 'consolidated context include');
   ['save_context', 'update_context', 'activate_context', 'deactivate_context', 'delete_context']
-    .forEach((action) => assertContains(contextActions, '\'' + action + '\'', 'action ' + action));
+    .forEach((action) => assertContains(adminContext, '\'' + action + '\'', 'action ' + action));
   assertContains(admin, 'cbt_admin_handle_context_request(', 'context dispatch hook');
-  assertContains(contextActions, "header('Location: ' . $scriptName);", 'context PRG redirect');
+  assertContains(adminContext, "header('Location: ' . $scriptName);", 'context PRG redirect');
   assertContains(admin, 'valid_csrf()', 'CSRF check');
-  assertContains(questionContextFields, 'name="context_id"', 'question link field');
-  assertContains(questionContextFields, 'name="context_position"', 'position field');
-  assertContains(questionContextFields, 'name="context_slot"', 'slot field');
-  assertContains(contextManagement, 'name="context_type"', 'context type field');
-  assertContains(contextManagement, 'name="expected_member_count"', 'expected count field');
-  assertContains(contextData, "'is_active' => !$parsed['errors'] && $context === null", 'linked questions are forced inactive');
+  assertContains(adminContext, 'name="context_id"', 'question link field');
+  assertContains(adminContext, 'name="context_position"', 'position field');
+  assertContains(adminContext, 'name="context_slot"', 'slot field');
+  assertContains(adminContext, 'name="context_type"', 'context type field');
+  assertContains(adminContext, 'name="expected_member_count"', 'expected count field');
+  assertContains(adminContext, "'is_active' => !$parsed['errors'] && $context === null", 'linked questions are forced inactive');
   assertContains(admin, 'cbt_admin_mutate_question(', 'question mutation hook');
   assertContains(admin, 'cbt_admin_delete_question(', 'question delete hook');
-  assertContains(questionMutations, 'cbt_admin_deactivate_contexts(', 'member mutation deactivates contexts');
+  assertContains(adminContext, 'cbt_admin_deactivate_contexts(', 'member mutation deactivates contexts');
   assertContains(admin, "cbt_strip_formatting((string) $item['question_text'])", 'question list renderer preserved');
   assertContains(admin, 'required><?php echo "\\n" . h($formValues[\'question_text\']); ?></textarea>', 'question textarea preserved');
   assertContains(admin, "'Question saved successfully (Question ID: '", 'save flash preserved');
@@ -244,40 +242,81 @@ test('admin entry point keeps only narrow context hooks', () => {
     '<label for="context_type">Context Type</label>',
     '<label for="context_id">Shared Context (optional)</label>',
   ].forEach((term) => assertNotContains(admin, term, 'entry point must externalize ' + term));
-  assertContains(contextActions, 'Admin context activation failed:', 'action failure handling externalized');
-  assertContains(contextData, 'cbt_admin_context_page_data', 'context page data externalized');
+  assertContains(adminContext, 'Admin context activation failed:', 'action failure handling externalized');
+  assertContains(adminContext, 'cbt_admin_context_page_data', 'context page data externalized');
+  assertContains(adminContext, 'cbt_admin_load_context_page', 'context page loading externalized');
 
-  const output = childProcess.execFileSync(
-    'git',
-    ['diff', '--numstat', 'cd2e6c9', '--', 'deployed/admin_questions.php'],
-    { cwd: ROOT, encoding: 'utf8' }
-  ).trim();
-  const additions = output === '' ? 0 : Number(output.split(/\s+/)[0]);
+  const additions = liveAdditions('archive/live-sources/admin_questions-2026-10-31.php', 'deployed/admin_questions.php');
   assert(Number.isFinite(additions), 'admin diff additions must be numeric');
   assert(additions <= 100, 'admin entry point has ' + additions + ' additions; expected 100 or fewer');
-  const lineCount = admin.split(/\r?\n/).length - (admin.endsWith('\n') ? 1 : 0);
-  assert(lineCount <= 1156, 'admin entry point has ' + lineCount + ' lines; OT05 baseline plus 100 is 1156');
 });
 
-test('every new production module stays within the externalize-first ceiling', () => {
+test('production handoff uses the consolidated file manifest', () => {
+  const production = [
+    'deployed/admin_questions.php',
+    'deployed/cbt.php',
+    'deployed/answer_details.php',
+    'deployed/render.php',
+    'deployed/context_lib.php',
+    'deployed/admin_context.php',
+    'deployed/cbt_candidate.php',
+    'deployed/sql/01-context-migration.sql',
+    'src/parser/core.js',
+    'src/owner-tool/render.js',
+    'src/owner-tool/owner-tool.js',
+    'src/owner-tool/owner-tool.css',
+  ];
+  const ops = [
+    'deployed/sql/README.md',
+    'deployed/sql/02-context-rollback.sql',
+  ];
+  production.concat(ops).forEach((relative) => {
+    assert(fs.existsSync(path.join(ROOT, relative)), relative + ' is part of the handoff');
+  });
   [
+    'deployed/context_input_validation.php',
+    'deployed/context_activation_validation.php',
     'deployed/admin_context_actions.php',
     'deployed/admin_context_data.php',
     'deployed/admin_context_management.php',
     'deployed/admin_question_context_fields.php',
     'deployed/admin_question_mutations.php',
-    'deployed/context_lib.php',
-    'deployed/context_input_validation.php',
-    'deployed/context_activation_validation.php',
-    'deployed/sql/01-context-migration.sql',
-    'deployed/sql/02-context-rollback.sql',
+    'deployed/cbt_candidate_selection.php',
+    'deployed/cbt_candidate_repository.php',
+    'src/parser/comprehension.js',
+    'src/parser/cloze.js',
+    'src/cbt/context-render.js',
+    'src/owner-tool/state.js',
+    'src/owner-tool/contexts.js',
+    'src/owner-tool/context-form.js',
+    'src/owner-tool/context-card.js',
+    'src/owner-tool/context-panel.js',
+    'src/owner-tool/controller.js',
+    'src/owner-tool/style.css',
+    'src/owner-tool/context-workflow.css',
+    'src/cbt/context.css',
+  ].forEach((relative) => {
+    assert(!fs.existsSync(path.join(ROOT, relative)), relative + ' is consolidated away');
+  });
+  [
+    'deployed/sql/base-schema.working.sql',
     'tools/context-migration-preflight.php',
     'tools/context-migration-contract.php',
     'tools/context-migration-inspector.php',
   ].forEach((relative) => {
-    const source = read(relative);
-    const lines = source.split(/\r?\n/).length - (source.endsWith('\n') ? 1 : 0);
-    assert(lines <= 250, relative + ' has ' + lines + ' lines; expected 250 or fewer');
+    assert(fs.existsSync(path.join(ROOT, relative)), relative + ' stays repo-only');
+  });
+});
+
+test('live-origin files stay within 100 cumulative additions', () => {
+  [
+    ['archive/live-sources/admin_questions-2026-10-31.php', 'deployed/admin_questions.php'],
+    ['archive/live-sources/cbt-2026-10-31.php', 'deployed/cbt.php'],
+    ['archive/live-sources/cbt_practice-2026-10-31.php', 'deployed/cbt_practice.php'],
+    ['archive/live-sources/answer_details-2026-11-02.php', 'deployed/answer_details.php'],
+  ].forEach(([archive, live]) => {
+    const additions = liveAdditions(archive, live);
+    assert(additions <= 100, live + ' has ' + additions + ' additions; expected 100 or fewer');
   });
 });
 
@@ -298,7 +337,7 @@ function assertLockCoversCall(source, lock, call, label) {
 }
 
 test('question mutation module locks and deactivates inside its transactions', () => {
-  assertOrdered(questionMutations, [
+  assertOrdered(adminContext, [
     '$pdo->beginTransaction();',
     'cbt_admin_lock_contexts(',
     'FOR UPDATE',
@@ -306,15 +345,15 @@ test('question mutation module locks and deactivates inside its transactions', (
     'cbt_admin_deactivate_contexts(',
     '$pdo->commit();',
   ], 'question mutation transaction');
-  assertContains(questionMutations, '$pdo->rollBack();', 'question mutation rollback');
-  assertContains(contextActions, 'cbt_context_fetch($pdo, $editingContextId, true)', 'context update row lock');
-  assertContains(contextActions, 'cbt_context_members($pdo, $editingContextId, true)', 'context update member locks');
+  assertContains(adminContext, '$pdo->rollBack();', 'question mutation rollback');
+  assertContains(adminContext, 'cbt_context_fetch($pdo, $editingContextId, true)', 'context update row lock');
+  assertContains(adminContext, 'cbt_context_members($pdo, $editingContextId, true)', 'context update member locks');
 });
 
 test('candidate delivery remains active-only after OT06 delegation', () => {
   assertContains(cbt, 'cbt_candidate_delivery(', 'CBT delegates context-aware delivery');
   assertNotContains(cbt, 'ORDER BY RAND()', 'CBT no longer randomizes raw question rows');
-  assertContains(candidateRepository, 'WHERE is_active = 1', 'repository candidate filter');
+  assertContains(candidate, 'WHERE is_active = 1', 'candidate filter');
   assertContains(practice, 'WHERE is_active = 1', 'practice candidate filter');
   assertNotContains(practice, 'context_id', 'practice delivery is not changed in OT05');
 });

@@ -2,7 +2,10 @@
 'use strict';
 
 const assert = require('assert');
-const contextApi = require('../src/cbt/context-render.js');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const contextApi = require('../src/owner-tool/render.js');
 
 let passed = 0;
 let failed = 0;
@@ -149,6 +152,17 @@ test('standalone and missing-context questions add no card', () => {
   assert.strictEqual(contextApi.renderForQuestion(host, {}, { contextId: null }), null);
   assert.strictEqual(contextApi.renderForQuestion(host, {}, { contextId: 404 }), null);
   assert.strictEqual(host.children.length, 0);
+});
+
+test('browser globals expose the shared text and context renderers', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../src/owner-tool/render.js'), 'utf8');
+  const sandbox = {};
+  vm.createContext(sandbox);
+  vm.runInContext(source, sandbox, { filename: 'src/owner-tool/render.js' });
+  assert.strictEqual(typeof sandbox.CBTText.format, 'function');
+  assert.strictEqual(typeof sandbox.CBTText.createCard, 'function');
+  assert.strictEqual(typeof sandbox.CBTContext.createCard, 'function');
+  assert.strictEqual(typeof sandbox.CBTContext.renderForQuestion, 'function');
 });
 
 console.log('\nSummary');

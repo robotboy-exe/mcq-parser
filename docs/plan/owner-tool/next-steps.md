@@ -161,6 +161,16 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-08.
   the closure-focused second re-review returned `PASS` and closed `FIX-2` on
   2026-11-08; phase 10 is review-settled and included in the 2026-11-08 boundary
   commit.
+- [x] Complete OT09A production consolidation from base `652c891`: 12 production
+  files plus 2 ops, behavior-preserving, live-origin additions
+  +95/+53/+20/+2 (all ≤ 100).
+- [x] Apply the documentation-only OT09A `FIX-1` (2026-11-08): the package
+  handoff now records the complete externalize-first per-file measurement table
+  (base deltas, final lines/LF bytes, hashes, responsibility, deployment
+  inclusion, direct test) and a separate excluded-artifact list, reproduced from
+  `652c891`. The closure-focused re-review returned `PASS` and closed `FIX-1` on
+  2026-11-08; phase 10A is review-settled and included in the 2026-11-08 boundary
+  commit.
 - [ ] Confirm final OT08 coverage. The owner supplied same-paste keys in
   `sample-passages.txt` on 2026-11-08: comprehension Q13-Q15 and cloze Q71-Q80.
   The cloze key is complete; comprehension Q11-Q12 are still missing. Both

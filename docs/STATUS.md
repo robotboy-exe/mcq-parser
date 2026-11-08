@@ -40,9 +40,12 @@ Last updated: 2026-11-08.
   and included in the 2026-11-08 boundary commit. The owner supplied same-paste
   answer keys in `sample-passages.txt` on 2026-11-08 (comprehension Q13-Q15,
   cloze Q71-Q80); the comprehension key does not cover Q11-Q12, so OT10 must
-  confirm final OT08 coverage. OT10 remains blocked on local PHP/staging
-  execution. Target-runtime migration/preflight/rollback execution and
-  browser/admin PRG checks remain deferred to OT10.
+  confirm final OT08 coverage. OT09A records a 12-production-file plus 2-ops
+  handoff; its documentation-only `FIX-1` was closed by the closure-focused
+  re-review on 2026-11-08, with no behavior change, so phase 10A is review-settled
+  and included in the 2026-11-08 boundary commit. OT10 remains blocked on local
+  PHP/staging execution. Target-runtime migration/preflight/rollback execution
+  and browser/admin PRG checks remain deferred to OT10.
 - Product implementation: parser 2.3.2 (comprehension and cloze contexts), exact
   underline rendering, multiline
   stems, Add/Edit formatting, native PRG preservation, shared-context
@@ -86,6 +89,7 @@ Last updated: 2026-11-08.
 | OT09 implementation snapshot (same tree, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `node tests/cbt-context.js`, and `node tools/extract-bank.js --check` on 2026-11-06 | 59 PASS, 0 FAIL, 0 PENDING runner; 158 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; PHP absent |
 | OT09 `BLOCK-1`/`FIX-1` fix snapshot (same tree, uncommitted, parser 2.3.1) | the same six commands plus `node --check` on the changed JS and `wc -l src/parser/cloze.js` on 2026-11-07 | 59 PASS, 0 FAIL, 0 PENDING runner; 160 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; cloze.js 242 lines; PHP absent |
 | OT09 `FIX-2` fix and second re-review (phase 10 boundary, committed 2026-11-08, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `node tools/extract-bank.js --check`, and `node --check` on 2026-11-07; independent re-review reproduced them on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; cloze probe exit 0; all 7 source/slice/extracted bank hashes match (the CLI still reports the known Windows/CRLF on-disk fixture mismatch); cloze.js 242 lines; PHP not executed |
+| OT09A production consolidation (phase 10A boundary, committed 2026-11-08, base `652c891`, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, and `node --check` on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; 12 production files plus 2 ops; live-origin additions +95/+53/+20/+2; known Windows/CRLF `extract-bank` pre-2026 mismatch remains; `FIX-1` docs-only evidence closed by re-review 2026-11-08 |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save

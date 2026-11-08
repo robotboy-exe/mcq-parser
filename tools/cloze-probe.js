@@ -10,7 +10,8 @@ const fs = require('fs');
 const path = require('path');
 
 const parser = require('../src/parser/parser.js');
-const cloze = require('../src/parser/cloze.js');
+const core = require('../src/parser/core.js');
+const cloze = core.clozeEngine();
 
 const DEFAULT_FILE = path.join(__dirname, 'cloze-two-groups.txt');
 const file = process.argv[2] ? path.resolve(process.argv[2]) : DEFAULT_FILE;

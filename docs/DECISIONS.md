@@ -1045,6 +1045,27 @@ the other passage separately when the warning appears.
 tells the administrator to re-paste it. Groups with distinct numbering are
 unaffected and keep their contexts and links.
 
+## D-71 - New phase modules are consolidated; live-origin files keep the 100-addition cap
+
+**Choice.** The externalize-first protection applies to each live-origin
+production file against its archived live snapshot: `deployed/admin_questions.php`,
+`deployed/cbt.php`, `deployed/cbt_practice.php`, and
+`deployed/answer_details.php` each receive at most 100 cumulative additions.
+New phase-cycle production modules have no fixed line cap; they must stay
+cohesive, avoid unnecessary fragmentation, and have an explicit deployment
+path. The 2026-11-08 owner requirement change replaces the former 250-line
+new-module ceiling.
+
+**Why.** The owner wanted a smaller developer handoff, not a rule that forced
+new behavior to be split into many small files. The original live entry points
+still need narrow diffs so their unchanged site contracts stay auditable.
+
+**Risk.** A large consolidated module can hide weak cohesion. OT09A compensates
+by recording one clear responsibility per file, exercising the real production
+paths, and requiring the consolidation review to verify the file set and
+behavior preservation. `PARSER_VERSION` stays `2.3.2`; changed shared assets get
+a cache-bust token, not a state-invalidating version bump.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

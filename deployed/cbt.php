@@ -1,7 +1,7 @@
 <?php
 $page_title = "Online CBT Examination | Skymenu";
 require_once __DIR__ . '/cbt_db.php';
-require_once __DIR__ . '/cbt_candidate_repository.php';
+require_once __DIR__ . '/cbt_candidate.php';
 
 $subjects = [];
 $examCategories = [];
@@ -173,7 +173,7 @@ $questionsForBrowser = array_map(static function (array $row): array {
 include __DIR__ . '/header.php';
 ?>
 
-<link rel="stylesheet" href="src/cbt/context.css?v=1">
+<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2c">
 <style>
 /* =========================================================
    SKYMENU ONLINE CBT
@@ -729,8 +729,7 @@ include __DIR__ . '/header.php';
 </main>
 
 <?php if ($examStarted): ?>
-<script src="src/owner-tool/render.js?v=2.1.0"></script>
-<script src="src/cbt/context-render.js?v=1"></script>
+<script src="src/owner-tool/render.js?v=2.3.2c"></script>
 <script>
 // Questions are randomly selected from MySQL for the chosen subject/category.\n// Subject 6 (English Language) allows 100; subject 12 (Oral English) allows 60; others allow 50.
 // JSON_HEX_* prevents question text from breaking the script context.
