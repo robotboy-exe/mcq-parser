@@ -26,8 +26,16 @@ Q13-Q15, cloze Q71-Q80) for OT10 validation. OT09A production consolidation is
 done and records a 12-production-file plus 2-ops handoff; it does not change the
 OT10 gates. Its documentation-only `FIX-1` was closed by the closure-focused
 re-review on 2026-11-08, so phase 10A is review-settled and included in the
-2026-11-08 boundary commit. Runtime/staging and target-database verification are
-deferred to OT10.
+2026-11-08 boundary commit. OT10 local execution is in progress: PHP 8.3.16
+lint/suites, MySQL 8.0.41 migration preflight/forward/rerun/rollback,
+adversarial schema/rollback probes, and a desktop Chromium 155 harness pass. The
+Brave/Android phone check was executed on 2026-11-09 and recorded as passed; it
+surfaced three owner-workflow refinements, routed by the owner to the independent
+OT11 package (phase 12). OT11's first re-check exposed a still-duplicated
+JS/native context editor; the owner's one-native-editor correction now passes
+local tests and a Chromium 155 DOM check, with the final phone re-check pending.
+OT10 remains blocked only on the independent final review and the live
+deployment artifacts; it is not done.
 
 Intent: [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -44,8 +52,10 @@ Intent: [`../../../INTENT.md`](../../../INTENT.md)
 | 9 | OT08 — Comprehension OCR | [`../owner-tool/ot-08-comprehension-ocr.md`](../owner-tool/ot-08-comprehension-ocr.md) | done 2026-11-06; light review PASS at OT09 Gate 1; same-paste key partially supplied 2026-11-08 (Q13-Q15; Q11-Q12 pending) |
 | 10 | OT09 — Cloze OCR | [`../owner-tool/ot-09-cloze-ocr.md`](../owner-tool/ot-09-cloze-ocr.md) | done 2026-11-06; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed; cloze key supplied 2026-11-08 |
 | 10A | OT09A — Production Consolidation | [`../owner-tool/ot-09a-production-consolidation.md`](../owner-tool/ot-09a-production-consolidation.md) | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed; OT10 gates unchanged |
-| 11 | OT10 — Release and Handoff | [`../owner-tool/ot-10-release-and-handoff.md`](../owner-tool/ot-10-release-and-handoff.md) | blocked: prior packages required; local PHP/staging execution and final key validation |
+| 11 | OT10 — Release and Handoff | [`../owner-tool/ot-10-release-and-handoff.md`](../owner-tool/ot-10-release-and-handoff.md) | blocked: local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; final review and live artifacts pending |
+| 12 | OT11 — Owner Workflow Refinements | [`../owner-tool/ot-11-owner-workflow-refinements.md`](../owner-tool/ot-11-owner-workflow-refinements.md) | implementation corrected during phone re-check; local/Chromium checks pass; final owner Brave/Android re-check and rigorous review pending; OT10 final review and live artifacts remain external |
 
 Run one phase per implementation session. A blocked phase stops at Gate 1; do
 not skip ahead unless the coordinator explicitly identifies an independent
-package that can proceed.
+package that can proceed. OT11 is owner-authorized as independent of the
+remaining OT10 final review and live artifacts.

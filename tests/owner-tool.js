@@ -15,6 +15,7 @@ const CONTROLLER_SOURCE = (() => {
 const RENDER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/render.js'), 'utf8');
 const STYLE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/owner-tool.css'), 'utf8');
 const ADMIN_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/admin_questions.php'), 'utf8');
+const ADMIN_CONTEXT_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/admin_context.php'), 'utf8');
 const CBT_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt.php'), 'utf8');
 const PRACTICE_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt_practice.php'), 'utf8');
 const DETAIL_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/answer_details.php'), 'utf8');
@@ -28,8 +29,29 @@ const COMPREHENSION_KEY_PASTE = fs.readFileSync(
   path.join(ROOT, 'fixtures/inputs/sample-comprehension-key.txt'), 'utf8');
 const COMPREHENSION_AMBIGUOUS_PASTE = fs.readFileSync(
   path.join(ROOT, 'fixtures/inputs/sample-comprehension-ambiguous.txt'), 'utf8');
+const COMPREHENSION_MULTI_PASTE = fs.readFileSync(
+  path.join(ROOT, 'fixtures/inputs/sample-comprehension-multi.txt'), 'utf8');
 const CLOZE_PASTE = fs.readFileSync(
   path.join(ROOT, 'fixtures/inputs/sample-cloze-section6.txt'), 'utf8');
+
+const HEADERED_COMPREHENSION_PASTE = [
+  'CRS 2021 JAMB',
+  '',
+  'PASSAGE I',
+  'The elephant is the largest land animal. It lives in herds led by an older female.',
+  '',
+  '1. An elephant herd is usually led by',
+  'A. the oldest male',
+  'B. an older female',
+  'C. the youngest calf',
+  'D. a lone bull',
+  '',
+  '2. An elephant uses its trunk for',
+  'A. fighting only',
+  'B. drinking and lifting',
+  'C. sleeping',
+  'D. hearing',
+].join('\n');
 
 const FULL_PASTE = [
   'CRS 2021 JAMB',
@@ -71,15 +93,20 @@ const NO_KEY_PASTE = [
 ].join('\n');
 
 function configureContext(env, index, values) {
-  const prefix = 'owner_context_' + index + '_';
-  if (values.type) env.edit(prefix + 'type', values.type, 'change');
-  if (values.title !== undefined) env.edit(prefix + 'title', values.title);
-  if (values.text !== undefined) env.edit(prefix + 'text', values.text);
-  if (values.targets !== undefined) env.edit(prefix + 'targets', values.targets);
-  if (values.expected !== undefined) env.edit(prefix + 'expected', values.expected);
-  if (values.subject !== undefined) env.edit(prefix + 'subject', values.subject);
-  if (values.category !== undefined) env.edit(prefix + 'category', values.category);
-  if (values.year !== undefined) env.edit(prefix + 'year', values.year);
+  const contexts = env.state().contexts;
+  if (contexts.length > 1) {
+    const select = env.byId('owner_context_select');
+    select.value = contexts[index].localId;
+    select.onchange();
+  }
+  if (values.type) env.edit('context_type', values.type, 'change');
+  if (values.title !== undefined) env.edit('context_title', values.title);
+  if (values.text !== undefined) env.edit('context_text', values.text);
+  if (values.targets !== undefined) env.edit('owner_context_targets', values.targets);
+  if (values.expected !== undefined) env.edit('expected_member_count', values.expected);
+  if (values.subject !== undefined) env.edit('context_subject_id', values.subject, 'change');
+  if (values.category !== undefined) env.edit('context_exam_category_id', values.category, 'change');
+  if (values.year !== undefined) env.edit('context_exam_year', values.year);
 }
 
 function submitContextForm(env) {
@@ -193,6 +220,7 @@ function createDocument(options) {
     body: null,
     actionInput: null,
     submitButton: null,
+    contextSubmitButton: null,
     successElement: opts.success ? { textContent: String(opts.success) } : null,
     errorElement: opts.error ? { textContent: String(opts.error) } : null,
     registerFromHTML(html) {
@@ -239,7 +267,9 @@ function createDocument(options) {
         return [...this.byId.values()].find(el => String(el.className || '').split(/\s+/).includes('admin-error')) || null;
       }
       if (selector === '.admin-table') return null;
-      if (selector === 'button[type=submit]') return this.submitButton;
+      if (selector === 'button[type=submit]') {
+        return scope === this.contextForm ? this.contextSubmitButton : this.submitButton;
+      }
       return null;
     },
     queryAll(_scope, selector) {
@@ -339,11 +369,23 @@ function createContextForm(doc) {
     exam_category_id: selectElement(doc, 'context_exam_category_id', [{ text: 'Select', value: '' }, { text: 'JAMB', value: '2' }], ''),
     exam_year: createElement(doc, 'input', { id: 'context_exam_year', name: 'exam_year', value: '', form }),
     expected_member_count: createElement(doc, 'input', { id: 'expected_member_count', name: 'expected_member_count', value: '1', form }),
+    owner_context_targets: createElement(doc, 'input', { id: 'owner_context_targets', value: '', form }),
   };
-  fields.subject_id.form = form;
-  fields.exam_category_id.form = form;
+  Object.keys(fields).forEach(name => { fields[name].form = form; });
   form.elements = fields;
   Object.keys(fields).forEach(name => doc.byId.set(fields[name].id, fields[name]));
+  const targetsWrap = createElement(doc, 'div', { id: 'owner_context_targets_field', hidden: true });
+  const status = createElement(doc, 'span', {
+    id: 'owner_context_native_status',
+    textContent: 'Paste a context or choose Add Context.',
+  });
+  doc.byId.set(targetsWrap.id, targetsWrap);
+  doc.byId.set(status.id, status);
+  doc.contextSubmitButton = createElement(doc, 'button', {
+    id: 'save_context',
+    type: 'submit',
+    textContent: 'Create Context',
+  });
   form.before = node => doc.body.appendChild(node);
   doc.contextForm = form;
   doc.byId.set('context_form', form);
@@ -355,6 +397,13 @@ function createEnv(options) {
   const doc = createDocument({ success: opts.success, error: opts.error });
   const form = createForm(doc, opts);
   if (opts.contextForm !== false) createContextForm(doc);
+  if (opts.contextData) {
+    const data = createElement(doc, 'script', {
+      id: 'owner_tool_context_data',
+      textContent: JSON.stringify(opts.contextData),
+    });
+    doc.byId.set('owner_tool_context_data', data);
+  }
   const raw = new Map();
   Object.keys(opts.storage || {}).forEach(key => raw.set(key, String(opts.storage[key])));
   const localStorage = {
@@ -475,6 +524,7 @@ function createEnv(options) {
     reload(reloadOptions) {
       const next = Object.assign({}, reloadOptions || {});
       if (opts.contextForm === false) next.contextForm = false;
+      if (opts.contextData) next.contextData = opts.contextData;
       const storage = {};
       raw.forEach((value, key) => { storage[key] = value; });
       next.storage = storage;
@@ -684,7 +734,7 @@ test('reset clears all owner state and metadata but leaves legacy keys untouched
   env.click('owner_tool_load');
   env.submit();
   env.click('owner_context_add');
-  env.edit('owner_context_0_title', 'Reset proof');
+  env.edit('context_title', 'Reset proof');
   env.click('owner_tool_reset');
   const state = env.state();
   assertEqual(state.items.length, 0, 'queue cleared');
@@ -714,7 +764,6 @@ test('one context card creates, binds, links, and survives a question save', () 
   assertEqual(env.state().items[0].contextRef, localId, 'question one is linked');
   assertEqual(env.state().items[0].contextPosition, '1', 'question one position');
   assertEqual(env.state().items[1].contextPosition, '2', 'question two position');
-  env.click('owner_context_0_fill');
   assertEqual(env.contextField('title'), 'Shared passage', 'native title prefilled');
   assertEqual(env.contextField('expected_member_count'), '2', 'native expected count prefilled');
   submitContextForm(env);
@@ -739,7 +788,24 @@ test('one context card creates, binds, links, and survives a question save', () 
   assertEqual(repeated.state().currentIndex, 1, 'an unbounded flash does not advance the queue');
 });
 
-test('multiple context cards bind their own IDs and members', () => {
+test('Add Context reveals and restores the single native editor', () => {
+  const env = createEnv();
+  assertEqual(env.visible('context_form'), false, 'context fields start hidden');
+  env.click('owner_context_add');
+  assertEqual(env.visible('context_form'), true, 'Add Context reveals the fields');
+  configureContext(env, 0, {
+    title: 'Manual passage',
+    text: 'Manually entered shared text.',
+    targets: '4, 5',
+    expected: '2',
+  });
+  const next = env.reload();
+  assertEqual(next.visible('context_form'), true, 'manual draft stays visible after reload');
+  assertEqual(next.contextField('title'), 'Manual passage', 'manual title is restored');
+  assertEqual(next.byId('owner_context_targets').value, '4, 5', 'manual linked numbers are restored');
+});
+
+test('multiple contexts bind their own IDs and members through one editor', () => {
   const first = createEnv();
   first.paste(FULL_PASTE);
   first.click('owner_tool_load');
@@ -747,10 +813,14 @@ test('multiple context cards bind their own IDs and members', () => {
   configureContext(first, 0, { title: 'First passage', text: 'First.', targets: '1', expected: '1' });
   first.click('owner_context_add');
   configureContext(first, 1, { title: 'Second passage', text: 'Second.', targets: '2', expected: '1' });
-  first.click('owner_context_0_fill');
+  const firstSelect = first.byId('owner_context_select');
+  firstSelect.value = first.state().contexts[0].localId;
+  firstSelect.onchange();
   submitContextForm(first);
   const second = first.reload({ success: 'Context #77 created. Link its members, then activate it.' });
-  second.click('owner_context_1_fill');
+  const secondSelect = second.byId('owner_context_select');
+  secondSelect.value = second.state().contexts[1].localId;
+  secondSelect.onchange();
   submitContextForm(second);
   const third = second.reload({ success: 'Context #78 created. Link its members, then activate it.' });
   const state = third.state();
@@ -770,7 +840,6 @@ test('a standalone question clears the native context fields', () => {
   env.click('owner_tool_load');
   env.click('owner_context_add');
   configureContext(env, 0, { title: 'Only question one', text: 'Passage.', targets: '1', expected: '1' });
-  env.click('owner_context_0_fill');
   submitContextForm(env);
   const next = env.reload({ success: 'Context #77 created. Link its members, then activate it.' });
   assertEqual(next.field('context_id'), '77', 'linked question has a context');
@@ -786,16 +855,14 @@ test('a saved context edit becomes stale and refuses a linked question save', ()
   env.click('owner_tool_load');
   env.click('owner_context_add');
   configureContext(env, 0, { title: 'Original', text: 'Original text.', targets: '1', expected: '1' });
-  env.click('owner_context_0_fill');
   submitContextForm(env);
   const next = env.reload({ success: 'Context #77 created. Link its members, then activate it.' });
-  next.edit('owner_context_0_title', 'Edited after save');
+  next.edit('context_title', 'Edited after save');
   assertEqual(next.state().contexts[0].stale, true, 'saved edit is stale');
   assertEqual(next.byId('save_question').disabled, true, 'linked save button disabled');
   assert(next.text('owner_context_link_warning').indexOf('Update it') > -1, 'update warning shown');
   next.submit();
   assertEqual(next.state().pendingSubmission, null, 'no question marker while stale');
-  next.click('owner_context_0_fill');
   submitContextForm(next);
   assertEqual(next.state().pendingSubmission.kind, 'context-update', 'context update marker stored');
   const after = next.reload({ success: 'Context #77 updated. It is inactive until revalidated.' });
@@ -810,7 +877,6 @@ test('a near-miss context flash never binds an ID or retries', () => {
   env.click('owner_tool_load');
   env.click('owner_context_add');
   configureContext(env, 0, { title: 'Pending', text: 'Pending.', targets: '1', expected: '1' });
-  env.click('owner_context_0_fill');
   submitContextForm(env);
   const next = env.reload({ success: 'Context #77 created.' });
   assertEqual(next.state().contexts[0].serverId, null, 'near-miss flash does not bind');
@@ -826,7 +892,6 @@ test('a rejected context save clears its marker without binding or advancing', (
   env.click('owner_tool_load');
   env.click('owner_context_add');
   configureContext(env, 0, { title: 'Rejected', text: 'Rejected.', targets: '1', expected: '1' });
-  env.click('owner_context_0_fill');
   submitContextForm(env);
   const next = env.reload({
     error: 'The context could not be saved.',
@@ -857,9 +922,9 @@ test('a comprehension paste fills the context card and the native options', () =
     'According to the author, electioneering campaign is the approach', 'stem');
   assertEqual(env.field('option_a'), 'best used in politics', 'option a');
   assertEqual(env.field('option_d'), 'currently in use.', 'option d');
-  assertEqual(env.byId('owner_context_0_title').value, 'PASSAGE III', 'card title is editable');
-  assertEqual(env.byId('owner_context_0_text').value,
-    state.contexts[0].text, 'card text is editable');
+  assertEqual(env.contextField('title'), 'PASSAGE III', 'single native title is editable');
+  assertEqual(env.contextField('context_text'), state.contexts[0].text, 'single native text is editable');
+  assertEqual(env.byId('owner_context_targets').value, '11, 12, 13, 14, 15', 'linked numbers share the native card');
   assertEqual(env.text('owner_tool_warning'), '', 'no warning');
   assertEqual(state.pendingSubmission, null, 'nothing is submitted');
 });
@@ -942,13 +1007,12 @@ test('an ambiguous passage warns and keeps the legacy parse', () => {
   assertEqual(env.visible('owner_tool_warning'), true, 'warning is visible');
 });
 
-test('key-only paste keeps the queue and context cards', () => {
+test('key-only paste keeps the queue and contexts', () => {
   const env = createEnv();
   env.paste(FULL_PASTE);
   env.click('owner_tool_load');
   env.click('owner_context_add');
   configureContext(env, 0, { title: 'Kept', text: 'Kept.', targets: '1', expected: '1' });
-  env.click('owner_context_0_fill');
   submitContextForm(env);
   const next = env.reload({ success: 'Context #77 created. Link its members, then activate it.' });
   next.paste('1.C 2.D');
@@ -972,7 +1036,6 @@ test('cloze contexts assign sorted gap slots by target order', () => {
     targets: '1,2',
     expected: '2',
   });
-  env.click('owner_context_0_fill');
   submitContextForm(env);
   const next = env.reload({ success: 'Context #77 created. Link its members, then activate it.' });
   assertEqual(next.field('context_slot'), '1', 'first target gets the first sorted slot');
@@ -982,16 +1045,141 @@ test('cloze contexts assign sorted gap slots by target order', () => {
 
 test('a missing native context form warns without arming a submission', () => {
   const env = createEnv({ contextForm: false });
-  env.paste(FULL_PASTE);
+  env.paste(COMPREHENSION_PASTE);
   env.click('owner_tool_load');
-  env.click('owner_context_add');
-  configureContext(env, 0, { title: 'No form', text: 'No form.', targets: '1', expected: '1' });
-  env.click('owner_context_0_fill');
   assert(env.text('owner_context_warning').indexOf('unavailable') > -1, 'unavailable form warning');
   assertEqual(env.state().pendingSubmission, null, 'no context marker');
   assertEqual(env.byId('save_question').disabled, true, 'uncreated context blocks a linked save');
   env.submit();
   assertEqual(env.state().pendingSubmission, null, 'no question marker for an uncreated context');
+});
+
+test('manual context selection is authoritative and does not require a matching card', () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.field('context_id'), '', 'standalone question starts unlinked');
+  env.setField('context_position', '3');
+  env.byId('context_id').value = '7';
+  env.byId('context_id').dispatch('change');
+  const state = env.state();
+  assertEqual(state.items[0].manualContextId, '7', 'manual id is persisted');
+  assertEqual(env.field('context_id'), '7', 'native field keeps the manual id');
+  assertEqual(env.field('context_position'), '3', 'manual selection keeps the entered position');
+  assertEqual(env.byId('save_question').disabled, false, 'manual selection allows the linked save');
+  env.submit();
+  const pending = env.state().pendingSubmission;
+  assert(pending && pending.kind === 'question', 'the question save is armed');
+});
+
+test('a saved context auto-matches and an already-saved member is skipped', () => {
+  const server = [{
+    context_id: 5,
+    context_type: 'comprehension',
+    title: 'PASSAGE I',
+    subject_id: '1',
+    exam_category_id: '2',
+    exam_year: '2021',
+    expected_member_count: 2,
+    member_count: 1,
+    is_active: 1,
+    members: [{
+      question_text: 'An elephant herd is usually led by',
+      context_position: '1',
+      context_slot: '',
+    }],
+  }];
+  const env = createEnv({ contextData: server });
+  env.paste(HEADERED_COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  const state = env.state();
+  assertEqual(state.contexts[0].serverId, 5, 'matching context id is bound');
+  assertEqual(state.contexts[0].adopted, true, 'matching context is marked adopted');
+  assertEqual(state.items[0].alreadySaved, true, 'first member is detected');
+  assertEqual(state.currentIndex, 1, 'the already-saved member is skipped');
+  assertEqual(env.field('question_text'), 'An elephant uses its trunk for', 'the next member loads');
+  assert(env.text('owner_tool_warning').indexOf('Skipped already-saved') > -1, 'skip notice is visible');
+  assertEqual(env.byId('save_question').disabled, false, 'the next member can be saved');
+  assertEqual(env.contextField('title'), 'PASSAGE I', 'matched context uses the native editor');
+  assertEqual(env.contextField('action'), 'update_context', 'matched context is ready for explicit update');
+  assertEqual(env.state().pendingSubmission, null, 'matching never submits the context');
+});
+
+test('a member-count mismatch only warns and still allows linked saves', () => {
+  const server = [{
+    context_id: 9,
+    context_type: 'comprehension',
+    title: 'PASSAGE I',
+    subject_id: '1',
+    exam_category_id: '2',
+    exam_year: '2021',
+    expected_member_count: 2,
+    member_count: 3,
+    is_active: 1,
+    members: [],
+  }];
+  const env = createEnv({ contextData: server });
+  env.paste(HEADERED_COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  const state = env.state();
+  assertEqual(state.contexts[0].serverId, 9, 'context is still adopted');
+  assert(env.text('owner_tool_warning').indexOf('has 3 saved member(s)') > -1, 'count mismatch warns');
+  assertEqual(env.byId('save_question').disabled, false, 'linked save stays available');
+});
+
+test('empty inferred pool metadata never auto-binds a saved context', () => {
+  const server = [{
+    context_id: 3,
+    context_type: 'comprehension',
+    title: 'PASSAGE III',
+    subject_id: '',
+    exam_category_id: '',
+    exam_year: '',
+    expected_member_count: 5,
+    member_count: 5,
+    is_active: 1,
+    members: [],
+  }];
+  const env = createEnv({ contextData: server });
+  env.paste(COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.state().contexts[0].serverId, null, 'empty gates do not auto-bind');
+  assertEqual(env.state().contexts[0].adopted, false, 'the card stays a draft');
+  env.byId('context_id').value = '3';
+  env.byId('context_id').dispatch('change');
+  assertEqual(env.state().items[0].manualContextId, '3', 'manual selection still works');
+});
+
+test('a multi-context paste uses one selector and one native editor', () => {
+  const env = createEnv();
+  env.paste(COMPREHENSION_MULTI_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.contextField('title'), 'PASSAGE I', 'the first parsed context fills the native form');
+  assertEqual(env.byId('owner_context_select').children.length, 2, 'both parsed contexts are listed');
+  assertEqual(env.doc.getElementById('owner_context_toggle'), null, 'there is no duplicate card list');
+  const select = env.byId('owner_context_select');
+  select.value = env.state().contexts[1].localId;
+  select.onchange();
+  assertEqual(env.contextField('title'), 'PASSAGE II', 'the selector fills the chosen context');
+});
+
+test('the underline toolbar is placed beside the question text and saved contexts are embedded', () => {
+  assert(CONTROLLER_SOURCE.indexOf("panel.querySelector('.owner-tool-format')") > -1, 'toolbar is located');
+  assert(CONTROLLER_SOURCE.indexOf('insertBefore(formatToolbar, questionBoxForFormat)') > -1, 'toolbar sits before the textarea');
+  assert(ADMIN_SOURCE.indexOf('id="owner_tool_context_data"') > -1, 'saved contexts are embedded');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('cbt_context_members($pdo') > -1, 'member payload is built by the context module');
+});
+
+test('the owner tool uses one native shared-context editor', () => {
+  assert(CONTROLLER_SOURCE.indexOf('insertBefore(contextPanelRoot, nativeContextForm)') > -1,
+    'context controls move into the native card');
+  assert(OWNER_TOOL_SOURCE.indexOf('Fill Context Form') === -1, 'redundant fill action is absent');
+  ['Subject pool', 'Category pool', 'Year pool', 'owner_context_toggle']
+    .forEach(term => assert(OWNER_TOOL_SOURCE.indexOf(term) === -1, term + ' is absent'));
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('id="shared_context_editor"') > -1, 'native editor has one stable card');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('id="owner_context_targets"') > -1, 'browser queue targets share the native card');
+  assert(!/id="owner_context_targets"[^>]*\bname=/.test(ADMIN_CONTEXT_SOURCE),
+    'browser-only targets do not change the server contract');
 });
 
 test('legacy bookmarklet state is reported, never imported or deleted', () => {

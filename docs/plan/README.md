@@ -9,8 +9,9 @@ Last updated: 2026-11-08.
 ## Current state
 
 - Active cycle: `owner-tool-2026-11`.
-- Product work: OT00-OT07 implementation is complete; Brave/Android staging and
-  target-runtime migration execution are owner-deferred to OT10. OT07's
+- Product work: OT00-OT07 implementation is complete; Brave/Android staging is
+  owner-deferred to OT10, and OT10 executed the target-runtime migration checks
+  on 2026-11-08. OT07's
   rigorous Release B review returned PASS WITH ACCEPTED FINDINGS; the owner
   authorized `FIX-1`, which was applied and then closed by the closure-focused
   re-review on 2026-11-06, so phase 8 is review-settled and OT08 is next.
@@ -46,8 +47,13 @@ Last updated: 2026-11-08.
   consolidation is done and recorded; it changes the handoff file set, not the
   OT10 gates. Its `FIX-1` documentation evidence gap was fixed and closed by the
   closure-focused re-review on 2026-11-08, so phase 10A is review-settled and
-  included in the 2026-11-08 boundary commit. OT10 remains blocked on local
-  PHP/staging execution and is not started.
+  included in the 2026-11-08 boundary commit. OT10 local execution is in
+  progress: PHP 8.3.16 lint/suites, MySQL 8.0.41 migration preflight/forward/
+  rerun/rollback, adversarial schema/rollback probes, and a desktop Chromium 155
+  harness pass. The Brave/Android phone check was performed on 2026-11-09 and
+  passed; it surfaced three owner-workflow refinements, routed by the owner to
+  the independent OT11 package (phase 12). OT10 remains blocked on the
+  independent final review and the live deployment artifacts; it is not done.
 - Working branch: `owner-tool-integration` is the authoritative integration and
   implementation line. `main` is the published baseline, not the current work
   branch. See [Branch strategy](#branch-strategy).
@@ -87,6 +93,32 @@ Last updated: 2026-11-08.
   product, test, fixture, parser-version, state-key, or deployment change. The
   closure-focused re-review returned `PASS` and closed `FIX-1` on 2026-11-08;
   phase 10A is review-settled and included in the 2026-11-08 boundary commit.
+- OT10 local evidence (uncommitted, base `79a6a57`, 2026-11-08): 59 runner PASS,
+  0 PENDING; 162 unit PASS; 53 owner-tool PASS; 14 context-migration PASS; 5
+  cbt-context PASS; 13 context-lib PASS; 19 context-admin PASS; 6
+  context-preflight PASS; 9 PHP renderer PASS; 7 cbt-candidate PASS; PHP 8.3.16
+  and JS syntax PASS. MySQL 8.0.41 migration preflight/forward/rerun/rollback
+  passed on a disposable production-shaped database, including extra/wrong-type/
+  descending/cascading schema probes, position-only/slot-only/context-row
+  rollback guards, and the post-`ALTER` writer-contention boundary. Desktop
+  Chromium 155.0.8059.40 local harness: 33/33 PASS (admin login, owner tool,
+  comprehension/cloze load, underline/paragraph preview, native PRG save, edit
+  formatting tool, CBT complete-group delivery, answer-details XSS probes). The
+  local smoke used test-only `cbt_db.php`, `cbt_admin_config.php`, and an
+  inferred `cbt_exam_attempts` table; do not deploy them. The Brave/Android
+  phone check passed on 2026-11-09; the independent final review and live
+  artifacts remain open. The known Windows/CRLF `extract-bank` pre-2026
+  mismatch remains pre-existing. No live write and no commit.
+- OT11 evidence (uncommitted, 2026-11-09): 59 runner PASS; 162 unit PASS; 61
+  owner-tool PASS; 14 context-migration PASS; 5 cbt-context PASS; 13 context-lib
+  PASS; 20 context-admin PASS; 6 context-preflight PASS; 9 PHP renderer PASS; 7
+  cbt-candidate PASS; PHP/JS syntax PASS. The first phone re-check found that the JS/native
+  context editors were still separate; the owner required one native editor and
+  the correction removed the duplicate fields, numeric pool inputs, toggle, and
+  Fill action. Chromium 155 then passed the merged-card DOM, Add reveal,
+  one-match adoption/member skip, and multi-context selector probes. The final
+  owner Brave/Android re-check and rigorous review remain open. No live write and
+  no commit.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
@@ -218,7 +250,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | done; parser 2.2.0; light review PASS at OT09 Gate 1 | key sample partially supplied 2026-11-08 (Q13-Q15; Q11-Q12 pending) |
 | 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed | cloze key supplied 2026-11-08 (OT10 validates) |
 | 10A | OT09A | [Production Consolidation](owner-tool/ot-09a-production-consolidation.md) | OT09 boundary | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed | none; OT10 gates unchanged |
-| 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked | local PHP, staging, all prior artifacts |
+| 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked: local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; final review and live artifacts pending | local PHP, staging, all prior artifacts |
+| 12 | OT11 | [Owner Workflow Refinements](owner-tool/ot-11-owner-workflow-refinements.md) | OT10 phone check (2026-11-09) | implementation corrected during phone re-check; local/Chromium checks pass; final owner Brave/Android re-check and rigorous review pending | owner Brave/Android re-check |
 
 The active map duplicates these statuses for session resolution. Update both
 files in the same package handoff; a mismatch blocks the next Gate 1.
@@ -284,7 +317,8 @@ verifies the detail path with the rest of Release A.
 | phase 8 close | OT07 Release B | rigorous | pass; review PASS WITH ACCEPTED FINDINGS, `FIX-1` closed by re-review 2026-11-06, boundary committed |
 | phase 9 | OT08 | light at OT09 Gate 1 | pass at OT09 Gate 1 |
 | phase 10 close | OT09 Release C | rigorous | pass; implementation done 2026-11-06; `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed |
-| phase 11 close | OT10 final release | rigorous | pending |
+| phase 11 close | OT10 final release | rigorous | pending; phone check passed 2026-11-09 |
+| phase 12 close | OT11 owner workflow refinements | rigorous | pending |
 
 OT05 implementation and its accepted Phase 6 fixes are complete. The third
 re-review remains immutable evidence. `BLOCK-3` and `BLOCK-6` are closed against
@@ -335,8 +369,17 @@ an OT10 constraint.
 Current workflow stop:
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 11
+NEXT COMMAND: NONE - complete the owner Brave/Android OT11 re-check before rigorous review
 ```
+
+OT10 is mid-package, not at a clean boundary. The Brave/Android phone check was
+performed on 2026-11-09 and passed; its three owner-workflow refinements are
+routed to OT11 (phase 12). OT11's first re-check found the duplicate-editor
+workflow defect; the one-native-editor correction now passes local and Chromium
+checks. The final owner Brave/Android re-check and rigorous review are pending. OT10 remains
+blocked on the independent final review and the live deployment artifacts. The
+local PHP/DB/desktop evidence is recorded in the OT10 handoff and
+[`../DEPLOYMENT.md`](../DEPLOYMENT.md).
 
 Rigorous reviews use [`prompts/review-session.md`](prompts/review-session.md)
 and write immutable records under [`reviews/`](reviews/README.md). A first-round

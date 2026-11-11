@@ -168,6 +168,37 @@ function cbt_admin_context_page_data(
     ];
 }
 
+function cbt_admin_owner_context_payload(?PDO $pdo): array
+{
+    if ($pdo === null) {
+        return [];
+    }
+    try {
+        return array_map(static function (array $context) use ($pdo): array {
+            return [
+                'context_id' => (int) $context['id'],
+                'context_type' => (string) $context['context_type'],
+                'title' => (string) $context['title'],
+                'subject_id' => (string) $context['subject_id'],
+                'exam_category_id' => (string) $context['exam_category_id'],
+                'exam_year' => (string) $context['exam_year'],
+                'expected_member_count' => (int) $context['expected_member_count'],
+                'member_count' => (int) $context['member_count'],
+                'is_active' => (int) $context['is_active'],
+                'members' => array_map(static function (array $member): array {
+                    return [
+                        'question_text' => (string) $member['question_text'],
+                        'context_position' => (string) $member['context_position'],
+                        'context_slot' => (string) $member['context_slot'],
+                    ];
+                }, cbt_context_members($pdo, (int) $context['id'])),
+            ];
+        }, cbt_context_list($pdo));
+    } catch (Throwable $error) {
+        return [];
+    }
+}
+
 function cbt_admin_load_context_page(
     PDO $pdo,
     array $categories,
@@ -693,9 +724,10 @@ function cbt_admin_render_context_management(array $variables): string
 {
     extract($variables, EXTR_SKIP);
     ob_start();
-    ?><section class="admin-card">
+    ?><section class="admin-card" id="shared_context_editor">
     <div class="admin-topline">
-        <h2><?php echo $editingContextId > 0 ? 'Edit Shared Context #' . (int) $editingContextId : 'Create a Shared Context'; ?></h2>
+        <h2>Shared Context</h2>
+        <span class="admin-note" id="owner_context_native_status"><?php echo $editingContextId > 0 ? 'Editing context #' . (int) $editingContextId : 'Paste a context or choose Add Context.'; ?></span>
         <?php if ($editingContextId > 0): ?>
             <a class="admin-btn admin-btn-muted" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>" style="display:inline-block;text-decoration:none">Cancel Context Edit</a>
         <?php endif; ?>
@@ -724,10 +756,11 @@ function cbt_admin_render_context_management(array $variables): string
                     <input id="context_title" name="title" type="text" maxlength="200" value="<?php echo h($contextValues['title']); ?>" required>
                 </div>
             </div>
+            <p class="admin-note">Type, title, subject, category, and year identify a shared context. The owner tool matches a pasted context to these values.</p>
 
             <div class="admin-grid">
                 <div class="admin-field">
-                    <label for="context_subject_id">Subject Pool</label>
+                    <label for="context_subject_id">Subject</label>
                     <select id="context_subject_id" name="subject_id" required>
                         <option value="">-- Select Subject --</option>
                         <?php foreach ($subjects as $subject): ?>
@@ -736,7 +769,7 @@ function cbt_admin_render_context_management(array $variables): string
                     </select>
                 </div>
                 <div class="admin-field">
-                    <label for="context_exam_category_id">Exam Category Pool</label>
+                    <label for="context_exam_category_id">Exam Category</label>
                     <select id="context_exam_category_id" name="exam_category_id" required>
                         <option value="">-- Select Exam Category --</option>
                         <?php foreach ($contextCategories as $category): ?>
@@ -748,7 +781,7 @@ function cbt_admin_render_context_management(array $variables): string
 
             <div class="admin-grid">
                 <div class="admin-field">
-                    <label for="context_exam_year">Exam Year Pool</label>
+                    <label for="context_exam_year">Exam Year</label>
                     <input id="context_exam_year" name="exam_year" type="number" min="1900" max="2100" step="1" value="<?php echo h($contextValues['exam_year']); ?>" required>
                 </div>
                 <div class="admin-field">
@@ -756,6 +789,12 @@ function cbt_admin_render_context_management(array $variables): string
                     <input id="expected_member_count" name="expected_member_count" type="number" min="1" max="500" step="1" value="<?php echo h($contextValues['expected_member_count']); ?>" required>
                     <p class="admin-note">Activation requires exactly this many linked questions with positions 1 through this count.</p>
                 </div>
+            </div>
+
+            <div class="admin-field" id="owner_context_targets_field" hidden>
+                <label for="owner_context_targets">Linked Question Numbers</label>
+                <input id="owner_context_targets" type="text" autocomplete="off" placeholder="Example: 11, 12, 13">
+                <p class="admin-note">Filled from the paste. This controls question order in the current browser queue and is not stored in the context record.</p>
             </div>
 
             <div class="admin-field">

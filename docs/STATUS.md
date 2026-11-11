@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-08.
+Last updated: 2026-11-09.
 
 ## Active cycle
 
@@ -43,14 +43,24 @@ Last updated: 2026-11-08.
   confirm final OT08 coverage. OT09A records a 12-production-file plus 2-ops
   handoff; its documentation-only `FIX-1` was closed by the closure-focused
   re-review on 2026-11-08, with no behavior change, so phase 10A is review-settled
-  and included in the 2026-11-08 boundary commit. OT10 remains blocked on local
-  PHP/staging execution. Target-runtime migration/preflight/rollback execution
-  and browser/admin PRG checks remain deferred to OT10.
+  and included in the 2026-11-08 boundary commit. OT10 local execution is in
+  progress: PHP 8.3.16 lint/suites, MySQL 8.0.41 migration preflight/forward/
+  rerun/rollback, adversarial schema/rollback probes, and a desktop Chromium 155
+  harness all pass. The Brave/Android phone check was performed on 2026-11-09 and
+  passed; it surfaced three owner-workflow refinements, routed by the owner to
+  the independent OT11 package (phase 12). OT11's first re-check found that the
+  JS and native context editors were still separate; the owner required one
+  native editor and the correction was applied immediately. Local tests and a
+  Chromium DOM check pass; the final owner Brave/Android re-check and rigorous
+  review are pending.
+  OT10 remains blocked on the independent final review and the live deployment
+  artifacts; it is not done.
 - Product implementation: parser 2.3.2 (comprehension and cloze contexts), exact
-  underline rendering, multiline
-  stems, Add/Edit formatting, native PRG preservation, shared-context
-  schema/admin/candidate delivery, and the manual owner context workflow are in
-  place.
+  underline rendering, multiline stems, Add/Edit formatting, native PRG
+  preservation, shared-context schema/admin/candidate delivery, and the manual
+  owner context workflow are in place. OT11 adds one native Shared Context
+  editor, the merged context selector, saved-context adoption, manual selection,
+  and member dedupe.
 - Working branch: `owner-tool-integration`; `main` is the published baseline.
   See [`plan/README.md`](plan/README.md#branch-strategy).
 
@@ -58,12 +68,14 @@ Last updated: 2026-11-08.
 
 - Application target: PHP 8.3.
 - Database: MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`.
-- Local Laragon binaries are present at
-  `C:\laragon\bin\php\php-8.3.16-Win32-vs16-x64\php.exe` and
-  `C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe` (not on PATH). They
-  were not executed for the phase-10 boundary; OT10 still requires the PHP 8.3
-  target and a disposable production-shaped database (the local MySQL is 8.4.3,
-  not the 8.0.41 target).
+- Local Laragon binaries: PHP 8.3.16 at
+  `C:\laragon\bin\php\php-8.3.16-Win32-vs16-x64\php.exe` and MySQL 8.0.41 at
+  `C:\laragon\bin\mysql\mysql-8.0.41-winx64\bin\mysql.exe` (not on PATH). Both
+  were executed for OT10; the PHP 8.3 and MySQL 8.0.41 targets are satisfied.
+- Connection collation finding: on MySQL 8.0.41, PDO `charset=utf8mb4` alone
+  reports `utf8mb4_general_ci`, while the preflight requires
+  `utf8mb4_unicode_ci`. The target connector/server must set the session
+  collation. This is a deployment prerequisite, not a schema change.
 - Connection contract: root `db_conn.php` supplies the PDO connection
   (charset `utf8mb4`, exception mode, associative fetches, native prepares). The
   full credential-bearing `cbt_db.php` is no longer required.
@@ -90,6 +102,8 @@ Last updated: 2026-11-08.
 | OT09 `BLOCK-1`/`FIX-1` fix snapshot (same tree, uncommitted, parser 2.3.1) | the same six commands plus `node --check` on the changed JS and `wc -l src/parser/cloze.js` on 2026-11-07 | 59 PASS, 0 FAIL, 0 PENDING runner; 160 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; 7 bank slices OK; cloze.js 242 lines; PHP absent |
 | OT09 `FIX-2` fix and second re-review (phase 10 boundary, committed 2026-11-08, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `node tools/extract-bank.js --check`, and `node --check` on 2026-11-07; independent re-review reproduced them on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; cloze probe exit 0; all 7 source/slice/extracted bank hashes match (the CLI still reports the known Windows/CRLF on-disk fixture mismatch); cloze.js 242 lines; PHP not executed |
 | OT09A production consolidation (phase 10A boundary, committed 2026-11-08, base `652c891`, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, and `node --check` on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; 12 production files plus 2 ops; live-origin additions +95/+53/+20/+2; known Windows/CRLF `extract-bank` pre-2026 mismatch remains; `FIX-1` docs-only evidence closed by re-review 2026-11-08 |
+| OT10 local execution (2026-11-08, uncommitted, base `79a6a57`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, `node --check`, MySQL 8.0.41 migration/rollback probes, and a desktop Chromium 155 local harness on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; migration preflight/forward/rerun/rollback and adversarial probes PASS; desktop Chromium 33/33 PASS; Brave/Android phone check passed 2026-11-09; OT11 correction passes local/Chromium checks, final re-check pending |
+| OT11 implementation (2026-11-09, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/php-render.php`, `php -l` on changed deployed files, and Chromium 155 merged-card DOM probe on 2026-11-09 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 61 owner-tool; 13 context-lib; 20 context-admin; 9 PHP renderer; PHP/JS syntax PASS; one native editor, underline placement, context selector, fingerprint adoption, manual selection, and member-skip checks PASS; final owner phone re-check pending |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -122,7 +136,8 @@ question-mutation modules, keep `deployed/admin_questions.php` as narrow wiring,
 split exact preflight contract/inspection from its CLI wrapper, reject extra
 schema objects, descending index parts, and unexpected checks, and reacquire the
 context-table lock after rollback's `ALTER TABLE` boundary. Local PHP 8.3.16
-checks pass; target-runtime execution is still deferred to OT10.
+checks pass, and OT10 executed the target-runtime migration, rollback, and
+desktop-browser checks on 2026-11-08.
 
 The supplied SQL exports are archived unchanged at
 `archive/sql/2026-11-03-supplied/` with hashes. `exam_category.sql` still uses
@@ -142,6 +157,8 @@ Supplied DDL SHA-256:
 |---|---|---|
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); OT10 validates the remaining Q11-Q12 coverage |
+| Brave/Android staging check | OT10 final acceptance | Satisfied 2026-11-09; desktop Chromium passed 33/33; OT11 correction passes local/Chromium checks and its final phone re-check is pending |
+| Live `cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts` | OT10 deployment | Live-site artifacts, not supplied; the local smoke used test-only shims |
 
 OT05 implementation, accepted fixes, third re-review, and `BLOCK-8` owner
 disposition are complete. The owner rejected `BLOCK-8` for the authoritative,
@@ -165,24 +182,32 @@ card/native-form workflow; its rigorous Release B review returned PASS WITH
 ACCEPTED FINDINGS and `FIX-1` (handoff hash/byte accuracy) was fixed and closed
 by the closure-focused re-review on 2026-11-06.
 
-`header.php`, `footer.php`, and `cbt_exam_attempts` are not requested up front.
-The supplied detail page is part of OT04; OT10 repeats Release A acceptance
-instead of performing first-time integration.
+`header.php`, `footer.php`, and `cbt_exam_attempts` are live-site artifacts and
+are not requested up front. OT10's local smoke used a test-only `cbt_db.php`,
+`cbt_admin_config.php`, and an inferred `cbt_exam_attempts` table; do not deploy
+those shims. The supplied detail page is part of OT04; OT10 repeats Release A
+acceptance instead of performing first-time integration.
 
 ## Deferred to OT10
 
-OT05 wrote the migration, preflight, and rollback artifacts, and the local
-static/helper checks pass. OT10 executes and proves them on the target runtime.
-OT10 also owns:
+OT05 wrote the migration, preflight, and rollback artifacts. OT10 executed and
+proved them on the target runtime on 2026-11-08:
 
-- `php -l` on every changed/new PHP file;
-- `php tests/php-render.php`;
+- `php -l` on every changed/new PHP file: PASS on PHP 8.3.16;
+- `php tests/php-render.php`: 9 PASS;
 - migration preflight, forward, rerun, and rollback on a disposable
-  production-shaped database;
-- desktop Chromium and Brave/Android staging checks; and
-- the deployment manifest and final human-developer handoff.
+  production-shaped MySQL 8.0.41 database: PASS, including adversarial
+  schema/rollback probes and the post-`ALTER` writer-contention boundary;
+- desktop Chromium 155.0.8059.40 local harness: 33/33 PASS (admin owner tool,
+  comprehension/cloze load, underline/paragraph preview, native PRG save, edit
+  formatting tool, CBT complete-group delivery, answer-details XSS probes).
 
-These checks are not OT05 completion gates.
+Still deferred: the independent final review and the live deployment artifacts.
+The Brave/Android staging phone check passed on 2026-11-09; OT11 re-checks the
+owner-workflow refinements. The deployment manifest is
+[`DEPLOYMENT.md`](DEPLOYMENT.md); the developer handoff is
+[`DEVELOPER-GUIDE.md`](DEVELOPER-GUIDE.md). These checks are not OT05 completion
+gates.
 
 ## Delivery stages
 

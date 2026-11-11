@@ -461,6 +461,25 @@ admin_test('context page preparation contains status query failures before rende
     admin_same($data['context_values']['title'], 'Preserved', 'failed status preparation keeps values');
 });
 
+admin_test('owner context payload executes the production list and member queries', function (): void {
+    $pdo = admin_new_db();
+    admin_same(cbt_admin_owner_context_payload(null), [], 'missing connection returns an empty payload');
+    $contextId = admin_insert_context($pdo);
+    admin_insert_question($pdo, $contextId, 1);
+    $payload = cbt_admin_owner_context_payload($pdo);
+    admin_same(count($payload), 1, 'one context is embedded');
+    admin_same($payload[0]['context_id'], $contextId, 'context id is preserved');
+    admin_same($payload[0]['title'], 'Reading passage', 'context title is preserved');
+    admin_same($payload[0]['member_count'], 1, 'member count is preserved');
+    admin_same(count($payload[0]['members']), 1, 'one member is embedded');
+    admin_same($payload[0]['members'][0]['question_text'], 'What is the answer?', 'member text is preserved');
+    admin_same($payload[0]['members'][0]['context_position'], '1', 'member position is preserved');
+
+    $empty = new AdminTestPdo('sqlite::memory:');
+    $empty->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    admin_same(cbt_admin_owner_context_payload($empty), [], 'missing schema is contained');
+});
+
 admin_test('real link, move, unlink, and delete paths deactivate actual affected contexts', function (): void {
     $pdo = admin_new_db();
     $contextA = admin_insert_context($pdo, ['title' => 'A', 'is_active' => 1]);
@@ -625,6 +644,16 @@ admin_test('rendered context forms keep selectors and never nest forms', functio
     }
     foreach (['save_context', 'activate_context', 'delete_context'] as $action) {
         admin_contains($html, 'value="' . $action . '"', 'rendered action ' . $action);
+    }
+    admin_contains($html, 'id="shared_context_editor"', 'single shared-context editor card');
+    admin_contains($html, '<h2>Shared Context</h2>', 'single shared-context heading');
+    admin_contains($html, 'id="owner_context_targets"', 'browser queue target field');
+    admin_check(
+        preg_match('/\bid="owner_context_targets"[^>]*\bname=/', $html) === 0,
+        'browser queue target field is not posted'
+    );
+    foreach (['Subject Pool', 'Exam Category Pool', 'Exam Year Pool'] as $oldLabel) {
+        admin_check(!str_contains($html, $oldLabel), 'old numeric pool label removed: ' . $oldLabel);
     }
 
     $pdo->exec('UPDATE question_contexts SET is_active = 1 WHERE id = ' . $contextId);

@@ -165,6 +165,11 @@ this table during review.
 | EC-104 | Tabs or mixed context families | Rows use tabs, or a cloze table is pasted with a comprehension passage | Tabs expand to column stops; both contexts coexist as `ctx-1…` in paste order with no numbering-gap flag between them | CONFIRMED | D-68; `sample-cloze-tabs`; `sample-cloze-mixed`; `tests/unit.js` |
 | EC-105 | Cloze row number repeats an ordinary question | The paste carries an ordinary question numbered the same as a table row | Warning names the colliding numbers; the whole group stays legacy with its rows parsed as ordinary questions; no partial context, no optionless member, and any other cloze group keeps its links | CONFIRMED | D-69; `tests/unit.js` collision tests |
 | EC-106 | Two cloze groups share gap numbers | Two fully evidenced cloze groups in one paste repeat the same row numbers (for example both 71-72) | The first group keeps its context and every member; every later colliding group is dropped whole with a warning naming its gap numbers; no zero-member context, and the dropped rows do not become ordinary questions | CONFIRMED | D-70; `tests/unit.js` duplicate-group tests |
+| EC-107 | Multiple saved contexts match one paste | More than one saved context matches all hard gates | No auto-bind; the owner picks one from `#context_id` or the parsed-context selector; the selected server context is authoritative | CONFIRMED | D-73; `tests/owner-tool.js` adoption tests |
+| EC-108 | Paste header has no pool metadata | Subject/category/year cannot be inferred | The card stays editable and the native Create/Update path is used; no auto-bind on empty gates | CONFIRMED | D-73; `tests/owner-tool.js` manual-selection test |
+| EC-109 | Saved context member count differs | `expected_member_count` differs from the saved `member_count` | A visible warning names both counts; the context is still adopted and linked saves stay available | CONFIRMED | D-73; `tests/owner-tool.js` mismatch test |
+| EC-110 | Context payload is unavailable | The context schema or member query is missing | The payload is omitted; auto-adoption and member dedupe are skipped; manual selection and native creation still work | CONFIRMED | D-73; `admin_questions.php` guarded payload; PHP tests |
+| EC-111 | Duplicate context editors appear equivalent | A parsed context is shown in both JavaScript draft fields and the native PHP form | Only the native Shared Context card is rendered as an editor; paste or Add Context reveals it, and the multi-context selector switches that same form | CONFIRMED | D-74; owner Brave/Android finding 2026-11-09; `tests/owner-tool.js`; Chromium 155 DOM check |
 
 Known limits of the archived blocks: block 2 still omits Q5, Q6, Q10, and Q11; Q1 is unnumbered; Q16 has only A/B and keeps `202.` in A. Block 1 is 19 bullets with no numbers. These limits are recorded, not repaired by guessing.
 
@@ -209,22 +214,26 @@ closed by the archived PHP/HTML sources:
   a boundary-less second A–D set.
 - EC-87, EC-88, and EC-89 are CONFIRMED by the P13 fixtures and unit checks for
   the shared table, marker fallback, and image-plan gate.
-- EC-90 through EC-94 are CONFIRMED by the OT04 parser/owner-tool regressions
-  and desktop Chromium harness; PHP runtime and Brave/Android staging
-  verification are owner-deferred to OT10.
+- EC-90 through EC-94 are CONFIRMED by the OT04 parser/owner-tool regressions,
+  the PHP 8.3.16 suites, and the desktop Chromium harness; the Brave/Android
+  staging check remains owner-deferred.
 - EC-95 through EC-99 are CONFIRMED by the OT08 comprehension fixtures and
-  owner-tool tests; the real same-paste key evidence remains open.
+  owner-tool tests. The owner supplied same-paste comprehension keys for Q13-Q15
+  in `sample-passages.txt` on 2026-11-08; Q11-Q12 remain missing.
 - EC-100 through EC-104 are CONFIRMED by the OT09 cloze fixtures, unit checks,
-  and owner-tool tests; the real same-paste cloze key evidence remains open.
+  and owner-tool tests. The owner supplied the complete same-paste cloze key for
+  Q71-Q80 in `sample-passages.txt` on 2026-11-08.
 - EC-105 is CONFIRMED by the 2026-11-07 `FIX-1` unit tests.
 - EC-106 is CONFIRMED by the 2026-11-07 `FIX-2` unit tests: the owner replaced
   the review's refuse-later criterion with keep-first deduplication, so the
   first evidenced group survives and every later colliding group is dropped
   whole with a warning naming its gap numbers.
+- EC-107 through EC-111 are CONFIRMED by the OT11 owner-tool tests and the
+  guarded read-only payload on `admin_questions.php`.
 
 ## Counts
 
-- Total: 106
-- CONFIRMED: 102
+- Total: 111
+- CONFIRMED: 107
 - UNVERIFIED: 4
 - CONFLICTED: 0

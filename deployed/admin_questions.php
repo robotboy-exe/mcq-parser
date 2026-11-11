@@ -1057,8 +1057,10 @@ if (is_file(__DIR__ . '/header.php')) {
 </div>
 </main>
 
-<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2c">
-<script src="src/parser/core.js?v=2.3.2c"></script><script src="src/owner-tool/render.js?v=2.3.2c"></script><script src="src/owner-tool/owner-tool.js?v=2.3.2c"></script>
+<?php $ownerContextData = cbt_admin_owner_context_payload($pdo ?? null); ?>
+<script type="application/json" id="owner_tool_context_data"><?php echo json_encode($ownerContextData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
+<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2e">
+<script src="src/parser/core.js?v=2.3.2e"></script><script src="src/owner-tool/render.js?v=2.3.2e"></script><script src="src/owner-tool/owner-tool.js?v=2.3.2e"></script>
 
 
 <?php if (is_file(__DIR__ . '/footer.php')) { include __DIR__ . '/footer.php'; } ?>

@@ -173,7 +173,7 @@ $questionsForBrowser = array_map(static function (array $row): array {
 include __DIR__ . '/header.php';
 ?>
 
-<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2c">
+<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2e">
 <style>
 /* =========================================================
    SKYMENU ONLINE CBT
@@ -729,7 +729,7 @@ include __DIR__ . '/header.php';
 </main>
 
 <?php if ($examStarted): ?>
-<script src="src/owner-tool/render.js?v=2.3.2c"></script>
+<script src="src/owner-tool/render.js?v=2.3.2e"></script>
 <script>
 // Questions are randomly selected from MySQL for the chosen subject/category.\n// Subject 6 (English Language) allows 100; subject 12 (Oral English) allows 60; others allow 50.
 // JSON_HEX_* prevents question text from breaking the script context.

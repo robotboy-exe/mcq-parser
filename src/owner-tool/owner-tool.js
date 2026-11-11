@@ -44,6 +44,8 @@
       return 'context server id is invalid';
     }
     if (typeof context.stale !== 'boolean') return 'context stale flag is invalid';
+    if (context.adopted !== undefined && typeof context.adopted !== 'boolean') return 'context adopted flag is invalid';
+    if (context.adopted === true && positiveInt(context.serverId) === null) return 'adopted context needs a server id';
     return '';
   }
 
@@ -79,6 +81,8 @@
       if (item.contextRef !== undefined && typeof item.contextRef !== 'string') return 'question context reference is invalid';
       if (item.contextPosition !== undefined && typeof item.contextPosition !== 'string') return 'question context position is invalid';
       if (item.contextSlot !== undefined && typeof item.contextSlot !== 'string') return 'question context slot is invalid';
+      if (item.manualContextId !== undefined && typeof item.manualContextId !== 'string') return 'question manual context id is invalid';
+      if (item.alreadySaved !== undefined && typeof item.alreadySaved !== 'boolean') return 'question saved flag is invalid';
     }
     if (!isObject(state.answerKey)) return 'answer key is not an object';
     if (!isIndex(state.currentIndex)) return 'current index is not a valid position';
@@ -273,7 +277,8 @@
       examCategoryId: source.exam_category_id === undefined ? '' : String(source.exam_category_id || ''),
       examYear: source.exam_year === undefined ? '' : String(source.exam_year || ''),
       serverId: null,
-      stale: false
+      stale: false,
+      adopted: false
     };
   }
 
@@ -365,7 +370,17 @@
 
   function linkInfo(state, item) {
     var info = { card: null, blocked: false, message: '' };
-    if (!item || !item.contextRef) return info;
+    if (!item) return info;
+    var manualId = positiveInt(item.manualContextId);
+    if (manualId !== null) {
+      info.card = item.contextRef ? findById(state.contexts, item.contextRef) : null;
+      if (info.card && info.card.contextType === 'cloze' && !item.contextSlot) {
+        info.blocked = true;
+        info.message = 'This cloze question has no matching [[gap:N]] slot.';
+      }
+      return info;
+    }
+    if (!item.contextRef) return info;
     var card = findById(state.contexts, item.contextRef);
     if (!card) {
       info.blocked = true;
@@ -388,7 +403,7 @@
     }
     if (card.serverId === null || card.serverId === undefined) {
       info.blocked = true;
-      info.message = 'Create this context in the native form before saving a linked question.';
+      info.message = 'Create this context in the native form, or pick an existing context from the Shared Context dropdown.';
       return info;
     }
     if (card.stale) {
@@ -421,6 +436,8 @@
       return 'context server id is invalid';
     }
     if (typeof context.stale !== 'boolean') return 'context stale flag is invalid';
+    if (context.adopted !== undefined && typeof context.adopted !== 'boolean') return 'context adopted flag is invalid';
+    if (context.adopted === true && positiveInt(context.serverId) === null) return 'adopted context needs a server id';
     return '';
   }
 
@@ -445,6 +462,7 @@
     var model = options.model;
     var doc = options.document || (typeof document !== 'undefined' ? document : null);
     var armedId = '';
+    var syncing = false;
 
     function questionForm() {
       var action = doc.querySelector('input[name=action][value=save_question]');
@@ -459,6 +477,10 @@
     function contextForm() {
       var text = doc.getElementById('context_text');
       return text && text.form ? text.form : null;
+    }
+
+    function contextButton(form) {
+      return form ? form.querySelector('button[type=submit]') : null;
     }
 
     function field(form, name, id) {
@@ -483,45 +505,75 @@
       if (element) element.value = next === null || next === undefined ? '' : String(next);
     }
 
-    function notify(element) {
-      if (typeof Event !== 'function' || !element || typeof element.dispatchEvent !== 'function') return;
-      element.dispatchEvent(new Event('input', { bubbles: true }));
+    function targetField() {
+      return doc.getElementById('owner_context_targets');
+    }
+
+    function targetWrap() {
+      return doc.getElementById('owner_context_targets_field');
+    }
+
+    function setStatus(text) {
+      var status = doc.getElementById('owner_context_native_status');
+      if (status) status.textContent = text || '';
+    }
+
+    function isEditing() {
+      var form = contextForm();
+      var action = field(form, 'action', '');
+      return Boolean(action && String(action.value) === 'update_context');
+    }
+
+    function setVisible(visible) {
+      var form = contextForm();
+      if (form) form.hidden = !visible;
     }
 
     function fill(card) {
       var form = contextForm();
       if (!form) return false;
-      var action = field(form, 'action', '');
-      var contextId = contextIdField(form);
-      var saved = card.serverId !== null && card.serverId !== undefined;
-      if (action) action.value = saved ? 'update_context' : 'save_context';
-      contextId.value = saved ? String(card.serverId) : '';
-      var values = {
-        context_type: card.contextType,
-        title: card.title,
-        context_text: card.text,
-        subject_id: card.subjectId,
-        exam_category_id: card.examCategoryId,
-        exam_year: card.examYear,
-        expected_member_count: String(card.expectedCount)
-      };
-      var ids = {
-        context_type: 'context_type',
-        title: 'context_title',
-        context_text: 'context_text',
-        subject_id: 'context_subject_id',
-        exam_category_id: 'context_exam_category_id',
-        exam_year: 'context_exam_year',
-        expected_member_count: 'expected_member_count'
-      };
-      Object.keys(values).forEach(function (name) {
-        var element = field(form, name, ids[name]);
-        if (element) {
-          element.value = values[name];
-          notify(element);
-        }
-      });
-      armedId = card.localId;
+      syncing = true;
+      try {
+        var action = field(form, 'action', '');
+        var contextId = contextIdField(form);
+        var saved = card.serverId !== null && card.serverId !== undefined;
+        if (action) action.value = saved ? 'update_context' : 'save_context';
+        contextId.value = saved ? String(card.serverId) : '';
+        var values = {
+          context_type: card.contextType,
+          title: card.title,
+          context_text: card.text,
+          subject_id: card.subjectId,
+          exam_category_id: card.examCategoryId,
+          exam_year: card.examYear,
+          expected_member_count: String(card.expectedCount)
+        };
+        var ids = {
+          context_type: 'context_type',
+          title: 'context_title',
+          context_text: 'context_text',
+          subject_id: 'context_subject_id',
+          exam_category_id: 'context_exam_category_id',
+          exam_year: 'context_exam_year',
+          expected_member_count: 'expected_member_count'
+        };
+        Object.keys(values).forEach(function (name) {
+          var element = field(form, name, ids[name]);
+          if (element) element.value = values[name];
+        });
+        var targets = targetField();
+        if (targets) targets.value = card.targets.join(', ');
+        var wrap = targetWrap();
+        if (wrap) wrap.hidden = false;
+        var button = contextButton(form);
+        if (button) button.textContent = saved ? 'Update Context' : 'Create Context';
+        setStatus(saved
+          ? (card.adopted ? 'Matched saved context #' : 'Editing context #') + card.serverId
+          : 'New context draft');
+        armedId = card.localId;
+      } finally {
+        syncing = false;
+      }
       return true;
     }
 
@@ -547,6 +599,8 @@
           card.expectedCount = number;
         }
       }
+      var targets = targetField();
+      if (targets) card.targets = model.parseTargets(targets.value);
       if (model.TYPES.indexOf(card.contextType) === -1) card.contextType = model.TYPES[0];
       return card;
     }
@@ -554,11 +608,15 @@
     function prepare(state, item) {
       var info = { blocked: false, message: '', card: null };
       if (item) info = model.linkInfo(state, item);
-      setValue('context_id', info.card && info.card.serverId !== null && info.card.serverId !== undefined
+      var manualId = item && item.manualContextId ? String(item.manualContextId) : '';
+      var cardId = info.card && info.card.serverId !== null && info.card.serverId !== undefined
         ? String(info.card.serverId)
-        : '');
-      setValue('context_position', item && item.contextPosition ? item.contextPosition : '');
-      setValue('context_slot', info.card && info.card.contextType === 'cloze' && item ? item.contextSlot : '');
+        : '';
+      setValue('context_id', manualId || cardId);
+      if (!(manualId && !info.card)) {
+        setValue('context_position', item && item.contextPosition ? item.contextPosition : '');
+        setValue('context_slot', info.card && info.card.contextType === 'cloze' && item ? item.contextSlot : '');
+      }
       var button = questionButton();
       if (button) button.disabled = Boolean(info.blocked);
       return info;
@@ -568,32 +626,55 @@
       armedId = '';
       var form = contextForm();
       if (form) {
-        var action = field(form, 'action', '');
-        var contextId = contextIdField(form);
-        if (action) action.value = 'save_context';
-        contextId.value = '';
-        Object.keys({
-          context_type: 'comprehension',
-          title: '',
-          context_text: '',
-          subject_id: '',
-          exam_category_id: '',
-          exam_year: ''
-        }).forEach(function (name) {
-          var element = field(form, name, name === 'title' ? 'context_title'
-            : name === 'subject_id' ? 'context_subject_id'
-              : name === 'exam_category_id' ? 'context_exam_category_id'
-                : name === 'exam_year' ? 'context_exam_year' : name);
-          if (element) element.value = name === 'context_type' ? 'comprehension' : '';
-        });
-        var expected = field(form, 'expected_member_count', 'expected_member_count');
-        if (expected) expected.value = '1';
+        syncing = true;
+        try {
+          var action = field(form, 'action', '');
+          var contextId = contextIdField(form);
+          if (action) action.value = 'save_context';
+          contextId.value = '';
+          Object.keys({
+            context_type: 'comprehension',
+            title: '',
+            context_text: '',
+            subject_id: '',
+            exam_category_id: '',
+            exam_year: ''
+          }).forEach(function (name) {
+            var element = field(form, name, name === 'title' ? 'context_title'
+              : name === 'subject_id' ? 'context_subject_id'
+                : name === 'exam_category_id' ? 'context_exam_category_id'
+                  : name === 'exam_year' ? 'context_exam_year' : name);
+            if (element) element.value = name === 'context_type' ? 'comprehension' : '';
+          });
+          var expected = field(form, 'expected_member_count', 'expected_member_count');
+          if (expected) expected.value = '1';
+          var targets = targetField();
+          if (targets) targets.value = '';
+          var wrap = targetWrap();
+          if (wrap) wrap.hidden = true;
+          var contextSubmit = contextButton(form);
+          if (contextSubmit) contextSubmit.textContent = 'Create Context';
+          setStatus('Paste a context or choose Add Context.');
+        } finally {
+          syncing = false;
+        }
       }
       setValue('context_id', '');
       setValue('context_position', '');
       setValue('context_slot', '');
       var button = questionButton();
       if (button) button.disabled = false;
+    }
+
+    function changed() {
+      if (syncing || !armedId) return;
+      var card = options.getCard(armedId);
+      if (!card) return;
+      var before = model.fingerprint(card);
+      read(card);
+      if (model.fingerprint(card) === before) return;
+      if (card.serverId !== null && card.serverId !== undefined) card.stale = true;
+      if (options.onChange) options.onChange(card);
     }
 
     var form = contextForm();
@@ -607,6 +688,14 @@
         }
         return event;
       });
+      ['context_type', 'context_title', 'context_text', 'context_subject_id',
+        'context_exam_category_id', 'context_exam_year', 'expected_member_count',
+        'owner_context_targets'].forEach(function (id) {
+        var element = doc.getElementById(id);
+        if (!element) return;
+        element.addEventListener('input', changed);
+        element.addEventListener('change', changed);
+      });
     }
 
     return {
@@ -615,6 +704,8 @@
       prepare: prepare,
       clear: clear,
       hasForm: Boolean(form),
+      isEditing: isEditing,
+      setVisible: setVisible,
       armedId: function () { return armedId; }
     };
   }
@@ -624,105 +715,16 @@
 
   var contextCardApi = (function () {
     'use strict';
-  function create(model, doc) {
-    function node(tag, props, text) {
-      var element = doc.createElement(tag);
-      Object.keys(props || {}).forEach(function (key) { element[key] = props[key]; });
-      if (text !== undefined) element.textContent = String(text);
-      return element;
-    }
-
-    function add(parent, tag, props, text) {
-      var element = node(tag, props, text);
-      parent.appendChild(element);
-      return element;
-    }
-
-    function field(parent, label, control) {
-      var wrap = add(parent, 'div', { className: 'owner-context-field' });
-      add(wrap, 'span', { className: 'owner-context-label' }, label);
-      wrap.appendChild(control);
-    }
-
-    function bind(handler, card, index, name, element, type) {
-      element.addEventListener(type || 'input', function () {
-        handler.onEdit(card, index, name, element);
-      });
-    }
-
+  function create() {
     function status(card) {
+      if (card.serverId !== null && card.serverId !== undefined && card.stale) {
+        return 'Context #' + card.serverId + ': update required';
+      }
+      if (card.adopted) return 'Context #' + card.serverId + ': saved (matched)';
       if (card.serverId === null || card.serverId === undefined) return 'Draft: not created';
-      if (card.stale) return 'Context #' + card.serverId + ': update required';
       return 'Context #' + card.serverId + ': saved';
     }
-
-    function render(card, index, parent, handler) {
-      var box = add(parent, 'div', { className: 'owner-context-card' });
-      var head = add(box, 'div', { className: 'owner-context-card-head' });
-      add(head, 'strong', {}, 'Context card ' + (index + 1));
-      add(head, 'span', { id: 'owner_context_' + index + '_status', className: 'owner-context-hint' }, status(card));
-
-      var type = add(box, 'select', { id: 'owner_context_' + index + '_type' });
-      model.TYPES.forEach(function (typeName) {
-        add(type, 'option', { value: typeName }, typeName === 'cloze' ? 'Cloze' : 'Comprehension');
-      });
-      type.value = card.contextType;
-      field(box, 'Type', type);
-      bind(handler, card, index, 'contextType', type, 'change');
-
-      var title = add(box, 'input', { id: 'owner_context_' + index + '_title', type: 'text', value: card.title });
-      field(box, 'Title', title);
-      bind(handler, card, index, 'title', title);
-
-      var text = add(box, 'textarea', { id: 'owner_context_' + index + '_text', value: card.text });
-      field(box, 'Shared text', text);
-      bind(handler, card, index, 'text', text);
-
-      var targets = add(box, 'input', {
-        id: 'owner_context_' + index + '_targets',
-        type: 'text',
-        value: card.targets.join(', ')
-      });
-      field(box, 'Question numbers (in order)', targets);
-      bind(handler, card, index, 'targets', targets);
-
-      var expected = add(box, 'input', {
-        id: 'owner_context_' + index + '_expected',
-        type: 'number',
-        value: String(card.expectedCount)
-      });
-      field(box, 'Expected members', expected);
-      bind(handler, card, index, 'expectedCount', expected);
-
-      var subject = add(box, 'input', { id: 'owner_context_' + index + '_subject', type: 'text', value: card.subjectId });
-      field(box, 'Subject pool', subject);
-      bind(handler, card, index, 'subjectId', subject);
-
-      var category = add(box, 'input', { id: 'owner_context_' + index + '_category', type: 'text', value: card.examCategoryId });
-      field(box, 'Category pool', category);
-      bind(handler, card, index, 'examCategoryId', category);
-
-      var year = add(box, 'input', { id: 'owner_context_' + index + '_year', type: 'number', value: card.examYear });
-      field(box, 'Year pool', year);
-      bind(handler, card, index, 'examYear', year);
-
-      var actions = add(box, 'div', { className: 'owner-context-actions' });
-      var fill = add(actions, 'button', {
-        type: 'button',
-        className: 'admin-btn',
-        id: 'owner_context_' + index + '_fill'
-      }, 'Fill Context Form');
-      fill.onclick = function () { handler.onFill(card); };
-      var remove = add(actions, 'button', {
-        type: 'button',
-        className: 'admin-btn admin-btn-muted',
-        id: 'owner_context_' + index + '_remove'
-      }, 'Remove Card');
-      remove.onclick = function () { handler.onRemove(card, index); };
-      return box;
-    }
-
-    return { render: render, status: status };
+    return { status: status };
   }
 
   return { create: create };
@@ -739,6 +741,7 @@
     var doc = root.ownerDocument || (typeof document !== 'undefined' ? document : null);
     var panelWarning = '';
     var panelNotice = '';
+    var selectedLocalId = '';
     function state() {
       return options.getState();
     }
@@ -764,7 +767,8 @@
       model: model,
       document: doc,
       getCard: function (localId) { return model.findById(state().contexts, localId); },
-      onSubmit: function (card) { submitCard(card); }
+      onSubmit: function (card) { submitCard(card); },
+      onChange: function (card) { nativeChanged(card); }
     });
     function showWarning(text) {
       panelWarning = text || '';
@@ -780,19 +784,17 @@
       element.textContent = text || '';
       element.hidden = !text;
     }
-    function refreshStatus(index) {
+    function refreshStatus() {
       var data = state();
       var conflicts = model.syncLinks(data);
       var element = doc.getElementById('owner_context_status');
       if (element) {
-        var text = data.contexts.length + (data.contexts.length === 1 ? ' context card' : ' context cards');
+        var text = data.contexts.length + (data.contexts.length === 1 ? ' context' : ' contexts');
+        var selected = model.findById(data.contexts, selectedLocalId);
+        if (selected) text += '. ' + cards.status(selected) + '.';
         if (conflicts.length) text += '. Target ' + conflicts.join(', ') + ' is assigned more than once.';
         if (panelNotice) text += ' ' + panelNotice;
         element.textContent = text;
-      }
-      if (index !== undefined && data.contexts[index]) {
-        var status = doc.getElementById('owner_context_' + index + '_status');
-        if (status) status.textContent = cards.status(data.contexts[index]);
       }
     }
     function prepare(item) {
@@ -800,76 +802,100 @@
       linkWarning(info.message);
       return !info.blocked;
     }
-    function editField(card, index, name, element) {
-      if (name === 'targets') {
-        card.targets = model.parseTargets(element.value);
-      } else if (name === 'expectedCount') {
-        var expected = Number(element.value);
-        if (isFinite(expected) && Math.floor(expected) === expected && expected >= 1 && expected <= 500) {
-          card.expectedCount = expected;
-        }
-      } else if (name === 'contextType') {
-        card.contextType = model.TYPES.indexOf(element.value) === -1 ? model.TYPES[0] : element.value;
-      } else {
-        card[name] = String(element.value === null || element.value === undefined ? '' : element.value);
-      }
-      if (card.serverId !== null && card.serverId !== undefined) card.stale = true;
-      panelNotice = '';
+    function nativeChanged(card) {
+      panelNotice = card.serverId !== null && card.serverId !== undefined
+        ? 'Submit Update Context before saving linked questions.'
+        : 'Draft changes are kept in this browser until Create Context is submitted.';
       model.syncLinks(state());
-      options.persist();
-      refreshStatus(index);
-      prepare(current());
-    }
-    function fillContext(card) {
-      if (!form.fill(card)) {
-        showWarning('The native context form is unavailable. Apply the context migration before creating contexts.');
-        return;
-      }
-      showWarning('');
-      panelNotice = 'Native form prepared. Submit it to create or update the draft.';
-      refreshStatus();
-    }
-    function removeCard(card, index) {
-      var data = state();
-      if (card.serverId !== null && card.serverId !== undefined) {
-        showWarning('Removed the local card only. Server context #' + card.serverId + ' was not deleted.');
-      } else {
-        showWarning('');
-      }
-      data.contexts.splice(index, 1);
-      model.syncLinks(data);
       options.persist();
       render();
       prepare(current());
     }
+    function fillContext(card) {
+      selectedLocalId = card.localId;
+      if (!form.fill(card)) {
+        showWarning('The native context form is unavailable. Apply the context migration before creating contexts.');
+        return false;
+      }
+      form.setVisible(true);
+      panelNotice = card.serverId !== null && card.serverId !== undefined
+        ? 'This saved context is ready for linked questions; submit Update Context only after editing it.'
+        : 'Submit Create Context when the fields are correct.';
+      refreshStatus();
+      return true;
+    }
+    function autoFillDraft() {
+      var data = state();
+      var card = model.findById(data.contexts, selectedLocalId) || data.contexts[0];
+      return card ? fillContext(card) : false;
+    }
+    function removeSelected() {
+      var data = state();
+      var card = model.findById(data.contexts, selectedLocalId);
+      var index = data.contexts.indexOf(card);
+      if (!card || index < 0) return;
+      if (card.serverId !== null && card.serverId !== undefined) {
+        showWarning('Removed this browser draft only. Server context #' + card.serverId + ' was not deleted.');
+      } else {
+        showWarning('');
+      }
+      data.contexts.splice(index, 1);
+      selectedLocalId = data.contexts[index]
+        ? data.contexts[index].localId
+        : data.contexts[index - 1] ? data.contexts[index - 1].localId : '';
+      model.syncLinks(data);
+      options.persist();
+      var next = model.findById(data.contexts, selectedLocalId);
+      if (!next) form.clear();
+      render();
+      if (next) fillContext(next);
+      prepare(current());
+    }
     function render() {
       var data = state();
+      if (!model.findById(data.contexts, selectedLocalId)) {
+        selectedLocalId = data.contexts[0] ? data.contexts[0].localId : '';
+      }
       root.textContent = '';
       var head = add(root, 'div', { className: 'owner-context-head' });
-      add(head, 'strong', {}, 'Shared contexts');
       var addButton = add(head, 'button', {
         type: 'button',
         className: 'admin-btn admin-btn-muted',
         id: 'owner_context_add'
       }, 'Add Context');
       addButton.onclick = function () {
-        data.contexts.push(model.emptyContext(data.metadata));
-        panelNotice = 'Context card added.';
+        var card = model.emptyContext(data.metadata);
+        data.contexts.push(card);
+        selectedLocalId = card.localId;
+        panelNotice = 'New context draft added.';
         showWarning('');
         model.syncLinks(data);
         options.persist();
         render();
+        fillContext(card);
         prepare(current());
       };
-      add(head, 'span', { className: 'owner-context-hint' }, 'Paste or add a card, then create and update it with the native context form.');
-      var list = add(root, 'div', { className: 'owner-context-list' });
-      data.contexts.forEach(function (card, index) {
-        cards.render(card, index, list, {
-          onEdit: editField,
-          onFill: fillContext,
-          onRemove: removeCard
+      if (selectedLocalId) {
+        var removeButton = add(head, 'button', {
+          type: 'button',
+          className: 'admin-btn admin-btn-muted',
+          id: 'owner_context_remove'
+        }, 'Remove Current Draft');
+        removeButton.onclick = removeSelected;
+      }
+      add(head, 'span', { className: 'owner-context-hint' }, 'Paste fills this form. Add Context starts one manually. Subject and category use the named lists below.');
+      if (data.contexts.length > 1) {
+        var select = add(root, 'select', { id: 'owner_context_select', className: 'owner-context-select' });
+        data.contexts.forEach(function (card, index) {
+          add(select, 'option', { value: card.localId }, (index + 1) + '. ' + (card.title || 'Untitled') + ' — ' + cards.status(card));
         });
-      });
+        select.value = selectedLocalId;
+        select.onchange = function () {
+          var card = model.findById(data.contexts, select.value);
+          if (card) fillContext(card);
+          prepare(current());
+        };
+      }
       add(root, 'div', { id: 'owner_context_status', className: 'owner-context-status' });
       var warning = add(root, 'div', {
         id: 'owner_context_warning',
@@ -882,6 +908,9 @@
         className: 'admin-alert owner-tool-error owner-context-warning'
       });
       link.hidden = true;
+      form.setVisible(Boolean(data.contexts.length) || form.isEditing());
+      var selected = model.findById(data.contexts, selectedLocalId);
+      if (selected && form.armedId() !== selected.localId) form.fill(selected);
       refreshStatus();
     }
     function submitCard(card) {
@@ -942,29 +971,38 @@
       options.persist();
       panelWarning = '';
       panelNotice = 'Context #' + serverId + ' confirmed.';
+      selectedLocalId = card.localId;
       showWarning('');
       render();
+      form.fill(card);
+      form.setVisible(true);
       prepare(current());
+      if (options.onContextResolved) options.onContextResolved(card);
       return 'success';
     }
     function clear() {
       panelWarning = '';
       panelNotice = '';
+      selectedLocalId = '';
       form.clear();
-      linkWarning('');
       render();
+      linkWarning('');
     }
 
     return {
       render: render,
       fillQuestion: function (item) {
         model.syncLinks(state());
+        var card = item && item.contextRef ? model.findById(state().contexts, item.contextRef) : null;
+        if (card && form.armedId() !== card.localId) fillContext(card);
         return prepare(item);
       },
       canSaveQuestion: function () {
         model.syncLinks(state());
         return prepare(current());
       },
+      prepare: prepare,
+      autoFillDraft: autoFillDraft,
       resolvePending: resolvePending,
       clear: clear
     };
@@ -975,7 +1013,7 @@
 
   function startOwnerTool() {
     'use strict';
-  var TOOL_VERSION = '1.2.0';
+  var TOOL_VERSION = '1.3.0';
   var SUCCESS_FLASH = /^Question saved successfully \(Question ID: \d+\)\.$/;
   var META_FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   var OPTION_FIELDS = ['option_a', 'option_b', 'option_c', 'option_d'];
@@ -1009,6 +1047,16 @@
   var pasteVisible = false;
   var savedSelection = null;
   var contextPanel = null;
+  var serverContexts = (function () {
+    var element = document.getElementById('owner_tool_context_data');
+    if (!element) return [];
+    try {
+      var data = JSON.parse(String(element.textContent || '[]'));
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      return [];
+    }
+  })();
 
   function $(id) {
     return document.getElementById(id);
@@ -1103,6 +1151,135 @@
       item.contextSlot = '';
     });
     return cards;
+  }
+
+  function normalizeContextText(value) {
+    return String(value === null || value === undefined ? '' : value)
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function contextHardKey(subject, category, year, type, title) {
+    return [String(subject || ''), String(category || ''), String(year || ''),
+      String(type || ''), normalizeContextText(title)].join('\u0001');
+  }
+
+  function cardHardKey(card) {
+    return contextHardKey(card.subjectId, card.examCategoryId, card.examYear, card.contextType, card.title);
+  }
+
+  function serverHardKey(server) {
+    return contextHardKey(server.subject_id, server.exam_category_id, server.exam_year, server.context_type, server.title);
+  }
+
+  function matchServerContexts(card) {
+    if (!card.subjectId || !card.examCategoryId || !card.examYear) return [];
+    var key = cardHardKey(card);
+    var matches = [];
+    serverContexts.forEach(function (server) {
+      if (serverHardKey(server) === key) matches.push(server);
+    });
+    return matches;
+  }
+
+  function serverContextById(id) {
+    var wanted = String(id || '');
+    for (var i = 0; i < serverContexts.length; i++) {
+      if (String(serverContexts[i].context_id) === wanted) return serverContexts[i];
+    }
+    return null;
+  }
+
+  function editingContextId() {
+    var text = $('context_text');
+    var contextForm = text && text.form ? text.form : null;
+    if (!contextForm) return 0;
+    var action = contextForm.querySelector('input[name=action]');
+    if (!action || String(action.value) !== 'update_context') return 0;
+    var hidden = contextForm.querySelector('input[name=context_id]');
+    var id = hidden ? Number(hidden.value) : 0;
+    return isFinite(id) && Math.floor(id) === id && id > 0 ? id : 0;
+  }
+
+  function adoptMatchingContexts(state) {
+    var warnings = [];
+    var editingId = editingContextId();
+    var editingApplied = false;
+    state.contexts.forEach(function (card) {
+      if (card.serverId !== null && card.serverId !== undefined) return;
+      if (editingId && !editingApplied) {
+        card.serverId = editingId;
+        card.adopted = true;
+        card.stale = false;
+        editingApplied = true;
+        return;
+      }
+      var matches = matchServerContexts(card);
+      if (matches.length !== 1) {
+        if (matches.length > 1) {
+          warnings.push('More than one saved context matches "' + card.title + '". Pick the right one from the Shared Context dropdown.');
+        }
+        return;
+      }
+      var match = matches[0];
+      card.serverId = Number(match.context_id);
+      card.adopted = true;
+      card.stale = false;
+      if (Number(match.member_count) !== Number(card.expectedCount)) {
+        warnings.push('Context #' + match.context_id + ' has ' + match.member_count + ' saved member(s); the parsed card expects ' + card.expectedCount + '.');
+      }
+    });
+    return warnings;
+  }
+
+  function normalizeQuestionText(value) {
+    return String(value === null || value === undefined ? '' : value)
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  function refreshAlreadySaved(state) {
+    if (!contextModel) return;
+    state.items.forEach(function (item) {
+      if (!item) return;
+      item.alreadySaved = false;
+      if (!item.manualContextId && !item.contextRef) return;
+      var contextId = item.manualContextId;
+      var position = item.contextPosition;
+      var slot = item.contextSlot;
+      if (!contextId && item.contextRef) {
+        var card = contextModel.findById(state.contexts, item.contextRef);
+        if (card && card.serverId !== null && card.serverId !== undefined) contextId = String(card.serverId);
+        if (card && !position) {
+          var index = card.targets.indexOf(Number(item.num));
+          if (index !== -1) position = String(index + 1);
+        }
+      }
+      var server = contextId ? serverContextById(contextId) : null;
+      if (!server) return;
+      var text = normalizeQuestionText(item.question);
+      var members = Array.isArray(server.members) ? server.members : [];
+      item.alreadySaved = members.some(function (member) {
+        if (normalizeQuestionText(member.question_text) !== text) return false;
+        if (slot && String(member.context_slot) !== String(slot)) return false;
+        if (position && String(member.context_position) !== String(position)) return false;
+        return true;
+      });
+    });
+  }
+
+  function skipAlreadySaved(state) {
+    var skipped = [];
+    for (var guard = 0; guard <= state.items.length; guard++) {
+      var item = state.items[state.currentIndex];
+      if (!item || !item.alreadySaved) break;
+      skipped.push(item.num === null || item.num === undefined ? '?' : item.num);
+      state.currentIndex += 1;
+    }
+    if (skipped.length) state.pendingSubmission = null;
+    return skipped;
   }
 
   function applyMetadata() {
@@ -1330,8 +1507,11 @@
       var savedNum = item.num === null || item.num === undefined ? '?' : item.num;
       loaded.currentIndex += 1;
       loaded.pendingSubmission = null;
+      refreshAlreadySaved(loaded);
+      var skipped = skipAlreadySaved(loaded);
       persist();
       note('Question ' + savedNum + ' saved. The next question is loaded.');
+      if (skipped.length) warn('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
       return 'success';
     }
     var pendingNum = item && item.num !== null && item.num !== undefined ? item.num : '?';
@@ -1372,14 +1552,80 @@
       + '</div>');
   form.before(panel);
 
+  var formatToolbar = panel.querySelector('.owner-tool-format');
+  var questionBoxForFormat = $('question_text');
+  if (formatToolbar && questionBoxForFormat && questionBoxForFormat.parentNode) {
+    if (typeof questionBoxForFormat.parentNode.insertBefore === 'function') {
+      questionBoxForFormat.parentNode.insertBefore(formatToolbar, questionBoxForFormat);
+    } else {
+      questionBoxForFormat.parentNode.appendChild(formatToolbar);
+    }
+  }
+
+  var nativeContextSection = (function () {
+    var node = $('context_text');
+    while (node && node !== document.body) {
+      if (node.tagName === 'SECTION' && String(node.className || '').indexOf('admin-card') !== -1) return node;
+      node = node.parentNode;
+    }
+    return null;
+  })();
+  var contextPanelRoot = $('owner_context_panel');
+  if (nativeContextSection && nativeContextSection.parentNode && panel.parentNode) {
+    panel.parentNode.insertBefore(nativeContextSection, panel.nextSibling);
+    var nativeContextForm = $('context_text') && $('context_text').form;
+    if (contextPanelRoot && nativeContextForm && nativeContextForm.parentNode === nativeContextSection) {
+      nativeContextSection.insertBefore(contextPanelRoot, nativeContextForm);
+    }
+  }
+
+  function onContextResolved() {
+    refreshAlreadySaved(loaded);
+    var skipped = skipAlreadySaved(loaded);
+    if (skipped.length) {
+      persist();
+      warn('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
+    }
+    render();
+  }
+
   if (!editMode && contextPanelApi && contextModel && contextFormApi && contextCardApi) {
     contextPanel = contextPanelApi.create({
       model: contextModel,
-      root: $('owner_context_panel'),
+      root: contextPanelRoot,
       getState: function () { return loaded; },
       persist: persist,
       formApi: contextFormApi,
-      cardApi: contextCardApi
+      cardApi: contextCardApi,
+      onContextResolved: onContextResolved
+    });
+  }
+
+  var contextSelect = $('context_id');
+  if (contextSelect && !editMode) {
+    contextSelect.addEventListener('change', function () {
+      var item = currentItem();
+      if (!item) return;
+      var value = String(contextSelect.value || '');
+      var manualId = /^[1-9][0-9]*$/.test(value) ? value : '';
+      if (item.contextRef) {
+        loaded.items.forEach(function (other) {
+          if (other && other.contextRef === item.contextRef) other.manualContextId = manualId;
+        });
+      } else {
+        item.manualContextId = manualId;
+      }
+      loaded.pendingSubmission = null;
+      refreshAlreadySaved(loaded);
+      var skipped = skipAlreadySaved(loaded);
+      persist();
+      if (skipped.length) {
+        warn('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
+      } else {
+        warn('');
+      }
+      if (contextPanel) contextPanel.prepare(currentItem());
+      render(true);
     });
   }
 
@@ -1392,6 +1638,14 @@
   function render(keepForm) {
     if (contextPanel && !blocked) contextPanel.render();
     var item = blocked ? null : currentItem();
+    if (item && item.alreadySaved) {
+      var skipped = skipAlreadySaved(loaded);
+      if (skipped.length) {
+        persist();
+        warn('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
+        item = currentItem();
+      }
+    }
     var total = blocked ? 0 : loaded.items.length;
     var input = $('owner_tool_input');
     if (input) input.hidden = !(pasteVisible || !item);
@@ -1484,9 +1738,14 @@
         warnings.push('question ' + number + ' is linked to more than one context');
       });
     }
+    adoptMatchingContexts(loaded).forEach(function (text) { warnings.push(text); });
+    refreshAlreadySaved(loaded);
+    var skipped = skipAlreadySaved(loaded);
+    if (skipped.length) warnings.push('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
     if (!persist()) return;
     warn(warnings.join(' '));
     showPaste(false);
+    if (!skipped.length && contextPanel) contextPanel.autoFillDraft();
     render();
   }
 

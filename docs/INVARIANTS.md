@@ -148,8 +148,8 @@ Status definitions:
 | INV-94 | The image plan is per tab and in memory: detected rows use `{stimulusId, nums, name, file}`, generic rows use `stimulusId: null`. A detected block must have its own ready row; a generic row cannot satisfy it. The gate blocks `stimulus-unassigned`, `stimulus-range`, and `image-required`; Start stays disabled until every detected block is ready and the current `needsImage` question is covered. Auto-save injects the first covering File as `question_image` with a 60-second timeout; no File, name, or plan marker is written to `ocrQueue`, `ocrSavedLog`, or `ocrBatchHistory`. Reload shows `No image`; Reset/Full Load clears the plan; key-only Load keeps it. | VERIFIED | D-60; `tests/unit.js`; `tests/ui-harness.js` 2026-10-28 |
 | INV-95 | Owner-tool state parsed by another parser version is read-only: key-only paste and native submit cannot rewrite it as current. Full re-paste or explicit Reset creates current-version state. | VERIFIED | D-66; `tests/owner-tool.js` |
 | INV-96 | Question stems fold single OCR wraps and retain real blank-line paragraphs after stimulus removal; option values remain one line. | VERIFIED | D-66; fixture `format-paragraph-stem`; `tests/unit.js` |
-| INV-97 | Only balanced exact lowercase `<u>...</u>` pairs format text. All content is escaped first; uppercase, attributed, encoded, nested, overlapping, or unmatched markers remain literal/safe. PHP and browser renderers must follow the same vectors. | AT_RISK | D-66; `tests/owner-tool.js`; `tests/php-render.php` deferred to OT10 PHP 8.3 staging |
-| INV-98 | Add mode provides importer plus formatting; Edit mode provides formatting only and performs no owner-state write. Underline retains selection and is one-step undoable. | AT_RISK | D-66; Node and desktop Chromium evidence; Brave/Android pending |
+| INV-97 | Only balanced exact lowercase `<u>...</u>` pairs format text. All content is escaped first; uppercase, attributed, encoded, nested, overlapping, or unmatched markers remain literal/safe. PHP and browser renderers must follow the same vectors. | VERIFIED | D-66; `tests/owner-tool.js`; `tests/php-render.php` on PHP 8.3.16 and desktop Chromium XSS probes, 2026-11-08 |
+| INV-98 | Add mode provides importer plus formatting; Edit mode provides formatting only and performs no owner-state write. Underline retains selection and is one-step undoable. | VERIFIED | D-66; Node, desktop Chromium, and Brave/Android 2026-11-09 evidence; OT11 re-checks the moved control |
 | INV-99 | Candidate, result, print, detail, and admin-summary paths share the exact-marker rules; options and explanations stay plain. | AT_RISK | D-66; static/desktop evidence; PHP/staging verification deferred to OT10 |
 | INV-100 | Year inference and answer-title removal accept 1900–2099 while rejecting 1899/2100. | VERIFIED | D-66; fixture `header-year-1994`; 1900/2099/1899/2100 cases in `tests/unit.js` |
 | INV-101 | A context needs strong heading evidence and at least two linked stems; passage prose is bounded before splitting and never invents ranges or numbers. | VERIFIED | D-67; `sample-comprehension-passage3/multi/ambiguous`; `tests/unit.js` |
@@ -161,12 +161,18 @@ Status definitions:
 | INV-107 | Cloze blocks are isolated before `splitSections`; comprehension and cloze contexts coexist and are numbered `ctx-1…` in paste order; synthesized items merge in number order without numbering-gap flags between families, and no context or item is posted automatically. | VERIFIED | D-68; `sample-cloze-mixed`; `tests/owner-tool.js` |
 | INV-108 | A cloze row number that collides with an ordinary question number refuses that whole group with a warning naming the colliding numbers, leaves its rows on the legacy path, and never yields a partial context or optionless member; a second, non-colliding group in the same paste keeps its context and links. | VERIFIED | D-69; `tests/unit.js` collision tests |
 | INV-109 | When a later cloze group shares any gap number with an earlier kept group, the first group keeps its context and every member and the later group is dropped whole (no context, no synthesized items, its rows stay removed) with a warning naming its gap numbers; no zero-member context is emitted and nothing is posted automatically. | VERIFIED | D-70; `tests/unit.js` duplicate-group tests |
+| INV-110 | The Underline control and hint sit adjacent to `#question_text` in add and edit modes; Ctrl+U, selection retention, and one-step undo are unchanged. | VERIFIED | D-73; `tests/owner-tool.js` placement/source check; owner phone re-check pending |
+| INV-111 | Auto-adoption requires exactly one saved context matching all hard gates (`subject_id`, `exam_category_id`, `exam_year`, `context_type`, normalized `title`); a count mismatch only warns, and zero or multiple matches never auto-bind. | VERIFIED | D-73; `tests/owner-tool.js` adoption and mismatch tests |
+| INV-112 | A manual `#context_id` selection is authoritative: `prepare` does not overwrite it, `linkInfo` accepts a selected server context without a local card `serverId`, and the current item is linked immediately. | VERIFIED | D-73; `tests/owner-tool.js` manual-selection test |
+| INV-113 | Already-saved members are matched by context ID, position (or cloze slot), and normalized question text; they are skipped with a visible notice, and a position-only text mismatch is a warning rather than a skip. | VERIFIED | D-73; `tests/owner-tool.js` member-skip test |
+| INV-114 | The context/member payload is read-only and ignored when the context schema is unavailable; no path creates, updates, activates, or saves a context or question automatically. The native Create/Update button remains the only context write. | VERIFIED | D-73; `tests/owner-tool.js` payload-source check; PHP tests |
+| INV-115 | The native Shared Context card is the only context editor. Paste or Add Context reveals it; multiple parsed contexts switch that same form. No duplicate JavaScript field set, numeric pool input, card-list toggle, or `Fill Context Form` action is rendered. `Linked Question Numbers` has no server field name and remains browser-only. | VERIFIED | D-74; `tests/owner-tool.js`; `tests/context-admin.php`; Chromium 155 DOM check 2026-11-09 |
 
 ## Counts
 
-- Total: 109
-- VERIFIED: 97
-- AT_RISK: 12
+- Total: 110
+- VERIFIED: 99
+- AT_RISK: 11
 - CONFLICTED: 0
 
 ## Conflict summary

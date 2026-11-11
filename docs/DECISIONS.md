@@ -1066,6 +1066,74 @@ paths, and requiring the consolidation review to verify the file set and
 behavior preservation. `PARSER_VERSION` stays `2.3.2`; changed shared assets get
 a cache-bust token, not a state-invalidating version bump.
 
+## D-72 — OT10 release evidence is local; phone check and final review are external gates
+
+**Choice.** OT10 proves the release on the local target runtime: PHP 8.3.16
+lint/suites, MySQL 8.0.41 migration preflight/forward/rerun/rollback on a
+disposable production-shaped database, adversarial schema/rollback probes, and a
+desktop Chromium 155 harness. The Brave/Android phone check and the independent
+final review remain external gates; OT10 is not accepted until both are done.
+The local browser smoke may use test-only `cbt_db.php`, `cbt_admin_config.php`,
+and an inferred `cbt_exam_attempts` table, but those are excluded from the
+deployment and never committed.
+
+**Why.** The owner works on Brave/Android and the release must be proven on the
+real phone path, not only desktop Chromium. The live-site artifacts
+(`cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts`) are not supplied
+and must not be fabricated into the release.
+
+**Risk.** The connection collation is a deployment prerequisite: PDO
+`charset=utf8mb4` alone reports `utf8mb4_general_ci` on MySQL 8.0.41, while the
+preflight requires `utf8mb4_unicode_ci`. `questions.practice_title` is `NOT NULL`
+with no default and the admin INSERT omits it; this is a known out-of-scope
+mismatch. Both must be verified on the target before a production deploy. The
+`extract-bank` Windows/CRLF `bank-pre-2026` mismatch remains pre-existing. No
+live write, production deploy, or cycle archive happens in this package.
+
+## D-73 — Context auto-match is optional; manual selection is the fallback
+
+**Choice.** OT11 may auto-match a parsed shared context to a saved context using
+hard gates (`subject_id`, `exam_category_id`, `exam_year`, `context_type`, and
+normalized `title`) plus a warning-only `expected_member_count` soft gate. A
+failed, ambiguous, or incomplete match never blocks a linked save: the owner
+selects an existing context from `#context_id`, and that selection is
+authoritative. `prepare` must not overwrite the manual choice, and `linkInfo`
+must accept a selected server context without requiring a local card `serverId`.
+Already-saved members are matched by context ID, position (or cloze slot), and
+normalized question text, then auto-skipped with a visible notice.
+
+**Why.** The parser's pool fields come from `inferMetadata`: the year from the
+paste header and subject/category from fuzzy header matching. A missing or
+ambiguous header leaves them empty. Making auto-match a gate would make the
+immediate-save path fail exactly when inference fails. Manual selection does not
+depend on inference and preserves the existing human-review workflow.
+
+**Risk.** Manual selection still needs valid subject/category/year when the owner
+creates a new context, and the server still rejects a question whose pool does
+not match the selected context. Member dedupe needs the read-only context/member
+payload; if it is unavailable, the tool falls back to manual review. No
+automatic context or question write is added.
+
+## D-74 — The native Shared Context card is the only context editor
+
+**Choice.** The JavaScript context-card form, numeric pool inputs, card-list
+toggle, and `Fill Context Form` action are removed. The owner tool moves Add,
+Remove, status, and multi-context selection controls into the native Shared
+Context card. A paste selects and fills that form; Add Context reveals the same
+form for manual entry. Subject and Exam Category remain native named selects.
+`Linked Question Numbers` is the only browser-only field in the card; it has no
+`name`, is not posted, and controls ordering in the current browser queue.
+
+**Why.** The first OT11 Brave/Android re-check showed that the collapsed
+JavaScript editor and native PHP form still looked like two competing ways to
+edit the same record. Auto-fill had already made `Fill Context Form` redundant,
+and numeric subject/category IDs were less clear than the native named lists.
+
+**Risk.** Native form edits now update the local context state immediately. An
+edit to a saved context marks it stale and linked-question saving remains blocked
+until the owner explicitly submits Update Context. Loading, switching, or
+editing the merged card still performs no server write.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

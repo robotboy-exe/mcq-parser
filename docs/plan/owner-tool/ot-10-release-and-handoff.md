@@ -1,10 +1,13 @@
 # OT10 — Release and Handoff
 
-- **Status:** blocked
+- **Status:** blocked: local PHP/DB/desktop checks pass; Brave/Android phone
+  check passed 2026-11-09; final rigorous review and live deployment artifacts
+  pending
 - **Depends on:** OT09 and its settled rigorous review
 - **Blocks:** cycle close
-- **External gate:** user's local PHP machine, staging environment, and all
-  remaining prior source-contract artifacts
+- **External gate:** live `cbt_db.php`, `header.php`, `footer.php`, and
+  `cbt_exam_attempts`; independent final review. The Brave/Android phone check
+  passed on 2026-11-09; OT11 re-checks its three follow-up refinements.
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal
@@ -104,3 +107,74 @@ Review: pending rigorous final review
 Commit: deferred
 Next: cycle close only after settled review and explicit authorization
 ```
+
+## Handoff
+
+Date: 2026-11-08
+Result: blocked — local release proof passes; Brave/Android phone check and
+independent final review remain open.
+
+Node/fixture/PHP results: runner 59 PASS / 0 PENDING; unit 162; owner-tool 53;
+context-migration 14; cbt-context 5; context-lib 13; context-admin 19;
+context-preflight 6; php-render 9; cbt-candidate 7; `php -l` 10 files PASS;
+`node --check` 15 files PASS; `cloze-probe` exit 0. `extract-bank --check` exits
+1 at the known Windows/CRLF `bank-pre-2026` mismatch (pre-existing).
+
+Migration/rollback evidence: on a disposable production-shaped MySQL 8.0.41
+database, preflight `not applied (ready)` → forward → `already applied (rerun
+safe)`; rerun no-op; adversarial extra CHECK, wrong `context_id` type, extra FK,
+cascading FK, descending index, extra context index, wrong `title` type, and
+extra context column all exit 1 SQLSTATE 45000; rollback guards refuse
+context/position-only/slot-only rows; empty rollback exit 0; post-rollback
+preflight `not applied (ready)`. Post-`ALTER` writer-contention probe (30k
+questions, background `cbt_writer_loop`) exited 1 with `Rollback refused:
+context data appeared during rollback; the context table was preserved.` and
+preserved 400 context rows.
+
+Release A/B/C acceptance: desktop Chromium 155.0.8059.40 local harness 33/33
+PASS — admin login + owner tool; comprehension context card/passage/options/
+correct tick/no auto-write; underline + `\n\n` preserved in form and preview;
+metadata mapping; native PRG flash `Question saved successfully (Question ID:
+103).` +1 row; edit page `#owner_format_tool`; cloze context card; answer-details
+XSS (no `window.__xss`, exact `<u>`, escaped script/img, explanation plain);
+CBT setup AJAX options; CBT complete context group, title, passage, total 4,
+attempt recorded.
+
+Deferred source integrations: live `cbt_db.php`, `header.php`, `footer.php`, and
+`cbt_exam_attempts` are not supplied. The local smoke used test-only
+`deployed/cbt_db.php`, `deployed/cbt_admin_config.php`, and an inferred
+`cbt_exam_attempts` table; do not deploy them. `cbt_practice.php` and
+`practice_title` remain outside scope.
+
+Desktop/mobile staging evidence: desktop Chromium 155.0.8059.40 PASS 33/33.
+Brave/Android phone check executed 2026-11-09; passed. It surfaced three
+owner-workflow refinements, routed to OT11 for a phone re-check.
+
+Security evidence: PHP 8.3.16 `tests/php-render.php` 9 PASS; desktop XSS probes
+show no execution, exact `<u>` only, and plain options/explanations.
+
+Deployment manifest path/hash: `docs/DEPLOYMENT.md`
+`F4DFFCC8A4B4C02B3DBE51B935AAFA682B086C834EDC6E9958A36D15A2994939` (145 lines)
+
+Developer guide path/hash: `docs/DEVELOPER-GUIDE.md`
+`281CAD9C03CDBD0E775E319157A44AED73D2063760E32DEFA3EA8BFF7EB770CB` (168 lines)
+
+Files changed: `docs/DEPLOYMENT.md` (new), `docs/DEVELOPER-GUIDE.md` (new),
+`docs/STATUS.md`, `docs/DECISIONS.md` (D-72), `docs/INVARIANTS.md` (INV-97,
+counts), `docs/EDGE_CASES.md`, `docs/AGENTS.md` (consolidated module names),
+`docs/plan/README.md`, `docs/plan/prompts/phase-map.md`,
+`docs/plan/owner-tool/next-steps.md`, this file. Test-only local files (excluded
+via `.git/info/exclude`, not committed): `deployed/cbt_db.php`,
+`deployed/cbt_admin_config.php`.
+
+Open questions/known limits: OT11 owner-workflow refinements and phone re-check;
+connection collation (`utf8mb4_unicode_ci` vs PDO `utf8mb4_general_ci`);
+`practice_title` `NOT NULL` without a default vs the admin INSERT; missing live
+header/footer/attempts artifacts; `extract-bank` pre-existing CRLF mismatch;
+final rigorous review pending.
+
+Review: pending rigorous final review
+Commit: deferred
+Next: settle OT11 and re-run the Brave/Android phone check, then run the
+independent final review; cycle close only after a settled review and explicit
+authorization.

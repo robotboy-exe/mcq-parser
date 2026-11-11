@@ -178,17 +178,27 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-08.
 
 ## OT10 Deferred Verification
 
-- [ ] Acquire an isolated staging environment when available. It must not use
-  the production database or production media storage.
-- [ ] Run `php -l` on every changed PHP file with PHP 8.3.
-- [ ] Run `php tests/php-render.php`.
-- [ ] Prove migration preflight, forward, rerun, and rollback on disposable
-  production-shaped data.
-- [ ] Run Chromium and Brave/Android checks for Add, Edit, native save, main CBT,
-  result, print, and answer-details rendering.
-- [ ] Complete the deployment manifest, final rigorous review, and cycle close.
+- [x] Local PHP/DB execution on 2026-11-08: PHP 8.3.16, MySQL 8.0.41.
+- [x] Run `php -l` on every changed PHP file with PHP 8.3.
+- [x] Run `php tests/php-render.php` (9 PASS).
+- [x] Prove migration preflight, forward, rerun, and rollback on disposable
+  production-shaped data, including adversarial schema/rollback probes and the
+  post-`ALTER` writer-contention boundary.
+- [x] Run the desktop Chromium 155 harness for Add, Edit, native save, main CBT,
+  and answer-details rendering (33/33 PASS).
+- [x] Run the Brave/Android phone check for Add, Edit, native save, main CBT,
+  result, print, and answer-details rendering on 2026-11-09. Passed; the three
+  owner-workflow refinements it surfaced are routed to OT11.
+- [x] Complete the deployment manifest and developer guide:
+  `docs/DEPLOYMENT.md`, `docs/DEVELOPER-GUIDE.md`.
+- [ ] Independent final review and cycle close.
 - [x] OT10 is the sole owner of runtime/staging verification. No OT05 completion
   gate may require these checks.
+
+The local browser smoke used test-only `deployed/cbt_db.php`,
+`deployed/cbt_admin_config.php`, and an inferred `cbt_exam_attempts` table. They
+are excluded from git and must not be deployed. The live-site `cbt_db.php`,
+`header.php`, `footer.php`, and `cbt_exam_attempts` remain external artifacts.
 
 ## Do Not Request Again
 

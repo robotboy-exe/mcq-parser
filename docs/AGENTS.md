@@ -30,12 +30,13 @@ historical regression testing, not the production delivery path.
 
 ## Production path (owner tool)
 
-`src/owner-tool/controller.js`, `src/owner-tool/state.js`,
-`src/owner-tool/contexts.js`, `src/owner-tool/context-form.js`,
-`src/owner-tool/context-card.js`, `src/owner-tool/context-panel.js`,
-`src/owner-tool/render.js`, `src/owner-tool/style.css`, and
-`src/owner-tool/context-workflow.css` are the shipping tool loaded by
-`admin_questions.php`. The context modules support manual native-form review;
+`src/owner-tool/owner-tool.js` (state, merged native context editor, and
+controller), `src/owner-tool/render.js` (shared renderer and candidate context cards), and
+`src/owner-tool/owner-tool.css` are the shipping tool loaded by
+`admin_questions.php`. The pre-OT09A module names (`controller.js`, `state.js`,
+`contexts.js`, `context-form.js`, `context-card.js`, `context-panel.js`,
+`style.css`, `context-workflow.css`) were consolidated into these three files;
+do not recreate them. The context modules support manual native-form review;
 they must never create, update, activate, or save automatically. `render.js` is
 also loaded by both CBT pages,
 and `deployed/render.php` is its server-side twin; both escape first and restore
