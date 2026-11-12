@@ -81,14 +81,39 @@ function cbt_context_members(PDO $pdo, int $contextId, bool $forUpdate = false):
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function cbt_context_list(PDO $pdo): array
+function cbt_context_list(PDO $pdo, ?int $limit = null, int $offset = 0): array
+{
+    $sql = 'SELECT c.id, c.context_type, c.title, c.context_text, c.subject_id,
+                   c.exam_category_id, c.exam_year, c.expected_member_count,
+                   c.is_active, c.created_at, c.updated_at, c.activated_at,
+                   s.subject_name, ec.category_name,
+                   (SELECT COUNT(*) FROM questions q WHERE q.context_id = c.id) AS member_count
+            FROM question_contexts c
+            LEFT JOIN subjects s ON s.id = c.subject_id
+            LEFT JOIN exam_category ec ON ec.id = c.exam_category_id
+            ORDER BY c.id DESC';
+    if ($limit !== null) {
+        $sql .= ' LIMIT :row_limit OFFSET :row_offset';
+    }
+    $stmt = $pdo->prepare($sql);
+    if ($limit !== null) {
+        $stmt->bindValue(':row_limit', max(0, $limit), PDO::PARAM_INT);
+        $stmt->bindValue(':row_offset', max(0, $offset), PDO::PARAM_INT);
+    }
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function cbt_context_count(PDO $pdo): int
+{
+    return (int) $pdo->query('SELECT COUNT(*) FROM question_contexts')->fetchColumn();
+}
+
+function cbt_context_option_list(PDO $pdo): array
 {
     $stmt = $pdo->query(
-        'SELECT c.id, c.context_type, c.title, c.subject_id,
-                c.exam_category_id, c.exam_year, c.expected_member_count,
-                c.is_active, c.created_at, c.updated_at, c.activated_at,
-                s.subject_name, ec.category_name,
-                (SELECT COUNT(*) FROM questions q WHERE q.context_id = c.id) AS member_count
+        'SELECT c.id, c.context_type, c.title, c.subject_id, c.exam_category_id, c.exam_year,
+                s.subject_name, ec.category_name
          FROM question_contexts c
          LEFT JOIN subjects s ON s.id = c.subject_id
          LEFT JOIN exam_category ec ON ec.id = c.exam_category_id
@@ -200,12 +225,12 @@ function cbt_context_status_label(array $context, int $memberCount, bool $valid 
 {
     $expected = (int) ($context['expected_member_count'] ?? 0);
     if ((int) ($context['is_active'] ?? 0) === 1) {
-        return $valid ? 'Active' : 'Active (needs review)';
+        return $valid ? 'On' : 'On - check it';
     }
     if ($memberCount !== $expected) {
-        return 'Incomplete (' . $memberCount . ' of ' . $expected . ')';
+        return 'Needs questions (' . $memberCount . ' of ' . $expected . ')';
     }
-    return $valid ? 'Ready to activate' : 'Needs review (' . $memberCount . ' of ' . $expected . ')';
+    return $valid ? 'Ready to turn on' : 'Check it (' . $memberCount . ' of ' . $expected . ')';
 }
 
 function cbt_context_scalar_input(array $input, string $key, string $label, array &$errors): string

@@ -253,7 +253,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.3.2', 'parser version');
+  eq(parsed.version, '2.3.3', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');
@@ -351,6 +351,17 @@ test('detect builds one cloze context and ten linked rows from the supplied tabl
   eq(detected.items[0].question, 'Choose the option that best fills gap 71.', 'generated stem');
   eq([detected.items[7].a, detected.items[7].b, detected.items[7].c, detected.items[7].d],
     ['a vow', 'an oath', 'an allegiance', 'a pledge'], 'wrapped multiword row');
+  eq(detected.warnings.length, 0, 'no warnings');
+});
+
+test('detect accepts a row with corroborated one-character column drift', () => {
+  const detected = cloze.detect(fs.readFileSync(
+    path.join(INPUT_DIR, 'sample-cloze-left-drift.txt'), 'utf8'));
+  eq(detected.contexts.length, 1, 'one cloze context');
+  eq(detected.items.length, 10, 'ten synthesized items');
+  const gap75 = detected.items.find(item => item.num === 75);
+  eq([gap75.a, gap75.b, gap75.c, gap75.d],
+    ['confession', 'suggestion', 'permission', 'complaint'], 'left-drift row cells');
   eq(detected.warnings.length, 0, 'no warnings');
 });
 

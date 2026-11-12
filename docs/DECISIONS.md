@@ -1134,6 +1134,147 @@ edit to a saved context marks it stale and linked-question saving remains blocke
 until the owner explicitly submits Update Context. Loading, switching, or
 editing the merged card still performs no server write.
 
+## D-75 — Phone workflow uses explicit safe stops and context-owned form state
+
+**Choice.** A question linked to a new shared context keeps **Save Question**
+tappable, but both button-click and submit paths cancel the unsafe post and show
+the exact text `Save the shared context first.` Safe standalone and saved-context
+submits remain native. A selected saved context owns Subject, Exam Category, and
+Exam Year; otherwise the linked local context owns them, then paste metadata is
+the standalone fallback. Exact context create/update success collapses the
+editor behind **Show**; rejected or ambiguous saves keep the exact pending card
+open. The three link fields and all other question fields render as separate
+groups, and the single safe preview moves beside Question Text.
+
+**Why.** Brave/Android use showed that a disabled button gave no reason, linked
+questions could retain the wrong pool, saved context forms occupied too much
+phone space, and the preview was too far from the text being checked. Short
+display text is easier to follow on a phone.
+
+**Risk.** Parser flags/warnings and fixed PRG flashes remain contract values.
+Only their owner-facing presentation is translated. The native form field names,
+CSRF/PRG flow, storage shape, parser version, and automatic-write policy do not
+change. Mobile visual acceptance still requires the owner Brave/Android re-check.
+
+## D-76 — The admin workflow is one stacked page, not a tab shell
+
+**Choice.** Add Question, Shared Texts, and All Questions remain visible as
+three full-width sections in that order, with clear card boundaries and no tab
+state. Add Shared Text lives only in Shared Texts. While a question is being
+edited, Shared Texts and All Questions are server-hidden and the owner helper is
+formatting/preview only. D-79 later supersedes only the editor placement: Edit
+Shared Text follows the paste while the saved management table stays below.
+
+**Why.** The owner rejected the proposed tab shell. One vertical flow keeps the
+three jobs understandable on desktop and phone without a second navigation
+model or PRG tab restoration.
+
+**Risk.** The sections make the page longer. Independent question and
+shared-text pagination limit the long lists, and the final phone re-check still
+owns visual acceptance.
+
+## D-77 — Full paste owns inferred state and full passage identity
+
+**Choice.** A new full paste clears every paste-derived native question value,
+link value, context-editor value, warning, selection, and pending marker before
+the new parse is applied. Empty inferred subject/category/year values clear the
+native fields. Key-only paste remains additive. Saved-context auto-adoption now
+requires pool, type, normalized title, and normalized full passage text; exact
+lowercase `<u>` markers and whitespace do not affect identity. This supersedes
+the title-only hard gate in D-73.
+
+Normal-question duplicates compare subject/category/year, normalized stem, and
+normalized options A-D against the latest 20 saved questions. Shared-text
+duplicates use the same full passage identity and exclude the saved context
+currently being edited or adopted. Both are client notices only: Save remains
+available and the server contract does not reject or overwrite duplicates.
+
+**Why.** Retained native values made a second paste appear to infer facts it did
+not contain, while title-only matching could bind distinct passages with the
+same heading. Advisory duplicate notices add review evidence without creating
+another write gate.
+
+**Risk.** Full identity intentionally auto-binds fewer passages. Manual saved
+context selection remains authoritative, and PHP/JS normalization is covered by
+paired tests.
+
+## D-78 — Shared-text paging never narrows the question selector
+
+**Choice.** Saved Shared Texts shows 10 rows per `context_page`; All Questions
+keeps its existing 20-row `page`. The question form receives a separate,
+unpaginated context-option list. Manual context selection keeps existing
+position/gap values or fills the next unused position and cloze token. Reading
+passages hide Gap number; standalone questions hide the whole link group. Saved
+context editors toggle Show/Hide without a write.
+
+**Why.** Paging the management table must not make older contexts impossible to
+select. The separate option query preserves the native link contract while the
+table stays manageable.
+
+**Risk.** The selector and read-only adoption payload still include all saved
+contexts. This is deliberate for correctness; only the management table is
+paginated.
+
+## D-79 — Edit Shared Text follows the paste and explicit edits own their form
+
+**Choice.** The one collapsible native context editor is named **Edit Shared
+Text** and sits immediately below the paste panel, before the light-blue shared-
+text link group and Question details. The paginated Saved Shared Texts table
+remains below Add Question. On `?edit_context=N`, server-loaded context values
+are authoritative: restoring the latest browser queue must not fill that editor.
+Tapping **Use Paste** on that page remains an explicit request to replace the
+editor fields and bind the parsed context to `N`.
+
+**Why.** The owner phone workflow needs the passage editor before the question
+that uses it. A reproduced staging defect showed that opening shared text #11
+loaded its server values and then immediately replaced them with shared text #6
+from `cbtOwnerTool:v1`, making Edit appear broken.
+
+**Risk.** The latest pasted question may still be visible in the separate native
+question form; it cannot overwrite the explicit shared-text edit. Moving the
+editor changes presentation only and does not change its form, CSRF/PRG action,
+storage shape, automatic-write policy, or Saved Shared Texts pagination. This
+supersedes only D-76's editor placement.
+
+## D-80 — Corroborated one-character cloze row drift is local
+
+**Choice.** Parser API `2.3.3` keeps the modal row-derived column starts from
+D-68. For one row only, if at least two of its segment starts are exactly one
+character left of otherwise absent modal B-D starts, every non-exact boundary
+in that row moves left one character before the existing rightward word-safe
+snap. Exact starts stay exact. No correction applies with fewer than two
+anchors.
+
+**Why.** In the user-supplied `new-sample.txt`, gap 75 has one space between
+`confession` and `suggestion`, then later cell starts at 29 and 43 while the
+table modes are 30 and 44. Applying the global modes made every boundary snap
+right and produced an empty Option D even though all four source words are
+present.
+
+**Risk.** This is not a general nearest-column guess. Global alignment still
+needs majority support, rightward word-safe overflow behavior remains, and true
+empty, overlong, unstable, or mismatched rows are still refused whole. The two
+independent row anchors keep the repair bounded to the evidenced one-character
+shift.
+
+## D-81 — A successful multi-text save exposes the next unsaved text
+
+**Choice.** In a paste with several shared texts, initial preparation and an
+exact context-create or update success select and open the first remaining
+unsaved text. The selector is visibly labelled **Shared text to edit**, and
+automatic question preparation does not replace a selected unsaved editor. When
+no unsaved text remains, the editor may follow the current question as before.
+Tool version `1.5.2`.
+
+**Why.** `sample-passages.txt` contains a reading passage followed by a cloze
+passage. After the first shared text saved, the editor immediately returned to
+the current reading question and hid the still-unsaved cloze text, making the
+second save appear unavailable on a phone.
+
+**Risk.** Selection and expansion are presentation state only. Every shared
+text still needs its own explicit native Save action and exact PRG success; no
+context or question is written, skipped, or activated automatically.
+
 ## Auto-Save verification notes
 
 - **2026-10-25, mock browser (Chromium 152, local copy of

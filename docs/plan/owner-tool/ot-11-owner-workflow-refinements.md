@@ -1,8 +1,8 @@
 # OT11 — Owner Workflow Refinements
 
-- **Status:** implementation corrected during the 2026-11-09 phone re-check;
-  local tests and Chromium DOM check pass; owner Brave/Android re-check and
-  rigorous review pending
+- **Status:** in progress; latest next-unsaved and parser 2.3.3 phone fixes
+  complete locally; 60 runner, 163 unit, 79 owner-tool and full local suites
+  pass; final Brave/Android confirmation and rigorous review pending
 - **Depends on:** OT10 phone check (recorded 2026-11-09) and the OT09A boundary
 - **Blocks:** OT10 final review and cycle close
 - **External gate:** owner Brave/Android re-check after implementation; no new
@@ -48,7 +48,8 @@ writes:
 ### 3. Immediate linked save with fingerprint and member awareness
 
 - Context fingerprint hard gates: `subject_id`, `exam_category_id`, `exam_year`,
-  `context_type`, normalized `title`. Soft gate: `expected_member_count`
+  `context_type`, normalized `title`, and normalized full passage text. Soft
+  gate: `expected_member_count`
   (warning only).
 - On paste load and on metadata edits, match the parsed context against the
   embedded server context list. Exactly one hard-gate match binds the existing
@@ -64,6 +65,42 @@ writes:
   position-only match with different text is a warning, not a skip.
 - The same cross-check runs on `?edit_context=N`.
 
+### 4. Follow-up phone feedback (2026-11-11)
+
+- A question linked to a new, unsaved shared context must not post. Tapping
+  **Save Question** must show the exact message **Save the shared context
+  first.** Safe standalone and saved-context submissions remain native.
+- A selected saved context or linked local context owns the question form's
+  Subject, Exam Category, and Exam Year values.
+- A context editor collapses after an exact create/update success flash. A
+  **Show** button reopens it; new drafts, failed saves, and explicit context edit
+  pages stay open.
+- The native question form has two clear visual groups: the three context-link
+  fields, and all remaining question fields.
+- Owner-facing labels, help, states, flags, and warnings use short plain words.
+  Parser evidence strings and fixed server-contract flashes remain unchanged;
+  presentation text is translated only at the owner UI boundary.
+- The one safe candidate preview is placed beside **Question Text** for normal,
+  linked, Add, and Edit flows.
+
+### 5. Final owner follow-up (2026-11-12)
+
+- Move the collapsible native shared-text editor directly below the paste panel
+  and above the light-blue question-link group.
+- Name the section **Edit Shared Text**.
+- Opening `?edit_context=N` must keep the server-loaded record even when
+  `cbtOwnerTool:v1` contains a linked context from the latest paste. An explicit
+  **Use Paste** remains allowed to replace those fields.
+
+### 6. Latest phone re-check fixes (2026-11-12)
+
+- For a multi-context paste, visibly label the editor selector and keep the
+  first unsaved shared text selected/open on initial adoption and after an exact
+  save. A saved-member skip must not return the editor to a saved first passage.
+- Parse the exact `new-sample.txt` cloze table without weakening strict refusal:
+  gap 75 may use a one-character local left correction only when at least two
+  row-derived starts corroborate it.
+
 ## Decisions
 
 - **D-OT11-1 — Automatic matching is optional; manual selection is first-class.**
@@ -71,8 +108,10 @@ writes:
   owner selects an existing context from `#context_id` (or creates one) and the
   selected server context is authoritative.
 - **D-OT11-2 — Hard and soft gates.** Auto-match uses `subject_id`,
-  `exam_category_id`, `exam_year`, `context_type`, and normalized `title` as hard
-  gates. `expected_member_count` is a warning-only soft gate.
+  `exam_category_id`, `exam_year`, `context_type`, normalized `title`, and
+  normalized full passage text as hard gates. `expected_member_count` is a
+  warning-only soft gate. The full-text addition supersedes the earlier
+  title-only wording.
 - **D-OT11-3 — Inferred metadata is a prefill, not a gate.** If the paste header
   does not identify the pool, the card stays editable and the manual path is
   used. The tool never auto-binds on empty or ambiguous gates.
@@ -82,6 +121,45 @@ writes:
 - **D-OT11-5 — Member dedupe.** Already-saved members are matched by context ID,
   position (or cloze slot), and normalized question text, then auto-skipped with
   a visible notice. A position-only mismatch warns instead of skipping.
+- **D-OT11-6 — Cancel only blocked linked submits.** The native question PRG
+  remains untouched when the form is safe. A linked-question blocker cancels
+  that submit and shows its reason; a new context uses the exact required text.
+- **D-OT11-7 — Context metadata owns linked questions.** Manual saved-context
+  selection wins first, then the linked local context, then paste metadata for
+  standalone questions. Context values do not overwrite global standalone
+  metadata.
+- **D-OT11-8 — Collapse is presentation state.** Saved context editors default
+  closed after confirmation and reopen only on **Show**. No storage shape or
+  server action changes.
+- **D-OT11-9 — Plain copy is a display rule.** Translate parser flags and
+  warnings when displayed rather than changing parser outputs or fixture
+  contracts. Keep exact question/context PRG success flashes unchanged.
+- **D-OT11-10 — One preview node.** Move the existing safe preview beside the
+  native Question Text field; do not create a second renderer or preview.
+- **D-OT11-11 — One stacked page.** Add Question, Shared Texts, and All
+  Questions are full-width sections in that order. There is no tab shell or
+  active-tab state. Question Edit server-hides the latter two sections.
+- **D-OT11-12 — Full paste replaces paste memory.** A new full paste clears
+  native question/link/context values before applying the new parse; empty
+  inference clears metadata. Key-only paste keeps the queue and contexts.
+- **D-OT11-13 — Duplicate evidence is advisory.** Latest-20 normal-question
+  identity and full shared-text identity show notices only. They never disable
+  Save, submit, skip, overwrite, or add a server rejection.
+- **D-OT11-14 — Independent shared-text paging.** The management table uses
+  `context_page` at 10 rows while the question selector remains unpaginated.
+  Manual selection fills the next unused position/gap when one is absent.
+- **D-OT11-15 — Explicit shared-text Edit owns the editor.** Edit Shared Text is
+  placed between the paste panel and native question form. Automatic queue
+  restoration cannot fill it on `?edit_context=N`; Use Paste is the explicit
+  replacement action. Saved Shared Texts stays in its paginated section below.
+- **D-OT11-16 — Unsaved text selection outranks question-following.** Initial
+  preparation and exact save success open the first remaining unsaved card. A
+  selected unsaved card cannot be hidden by automatic question preparation;
+  every write remains an explicit native submit.
+- **D-OT11-17 — Cloze drift repair is local and corroborated.** Keep modal
+  row-derived starts. Shift one row's non-exact boundaries left one character
+  only when at least two starts occur at modal-minus-one; preserve every D-68
+  whole-group refusal and word-safe right snap.
 
 ## Non-goals
 
@@ -100,11 +178,26 @@ writes:
 | Underline placement | Button/hint adjacent to `#question_text` in add and edit; Ctrl+U and selection behavior unchanged |
 | One card | One native Shared Context editor; paste or Add Context reveals it; no duplicate JS fields, card-list toggle, or Fill step; direct Create/Update; named subject/category selects |
 | Context selector | A multi-context paste can switch the card without duplicate cards |
-| Fingerprint adoption | Hard-gate match binds the existing context; Save enabled; no create step |
+| Fingerprint adoption | Full pool/type/title/text identity binds the existing context; Save enabled; no create step |
 | Soft gate | Different expected count warns but does not block |
 | Native selection | Manual `#context_id` selection survives prepare and links the current item |
 | Member skip | Already-saved members are skipped with a notice; no duplicate save |
 | Context edit | Pasting into `?edit_context=N` cross-checks that context's members |
+| Unsaved context stop | Save Question remains tappable, cancels the post, and says exactly `Save the shared context first.` |
+| Context metadata | Selecting or linking a context fills Subject, Exam Category, and Exam Year from that context |
+| Saved-card collapse | Exact context create/update success collapses the editor; Show reopens it without a write |
+| Form boundaries | Context ID/position/slot are one visible group and all other question fields are another |
+| Plain copy | Owner panel and native-form labels, help, states, flags, and warnings use the recorded short vocabulary; fixed flashes stay exact |
+| Preview placement | The single preview is beside Question Text for standalone and linked questions in Add/Edit flows |
+| Page shape | Add Question, Shared Texts, and All Questions are stacked full width; no tabs; Edit shows formatting/preview only |
+| Editor placement | Edit Shared Text is directly below paste and above the light-blue question-link group |
+| Explicit shared-text edit | Server values survive stored latest-paste state; Use Paste may intentionally replace them |
+| Full re-paste | Prior metadata, link values, and context-editor values clear before the new parse; empty inference stays empty |
+| Duplicate notice | Latest-20 normal and full-identity shared notices are visible and non-blocking |
+| Shared-text paging | 10 rows per `context_page`; the question selector still contains every saved context |
+| Manual next free | Missing passage number/gap uses the first unused saved value; existing values stay |
+| Next unsaved text | Initial adoption/save selects and opens the first unsaved card under a visible `Shared text to edit` label, including after a saved-member skip |
+| One-character cloze drift | Exact `new-sample.txt` yields 15 items, Q75 `confession/suggestion/permission/complaint`, two contexts, and no warning |
 | No auto-write | No automatic context/question write in any path |
 | Tests | `node tests/owner-tool.js`, PHP context tests, lint/syntax, and the phone re-check pass |
 | Docs | Status, decisions, invariants, edge cases, developer guide, deployment manifest updated |
@@ -112,10 +205,13 @@ writes:
 ## Guardrails
 
 - Preserve the exact success flash and PRG flow.
+- Preserve parser warning/flag values and translate them only for display.
 - Do not weaken `linkInfo` validation; extend it to accept a matched or selected
   server context.
 - Do not reuse a server context ID for a different local context.
 - Do not skip an item without a visible notice and a deterministic rule.
+- Do not turn the one-character, two-anchor cloze correction into nearest-column
+  guessing or weaken true missing-column refusal.
 - Do not start OT10 final review or cycle close.
 
 ## Provisional externalize-first plan
@@ -124,13 +220,18 @@ Gate 1 records exact baselines. Expected production files:
 
 - `src/owner-tool/owner-tool.js`: controller, panel, underline, context
   model/form.
+- `src/parser/core.js`: pure bounded cloze row-drift correction and parser
+  version.
 - `src/owner-tool/owner-tool.css`: merged card and toolbar styles.
 - `deployed/admin_questions.php`: read-only context/member payload and asset
   cache-bust; no contract change.
+- `deployed/cbt.php`: shared owner CSS/render cache-bust only.
 - `deployed/admin_context.php` and `deployed/context_lib.php`: only a read-only
-  helper if the payload needs one; no mutation change.
-- `tests/owner-tool.js` and `tests/context-admin.php`: adoption, selector,
-  member skip, and payload coverage.
+  helper, semantic link group, and owner-facing labels/statuses; no mutation
+  change.
+- `tests/owner-tool.js`, `tests/context-admin.php`, and `tests/context-lib.php`:
+  adoption, selector, member skip, phone-feedback behavior, payload, rendering,
+  and status coverage.
 - Docs: this file, `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/INVARIANTS.md`,
   `docs/EDGE_CASES.md`, `docs/DEVELOPER-GUIDE.md`, `docs/DEPLOYMENT.md`,
   `docs/plan/README.md`, and `docs/plan/prompts/phase-map.md`.
@@ -152,7 +253,8 @@ Excluded artifacts: the untracked local staging tree and test-only shims.
   from `cbt_context_list` and `cbt_context_members`; the payload is ignored if
   the context schema is unavailable.
 - Hard-gate matching (`subject_id`, `exam_category_id`, `exam_year`,
-  `context_type`, normalized `title`) adopts exactly one saved context.
+  `context_type`, normalized `title`, normalized full passage text) adopts
+  exactly one saved context.
   `expected_member_count` only warns. Manual `#context_id` selection is
   authoritative and survives `prepare`.
 - Member dedupe matches context ID, position or cloze slot, and normalized
@@ -167,45 +269,146 @@ Excluded artifacts: the untracked local staging tree and test-only shims.
   and two-context selector switching. The final Brave/Android re-check remains
   pending.
 
+## Follow-up implementation notes (2026-11-11)
+
+- Tool version `1.4.0` and shared cache token `2.3.2f` implement the six
+  follow-up requirements without a parser/state/database change.
+- A new linked context leaves Save Question tappable. Its button click stops
+  before native validation and its submit path is also guarded; both show the
+  exact required sentence. Safe native submits still run normally.
+- Question metadata uses manual saved context, linked local context, then paste
+  metadata. A saved-member skip now fills the next question before another save.
+- Exact context create/update success collapses the editor. Show follows the
+  selected card; error or ambiguity reopens the exact pending card, including a
+  non-first card.
+- The context-link PHP fragment is one semantic fieldset. The owner tool groups
+  the remaining native fields separately, translates owner-facing copy without
+  changing parser evidence/fixed flashes, and moves the existing safe preview
+  beside Question Text.
+- A focused implementation review found stale-form, stale-Show, and ambiguous
+  multi-context paths; all were fixed and its closure recheck reports no open
+  findings. The independent rigorous OT11 review is still pending.
+
+## Consolidation implementation notes (2026-11-12)
+
+- Tool version `1.5.0` and shared cache token `2.3.2g` implement the approved
+  no-tab consolidation without a parser, schema, storage-key, or write-contract
+  change.
+- The page renders Add Question, Shared Texts, and All Questions as stacked
+  full-width sections. Add Shared Text is moved with its controls into Shared
+  Texts. Question Edit server-hides Shared Texts and All Questions and keeps the
+  formatting/preview-only helper.
+- A full paste first replaces the owner state and clears native question,
+  metadata, link, and context-editor values. Empty inferred pool values remain
+  empty. Key-only paste behavior is unchanged.
+- Saved-context adoption now includes normalized full passage text. The
+  read-only payload carries normalized identity keys and cloze tokens; exact
+  lowercase underline markers and whitespace do not affect identity.
+- Latest-20 question duplicates and full-identity shared-text duplicates show
+  non-blocking notices. Correct answer, explanation, and media are excluded from
+  normal identity.
+- Saved Shared Texts uses 10-row `context_page` pagination. A separate
+  unpaginated option query keeps every context available in `#context_id`.
+- Manual saved-context selection preserves existing position/gap values or
+  fills the first unused position and cloze token. Standalone questions hide
+  the link group; reading passages hide Gap number. Saved editors now toggle
+  Show/Hide without arming a write.
+- Focused and full suites pass: 59 runner, 162 unit, 77 owner-tool, 14
+  context-migration, 5 cbt-context, 14 context-lib, 23 context-admin, 6
+  context-preflight, 9 PHP renderer, and 7 cbt-candidate. Cloze probe, 7 bank
+  hashes, PHP lint, JS syntax, and `git diff --check` pass.
+
+## Final follow-up implementation notes (2026-11-12)
+
+- Tool version `1.5.1`; the changed admin `owner-tool.js` cache token is
+  `2.3.2h`. Unchanged parser, renderer, CSS, and CBT assets remain `2.3.2g`.
+- The native editor is moved after the injected paste panel and before the
+  question form, so its collapsed controls precede the light-blue link group at
+  desktop and 390px mobile width. Its heading is **Edit Shared Text**.
+- A stored-paste regression now includes a current item linked to a stale local
+  context. On `?edit_context=N`, automatic `fillQuestion` preparation leaves the
+  server editor untouched until Use Paste explicitly selects a new local card.
+- Local Chromium reproduced shared text #11 being replaced by stored context #6
+  before the fix and confirmed #11's full server values after it. No server
+  write was made; the only console error was the staging favicon 404.
+
+## Latest re-check implementation notes (2026-11-12)
+
+- Tool version `1.5.2`; changed `owner-tool.js` uses cache token `2.3.3c`.
+  Multi-context preparation chooses the first unsaved card, exact save success
+  advances to the next unsaved card, and question preparation cannot hide that
+  draft. The selector is labelled **Shared text to edit**.
+- Parser `2.3.3`; changed `core.js` uses cache token `2.3.3`. A row needs two
+  independent segment starts at modal-minus-one before non-exact local
+  boundaries move left one character. Existing rightward word snapping and all
+  strict refusals are unchanged.
+- The exact `new-sample.txt` fixture produces comprehension Q11-Q15 and cloze
+  Q71-Q80, including Q75's four source options and zero warnings. The full
+  `sample-passages.txt` owner regression creates both shared texts and permits
+  Q71 with context position 1/slot 71; another regression covers an adopted
+  first context plus saved-member skip.
+- Focused staging Chromium confirms parser 2.3.3/Q75 and the adopted context #6
+  path selecting/opening unsaved `SECTION 99`; no live write was used. One
+  disposable local staging context (#12) was created during pre-fix PRG
+  reproduction and left in the local staging database.
+
 ## Correction measurements
 
 Package base remains `79a6a57`. Counts and hashes use LF-normalized UTF-8.
 
 | Production file | Base delta +/− | Final lines / bytes | SHA-256 | Responsibility / deployment | Direct evidence |
 |---|---:|---:|---|---|---|
-| `src/owner-tool/owner-tool.js` | +458 / −199 | 1872 / 70250 | `f62e3fb759e8ebc64d49d2567934e4a6b6660e9f8dc516a09889ed620e74e9c5` | State, one native context editor, controller; deploy to `src/owner-tool/` | `node tests/owner-tool.js`; Chromium merged-card/adoption/selector probe |
-| `src/owner-tool/owner-tool.css` | +14 / −64 | 207 / 3210 | `d5d1c981097e77a675c5d66153ccbc7df767a229eccc6c32f3c0a6729a4ed5fb` | Owner/context/CBT styling; deploy to `src/owner-tool/` | Chromium merged-card probe; loaded production stylesheet |
-| `deployed/admin_context.php` | +44 / −5 | 872 / 40667 | `df0f690a9d8cc9e7860f6730baa11e3d5e797dba946856a23fff0a01836a2b59` | Native editor plus guarded payload helper; deploy to site root | `php tests/context-admin.php`; PHP lint; real admin Chromium route |
-| `deployed/admin_questions.php` | +4 / −2 | 1066 / 62912 | `40c62a19ec37ac44a6eddcded17b1b279640ef3211843bf45071f905edb7f820` | Narrow entry wiring, payload emission, asset token; deploy to site root | `node tests/context-migration.js`; `node tests/owner-tool.js`; PHP lint; Chromium login/admin route |
-| `deployed/cbt.php` | +2 / −2 | 1008 / 44515 | `43092c25f30284c8a45843766b9d8038c3be46a72719373e98c362edcc5042ae` | Owner CSS/render cache token only; deploy to site root | PHP lint; prior OT10 candidate/runtime evidence remains applicable |
+| `src/parser/core.js` | +9 / −3 | 1432 / 49296 | `1321d95f046151e202c44eb8a18f9b1c9df39e2d31e001a73b639e49b4a71f67` | Parser 2.3.3 and bounded row-local cloze drift; deploy to `src/parser/` | 60 runner, 163 unit, exact `new-sample.txt` cloze probe, staging Chromium |
+| `src/owner-tool/owner-tool.js` | +1199 / −276 | 2536 / 104816 | `c89a5dc3d9788c0b20b39ed969e5d5392e41e31918dbc2cfadb510613ab81b8a` | State/controller, next-unsaved selection, paste-adjacent editor placement, explicit-edit isolation, full-paste reset, full identity, next-free links, advisory duplicates, Show/Hide; deploy to `src/owner-tool/` | `node tests/owner-tool.js` 79 PASS; focused desktop/mobile Chromium |
+| `src/owner-tool/owner-tool.css` | +56 / −59 | 254 / 3934 | `39bb772adb0a18f67c6c4b5e03e52936e36f49cf43be2208e3867f3108f43a4b` | Owner/context/CBT styling, stacked section boundaries, duplicate notices, native form boundaries; deploy to `src/owner-tool/` | production stylesheet assertions; owner-tool tests |
+| `deployed/admin_context.php` | +209 / −48 | 994 / 46189 | `36e411d2535eec08f5c55687c78841b16c5511574a572c7c18dbcac695960be2` | Native Edit Shared Text section, pagination, semantic link group, identity/recent payloads; deploy to site root | `php tests/context-admin.php` 23 PASS; PHP lint; real rendered fragments |
+| `deployed/context_lib.php` | +34 / −9 | 505 / 20353 | `0b1051a97708b9e8fddce9ec10b2637eee1b2b236ed10aae3d2c0f6a82a78673` | Context validation/query contract, paginated management list, unpaginated selector options; deploy to site root | `php tests/context-lib.php` 14 PASS; PHP lint |
+| `deployed/admin_questions.php` | +7 / −6 | 1065 / 62892 | `e73f7f63e88c3fa8c0b4e190c936dbeb11aa3c9dac28a3f4e353b69de711ab83` | Narrow stacked-section/payload wiring; changed parser/tool use `2.3.3`/`2.3.3c`; deploy to site root | context-migration and owner-tool tests; PHP lint |
+| `deployed/cbt.php` | +2 / −2 | 1008 / 44515 | `42ebf711ccff3ffca1a56d26938524af953bcfa6ccaf5018c640881c246c467e` | Owner CSS/render `2.3.2g` cache token only; deploy to site root | PHP lint; prior OT10 candidate/runtime evidence remains applicable |
 
 Live-origin cumulative additions remain within the contract:
-`admin_questions.php` +97/−77 and `cbt.php` +53/−89 against their archived
+`admin_questions.php` +100/−81 and `cbt.php` +53/−89 against their archived
 2026-10-31 snapshots. The local `mcq-staging` copy, test-only DB/config shims,
 `mcq_ot10_browser` rows/title labels, and temporary Chromium profile/probe are
-excluded test artifacts and are not deployment files.
+excluded test artifacts and are not deployment files. The unrelated untracked
+`session-ses_e35a.md` owner/session note is also excluded. The supplied root
+`new-sample.txt`, local phone-staging tree/database (including context #12), and
+temporary Chromium profile/probes are evidence/test artifacts, not deployment
+files; the tracked `sample-cloze-left-drift` fixture is test input.
 
 ## Handoff
 
 ```text
-Date: 2026-11-09
-Result: implementation corrected during phone re-check; local and Chromium checks pass; final phone re-check and rigorous review pending
-Files changed: src/owner-tool/owner-tool.js, src/owner-tool/owner-tool.css,
-  deployed/admin_questions.php, deployed/admin_context.php, deployed/cbt.php,
-  tests/owner-tool.js, tests/context-admin.php, docs/DECISIONS.md, docs/STATUS.md, docs/INVARIANTS.md,
-  docs/EDGE_CASES.md, docs/DEVELOPER-GUIDE.md, docs/DEPLOYMENT.md,
+Date: 2026-11-12
+Result: all follow-ups plus next-unsaved shared-text selection and parser 2.3.3 row-drift handling implemented; full local suites pass; final owner phone confirmation and rigorous review pending
+Files changed: src/parser/core.js, src/owner-tool/owner-tool.js, src/owner-tool/owner-tool.css,
+  deployed/admin_questions.php, deployed/admin_context.php, deployed/context_lib.php,
+  deployed/cbt.php, tests/unit.js, tests/owner-tool.js, tests/context-admin.php,
+  tests/context-lib.php, fixtures/inputs/sample-cloze-left-drift.txt,
+  fixtures/expected/sample-cloze-left-drift.json, AGENTS.md, docs/AGENTS.md,
+  docs/SPEC.md, docs/DECISIONS.md,
+  docs/STATUS.md, docs/INVARIANTS.md, docs/EDGE_CASES.md,
+  docs/DEVELOPER-GUIDE.md, docs/DEPLOYMENT.md,
   docs/plan/README.md, docs/plan/prompts/phase-map.md,
   docs/plan/owner-tool/ot-10-release-and-handoff.md,
-  docs/plan/owner-tool/next-steps.md, this file
-Tests: node tests/owner-tool.js 61 PASS; node tests/runner.js 59 PASS;
-  node tests/unit.js 162 PASS; context-migration 14 PASS; cbt-context 5 PASS;
-  PHP context-lib 13 PASS; context-admin 20 PASS; context-preflight 6 PASS;
-  php-render 9 PASS; cbt-candidate 7 PASS; php -l on changed deployed PHP files PASS; Chromium 155
-  merged-card DOM/adoption/member-skip/multi-selector probe PASS
-Fingerprint/member evidence: auto-adopt, manual selection, member skip, and
-  count-mismatch warning covered by new tests/owner-tool.js cases
-Phone re-check: first attempt found the duplicate-editor defect; correction deployed; final re-check pending
-Review: pending
+  docs/plan/owner-tool/next-steps.md,
+  docs/plan/owner-tool/ot-11-phone-feedback-scratch.md,
+  docs/plan/owner-tool/ot-11-owner-refinement-plan-2026-11-12.md, this file
+Tests: node tests/owner-tool.js 79 PASS; node tests/runner.js 60 PASS;
+  node tests/unit.js 163 PASS; context-migration 14 PASS; cbt-context 5 PASS;
+  PHP context-lib 14 PASS; context-admin 23 PASS; context-preflight 6 PASS;
+  php-render 9 PASS; cbt-candidate 7 PASS; extract-bank PASS; PHP/JS syntax and
+  git diff check PASS; focused Chromium blocked/safe submit, group, preview,
+  desktop/390px editor order, context #11/#6 edit-isolation, exact Q75, and
+  adopted-member/next-unsaved probes PASS
+Phone-feedback evidence: exact click/submit stop, metadata precedence, saved-card
+  Show/Hide/error retention, semantic groups, plain copy, normal/context/edit
+  preview placement, full-paste clearing, full identity, advisory duplicates,
+  next-free links, independent pagination, multi-context ambiguity, editor
+  placement, stored-paste edit isolation, next-unsaved selection, and bounded
+  one-character cloze drift covered
+Phone re-check: latest two reports fixed locally; final owner Brave/Android confirmation pending
+Review: focused implementation review findings closed; independent rigorous review pending
 Commit: deferred
 Next: owner Brave/Android re-check, then rigorous OT11 review
 ```

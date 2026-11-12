@@ -1,6 +1,6 @@
 # Owner Tool Next Steps
 
-Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-08.
+Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-12.
 
 ## Confirmed Starting Point
 
@@ -189,6 +189,26 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-08.
 - [x] Run the Brave/Android phone check for Add, Edit, native save, main CBT,
   result, print, and answer-details rendering on 2026-11-09. Passed; the three
   owner-workflow refinements it surfaced are routed to OT11.
+- [x] Implement the six follow-up phone requirements recorded 2026-11-11:
+  explained unsaved-context stop, linked metadata fill, saved-card collapse/Show,
+  native form groups, plain owner copy, and preview placement. Full local suites,
+  focused Chromium, and implementation closure recheck pass.
+- [x] Implement the 2026-11-12 consolidation: stacked no-tab sections,
+  full-paste clearing, full passage identity, advisory duplicate notices,
+  next-free link values, Show/Hide, copy cleanup, and 10-row shared-text paging
+  with an unpaginated question selector. Full suites pass, including 77
+  owner-tool, 14 context-lib, and 23 context-admin tests.
+- [x] Apply the final 2026-11-12 owner follow-up: place Edit Shared Text below
+  the paste panel and above the light-blue link group; keep an explicit
+  `?edit_context=N` server form isolated from restored paste state. Focused
+  desktop and 390px Chromium checks pass without a server write.
+- [x] Fix the two latest phone re-check reports: a multi-text paste now selects
+  and opens its first unsaved shared text after adoption/save, and parser 2.3.3
+  reads `new-sample.txt` gap 75 using a corroborated one-character local drift.
+  Full suites pass at 60 runner, 163 unit, and 79 owner-tool; focused staging
+  Chromium confirms the adopted-member path.
+- [ ] Run the final owner Brave/Android OT11 re-check without a live write, then
+  run the independent rigorous OT11 review.
 - [x] Complete the deployment manifest and developer guide:
   `docs/DEPLOYMENT.md`, `docs/DEVELOPER-GUIDE.md`.
 - [ ] Independent final review and cycle close.

@@ -1,7 +1,8 @@
 # OT11 Phone Feedback Scratch
 
 Date: 2026-11-11
-Status: WIP handoff; not implemented
+Status: follow-ups and latest re-check fixes implemented locally through
+2026-11-12; owner Brave/Android confirmation and rigorous review pending
 
 The owner tested the current staging build in Brave on Android. It works well
 enough for now, but the following changes are required before the final OT11
@@ -26,6 +27,9 @@ phone acceptance.
    the legacy/native form. It is not limited to the Shared Context card. Keep
    fixed server-contract text, including the exact question success flash,
    unchanged.
+6. Place the candidate preview next to the legacy/native **Question Text**
+   field for every loaded question, including normal MCQs and shared-context
+   questions.
 
 ## Verification
 
@@ -34,6 +38,39 @@ phone acceptance.
 - Re-check the full flow in Brave on Android without a live write.
 - Staging Apache and MySQL were stopped after this phone session; ports 80,
   443, and 3306 were confirmed closed.
+
+Local implementation evidence is recorded in
+[`ot-11-owner-workflow-refinements.md`](ot-11-owner-workflow-refinements.md).
+
+## Final Follow-up (2026-11-12)
+
+1. Move the collapsible shared-text editor directly below the paste box and
+   above the light-blue shared-text link group.
+2. Name that editor **Edit Shared Text**.
+3. Fix explicit shared-text Edit so the latest stored paste cannot replace the
+   server-loaded record.
+
+Implemented as tool 1.5.1. A focused local Chromium check reproduced context
+#11 being replaced by stored context #6 before the fix, then confirmed #11's
+server values, the new order, and the 390px mobile layout after the fix. The
+owner Brave/Android re-check remains pending.
+
+## Latest Re-check Fixes (2026-11-12)
+
+1. Full `sample-passages.txt` could save a shared-text POST, but after the first
+   passage was adopted or saved the editor returned to the current reading
+   question and hid the unsaved `SECTION 6` cloze text. Tool 1.5.2 labels the
+   selector and keeps the first unsaved text selected/open, including after an
+   already-saved member is skipped.
+2. `new-sample.txt` reached cloze detection but gap 75 was refused as missing D:
+   two later row starts were one character left of the table modes. Parser 2.3.3
+   accepts only this corroborated two-anchor, one-character row drift and keeps
+   all existing whole-group refusals.
+
+Local evidence: 60 runner, 163 unit, and 79 owner-tool PASS; full PHP/context
+suites PASS; exact cloze probe emits 15 items and zero warnings; focused staging
+Chromium shows the unsaved second context open after adoption/member skip. Final
+owner Brave/Android confirmation remains pending.
 
 ## After These Fixes
 

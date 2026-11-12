@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.3.2
+// Version: 2.3.3
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.3.2";
+const PARSER_VERSION = "2.3.3";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -1062,8 +1062,14 @@ function snap(body, index) {
 }
 
 function cellsOf(row, starts) {
+  // Require two row-derived anchors before correcting a local one-column drift.
+  const leftAnchors = starts.slice(1).filter(start =>
+    row.starts.indexOf(start) === -1 && row.starts.indexOf(start - 1) !== -1).length;
   const edges = [row.offset];
-  for (let k = 1; k < 4; k++) edges.push(Math.max(snap(row.body, starts[k]), edges[k - 1]));
+  for (let k = 1; k < 4; k++) {
+    const local = leftAnchors >= 2 && row.starts.indexOf(starts[k]) === -1 ? starts[k] - 1 : starts[k];
+    edges.push(Math.max(snap(row.body, local), edges[k - 1]));
+  }
   edges.push(row.body.length);
   const cells = [];
   for (let c = 0; c < 4; c++) cells.push(row.body.slice(edges[c], edges[c + 1]));

@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-09.
+Last updated: 2026-11-12.
 
 ## Active cycle
 
@@ -51,16 +51,35 @@ Last updated: 2026-11-09.
   the independent OT11 package (phase 12). OT11's first re-check found that the
   JS and native context editors were still separate; the owner required one
   native editor and the correction was applied immediately. Local tests and a
-  Chromium DOM check pass; the final owner Brave/Android re-check and rigorous
-  review are pending.
+  Chromium DOM check pass. A later phone session recorded six follow-up
+  requirements; their implementation plus the 2026-11-12 consolidation now
+  passes the full local suites. A final owner follow-up
+  moves the collapsible Edit Shared Text editor below the paste panel and above
+  the light-blue question-link group. A reproduced `?edit_context=11` defect no
+  longer lets stored paste context #6 overwrite the server-loaded edit. Focused
+  Chromium passes at desktop and 390px mobile width. Full paste clearing, full
+  passage identity, advisory duplicates, next-free links, Show/Hide, and
+  independent shared-text pagination remain covered. The latest phone re-check
+  then found that a saved/adopted first passage hid the unsaved cloze passage
+  and that `new-sample.txt` gap 75 was one character left of the modal columns.
+  Tool 1.5.2 now keeps the first unsaved shared text selected/open, and parser
+  2.3.3 applies only a two-anchor one-character row correction. The full local
+  suites and focused staging Chromium pass. Final owner phone confirmation and
+  rigorous review are pending.
   OT10 remains blocked on the independent final review and the live deployment
   artifacts; it is not done.
-- Product implementation: parser 2.3.2 (comprehension and cloze contexts), exact
+- Product implementation: parser 2.3.3 (comprehension and cloze contexts), exact
   underline rendering, multiline stems, Add/Edit formatting, native PRG
   preservation, shared-context schema/admin/candidate delivery, and the manual
   owner context workflow are in place. OT11 adds one native Shared Context
   editor, the merged context selector, saved-context adoption, manual selection,
-  and member dedupe.
+  member dedupe, an explained unsaved-context stop, context-owned metadata,
+  saved-card Show/Hide, form boundaries, plain owner copy, one preview beside
+  Question Text, full-paste replacement, full passage identity, advisory
+  duplicate notices, next-free link values, 10-row Shared Texts pagination, the
+  paste-adjacent Edit Shared Text placement, and explicit-edit isolation from
+  stored paste state, next-unsaved multi-text selection, and bounded cloze row
+  drift handling.
 - Working branch: `owner-tool-integration`; `main` is the published baseline.
   See [`plan/README.md`](plan/README.md#branch-strategy).
 
@@ -103,7 +122,7 @@ Last updated: 2026-11-09.
 | OT09 `FIX-2` fix and second re-review (phase 10 boundary, committed 2026-11-08, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `node tools/extract-bank.js --check`, and `node --check` on 2026-11-07; independent re-review reproduced them on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; cloze probe exit 0; all 7 source/slice/extracted bank hashes match (the CLI still reports the known Windows/CRLF on-disk fixture mismatch); cloze.js 242 lines; PHP not executed |
 | OT09A production consolidation (phase 10A boundary, committed 2026-11-08, base `652c891`, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, and `node --check` on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; 12 production files plus 2 ops; live-origin additions +95/+53/+20/+2; known Windows/CRLF `extract-bank` pre-2026 mismatch remains; `FIX-1` docs-only evidence closed by re-review 2026-11-08 |
 | OT10 local execution (2026-11-08, uncommitted, base `79a6a57`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, `node --check`, MySQL 8.0.41 migration/rollback probes, and a desktop Chromium 155 local harness on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; migration preflight/forward/rerun/rollback and adversarial probes PASS; desktop Chromium 33/33 PASS; Brave/Android phone check passed 2026-11-09; OT11 correction passes local/Chromium checks, final re-check pending |
-| OT11 implementation (2026-11-09, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/php-render.php`, `php -l` on changed deployed files, and Chromium 155 merged-card DOM probe on 2026-11-09 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 61 owner-tool; 13 context-lib; 20 context-admin; 9 PHP renderer; PHP/JS syntax PASS; one native editor, underline placement, context selector, fingerprint adoption, manual selection, and member-skip checks PASS; final owner phone re-check pending |
+| OT11 implementation (updated 2026-11-12, uncommitted) | full Node/PHP suite, syntax/lint, bank extractor, exact `new-sample.txt` cloze probe, and focused Chromium owner-flow probes | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 79 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; cloze probe and 7 bank hashes PASS; PHP/JS syntax PASS; desktop/390px placement/edit isolation plus next-unsaved/adopted-member Chromium probes PASS; live-origin additions remain at +100/+53; final owner phone confirmation pending |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -157,7 +176,7 @@ Supplied DDL SHA-256:
 |---|---|---|
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); OT10 validates the remaining Q11-Q12 coverage |
-| Brave/Android staging check | OT10 final acceptance | Satisfied 2026-11-09; desktop Chromium passed 33/33; OT11 correction passes local/Chromium checks and its final phone re-check is pending |
+| Brave/Android staging check | OT10 final acceptance | Initial check satisfied 2026-11-09; desktop Chromium passed 33/33; OT11 follow-up passes local/focused Chromium checks and its final owner phone re-check is pending |
 | Live `cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts` | OT10 deployment | Live-site artifacts, not supplied; the local smoke used test-only shims |
 
 OT05 implementation, accepted fixes, third re-review, and `BLOCK-8` owner
@@ -203,8 +222,8 @@ proved them on the target runtime on 2026-11-08:
   formatting tool, CBT complete-group delivery, answer-details XSS probes).
 
 Still deferred: the independent final review and the live deployment artifacts.
-The Brave/Android staging phone check passed on 2026-11-09; OT11 re-checks the
-owner-workflow refinements. The deployment manifest is
+The Brave/Android staging phone check passed on 2026-11-09; OT11's follow-up
+implementation is local-complete and awaits the final owner phone re-check. The deployment manifest is
 [`DEPLOYMENT.md`](DEPLOYMENT.md); the developer handoff is
 [`DEVELOPER-GUIDE.md`](DEVELOPER-GUIDE.md). These checks are not OT05 completion
 gates.

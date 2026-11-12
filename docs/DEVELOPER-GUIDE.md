@@ -1,6 +1,6 @@
 # Developer Guide — Owner Tool, Context Schema, and CBT Delivery
 
-Recorded: 2026-11-08. This is the human-developer handoff for the
+Recorded: 2026-11-08; updated for OT11 on 2026-11-12. This is the human-developer handoff for the
 `owner-tool-2026-11` cycle. It covers the shipped architecture, source of truth,
 stored state, parser extension rules, the context lifecycle, the security
 renderer, testing commands, and known limitations. Deployment steps are in
@@ -11,13 +11,13 @@ renderer, testing commands, and known limitations. Deployment steps are in
 | File | Responsibility |
 |---|---|
 | `deployed/admin_questions.php` | Admin entry point: session/CSRF, login, native question form, PRG dispatch, renderer/asset wiring. Includes `admin_context.php` and `render.php`. |
-| `deployed/admin_context.php` | Admin context request handling, input/activation validation, context CRUD, question-link mutations, and context-management rendering. |
-| `deployed/context_lib.php` | Side-effect-free context validation and queries (slot tokens, member checks, link errors, status labels). |
+| `deployed/admin_context.php` | Admin context request handling, context CRUD/question-link mutations, paginated management rendering, and read-only owner payloads. |
+| `deployed/context_lib.php` | Side-effect-free context validation and queries (slot tokens, member checks, link errors, status labels, paginated lists, and unpaginated selector options). |
 | `deployed/cbt_candidate.php` | Complete-group candidate selection and repository queries for `cbt.php`. |
 | `deployed/cbt.php` | Candidate setup, AJAX subject/category/year options, complete-group delivery, exam UI, result panel. Loads `render.js`. |
 | `deployed/answer_details.php` | Supplied answer-details page. Uses `render.php` for question text. |
 | `deployed/render.php` | Server-side safe renderer: escape first, restore only exact `<u>`/`</u>`. |
-| `src/parser/core.js` | Pure parser 2.3.2. Owns the comprehension and cloze engines as internal IIFEs; exposes the parser API and `comprehensionEngine()`/`clozeEngine()`. |
+| `src/parser/core.js` | Pure parser 2.3.3. Owns the comprehension and cloze engines as internal IIFEs; exposes the parser API and `comprehensionEngine()`/`clozeEngine()`. |
 | `src/owner-tool/render.js` | Shared client renderer and context-card renderer (`window.CBTText`, `window.CBTContext`). |
 | `src/owner-tool/owner-tool.js` | Owner-tool state, merged native context editor, and controller. |
 | `src/owner-tool/owner-tool.css` | Owner-tool, context-workflow, and CBT context styles. |
@@ -50,7 +50,7 @@ legacy `ocrQueue`, `ocrMeta`, or `ansKey` values.
 ```text
 cbtOwnerTool:v1 = {
   version: 1,
-  parserVersion: "2.3.2",
+  parserVersion: "2.3.3",
   queueId: string,
   metadata: { subject_id, exam_category_id, exam_year },
   contexts: [{
@@ -77,13 +77,16 @@ Rules:
 - Loading, parsing, previewing, and filling the native form write no server row.
   Only the native form submit saves.
 - Reset replaces the state with `emptyState` and clears the key/batch state.
+- A new full paste also replaces every paste-derived native/context value before
+  applying the parse. A key-only paste keeps the queue and contexts.
 
 ## 4. Parser extension rules
 
 - Keep `src/parser/core.js` pure: no DOM, storage, network, or UI references.
-- Bump `PARSER_VERSION` and the shared asset token (`?v=…`) for any behavior
-  change. The current parser version is `2.3.2`; the current owner-tool token is
-  `2.3.2e`.
+- Bump `PARSER_VERSION` and the relevant asset token (`?v=…`) for any behavior
+  change. The current parser version is `2.3.3`; `core.js` uses `2.3.3` and
+  `owner-tool.js` uses `2.3.3c`, while unchanged renderer/style assets use
+  `2.3.2g`.
 - Add doc-backed fixtures in `fixtures/inputs/` and
   `fixtures/expected/*.json`. Never generate expected output from the parser;
   mark doc-unsupported fields `PENDING`.
@@ -92,10 +95,11 @@ Rules:
   boundary or merge two sets.
 - Cloze: a gap passage plus an A–D table becomes one shared context. A gap token
   is exactly `[[gap:N]]` with the source number. Column starts are row-derived;
-  boundaries stay word-safe. Refuse the whole group on an empty cell, an option
-  over 500 characters, unmatched row/gap numbers, fewer than two gaps, or
-  unstable alignment. Keep the first evidenced group and drop later colliding
-  groups as a whole with a warning naming the shared gap numbers.
+  boundaries stay word-safe. A local one-character left correction requires at
+  least two row-derived starts at modal-minus-one. Refuse the whole group on an
+  empty cell, an option over 500 characters, unmatched row/gap numbers, fewer
+  than two gaps, or unstable alignment. Keep the first evidenced group and drop
+  later colliding groups as a whole with a warning naming the shared gap numbers.
 - Preserve the deliberate quirks and dangerous-area rules in `docs/AGENTS.md`
   (E/F→D, `splitQuestions` numbering guard, advisory flags, blank options,
   `FIXES` order, divider-only section separators, exact renderer markers).
@@ -106,16 +110,27 @@ Rules:
    linked-question items; nothing is posted. The native Shared Context card is
    the only editor and is filled by the paste; Add Context reveals that same
    card for manual entry. Multiple contexts switch through one selector. When
-   exactly one saved context matches the hard
-   gates (`subject_id`, `exam_category_id`, `exam_year`, `context_type`, and
-   normalized `title`), the card adopts it; a count mismatch only warns. A
-   manual `#context_id` selection is authoritative and always available.
+   exactly one saved context matches pool, type, normalized title, and
+   normalized full passage text, the card adopts it; a count mismatch only
+   warns. A manual `#context_id` selection is authoritative and always
+   available.
+   The card is labelled **Edit Shared Text** and sits directly below the paste
+   controls, before the light-blue question-link group.
 2. The administrator saves a draft context with the native form. The server
    validates input and returns a PRG flash. The owner tool embeds a read-only
    context/member payload for matching and member dedupe; it never writes a
-   context or question automatically.
+   context or question automatically. A linked question cannot post first: its
+   click/submit says `Save the shared context first.` Exact context-save success
+   collapses the saved editor; **Show/Hide** toggles it without a write, while
+   failed or ambiguous saves keep the pending card open. In a multi-text paste,
+   the labelled selector opens the first unsaved text initially and after an
+   exact success.
 3. The administrator links questions with a unique position (comprehension) or
-   a unique cloze slot (cloze). The pool subject/category/year must match.
+   a unique cloze slot (cloze). The selected saved context, then the linked
+   local context, fills Subject, Exam Category, and Exam Year so the pool
+   matches. Missing positions/gaps use the next unused saved value. Standalone
+   questions hide the link group; reading passages hide Gap number. The three
+   link fields are visually separate from Question details.
 4. Activation validates the complete group atomically: expected member count,
    contiguous unique positions, required cloze slots, four options and a correct
    answer, matching pool metadata, and every member staying inactive.
@@ -126,6 +141,15 @@ Rules:
    until it is revalidated.
 7. The rollback script refuses populated context data. If context data exists,
    restore the backup; do not run the automatic rollback.
+
+The admin page has no tab shell. Add Question contains the paste controls, Edit
+Shared Text, and the question form in that order. Saved Shared Texts and All
+Questions follow as full-width sections. Saved Shared Texts uses `context_page`
+at 10 rows; All Questions keeps `page` at 20. The question selector is
+deliberately unpaginated. Duplicate notices are browser-only review hints and
+never block a native save. On `?edit_context=N`, stored queue restoration must
+not replace the server-loaded shared text; only an explicit **Use Paste** may do
+that.
 
 ## 6. Security renderer
 
@@ -161,17 +185,21 @@ php tests/cbt-candidate.php
 Current local evidence on PHP 8.3.16 / MySQL 8.0.41:
 
 - runner: 59 fixtures, 59 PASS, 0 FAIL, 0 PENDING;
-- unit: 162 PASS; owner-tool: 61 PASS; context-migration: 14 PASS;
+- unit: 162 PASS; owner-tool: 77 PASS; context-migration: 14 PASS;
   cbt-context: 5 PASS;
-- context-lib: 13 PASS; context-admin: 20 PASS; context-preflight: 6 PASS;
+- context-lib: 14 PASS; context-admin: 23 PASS; context-preflight: 6 PASS;
   php-render: 9 PASS; cbt-candidate: 7 PASS;
 - `php -l` on 10 deployed PHP files and `node --check` on 15 JS files: PASS;
 - `node tools/cloze-probe.js`: exit 0;
-- `node tools/extract-bank.js --check`: exits 1 at the known Windows/CRLF
-  `bank-pre-2026` output-hash mismatch (pre-existing, not a regression);
+- `node tools/extract-bank.js --check`: PASS on the LF checkout; the recorded
+  Windows/CRLF `bank-pre-2026` mismatch remains a pre-existing target-worktree
+  artifact;
 - desktop Chromium 155.0.8059.40 local harness: 33/33 checks passed (admin
   login, comprehension/cloze load, underline/paragraph preview, native PRG save,
   edit formatting tool, CBT complete-group delivery, answer-details XSS probes).
+- focused Chromium 155 no-write check at desktop and 390px mobile width: Edit
+  Shared Text appears between paste and the light-blue link group, and explicit
+  edit #11 keeps its server values despite stored paste context #6.
 
 No live site, staging database, or production cleanup was used.
 

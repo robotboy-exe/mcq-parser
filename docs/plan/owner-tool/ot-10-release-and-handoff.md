@@ -7,7 +7,8 @@
 - **Blocks:** cycle close
 - **External gate:** live `cbt_db.php`, `header.php`, `footer.php`, and
   `cbt_exam_attempts`; independent final review. The Brave/Android phone check
-  passed on 2026-11-09; OT11 re-checks its three follow-up refinements.
+  passed on 2026-11-09; OT11's expanded follow-up and latest cloze/save-flow
+  fixes are locally complete and await final owner phone confirmation.
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal
@@ -148,16 +149,20 @@ Deferred source integrations: live `cbt_db.php`, `header.php`, `footer.php`, and
 
 Desktop/mobile staging evidence: desktop Chromium 155.0.8059.40 PASS 33/33.
 Brave/Android phone check executed 2026-11-09; passed. It surfaced three
-owner-workflow refinements, routed to OT11 for a phone re-check.
+owner-workflow refinements, routed to OT11. A later phone session recorded six
+additional workflow requirements; the 2026-11-12 no-tab consolidation and full
+local suites pass. The final placement/edit-isolation follow-up passes focused
+desktop and 390px Chromium without a write; the owner phone re-check remains
+pending.
 
 Security evidence: PHP 8.3.16 `tests/php-render.php` 9 PASS; desktop XSS probes
 show no execution, exact `<u>` only, and plain options/explanations.
 
-Deployment manifest path/hash: `docs/DEPLOYMENT.md`
-`F4DFFCC8A4B4C02B3DBE51B935AAFA682B086C834EDC6E9958A36D15A2994939` (145 lines)
+Current post-OT11 deployment manifest path/hash: `docs/DEPLOYMENT.md`
+`FD14E38C804B250027400D9B898B4E6F02417C546F0D01CED6629F07801D4AA3` (173 lines)
 
-Developer guide path/hash: `docs/DEVELOPER-GUIDE.md`
-`281CAD9C03CDBD0E775E319157A44AED73D2063760E32DEFA3EA8BFF7EB770CB` (168 lines)
+Current post-OT11 developer guide path/hash: `docs/DEVELOPER-GUIDE.md`
+`76556B289461E8264E032F414CAA44359FB86F6ED078F89B7D827ADC79DDD351` (228 lines)
 
 Files changed: `docs/DEPLOYMENT.md` (new), `docs/DEVELOPER-GUIDE.md` (new),
 `docs/STATUS.md`, `docs/DECISIONS.md` (D-72), `docs/INVARIANTS.md` (INV-97,
@@ -167,7 +172,7 @@ counts), `docs/EDGE_CASES.md`, `docs/AGENTS.md` (consolidated module names),
 via `.git/info/exclude`, not committed): `deployed/cbt_db.php`,
 `deployed/cbt_admin_config.php`.
 
-Open questions/known limits: OT11 owner-workflow refinements and phone re-check;
+Open questions/known limits: OT11 owner Brave/Android re-check and rigorous review;
 connection collation (`utf8mb4_unicode_ci` vs PDO `utf8mb4_general_ci`);
 `practice_title` `NOT NULL` without a default vs the admin INSERT; missing live
 header/footer/attempts artifacts; `extract-bank` pre-existing CRLF mismatch;

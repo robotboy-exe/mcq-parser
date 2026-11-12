@@ -33,6 +33,7 @@ const COMPREHENSION_MULTI_PASTE = fs.readFileSync(
   path.join(ROOT, 'fixtures/inputs/sample-comprehension-multi.txt'), 'utf8');
 const CLOZE_PASTE = fs.readFileSync(
   path.join(ROOT, 'fixtures/inputs/sample-cloze-section6.txt'), 'utf8');
+const SAMPLE_PASSAGES = fs.readFileSync(path.join(ROOT, 'sample-passages.txt'), 'utf8');
 
 const HEADERED_COMPREHENSION_PASTE = [
   'CRS 2021 JAMB',
@@ -137,7 +138,10 @@ function createElement(doc, tag, props) {
     get innerHTML() { return this.html; },
     set innerHTML(html) {
       this.html = String(html == null ? '' : html);
-      doc.registerFromHTML(this.html);
+      ownText = '';
+      (this.children || []).forEach(child => { child.parentNode = null; });
+      this.children = [];
+      doc.registerFromHTML(this.html, this);
     },
     appendChild(child) {
       if (child && child.parentNode) child.remove();
@@ -150,8 +154,19 @@ function createElement(doc, tag, props) {
       }
       return child;
     },
+    insertBefore(child, reference) {
+      if (!reference) return this.appendChild(child);
+      const at = this.children.indexOf(reference);
+      if (at < 0) return this.appendChild(child);
+      if (child && child.parentNode) child.remove();
+      if (child) child.parentNode = this;
+      this.children.splice(at, 0, child);
+      if (child && child.id) doc.byId.set(child.id, child);
+      return child;
+    },
     before(node) {
-      doc.body.appendChild(node);
+      if (!this.parentNode) return doc.body.appendChild(node);
+      return this.parentNode.insertBefore(node, this);
     },
     remove() {
       if (!this.parentNode) return;
@@ -165,14 +180,30 @@ function createElement(doc, tag, props) {
       (this.listeners[type] = this.listeners[type] || []).push(fn);
     },
     dispatchEvent(event) {
-      this.dispatch(event && event.type, event);
-      return true;
+      const next = this.dispatch(event && event.type, event);
+      return !next.defaultPrevented;
     },
     dispatch(type, event) {
-      (this.listeners[type] || []).slice().forEach(fn => fn(event || { type }));
+      const next = event || { type };
+      if (!next.type) next.type = type;
+      if (next.defaultPrevented === undefined) next.defaultPrevented = false;
+      if (typeof next.preventDefault !== 'function') {
+        next.preventDefault = function () { this.defaultPrevented = true; };
+      }
+      (this.listeners[type] || []).slice().forEach(fn => fn(next));
+      return next;
     },
     querySelector(selector) { return doc.query(this, selector); },
-    querySelectorAll(selector) { return doc.queryAll(this, selector); }
+    querySelectorAll(selector) { return doc.queryAll(this, selector); },
+    getElementsByTagName(tag) { return doc.queryAll(this, String(tag || '*')); },
+    closest(selector) {
+      let node = this;
+      while (node) {
+        if (doc.matches(node, selector)) return node;
+        node = node.parentNode;
+      }
+      return null;
+    },
   };
   Object.assign(el, props || {});
   const initialText = typeof el.textContent === 'string' ? el.textContent : '';
@@ -189,6 +220,18 @@ function createElement(doc, tag, props) {
       (this.children || []).forEach(child => { child.parentNode = null; });
       this.children = [];
     },
+  });
+  Object.defineProperty(el, 'nextSibling', {
+    configurable: true,
+    get() {
+      if (!this.parentNode) return null;
+      const at = this.parentNode.children.indexOf(this);
+      return at < 0 ? null : this.parentNode.children[at + 1] || null;
+    },
+  });
+  Object.defineProperty(el, 'firstChild', {
+    configurable: true,
+    get() { return this.children[0] || null; },
   });
   return el;
 }
@@ -223,20 +266,34 @@ function createDocument(options) {
     contextSubmitButton: null,
     successElement: opts.success ? { textContent: String(opts.success) } : null,
     errorElement: opts.error ? { textContent: String(opts.error) } : null,
-    registerFromHTML(html) {
-      const re = /<([a-z][\w-]*)([^>]*)>/gi;
-      let match;
-      while ((match = re.exec(html))) {
-        const id = match[2].match(/\bid="([^"]+)"/i);
-        if (!id) continue;
-        const classes = match[2].match(/\bclass="([^"]*)"/i);
-        if (!this.byId.has(id[1])) {
-          this.byId.set(id[1], createElement(this, match[1], {
-            id: id[1],
-            className: classes ? classes[1] : '',
-          }));
+    registerFromHTML(html, parent) {
+      const stack = [parent || this.body];
+      const tokens = String(html || '').match(/<[^>]+>|[^<]+/g) || [];
+      const voidTags = ['AREA', 'BASE', 'BR', 'COL', 'EMBED', 'HR', 'IMG', 'INPUT', 'LINK', 'META', 'PARAM', 'SOURCE', 'TRACK', 'WBR'];
+      tokens.forEach(token => {
+        if (token.indexOf('</') === 0) {
+          if (stack.length > 1) stack.pop();
+          return;
         }
-      }
+        if (token.charAt(0) !== '<') {
+          if (token) stack[stack.length - 1].appendChild(this.createTextNode(token));
+          return;
+        }
+        const opening = token.match(/^<([a-z][\w-]*)([^>]*)>/i);
+        if (!opening) return;
+        const attrs = opening[2] || '';
+        const prop = {};
+        ['id', 'class', 'name', 'type', 'title', 'for', 'value'].forEach(name => {
+          const match = attrs.match(new RegExp('\\b' + name + '="([^"]*)"', 'i'));
+          if (!match) return;
+          prop[name === 'class' ? 'className' : name === 'for' ? 'htmlFor' : name] = match[1];
+        });
+        if (/\bhidden\b/i.test(attrs)) prop.hidden = true;
+        const element = createElement(this, opening[1], prop);
+        stack[stack.length - 1].appendChild(element);
+        if (element.id) this.byId.set(element.id, element);
+        if (voidTags.indexOf(element.tagName) === -1 && !/\/\s*>$/.test(token)) stack.push(element);
+      });
     },
     getElementById(id) {
       return this.byId.get(id) || null;
@@ -248,6 +305,37 @@ function createDocument(options) {
       const node = createElement(this, '#text', { textContent: String(text) });
       node.nodeType = 3;
       return node;
+    },
+    descendants(scope) {
+      const out = [];
+      function visit(node) {
+        (node && node.children ? node.children : []).forEach(child => {
+          out.push(child);
+          visit(child);
+        });
+      }
+      visit(scope);
+      return out;
+    },
+    matches(element, selector) {
+      if (!element || !selector) return false;
+      if (selector.charAt(0) === '#') return element.id === selector.slice(1);
+      if (selector.charAt(0) === '.') {
+        return String(element.className || '').split(/\s+/).includes(selector.slice(1));
+      }
+      const attr = selector.match(/^([a-z][\w-]*)?\[([\w-]+)(?:=["']?([^\]"']+)["']?)?\]$/i);
+      if (attr) {
+        if (attr[1] && element.tagName !== attr[1].toUpperCase()) return false;
+        const key = attr[2] === 'class' ? 'className' : attr[2] === 'for' ? 'htmlFor' : attr[2];
+        if (attr[3] === undefined) return element[key] !== undefined && element[key] !== '';
+        return String(element[key] == null ? '' : element[key]) === attr[3];
+      }
+      const tagClass = selector.match(/^([a-z][\w-]*)\.([\w-]+)$/i);
+      if (tagClass) {
+        return element.tagName === tagClass[1].toUpperCase()
+          && String(element.className || '').split(/\s+/).includes(tagClass[2]);
+      }
+      return selector === '*' || element.tagName === selector.toUpperCase();
     },
     query(scope, selector) {
       if (selector === 'input[name=action][value=save_question]') {
@@ -270,11 +358,11 @@ function createDocument(options) {
       if (selector === 'button[type=submit]') {
         return scope === this.contextForm ? this.contextSubmitButton : this.submitButton;
       }
-      return null;
+      return this.descendants(scope).find(element => this.matches(element, selector)) || null;
     },
-    queryAll(_scope, selector) {
+    queryAll(scope, selector) {
       if (selector === '[name=correct_option]') return doc.radios.slice();
-      return [];
+      return this.descendants(scope).filter(element => this.matches(element, selector));
     },
     querySelector(selector) {
       return this.query(this.body, selector);
@@ -285,15 +373,56 @@ function createDocument(options) {
     addEventListener() {},
   };
   doc.body = createElement(doc, 'body');
+  if (opts.success) {
+    doc.successElement = createElement(doc, 'div', {
+      className: 'admin-alert admin-success',
+      textContent: String(opts.success),
+    });
+    doc.body.appendChild(doc.successElement);
+  }
+  if (opts.error) {
+    doc.errorElement = createElement(doc, 'div', {
+      className: 'admin-alert admin-error',
+      textContent: String(opts.error),
+    });
+    doc.body.appendChild(doc.errorElement);
+  }
   return doc;
 }
 
 function createForm(doc, options) {
   const opts = options || {};
   const form = createElement(doc, 'form', { id: 'question_form' });
+  function label(forId, text) {
+    const element = createElement(doc, 'label', { htmlFor: forId || '' });
+    element.appendChild(doc.createTextNode(text));
+    return element;
+  }
+  function fieldWrap(field, labelText, note) {
+    const wrap = createElement(doc, 'div', { className: 'admin-field' });
+    if (labelText) wrap.appendChild(label(field.id, labelText));
+    wrap.appendChild(field);
+    if (note) {
+      const help = createElement(doc, 'p', { className: 'admin-note' });
+      help.appendChild(doc.createTextNode(note));
+      wrap.appendChild(help);
+    }
+    return wrap;
+  }
+  function grid(children, className) {
+    const wrap = createElement(doc, 'div', { className: className || 'admin-grid' });
+    children.forEach(child => wrap.appendChild(child));
+    return wrap;
+  }
   const fields = {
-    subject_id: selectElement(doc, 'subject_id', ['CRS', 'CRK', 'Government'], '1'),
+    subject_id: selectElement(doc, 'subject_id', [
+      { text: '-- Select Subject --', value: '' },
+      { text: 'CRS', value: '1' },
+      { text: 'CRK', value: '2' },
+      { text: 'Government', value: '3' },
+    ], '1'),
     exam_category_id: selectElement(doc, 'exam_category_id', [
+      { text: '-- Select Exam Category --', value: '' },
       { text: 'JAMB / UTME', value: '2' },
       { text: 'WASCE / NECO / GCE', value: '3' },
       { text: 'JAMB', value: '8' },
@@ -323,7 +452,10 @@ function createForm(doc, options) {
     context_slot: createElement(doc, 'input', { id: 'context_slot', name: 'context_slot', value: '' }),
   };
   form.elements = fields;
-  Object.keys(fields).forEach(name => doc.byId.set(name, fields[name]));
+  Object.keys(fields).forEach(name => {
+    fields[name].form = form;
+    doc.byId.set(name, fields[name]);
+  });
   doc.radios = [0, 1, 2, 3].map(index => {
     const radio = createElement(doc, 'input', {
       id: 'correct_option_' + index,
@@ -335,6 +467,7 @@ function createForm(doc, options) {
     return radio;
   });
   doc.submitButton = createElement(doc, 'button', { id: 'save_question', type: 'submit' });
+  doc.submitButton.form = form;
   doc.byId.set('save_question', doc.submitButton);
   doc.actionInput = createElement(doc, 'input', {
     name: 'action',
@@ -349,16 +482,86 @@ function createForm(doc, options) {
       fields[name].value = String(opts.formValues[name]);
     }
   });
-  form.before = node => doc.body.appendChild(node);
   doc.form = form;
   doc.byId.set('question_form', form);
+  doc.body.appendChild(form);
+  form.appendChild(doc.actionInput);
+  form.appendChild(grid([
+    fieldWrap(fields.subject_id, 'Subject'),
+    fieldWrap(fields.exam_category_id, 'Exam Category'),
+  ]));
+  form.appendChild(fieldWrap(fields.exam_year, 'Exam Year', 'Enter the year the exam question belongs to.'));
+
+  const linkGroup = createElement(doc, 'fieldset', {
+    id: 'owner_context_link_fields',
+    className: 'owner-form-group owner-link-fields',
+  });
+  const linkLegend = createElement(doc, 'legend');
+  linkLegend.appendChild(doc.createTextNode('Shared Context Link'));
+  linkGroup.appendChild(linkLegend);
+  const contextIdWrap = fieldWrap(fields.context_id, 'Shared Context (optional)', 'The question and context must match.');
+  const contextPositionWrap = fieldWrap(fields.context_position, 'Context Position', 'Use each number once.');
+  const contextSlotWrap = fieldWrap(fields.context_slot, 'Cloze Slot (optional)', 'Use the matching gap number.');
+  contextPositionWrap.id = 'owner_context_position_field';
+  contextSlotWrap.id = 'owner_context_slot_field';
+  doc.byId.set(contextPositionWrap.id, contextPositionWrap);
+  doc.byId.set(contextSlotWrap.id, contextSlotWrap);
+  linkGroup.appendChild(grid([
+    contextIdWrap,
+    contextPositionWrap,
+    contextSlotWrap,
+  ]));
+  doc.byId.set(linkGroup.id, linkGroup);
+  form.appendChild(linkGroup);
+
+  form.appendChild(grid([
+    fieldWrap(fields.question_text, 'Question'),
+    fieldWrap(fields.question_image, 'Question Picture / Diagram (optional)', 'Upload a picture for this question.'),
+  ], 'admin-grid question-entry-grid'));
+  form.appendChild(grid([
+    fieldWrap(fields.option_a, 'Option A'),
+    fieldWrap(fields.option_b, 'Option B'),
+    fieldWrap(fields.option_c, 'Option C'),
+    fieldWrap(fields.option_d, 'Option D'),
+  ]));
+  const correctWrap = createElement(doc, 'div', { className: 'admin-field' });
+  correctWrap.appendChild(label('', 'Correct Answer'));
+  const correct = createElement(doc, 'div', { className: 'admin-correct' });
+  doc.radios.forEach((radio, index) => {
+    const radioLabel = label('', ' Option ' + 'ABCD'.charAt(index));
+    radioLabel.insertBefore(radio, radioLabel.firstChild || null);
+    correct.appendChild(radioLabel);
+  });
+  correctWrap.appendChild(correct);
+  const correctNote = createElement(doc, 'p', { className: 'admin-note' });
+  correctNote.appendChild(doc.createTextNode('Choose the option that contains the correct answer.'));
+  correctWrap.appendChild(correctNote);
+  form.appendChild(correctWrap);
+  form.appendChild(fieldWrap(fields.answer_explanation, 'Answer Explanation', 'Optional. Students may see this after the test.'));
+  form.appendChild(fieldWrap(fields.answer_video, 'Answer Illustration (Video or Picture - optional)', 'Upload a video or picture.'));
+  const activeWrap = createElement(doc, 'div', { className: 'admin-field' });
+  const activeLabel = label('', ' Make question active immediately');
+  activeLabel.insertBefore(fields.is_active, activeLabel.firstChild || null);
+  activeWrap.appendChild(activeLabel);
+  const activeNote = createElement(doc, 'p', { className: 'admin-note' });
+  activeNote.appendChild(doc.createTextNode('Linked questions stay inactive.'));
+  activeWrap.appendChild(activeNote);
+  form.appendChild(activeWrap);
+  form.appendChild(doc.submitButton);
   return form;
 }
 
-function createContextForm(doc) {
+function createContextForm(doc, options) {
+  const opts = options || {};
   const form = createElement(doc, 'form', { id: 'context_form' });
   const fields = {
-    action: createElement(doc, 'input', { id: 'context_action', name: 'action', type: 'hidden', value: 'save_context', form }),
+    action: createElement(doc, 'input', {
+      id: 'context_action',
+      name: 'action',
+      type: 'hidden',
+      value: opts.contextAction || 'save_context',
+      form,
+    }),
     context_type: selectElement(doc, 'context_type', [
       { text: 'Comprehension', value: 'comprehension' },
       { text: 'Cloze', value: 'cloze' },
@@ -371,6 +574,18 @@ function createContextForm(doc) {
     expected_member_count: createElement(doc, 'input', { id: 'expected_member_count', name: 'expected_member_count', value: '1', form }),
     owner_context_targets: createElement(doc, 'input', { id: 'owner_context_targets', value: '', form }),
   };
+  if (opts.contextId !== undefined) {
+    fields.context_id = createElement(doc, 'input', {
+      id: 'context_record_id',
+      name: 'context_id',
+      type: 'hidden',
+      value: String(opts.contextId),
+      form,
+    });
+  }
+  Object.keys(opts.contextFormValues || {}).forEach(name => {
+    if (fields[name]) fields[name].value = String(opts.contextFormValues[name]);
+  });
   Object.keys(fields).forEach(name => { fields[name].form = form; });
   form.elements = fields;
   Object.keys(fields).forEach(name => doc.byId.set(fields[name].id, fields[name]));
@@ -386,9 +601,21 @@ function createContextForm(doc) {
     type: 'submit',
     textContent: 'Create Context',
   });
-  form.before = node => doc.body.appendChild(node);
+  doc.contextSubmitButton.form = form;
   doc.contextForm = form;
   doc.byId.set('context_form', form);
+  const section = createElement(doc, 'section', { id: 'shared_context_editor', className: 'admin-card' });
+  section.appendChild(status);
+  section.appendChild(form);
+  form.appendChild(fields.action);
+  if (fields.context_id) form.appendChild(fields.context_id);
+  ['context_type', 'title', 'subject_id', 'exam_category_id', 'exam_year', 'expected_member_count']
+    .forEach(name => form.appendChild(fields[name]));
+  form.appendChild(targetsWrap);
+  targetsWrap.appendChild(fields.owner_context_targets);
+  form.appendChild(fields.context_text);
+  form.appendChild(doc.contextSubmitButton);
+  doc.body.appendChild(section);
   return form;
 }
 
@@ -396,13 +623,20 @@ function createEnv(options) {
   const opts = options || {};
   const doc = createDocument({ success: opts.success, error: opts.error });
   const form = createForm(doc, opts);
-  if (opts.contextForm !== false) createContextForm(doc);
+  if (opts.contextForm !== false) createContextForm(doc, opts);
   if (opts.contextData) {
     const data = createElement(doc, 'script', {
       id: 'owner_tool_context_data',
       textContent: JSON.stringify(opts.contextData),
     });
     doc.byId.set('owner_tool_context_data', data);
+  }
+  if (opts.recentQuestions) {
+    const data = createElement(doc, 'script', {
+      id: 'owner_tool_recent_questions',
+      textContent: JSON.stringify(opts.recentQuestions),
+    });
+    doc.byId.set('owner_tool_recent_questions', data);
   }
   const raw = new Map();
   Object.keys(opts.storage || {}).forEach(key => raw.set(key, String(opts.storage[key])));
@@ -478,8 +712,14 @@ function createEnv(options) {
     },
     click(id) {
       const el = doc.getElementById(id);
-      if (!el || typeof el.onclick !== 'function') throw new Error('no click handler for ' + id);
-      return el.onclick();
+      if (!el) throw new Error('no element for click ' + id);
+      if (typeof el.onclick === 'function') return el.onclick();
+      if (el.listeners.click && el.listeners.click.length) {
+        const event = el.dispatch('click');
+        if (!event.defaultPrevented && el.type === 'submit' && el.form) el.form.dispatch('submit');
+        return event;
+      }
+      throw new Error('no click handler for ' + id);
     },
     paste(text) {
       doc.getElementById('owner_tool_text').value = text;
@@ -515,7 +755,7 @@ function createEnv(options) {
       return doc.radios.findIndex(radio => radio.checked);
     },
     submit() {
-      form.dispatch('submit');
+      return form.dispatch('submit');
     },
     state() {
       const rawState = raw.get(stateApi.KEY);
@@ -525,6 +765,7 @@ function createEnv(options) {
       const next = Object.assign({}, reloadOptions || {});
       if (opts.contextForm === false) next.contextForm = false;
       if (opts.contextData) next.contextData = opts.contextData;
+      if (opts.recentQuestions) next.recentQuestions = opts.recentQuestions;
       const storage = {};
       raw.forEach((value, key) => { storage[key] = value; });
       next.storage = storage;
@@ -566,7 +807,7 @@ test('full paste fills the native fields and stores a versioned state', () => {
   assertEqual(env.field('exam_category_id'), '2', 'inferred category');
   const state = env.state();
   assertEqual(state.version, 1, 'state version');
-  assertEqual(state.parserVersion, '2.3.2', 'parser version');
+  assertEqual(state.parserVersion, '2.3.3', 'parser version');
   assertEqual(state.items.length, 2, 'queue length');
   assertEqual(state.answerKey['1'], 'D', 'answer key');
   assert(state.queueId.indexOf('q-') === 0, 'queue id is generated');
@@ -579,7 +820,7 @@ test('E/F collapses into option D and ticks index 3 when the key says E', () => 
   env.click('owner_tool_load');
   assertEqual(env.field('option_d'), 'Hatred', 'E text replaces option D');
   assertEqual(env.radioIndex(), 3, 'E ticks the D radio');
-  assert(env.text('owner_tool_flags').indexOf('E/F options present') > -1, 'E/F flag is advisory');
+  assert(env.text('owner_tool_flags').indexOf('option E or F was found') > -1, 'E/F flag is clear');
 });
 
 test('without a key E/F text is appended to option D and nothing is ticked', () => {
@@ -645,7 +886,7 @@ test('a near-miss flash does not advance', () => {
   env.submit();
   const next = env.reload({ success: 'Question updated successfully (Question ID: 5040).' });
   assertEqual(next.state().currentIndex, 0, 'no advance');
-  assert(next.text('owner_tool_warning').indexOf('Could not confirm') > -1, 'review warning shown');
+  assert(next.text('owner_tool_warning').indexOf('I am not sure') > -1, 'review warning shown');
 });
 
 test('a server error keeps the current item and the server-rendered edits', () => {
@@ -665,7 +906,7 @@ test('a server error keeps the current item and the server-rendered edits', () =
   });
   assertEqual(next.state().currentIndex, 0, 'item kept');
   assertEqual(next.state().pendingSubmission, null, 'in-flight state cleared');
-  assert(next.text('owner_tool_warning').indexOf('rejected') > -1, 'error warning shown');
+  assert(next.text('owner_tool_warning').indexOf('did not save') > -1, 'error warning shown');
   assertEqual(next.field('question_text'), 'Edited <u>stem</u>\n\nSecond paragraph.', 'posted stem preserved');
   assertEqual(next.field('option_b'), 'Edited B', 'posted option preserved');
   assertEqual(next.radioIndex(), 1, 'posted answer preserved');
@@ -682,7 +923,7 @@ test('a rejected save never advances on a stale success flash', () => {
   });
   assertEqual(next.state().currentIndex, 0, 'no advance when the server rejected the save');
   assertEqual(next.state().pendingSubmission, null, 'in-flight state cleared');
-  assert(next.text('owner_tool_warning').indexOf('rejected') > -1, 'rejection warning shown');
+  assert(next.text('owner_tool_warning').indexOf('did not save') > -1, 'rejection warning shown');
   assertEqual(next.state().items[0].question, 'Who was the father of faith in the Bible?', 'same queue item remains');
 });
 
@@ -694,7 +935,7 @@ test('an ambiguous reload keeps the item and never retries', () => {
   const next = env.reload({});
   assertEqual(next.state().currentIndex, 0, 'no advance');
   assertEqual(next.state().pendingSubmission, null, 'no stale marker');
-  assert(next.text('owner_tool_warning').indexOf('Check Recently Added Questions') > -1, 'review warning shown');
+  assert(next.text('owner_tool_warning').indexOf('Check Saved Questions') > -1, 'review warning shown');
 });
 
 test('Show Paste never overwrites administrator edits', () => {
@@ -719,7 +960,7 @@ test('skip advances deterministically and clears the marker', () => {
   assertEqual(env.state().pendingSubmission, null, 'marker cleared');
   env.click('owner_tool_skip');
   assertEqual(env.state().currentIndex, 2, 'skipped past the end');
-  assert(env.text('owner_tool_status').indexOf('All 2 questions done') > -1, 'end state reported');
+  assert(env.text('owner_tool_status').indexOf('All 2 questions are done') > -1, 'end state reported');
 });
 
 test('reset clears all owner state and metadata but leaves legacy keys untouched', () => {
@@ -751,7 +992,39 @@ test('reset clears all owner state and metadata but leaves legacy keys untouched
   assertEqual(env.field('context_id'), '', 'native context link cleared');
   assertEqual(env.radioIndex(), -1, 'no radio remains ticked');
   assert(env.raw.has('ocrQueue') && env.raw.has('ocrMeta') && env.raw.has('ansKey'), 'legacy keys untouched');
-  assert(env.text('owner_tool_status').indexOf('No queue yet') > -1, 'empty status shown');
+  assert(env.text('owner_tool_status').indexOf('Paste questions to begin') > -1, 'empty status shown');
+});
+
+test('a new full paste clears old native metadata, links, and shared-text fields', () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  env.click('owner_context_add');
+  configureContext(env, 0, {
+    title: 'Old shared text',
+    text: 'Old passage text.',
+    targets: '1',
+    expected: '1',
+    subject: '1',
+    category: '2',
+    year: '2021',
+  });
+  env.paste(NO_KEY_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.field('subject_id'), '', 'empty inferred subject clears the native subject');
+  assertEqual(env.field('exam_category_id'), '', 'empty inferred exam clears the native exam');
+  assertEqual(env.field('exam_year'), '', 'empty inferred year clears the native year');
+  assertEqual(env.field('context_id'), '', 'old shared-text link is cleared');
+  assertEqual(env.field('context_position'), '', 'old passage number is cleared');
+  assertEqual(env.field('context_slot'), '', 'old gap number is cleared');
+  assertEqual(env.contextField('title'), '', 'old shared-text title is cleared');
+  assertEqual(env.contextField('context_text'), '', 'old shared text is cleared');
+  assertEqual(env.contextField('subject_id'), '', 'old shared-text subject is cleared');
+  assertEqual(env.contextField('exam_year'), '', 'old shared-text year is cleared');
+  assertEqual(env.contextField('action'), 'save_context', 'shared-text form returns to create mode');
+  assertEqual(env.state().contexts.length, 0, 'old browser contexts are discarded');
+  assertEqual(env.visible('context_form'), false, 'empty shared-text editor stays closed');
+  assertEqual(env.visible('owner_context_link_fields'), false, 'standalone question hides link fields');
 });
 
 test('one context card creates, binds, links, and survives a question save', () => {
@@ -776,6 +1049,15 @@ test('one context card creates, binds, links, and survives a question save', () 
   assertEqual(next.field('context_id'), '77', 'native context link filled');
   assertEqual(next.field('context_position'), '1', 'native position filled');
   assertEqual(next.byId('save_question').disabled, false, 'linked save is available');
+  assertEqual(next.visible('context_form'), false, 'confirmed context editor is collapsed');
+  assertEqual(next.text('owner_context_show'), 'Show', 'Show control is visible');
+  next.click('owner_context_show');
+  assertEqual(next.visible('context_form'), true, 'Show reopens the saved context');
+  assertEqual(next.state().pendingSubmission, null, 'Show does not arm a write');
+  assertEqual(next.text('owner_context_hide'), 'Hide', 'Hide replaces Show while the editor is open');
+  next.click('owner_context_hide');
+  assertEqual(next.visible('context_form'), false, 'Hide closes the saved context editor');
+  assertEqual(next.state().pendingSubmission, null, 'Hide does not arm a write');
   next.submit();
   assertEqual(next.state().pendingSubmission.kind, 'question', 'question marker stored');
   const after = next.reload({ success: 'Question saved successfully (Question ID: 5040).' });
@@ -829,6 +1111,13 @@ test('multiple contexts bind their own IDs and members through one editor', () =
   assertEqual(state.items[0].contextRef, state.contexts[0].localId, 'question one links first');
   assertEqual(state.items[1].contextRef, state.contexts[1].localId, 'question two links second');
   assertEqual(third.field('context_id'), '77', 'question one uses first id');
+  const savedSelect = third.byId('owner_context_select');
+  savedSelect.value = state.contexts[0].localId;
+  savedSelect.onchange();
+  assertEqual(third.visible('context_form'), false, 'selected saved context stays collapsed');
+  third.click('owner_context_show');
+  assertEqual(third.visible('context_form'), true, 'Show opens the newly selected saved context');
+  assertEqual(third.contextField('title'), 'First passage', 'Show is bound to the selected context');
   third.click('owner_tool_skip');
   assertEqual(third.field('context_id'), '78', 'question two uses second id');
   assertEqual(third.field('context_position'), '1', 'second context position is one');
@@ -860,7 +1149,7 @@ test('a saved context edit becomes stale and refuses a linked question save', ()
   next.edit('context_title', 'Edited after save');
   assertEqual(next.state().contexts[0].stale, true, 'saved edit is stale');
   assertEqual(next.byId('save_question').disabled, true, 'linked save button disabled');
-  assert(next.text('owner_context_link_warning').indexOf('Update it') > -1, 'update warning shown');
+  assert(next.text('owner_context_link_warning').indexOf('Save the shared text again') > -1, 'update warning shown');
   next.submit();
   assertEqual(next.state().pendingSubmission, null, 'no question marker while stale');
   submitContextForm(next);
@@ -869,6 +1158,59 @@ test('a saved context edit becomes stale and refuses a linked question save', ()
   assertEqual(after.state().contexts[0].stale, false, 'successful update clears stale');
   assertEqual(after.state().pendingSubmission, null, 'update marker cleared');
   assertEqual(after.byId('save_question').disabled, false, 'linked save is available again');
+  assertEqual(after.visible('context_form'), false, 'confirmed update collapses the editor');
+  assertEqual(after.text('owner_context_show'), 'Show', 'saved update can be reopened');
+});
+
+test('an unconfirmed saved-context update stays open for correction', () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  env.click('owner_context_add');
+  configureContext(env, 0, { title: 'Original', text: 'Original text.', targets: '1', expected: '1' });
+  submitContextForm(env);
+  const saved = env.reload({ success: 'Context #77 created. Link its members, then activate it.' });
+  saved.click('owner_context_show');
+  saved.edit('context_title', 'Needs another check');
+  submitContextForm(saved);
+  const next = saved.reload({ success: 'Context #77 updated.' });
+  assertEqual(next.state().contexts[0].stale, true, 'unconfirmed update stays stale');
+  assertEqual(next.visible('context_form'), true, 'unconfirmed update remains open');
+  assertEqual(next.contextField('title'), 'Needs another check', 'edited value remains visible');
+  assert(next.text('owner_context_warning').indexOf('not sure') > -1, 'plain retry warning is shown');
+});
+
+test('an unconfirmed update reopens the pending card when several contexts exist', () => {
+  const first = createEnv();
+  first.paste(FULL_PASTE);
+  first.click('owner_tool_load');
+  first.click('owner_context_add');
+  configureContext(first, 0, { title: 'First passage', text: 'First.', targets: '1', expected: '1' });
+  first.click('owner_context_add');
+  configureContext(first, 1, { title: 'Second passage', text: 'Second.', targets: '2', expected: '1' });
+  const firstSelect = first.byId('owner_context_select');
+  firstSelect.value = first.state().contexts[0].localId;
+  firstSelect.onchange();
+  submitContextForm(first);
+  const second = first.reload({ success: 'Context #77 created. Link its members, then activate it.' });
+  const secondSelect = second.byId('owner_context_select');
+  secondSelect.value = second.state().contexts[1].localId;
+  secondSelect.onchange();
+  submitContextForm(second);
+  const saved = second.reload({ success: 'Context #78 created. Link its members, then activate it.' });
+  const updateSelect = saved.byId('owner_context_select');
+  updateSelect.value = saved.state().contexts[1].localId;
+  updateSelect.onchange();
+  saved.click('owner_context_show');
+  assertEqual(saved.contextField('title'), 'Second passage', 'the second saved context is opened');
+  saved.edit('context_title', 'Second needs another check');
+  submitContextForm(saved);
+  assertEqual(saved.state().pendingSubmission.localId, saved.state().contexts[1].localId,
+    'the update marker targets the second context');
+  const next = saved.reload({ success: 'Context #78 updated.' });
+  assertEqual(next.visible('context_form'), true, 'pending context editor stays open');
+  assertEqual(next.contextField('title'), 'Second needs another check', 'the pending context is selected');
+  assertEqual(next.state().contexts[1].serverId, 78, 'the second saved context remains bound');
 });
 
 test('a near-miss context flash never binds an ID or retries', () => {
@@ -881,7 +1223,7 @@ test('a near-miss context flash never binds an ID or retries', () => {
   const next = env.reload({ success: 'Context #77 created.' });
   assertEqual(next.state().contexts[0].serverId, null, 'near-miss flash does not bind');
   assertEqual(next.state().pendingSubmission, null, 'marker cleared');
-  assert(next.text('owner_context_warning').indexOf('Could not confirm') > -1, 'review warning shown');
+  assert(next.text('owner_context_warning').indexOf('not sure') > -1, 'review warning shown');
   const again = next.reload({ success: 'Context #77 created. Link its members, then activate it.' });
   assertEqual(again.state().contexts[0].serverId, null, 'a later flash cannot bind the cleared marker');
 });
@@ -900,7 +1242,7 @@ test('a rejected context save clears its marker without binding or advancing', (
   assertEqual(next.state().contexts[0].serverId, null, 'rejected save does not bind');
   assertEqual(next.state().pendingSubmission, null, 'context marker cleared');
   assertEqual(next.state().currentIndex, 0, 'queue did not advance');
-  assert(next.text('owner_context_warning').indexOf('rejected') > -1, 'rejection warning shown');
+  assert(next.text('owner_context_warning').indexOf('did not save') > -1, 'rejection warning shown');
 });
 
 test('a comprehension paste fills the context card and the native options', () => {
@@ -954,6 +1296,93 @@ test('a cloze paste fills a cloze card, slots, and the native options', () => {
   assertEqual(state.pendingSubmission, null, 'nothing is submitted');
 });
 
+test('the full sample advances to its unsaved cloze text and then allows gap 71 to save', () => {
+  const env = createEnv();
+  env.paste(SAMPLE_PASSAGES);
+  env.click('owner_tool_load');
+  assertEqual(env.state().contexts.length, 2, 'reading and gap texts are loaded');
+  assertEqual(env.contextField('title'), 'PASSAGE III', 'first shared text is selected');
+  submitContextForm(env);
+
+  const next = env.reload({ success: 'Context #77 created. Link its members, then activate it.' });
+  const nextState = next.state();
+  assertEqual(nextState.contexts[0].serverId, 77, 'first shared text is bound');
+  assertEqual(next.contextField('title'), 'SECTION 6', 'next unsaved gap text stays selected');
+  assertEqual(next.contextField('context_type'), 'cloze', 'next editor uses the gap type');
+  assertEqual(next.byId('owner_context_select').value, nextState.contexts[1].localId,
+    'selector points to the unsaved gap text');
+  assertEqual(next.visible('context_form'), true, 'next unsaved editor stays open');
+  assertEqual(next.text('owner_context_select_label'), 'Shared text to edit', 'selector has a clear label');
+  submitContextForm(next);
+
+  const after = next.reload({ success: 'Context #78 created. Link its members, then activate it.' });
+  assertEqual(after.state().contexts[1].serverId, 78, 'gap text is bound');
+  for (let i = 0; i < 5; i++) after.click('owner_tool_skip');
+  assertEqual(after.state().items[after.state().currentIndex].num, 71, 'gap 71 is current');
+  assertEqual(after.field('context_id'), '78', 'gap question uses the saved text');
+  assertEqual(after.field('context_position'), '1', 'gap question keeps its position');
+  assertEqual(after.field('context_slot'), '71', 'gap question keeps slot 71');
+  const saveEvent = after.click('save_question');
+  assertEqual(saveEvent.defaultPrevented, false, 'saved-context gap question may post');
+  assertEqual(after.state().pendingSubmission.kind, 'question', 'gap question save is armed');
+});
+
+test('the full sample opens its unsaved cloze text when the reading passage is already saved', () => {
+  const paste = SAMPLE_PASSAGES.replace('U. M. E. JAMB USE OF ENGLISH', 'CRS JAMB');
+  const parsed = parser.parsePaste(paste);
+  const reading = parsed.contexts[0];
+  const env = createEnv({
+    contextData: [{
+      context_id: 77,
+      context_type: 'comprehension',
+      title: reading.title,
+      context_text: reading.text,
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '1994',
+      expected_member_count: 5,
+      member_count: 1,
+      members: [{
+        question_text: 'According to the author, electioneering campaign is the approach',
+        context_position: '1',
+        context_slot: '',
+      }],
+    }],
+  });
+  env.paste(paste);
+  env.click('owner_tool_load');
+  const state = env.state();
+  assertEqual(state.contexts[0].serverId, 77, 'reading passage is adopted');
+  assertEqual(state.contexts[1].serverId, null, 'gap text remains unsaved');
+  assertEqual(state.currentIndex, 1, 'saved first reading question is skipped');
+  assertEqual(env.contextField('title'), 'SECTION 6', 'unsaved gap text opens first');
+  assertEqual(env.byId('owner_context_select').value, state.contexts[1].localId,
+    'selector points to the remaining unsaved text');
+  assertEqual(env.visible('context_form'), true, 'unsaved gap editor is open');
+  const restored = env.reload();
+  assertEqual(restored.contextField('title'), 'SECTION 6', 'unsaved gap text stays selected after reload');
+  assertEqual(restored.visible('context_form'), true, 'unsaved gap editor stays open after reload');
+});
+
+test('shared-text link fields only show for passage questions', () => {
+  const normal = createEnv();
+  normal.paste(FULL_PASTE);
+  normal.click('owner_tool_load');
+  assertEqual(normal.visible('owner_context_link_fields'), false, 'normal question hides the shared-text group');
+
+  const reading = createEnv();
+  reading.paste(COMPREHENSION_PASTE);
+  reading.click('owner_tool_load');
+  assertEqual(reading.visible('owner_context_link_fields'), true, 'reading question shows the shared-text group');
+  assertEqual(reading.visible('owner_context_slot_field'), false, 'reading question hides the gap number');
+
+  const cloze = createEnv();
+  cloze.paste(CLOZE_PASTE);
+  cloze.click('owner_tool_load');
+  assertEqual(cloze.visible('owner_context_link_fields'), true, 'gap question shows the shared-text group');
+  assertEqual(cloze.visible('owner_context_slot_field'), true, 'gap question shows the gap number');
+});
+
 test('a same-paste cloze key ticks rows by printed number and never posts', () => {
   const env = createEnv();
   let submits = 0;
@@ -1003,7 +1432,7 @@ test('an ambiguous passage warns and keeps the legacy parse', () => {
   assertEqual(state.contexts.length, 0, 'no invented context');
   assertEqual(state.items.length, 1, 'question still loaded');
   assertEqual(state.items[0].contextRef || '', '', 'standalone question has no context');
-  assert(env.text('owner_tool_warning').indexOf('fewer than two') > -1, 'fallback warning shown');
+  assert(env.text('owner_tool_warning').indexOf('too few questions') > -1, 'fallback warning shown');
   assertEqual(env.visible('owner_tool_warning'), true, 'warning is visible');
 });
 
@@ -1047,15 +1476,49 @@ test('a missing native context form warns without arming a submission', () => {
   const env = createEnv({ contextForm: false });
   env.paste(COMPREHENSION_PASTE);
   env.click('owner_tool_load');
-  assert(env.text('owner_context_warning').indexOf('unavailable') > -1, 'unavailable form warning');
+  assert(env.text('owner_context_warning').indexOf('not set up') > -1, 'unavailable form warning');
   assertEqual(env.state().pendingSubmission, null, 'no context marker');
-  assertEqual(env.byId('save_question').disabled, true, 'uncreated context blocks a linked save');
-  env.submit();
+  assertEqual(env.byId('save_question').disabled, false, 'the button stays tappable so it can explain the stop');
+  const event = env.submit();
+  assert(event.defaultPrevented, 'the unsafe native post is cancelled');
+  assertEqual(env.text('owner_tool_warning'), 'Save the shared context first.', 'the exact reason is shown');
   assertEqual(env.state().pendingSubmission, null, 'no question marker for an uncreated context');
 });
 
-test('manual context selection is authoritative and does not require a matching card', () => {
+test('a new pasted context stops Save Question with the exact reason', () => {
   const env = createEnv();
+  env.paste(COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.byId('save_question').disabled, false, 'Save Question can be tapped');
+  const clickEvent = env.click('save_question');
+  assert(clickEvent.defaultPrevented, 'the button stops before native validation or post');
+  const event = env.submit();
+  assert(event.defaultPrevented, 'keyboard or programmatic submit is also stopped');
+  assertEqual(env.text('owner_tool_warning'), 'Save the shared context first.', 'exact phone message');
+  assertEqual(env.state().pendingSubmission, null, 'no question submission is armed');
+
+  const standalone = createEnv();
+  standalone.paste(FULL_PASTE);
+  standalone.click('owner_tool_load');
+  const safeEvent = standalone.click('save_question');
+  assertEqual(safeEvent.defaultPrevented, false, 'a safe native submit is untouched');
+  assertEqual(standalone.state().pendingSubmission.kind, 'question', 'safe save is armed');
+});
+
+test('manual context selection is authoritative and does not require a matching card', () => {
+  const env = createEnv({
+    contextData: [{
+      context_id: 7,
+      context_type: 'comprehension',
+      title: 'Saved text',
+      subject_id: '3',
+      exam_category_id: '8',
+      exam_year: '2030',
+      expected_member_count: 1,
+      member_count: 0,
+      members: [],
+    }],
+  });
   env.paste(FULL_PASTE);
   env.click('owner_tool_load');
   assertEqual(env.field('context_id'), '', 'standalone question starts unlinked');
@@ -1066,10 +1529,134 @@ test('manual context selection is authoritative and does not require a matching 
   assertEqual(state.items[0].manualContextId, '7', 'manual id is persisted');
   assertEqual(env.field('context_id'), '7', 'native field keeps the manual id');
   assertEqual(env.field('context_position'), '3', 'manual selection keeps the entered position');
+  assertEqual(env.field('subject_id'), '3', 'saved context fills the subject');
+  assertEqual(env.field('exam_category_id'), '8', 'saved context fills the exam');
+  assertEqual(env.field('exam_year'), '2030', 'saved context fills the year');
   assertEqual(env.byId('save_question').disabled, false, 'manual selection allows the linked save');
   env.submit();
   const pending = env.state().pendingSubmission;
   assert(pending && pending.kind === 'question', 'the question save is armed');
+});
+
+test('manual context selection fills the next free passage number and cloze gap', () => {
+  const reading = createEnv({
+    contextData: [{
+      context_id: 7,
+      context_type: 'comprehension',
+      title: 'Saved reading',
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      expected_member_count: 4,
+      member_count: 2,
+      members: [
+        { question_text: 'One', context_position: '1', context_slot: '' },
+        { question_text: 'Three', context_position: '3', context_slot: '' },
+      ],
+    }],
+  });
+  reading.paste(FULL_PASTE);
+  reading.click('owner_tool_load');
+  reading.byId('context_id').value = '7';
+  reading.byId('context_id').dispatch('change');
+  assertEqual(reading.state().items[0].contextPosition, '2', 'first unused reading position is selected');
+  assertEqual(reading.field('context_position'), '2', 'native passage number is filled');
+  assertEqual(reading.field('context_slot'), '', 'reading passage has no gap number');
+
+  const cloze = createEnv({
+    contextData: [{
+      context_id: 8,
+      context_type: 'cloze',
+      title: 'Saved gap passage',
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      expected_member_count: 3,
+      member_count: 1,
+      slots: [71, 72, 73],
+      members: [{ question_text: 'One', context_position: '1', context_slot: '71' }],
+    }],
+  });
+  cloze.paste(FULL_PASTE);
+  cloze.click('owner_tool_load');
+  cloze.byId('context_id').value = '8';
+  cloze.byId('context_id').dispatch('change');
+  assertEqual(cloze.state().items[0].contextPosition, '2', 'first unused cloze position is selected');
+  assertEqual(cloze.state().items[0].contextSlot, '72', 'first unused parsed gap is selected');
+  assertEqual(cloze.field('context_slot'), '72', 'native gap number is filled');
+
+  const override = createEnv({
+    contextData: [{
+      context_id: 9,
+      context_type: 'comprehension',
+      title: 'Manual reading override',
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      expected_member_count: 10,
+      member_count: 0,
+      members: [],
+    }],
+  });
+  override.paste(CLOZE_PASTE);
+  override.click('owner_tool_load');
+  override.byId('context_id').value = '9';
+  override.byId('context_id').dispatch('change');
+  assertEqual(override.state().items[0].manualContextType, 'comprehension', 'saved context type is authoritative');
+  assertEqual(override.field('context_slot'), '', 'reading override clears the parsed cloze gap');
+  assertEqual(override.visible('owner_context_slot_field'), false, 'reading override hides the gap field');
+  assertEqual(override.byId('save_question').disabled, false, 'local cloze type does not block the reading override');
+});
+
+test('manual adoption loads the next question after skipping a saved member', () => {
+  const env = createEnv({
+    contextData: [{
+      context_id: 7,
+      context_type: 'comprehension',
+      title: 'Saved text',
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      expected_member_count: 1,
+      member_count: 1,
+      members: [{
+        question_text: 'Who was the father of faith in the Bible?',
+        context_position: '1',
+        context_slot: '',
+      }],
+    }],
+  });
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  env.setField('context_position', '1');
+  env.byId('context_id').value = '7';
+  env.byId('context_id').dispatch('change');
+  assertEqual(env.state().currentIndex, 1, 'saved first member is skipped');
+  assertEqual(env.field('question_text'), 'How many books are in the New Testament?', 'next question fills the form');
+  assert(env.text('owner_tool_preview').indexOf('New Testament') > -1, 'preview also moves to the next question');
+});
+
+test('a linked local context owns the question subject, exam, and year', () => {
+  const env = createEnv();
+  env.paste(FULL_PASTE);
+  env.click('owner_tool_load');
+  env.click('owner_context_add');
+  configureContext(env, 0, {
+    title: 'Local shared text',
+    text: 'Read this.',
+    targets: '1',
+    expected: '1',
+    subject: '3',
+    category: '8',
+    year: '2031',
+  });
+  assertEqual(env.field('subject_id'), '3', 'local context fills the subject');
+  assertEqual(env.field('exam_category_id'), '8', 'local context fills the exam');
+  assertEqual(env.field('exam_year'), '2031', 'local context fills the year');
+  env.click('owner_tool_skip');
+  assertEqual(env.field('subject_id'), '1', 'standalone question returns to paste subject');
+  assertEqual(env.field('exam_category_id'), '2', 'standalone question returns to paste exam');
+  assertEqual(env.field('exam_year'), '2021', 'standalone question returns to paste year');
 });
 
 test('a saved context auto-matches and an already-saved member is skipped', () => {
@@ -1077,6 +1664,7 @@ test('a saved context auto-matches and an already-saved member is skipped', () =
     context_id: 5,
     context_type: 'comprehension',
     title: 'PASSAGE I',
+    context_text: 'The elephant is the largest land animal. It lives in herds led by an older female.',
     subject_id: '1',
     exam_category_id: '2',
     exam_year: '2021',
@@ -1098,11 +1686,176 @@ test('a saved context auto-matches and an already-saved member is skipped', () =
   assertEqual(state.items[0].alreadySaved, true, 'first member is detected');
   assertEqual(state.currentIndex, 1, 'the already-saved member is skipped');
   assertEqual(env.field('question_text'), 'An elephant uses its trunk for', 'the next member loads');
-  assert(env.text('owner_tool_warning').indexOf('Skipped already-saved') > -1, 'skip notice is visible');
+  assert(env.text('owner_tool_warning').indexOf('Already saved') > -1, 'skip notice is visible');
   assertEqual(env.byId('save_question').disabled, false, 'the next member can be saved');
   assertEqual(env.contextField('title'), 'PASSAGE I', 'matched context uses the native editor');
   assertEqual(env.contextField('action'), 'update_context', 'matched context is ready for explicit update');
   assertEqual(env.state().pendingSubmission, null, 'matching never submits the context');
+});
+
+test('saved shared text matches by normalized title and full passage text', () => {
+  const wrongText = createEnv({
+    contextData: [{
+      context_id: 5,
+      context_type: 'comprehension',
+      title: 'PASSAGE I',
+      context_text: 'A different passage with the same name.',
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      expected_member_count: 2,
+      member_count: 0,
+      members: [],
+    }],
+  });
+  wrongText.paste(HEADERED_COMPREHENSION_PASTE);
+  wrongText.click('owner_tool_load');
+  assertEqual(wrongText.state().contexts[0].serverId, null, 'same title with different text does not bind');
+
+  const normalized = createEnv({
+    contextData: [{
+      context_id: 6,
+      context_type: 'comprehension',
+      title: '  PASSAGE   I ',
+      context_text: 'The <u>elephant</u> is the largest land animal.\nIt lives in herds led by an older female.',
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      expected_member_count: 2,
+      member_count: 0,
+      members: [],
+    }],
+  });
+  normalized.paste(HEADERED_COMPREHENSION_PASTE);
+  normalized.click('owner_tool_load');
+  assertEqual(normalized.state().contexts[0].serverId, 6, 'whitespace and exact underline markers do not prevent binding');
+  assertEqual(normalized.visible('owner_context_duplicate'), false, 'the adopted saved copy is not reported as its own duplicate');
+});
+
+test('normal and shared-text duplicate notices are advisory', () => {
+  const normal = createEnv({
+    recentQuestions: [{
+      id: 501,
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      question_text: 'Who was the father of faith in the Bible?',
+      option_a: 'Isaac',
+      option_b: 'Jacob',
+      option_c: 'Moses',
+      option_d: 'Abraham',
+    }],
+  });
+  normal.paste(FULL_PASTE);
+  normal.click('owner_tool_load');
+  assert(normal.text('owner_tool_duplicate').indexOf('Question #501') > -1, 'matching recent question is named');
+  assertEqual(normal.byId('save_question').disabled, false, 'question duplicate does not disable Save');
+  normal.edit('option_b', 'A different option');
+  assertEqual(normal.visible('owner_tool_duplicate'), false, 'changing an identity field clears the notice');
+
+  const shared = createEnv({
+    contextData: [{
+      context_id: 77,
+      context_type: 'comprehension',
+      title: 'Shared passage',
+      context_text: 'Read this shared text.',
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      expected_member_count: 1,
+      member_count: 0,
+      members: [],
+    }],
+  });
+  shared.paste(FULL_PASTE);
+  shared.click('owner_tool_load');
+  shared.click('owner_context_add');
+  configureContext(shared, 0, {
+    title: '  Shared   passage ',
+    text: '<u>Read</u> this shared text.',
+    targets: '1',
+    expected: '1',
+  });
+  assert(shared.text('owner_context_duplicate').indexOf('shared text #77') > -1,
+    'matching saved shared text is named');
+  assertEqual(shared.byId('save_context').disabled, false, 'shared-text duplicate does not disable Save');
+  assertEqual(shared.state().pendingSubmission, null, 'duplicate notice never arms a write');
+});
+
+test('shared-text edit survives the latest stored paste and excludes its own duplicate identity', () => {
+  const stale = stateApi.emptyState(parser.version, 'q-edit-context');
+  stale.contexts = [{
+    localId: 'c-stale',
+    contextType: 'comprehension',
+    title: 'Stale browser card',
+    text: 'Do not fill this.',
+    targets: [1],
+    expectedCount: 1,
+    subjectId: '1',
+    examCategoryId: '2',
+    examYear: '2021',
+    serverId: null,
+    stale: false,
+    adopted: false,
+  }];
+  stale.items = [{
+    num: 1,
+    question: 'Question from the latest paste.',
+    a: 'A',
+    b: 'B',
+    c: 'C',
+    d: 'D',
+    e: '',
+    f: '',
+    flags: [],
+    contextRef: 'c-stale',
+    contextPosition: '1',
+    contextSlot: '',
+  }];
+  const saved = [7, 8].map(id => ({
+    context_id: id,
+    context_type: 'comprehension',
+    title: 'Shared passage',
+    context_text: 'Read this shared text.',
+    subject_id: '1',
+    exam_category_id: '2',
+    exam_year: '2021',
+    expected_member_count: 1,
+    member_count: 0,
+    members: [],
+  }));
+  const env = createEnv({
+    storage: { [stateApi.KEY]: JSON.stringify(stale) },
+    contextAction: 'update_context',
+    contextId: 7,
+    contextFormValues: {
+      context_type: 'comprehension',
+      title: 'Shared passage',
+      context_text: 'Read this shared text.',
+      subject_id: '1',
+      exam_category_id: '2',
+      exam_year: '2021',
+      expected_member_count: '1',
+    },
+    contextData: saved,
+  });
+  const storedBefore = env.raw.get(stateApi.KEY);
+  assertEqual(env.contextField('title'), 'Shared passage', 'stored browser card does not overwrite the server edit form');
+  assertEqual(env.doc.getElementById('owner_context_add'), null, 'editing shared text has no Add control');
+  assert(env.text('owner_context_duplicate').indexOf('shared text #8') > -1,
+    'duplicate notice excludes current shared text #7');
+  env.edit('context_text', 'A unique replacement.');
+  assertEqual(env.visible('owner_context_duplicate'), false, 'editing identity refreshes the notice');
+  assertEqual(env.raw.get(stateApi.KEY), storedBefore, 'duplicate checking does not write owner state');
+
+  env.paste(HEADERED_COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.state().contexts[0].serverId, 7, 'paste on shared-text edit stays bound to the edited ID');
+  assertEqual(env.contextField('action'), 'update_context', 'paste keeps update mode');
+  assertEqual(env.contextField('context_id'), '7', 'paste keeps the edited context ID');
+  assertEqual(env.contextField('title'), 'PASSAGE I', 'Use Paste explicitly replaces the edited title');
+  assert(env.contextField('context_text').indexOf('largest land animal') > -1,
+    'Use Paste explicitly replaces the edited passage');
 });
 
 test('a member-count mismatch only warns and still allows linked saves', () => {
@@ -1110,6 +1863,7 @@ test('a member-count mismatch only warns and still allows linked saves', () => {
     context_id: 9,
     context_type: 'comprehension',
     title: 'PASSAGE I',
+    context_text: 'The elephant is the largest land animal. It lives in herds led by an older female.',
     subject_id: '1',
     exam_category_id: '2',
     exam_year: '2021',
@@ -1123,7 +1877,7 @@ test('a member-count mismatch only warns and still allows linked saves', () => {
   env.click('owner_tool_load');
   const state = env.state();
   assertEqual(state.contexts[0].serverId, 9, 'context is still adopted');
-  assert(env.text('owner_tool_warning').indexOf('has 3 saved member(s)') > -1, 'count mismatch warns');
+  assert(env.text('owner_tool_warning').indexOf('has 3 questions') > -1, 'count mismatch warns');
   assertEqual(env.byId('save_question').disabled, false, 'linked save stays available');
 });
 
@@ -1163,11 +1917,75 @@ test('a multi-context paste uses one selector and one native editor', () => {
   assertEqual(env.contextField('title'), 'PASSAGE II', 'the selector fills the chosen context');
 });
 
-test('the underline toolbar is placed beside the question text and saved contexts are embedded', () => {
-  assert(CONTROLLER_SOURCE.indexOf("panel.querySelector('.owner-tool-format')") > -1, 'toolbar is located');
-  assert(CONTROLLER_SOURCE.indexOf('insertBefore(formatToolbar, questionBoxForFormat)') > -1, 'toolbar sits before the textarea');
-  assert(ADMIN_SOURCE.indexOf('id="owner_tool_context_data"') > -1, 'saved contexts are embedded');
+test('the toolbar and one candidate preview sit beside Question Text for every item type', () => {
+  [FULL_PASTE, COMPREHENSION_PASTE].forEach(paste => {
+    const env = createEnv();
+    env.paste(paste);
+    env.click('owner_tool_load');
+    const questionField = env.form.elements.question_text.closest('.admin-field');
+    const toolbar = env.doc.querySelector('.owner-tool-format');
+    const preview = env.doc.querySelector('.owner-tool-preview-wrap');
+    assert(toolbar.parentNode === questionField, 'toolbar shares the question field');
+    assert(preview.parentNode === questionField, 'preview shares the question field');
+    assert(env.text('owner_tool_preview').length > 0, 'loaded question has a preview');
+  });
+  const edit = createEnv({
+    search: '?edit=42',
+    formValues: { question_text: 'Edit this linked question.', context_id: '5' },
+  });
+  assert(edit.doc.querySelector('.owner-tool-preview-wrap').parentNode
+    === edit.form.elements.question_text.closest('.admin-field'), 'edit preview shares the question field');
+  assertEqual(edit.text('owner_tool_preview'), 'Edit this linked question.', 'loaded linked edit has a preview');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('id="owner_tool_context_data"') > -1, 'saved contexts are embedded');
   assert(ADMIN_CONTEXT_SOURCE.indexOf('cbt_context_members($pdo') > -1, 'member payload is built by the context module');
+});
+
+test('the native form has separate shared-text and question-detail groups', () => {
+  const env = createEnv();
+  const linkGroup = env.byId('owner_context_link_fields');
+  const questionGroup = env.byId('owner_question_fields');
+  assert(linkGroup.parentNode === env.form, 'shared-text group is in the question form');
+  assert(questionGroup.parentNode === env.form, 'question-detail group is in the question form');
+  ['context_id', 'context_position', 'context_slot'].forEach(id => {
+    assert(env.byId(id).closest('fieldset') === linkGroup, id + ' stays in the shared-text group');
+  });
+  ['subject_id', 'exam_category_id', 'exam_year', 'question_text', 'option_a', 'answer_explanation']
+    .forEach(id => assert(env.byId(id).closest('fieldset') === questionGroup, id + ' stays in question details'));
+  assert(STYLE_SOURCE.indexOf('.owner-link-fields') > -1, 'shared-text group has boundary styles');
+  assert(STYLE_SOURCE.indexOf('.owner-question-fields') > -1, 'question details have boundary styles');
+});
+
+test('owner copy uses short plain words while fixed flashes stay exact', () => {
+  const env = createEnv();
+  assert(env.text('owner_tool').indexOf('Question Helper') > -1, 'plain tool name');
+  const questionLabel = env.form.elements.question_text.closest('.admin-field').querySelector('label[for="question_text"]');
+  assertEqual(questionLabel.textContent, 'Question Text', 'native question label');
+  assertEqual(env.form.elements.subject_id.options[0].text, 'Choose a subject', 'plain subject prompt');
+  assertEqual(env.form.elements.exam_category_id.options[0].text, 'Choose an exam', 'plain exam prompt');
+  env.paste(EF_PASTE);
+  env.click('owner_tool_load');
+  assert(env.text('owner_tool_flags').indexOf('option E or F was found') > -1, 'parser flag is translated for display');
+  assert(env.text('owner_tool_status').indexOf('queue') === -1, 'status does not say queue');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('<h2>Edit Shared Text</h2>') > -1, 'native context heading names the editor');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('Context Position') === -1, 'native link jargon is removed');
+  assert(OWNER_TOOL_SOURCE.indexOf('Question saved successfully \\(Question ID: \\d+\\)') > -1,
+    'exact question flash detector remains');
+  assert(OWNER_TOOL_SOURCE.indexOf('Context #(\\d+) created\\. Link its members, then activate it\\.') > -1,
+    'exact context flash detector remains');
+});
+
+test('plain server copy keeps every context validation reason', () => {
+  const env = createEnv({
+    error: 'Please enter a context title. Please enter the shared context text. Choose a valid subject for the context pool.',
+  });
+  assertEqual(env.doc.errorElement.textContent,
+    'Give the shared text a name. Add the shared text. Choose a subject.',
+    'all validation reasons remain visible');
+  const failed = createEnv({
+    error: 'The context could not be saved. Check that the context migration has been imported and try again.',
+  });
+  assertEqual(failed.doc.errorElement.textContent, 'The shared text did not save. Ask for help.',
+    'context failure is not called a question failure');
 });
 
 test('the owner tool uses one native shared-context editor', () => {
@@ -1182,6 +2000,37 @@ test('the owner tool uses one native shared-context editor', () => {
     'browser-only targets do not change the server contract');
 });
 
+test('the admin workflow is three full-width sections without tabs', () => {
+  const addAt = ADMIN_SOURCE.indexOf('id="owner-add-question"');
+  const sharedAt = ADMIN_SOURCE.indexOf('cbt_admin_render_context_management');
+  const allAt = ADMIN_SOURCE.indexOf('id="owner-all-questions"');
+  assert(addAt > -1 && sharedAt > addAt && allAt > sharedAt, 'Add, Shared Texts, and All Questions stay in order');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('id="owner-shared-texts"') > -1, 'shared-text module owns its full-width section');
+  assert(OWNER_TOOL_SOURCE.indexOf('owner_tool_tab') === -1, 'owner tool has no tab shell');
+  assert(ADMIN_SOURCE.indexOf('owner_tool_tab') === -1, 'admin page has no tab shell');
+  assert(STYLE_SOURCE.indexOf('.owner-workflow-section') > -1, 'full-width sections have shared boundary styles');
+  const env = createEnv();
+  const pastePanel = env.byId('owner_tool');
+  const editor = env.byId('shared_context_editor');
+  const questionForm = env.form;
+  const children = env.doc.body.children;
+  assert(children.indexOf(editor) === children.indexOf(pastePanel) + 1,
+    'Edit Shared Text sits directly below the paste panel');
+  assert(children.indexOf(questionForm) === children.indexOf(editor) + 1,
+    'Edit Shared Text sits above the question form and its light-blue link group');
+  assert(env.byId('owner_context_add').closest('#shared_context_editor'), 'Add Shared Text stays in its editor');
+});
+
+test('refinement copy uses Reset, Edit, and the short target instruction', () => {
+  const env = createEnv();
+  assertEqual(env.text('owner_tool_reset'), 'Reset', 'reset button copy');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('Add this many questions, numbered from 1.') === -1,
+    'expected-count helper is removed');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('List question numbers in order.') > -1, 'target instruction is exact');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('>Edit</a>') > -1, 'saved shared-text action says Edit');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('Editing shared text #') > -1, 'shared-text edit status says Editing');
+});
+
 test('legacy bookmarklet state is reported, never imported or deleted', () => {
   const env = createEnv({
     storage: {
@@ -1191,8 +2040,8 @@ test('legacy bookmarklet state is reported, never imported or deleted', () => {
     },
   });
   const warning = env.text('owner_tool_warning');
-  assert(warning.indexOf('ocrQueue') > -1, 'legacy keys named');
-  assert(warning.indexOf('not imported') > -1, 'import refused');
+  assert(warning.indexOf('Old saved work') > -1, 'old work is explained');
+  assert(warning.indexOf('left alone') > -1, 'old work is preserved');
   assertEqual(env.state(), null, 'no owner-tool state created');
   assert(env.raw.has('ocrQueue'), 'legacy queue left in place');
   assert(env.raw.has('ansKey'), 'legacy key left in place');
@@ -1208,6 +2057,10 @@ test('edit pages get formatting only and no storage writes', () => {
   env.click('owner_tool_underline');
   assertEqual(env.field('question_text'), 'Edit <u>this</u> existing question.', 'edit selection underlined');
   assertEqual(env.raw.size, 0, 'no storage writes');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf("($editingQuestionId ?? 0) > 0 ? ' hidden' : ''") > -1,
+    'shared-text section is server-hidden while editing a question');
+  assert(ADMIN_SOURCE.indexOf("$editingQuestionId > 0 ? ' hidden' : ''") > -1,
+    'all-questions section is server-hidden while editing a question');
 });
 
 test('an invalid edit URL with an Add form keeps the importer', () => {
@@ -1221,7 +2074,7 @@ test('stale-parser state is refused and preserved', () => {
   stale.items = [{ num: 1, question: 'Old stem from the previous parser', a: 'A', b: 'B', c: 'C', d: 'D', e: '', f: '', flags: [] }];
   stale.answerKey = { 1: 'A' };
   const env = createEnv({ storage: { [stateApi.KEY]: JSON.stringify(stale) } });
-  assert(env.text('owner_tool_warning').indexOf('was not loaded') > -1, 'refusal warning shown');
+  assert(env.text('owner_tool_warning').indexOf('older tool') > -1, 'refusal warning shown');
   assertEqual(env.field('question_text'), '', 'stale queue is not filled');
   assertEqual(env.state().parserVersion, '1.9.9', 'stored state is not rewritten');
   assertEqual(env.state().items.length, 1, 'stored items preserved');
@@ -1263,7 +2116,7 @@ test('a full re-paste replaces stale state instead of re-versioning it', () => {
 
 test('corrupt state warns without crashing or deleting', () => {
   const env = createEnv({ storage: { [stateApi.KEY]: '{not json' } });
-  assert(env.text('owner_tool_warning').indexOf('could not be used') > -1, 'corrupt warning shown');
+  assert(env.text('owner_tool_warning').indexOf('could not open') > -1, 'corrupt warning shown');
   assertEqual(env.raw.get(stateApi.KEY), '{not json', 'corrupt value preserved');
 });
 
@@ -1301,7 +2154,7 @@ test('an empty selection inserts no markup and keeps the caret', () => {
   const box = env.form.elements.question_text;
   assertEqual(box.selectionStart, 4, 'caret stays put');
   assertEqual(box.selectionEnd, 4, 'no selection is invented');
-  assert(env.text('owner_tool_hint').indexOf('Select the words') > -1, 'the owner is told what to select');
+  assert(env.text('owner_tool_hint').indexOf('Select words') > -1, 'the owner is told what to select');
 });
 
 test('the preview keeps paragraphs and renders markers, not markup', () => {
@@ -1361,6 +2214,11 @@ test('the admin page loads the consolidated parser, renderer, and owner tool in 
   assert(renderAt > -1, 'shared renderer is loaded');
   assert(toolAt > -1, 'owner tool bundle is loaded');
   assert(coreAt < renderAt && renderAt < toolAt, 'core, renderer, and owner tool load in order');
+  ['src/parser/core.js?v=2.3.3', 'src/owner-tool/owner-tool.css?v=2.3.2g',
+    'src/owner-tool/owner-tool.js?v=2.3.3c']
+    .forEach(asset => assert(ADMIN_SOURCE.indexOf(asset) > -1, asset + ' uses the current admin token'));
+  ['src/owner-tool/owner-tool.css?v=2.3.2g', 'src/owner-tool/render.js?v=2.3.2g']
+    .forEach(asset => assert(CBT_SOURCE.indexOf(asset) > -1, asset + ' uses the current CBT token'));
   ['src/parser/comprehension.js', 'src/parser/cloze.js', 'src/owner-tool/state.js', 'src/owner-tool/controller.js']
     .forEach(relative => assert(ADMIN_SOURCE.indexOf(relative) === -1, relative + ' is consolidated away'));
 });
@@ -1387,7 +2245,7 @@ test('underline refuses to create nested or overlapping marker pairs', () => {
   env.select(5, 7);
   env.click('owner_tool_underline');
   assertEqual(env.field('question_text'), '<u>abcdef</u>', 'partial inner selection is unchanged');
-  assert(env.text('owner_tool_hint').indexOf('entire underlined text') > -1, 'owner receives a useful instruction');
+  assert(env.text('owner_tool_hint').indexOf('all underlined words') > -1, 'owner receives a useful instruction');
 });
 
 test('underline refuses to remove markers from a nested boundary', () => {
@@ -1398,7 +2256,7 @@ test('underline refuses to remove markers from a nested boundary', () => {
   env.select(start, start + 'inner'.length);
   env.click('owner_tool_underline');
   assertEqual(env.field('question_text'), value, 'malformed nested text is unchanged');
-  assert(env.text('owner_tool_hint').indexOf('overlapping') > -1, 'overlap guidance shown');
+  assert(env.text('owner_tool_hint').indexOf('all underlined words') > -1, 'overlap guidance shown');
 });
 
 test('underline retains the last non-empty selection when toolbar focus collapses it', () => {
@@ -1421,7 +2279,7 @@ test('programmatic fill clears a selection remembered from the prior question', 
   const before = env.field('question_text');
   env.click('owner_tool_underline');
   assertEqual(env.field('question_text'), before, 'next question is unchanged');
-  assert(env.text('owner_tool_hint').indexOf('Select the words') > -1, 'empty-selection guidance shown');
+  assert(env.text('owner_tool_hint').indexOf('Select words') > -1, 'empty-selection guidance shown');
 });
 
 test('underline refuses a selection that touches only part of a marker', () => {
@@ -1430,7 +2288,7 @@ test('underline refuses a selection that touches only part of a marker', () => {
   env.select(8, 10);
   env.click('owner_tool_underline');
   assertEqual(env.field('question_text'), '<u>word</u>', 'partial closing marker is unchanged');
-  assert(env.text('owner_tool_hint').indexOf('entire underlined text') > -1, 'overlap guidance shown');
+  assert(env.text('owner_tool_hint').indexOf('all underlined words') > -1, 'overlap guidance shown');
 });
 
 test('the preview refreshes after a programmatic fill and a native reset', async () => {
@@ -1471,10 +2329,15 @@ test('excluded behavior is absent from the production controller', () => {
       'controller must not contain ' + term));
   const submitAt = CONTROLLER_SOURCE.indexOf("addEventListener('submit'");
   assert(submitAt > -1, 'the native submit listener exists');
-  const submitBody = CONTROLLER_SOURCE.slice(submitAt, submitAt + 400);
-  assert(submitBody.indexOf('preventDefault') === -1, 'native submit is never intercepted');
-  assertEqual((CONTROLLER_SOURCE.match(/\.preventDefault\(/g) || []).length, 2, 'only underline keyboard and focus retention suppress defaults');
-  assert(CONTROLLER_SOURCE.indexOf('is_active') === -1, 'active checkbox is never forced');
+  const submitBody = CONTROLLER_SOURCE.slice(submitAt, submitAt + 700);
+  assert(submitBody.indexOf('blockQuestionSave') > -1, 'submit cancellation uses the focused link blocker');
+  const blockerAt = CONTROLLER_SOURCE.indexOf('function blockQuestionSave');
+  const blockerBody = CONTROLLER_SOURCE.slice(blockerAt, blockerAt + 500);
+  assert(blockerAt > -1 && blockerBody.indexOf('preventDefault') > -1, 'a blocked linked submit is cancelled');
+  assertEqual((CONTROLLER_SOURCE.match(/\.preventDefault\(/g) || []).length, 3,
+    'only the linked-save stop and underline controls suppress defaults');
+  assert(CONTROLLER_SOURCE.indexOf("$('is_active').checked") === -1,
+    'active checkbox state is never forced');
 });
 
 (async () => {

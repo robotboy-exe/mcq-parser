@@ -766,9 +766,9 @@ if (is_file(__DIR__ . '/header.php')) {
             </form>
         </section>
     <?php else: ?>
-        <section class="admin-card">
+        <section class="admin-card owner-workflow-section" id="owner-add-question">
             <div class="admin-topline">
-                <h2><?php echo $editingQuestionId > 0 ? 'Edit Question #' . (int) $editingQuestionId : 'Add a New Question'; ?></h2>
+                <h2><?php echo $editingQuestionId > 0 ? 'Edit Question #' . (int) $editingQuestionId : 'Add Question'; ?></h2>
                 <form method="post">
                     <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['cbt_admin_csrf']); ?>">
                     <input type="hidden" name="action" value="logout">
@@ -924,9 +924,9 @@ if (is_file(__DIR__ . '/header.php')) {
 
         <?php echo cbt_admin_render_context_management(get_defined_vars()); ?>
 
-        <section class="admin-card">
+        <section class="admin-card owner-workflow-section" id="owner-all-questions"<?php echo $editingQuestionId > 0 ? ' hidden' : ''; ?>>
             <div>
-                <h2 style="margin-bottom:8px">Recently Added Questions</h2>
+                <h2 style="margin-bottom:8px">All Questions</h2>
                 <form method="get" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 12px">
                     <label for="subject_id_filter" style="font-weight:700">Filter by subject:</label>
                     <select id="subject_id_filter" name="subject_id" style="max-width:320px;border:1px solid #d5dfe9;border-radius:8px;padding:10px 12px;background:#fff;color:#263445;font:inherit">
@@ -1057,10 +1057,9 @@ if (is_file(__DIR__ . '/header.php')) {
 </div>
 </main>
 
-<?php $ownerContextData = cbt_admin_owner_context_payload($pdo ?? null); ?>
-<script type="application/json" id="owner_tool_context_data"><?php echo json_encode($ownerContextData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
-<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2e">
-<script src="src/parser/core.js?v=2.3.2e"></script><script src="src/owner-tool/render.js?v=2.3.2e"></script><script src="src/owner-tool/owner-tool.js?v=2.3.2e"></script>
+<?php echo cbt_admin_owner_payload_scripts($pdo ?? null, $isLoggedIn && $editingQuestionId === 0); ?>
+<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2g">
+<script src="src/parser/core.js?v=2.3.3"></script><script src="src/owner-tool/render.js?v=2.3.2g"></script><script src="src/owner-tool/owner-tool.js?v=2.3.3c"></script>
 
 
 <?php if (is_file(__DIR__ . '/footer.php')) { include __DIR__ . '/footer.php'; } ?>

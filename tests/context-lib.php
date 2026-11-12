@@ -366,11 +366,29 @@ test('list, fetch, and member count return the expected context facts', function
     same(cbt_context_fetch($pdo, 999), null, 'missing context');
 });
 
+test('context list supports independent count, limit, and offset pagination', function () {
+    $pdo = newDb();
+    for ($number = 1; $number <= 12; $number++) {
+        insertContext($pdo, ['title' => 'Passage ' . $number]);
+    }
+    same(cbt_context_count($pdo), 12, 'context count');
+    $firstPage = cbt_context_list($pdo, 10, 0);
+    $secondPage = cbt_context_list($pdo, 10, 10);
+    same(count($firstPage), 10, 'first page size');
+    same((int) $firstPage[0]['id'], 12, 'first page starts with newest');
+    same((int) $firstPage[9]['id'], 3, 'first page ends at id three');
+    same(count($secondPage), 2, 'second page size');
+    same((int) $secondPage[0]['id'], 2, 'second page starts at id two');
+    same((int) $secondPage[1]['id'], 1, 'second page ends at oldest');
+    same($firstPage[0]['context_text'], "First paragraph.\n\nSecond paragraph.", 'list carries identity text');
+    same(count(cbt_context_option_list($pdo)), 12, 'question selector list is not paginated');
+});
+
 test('status labels distinguish active, incomplete, ready, and review states', function () {
-    same(cbt_context_status_label(['is_active' => 1, 'expected_member_count' => 2], 2, true), 'Active', 'active');
-    same(cbt_context_status_label(['is_active' => 0, 'expected_member_count' => 2], 1, false), 'Incomplete (1 of 2)', 'incomplete');
-    same(cbt_context_status_label(['is_active' => 0, 'expected_member_count' => 2], 2, true), 'Ready to activate', 'ready');
-    same(cbt_context_status_label(['is_active' => 0, 'expected_member_count' => 2], 2, false), 'Needs review (2 of 2)', 'review');
+    same(cbt_context_status_label(['is_active' => 1, 'expected_member_count' => 2], 2, true), 'On', 'active');
+    same(cbt_context_status_label(['is_active' => 0, 'expected_member_count' => 2], 1, false), 'Needs questions (1 of 2)', 'incomplete');
+    same(cbt_context_status_label(['is_active' => 0, 'expected_member_count' => 2], 2, true), 'Ready to turn on', 'ready');
+    same(cbt_context_status_label(['is_active' => 0, 'expected_member_count' => 2], 2, false), 'Check it (2 of 2)', 'review');
 });
 
 echo PHP_EOL . 'Summary' . PHP_EOL;

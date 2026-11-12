@@ -82,6 +82,10 @@
       if (item.contextPosition !== undefined && typeof item.contextPosition !== 'string') return 'question context position is invalid';
       if (item.contextSlot !== undefined && typeof item.contextSlot !== 'string') return 'question context slot is invalid';
       if (item.manualContextId !== undefined && typeof item.manualContextId !== 'string') return 'question manual context id is invalid';
+      if (item.manualContextType !== undefined
+        && item.manualContextType !== ''
+        && item.manualContextType !== 'comprehension'
+        && item.manualContextType !== 'cloze') return 'question manual context type is invalid';
       if (item.alreadySaved !== undefined && typeof item.alreadySaved !== 'boolean') return 'question saved flag is invalid';
     }
     if (!isObject(state.answerKey)) return 'answer key is not an object';
@@ -369,14 +373,16 @@
   }
 
   function linkInfo(state, item) {
-    var info = { card: null, blocked: false, message: '' };
+    var info = { card: null, blocked: false, reason: '', message: '' };
     if (!item) return info;
     var manualId = positiveInt(item.manualContextId);
     if (manualId !== null) {
       info.card = item.contextRef ? findById(state.contexts, item.contextRef) : null;
-      if (info.card && info.card.contextType === 'cloze' && !item.contextSlot) {
+      var manualType = item.manualContextType || (info.card && info.card.contextType) || '';
+      if (manualType === 'cloze' && !item.contextSlot) {
         info.blocked = true;
-        info.message = 'This cloze question has no matching [[gap:N]] slot.';
+        info.reason = 'missing-gap';
+        info.message = 'Choose the right gap number.';
       }
       return info;
     }
@@ -384,7 +390,8 @@
     var card = findById(state.contexts, item.contextRef);
     if (!card) {
       info.blocked = true;
-      info.message = 'The linked context card is missing. Link the question again.';
+      info.reason = 'missing-context';
+      info.message = 'Choose the shared text again.';
       return info;
     }
     info.card = card;
@@ -393,27 +400,32 @@
     });
     if (claimed) {
       info.blocked = true;
-      info.message = 'More than one context card claims this question. Remove the duplicate target.';
+      info.reason = 'duplicate-target';
+      info.message = 'This question is in two shared texts. Remove one.';
       return info;
     }
     if (card.serverId !== null && card.serverId !== undefined && duplicateServerIds(state.contexts).length) {
       info.blocked = true;
-      info.message = 'Two context cards use the same server ID. Fix the cards before saving.';
+      info.reason = 'duplicate-context';
+      info.message = 'Two shared texts use the same saved copy. Fix one.';
       return info;
     }
     if (card.serverId === null || card.serverId === undefined) {
       info.blocked = true;
-      info.message = 'Create this context in the native form, or pick an existing context from the Shared Context dropdown.';
+      info.reason = 'unsaved-context';
+      info.message = 'Save the shared context first.';
       return info;
     }
     if (card.stale) {
       info.blocked = true;
-      info.message = 'The context changed after it was saved. Update it before saving linked questions.';
+      info.reason = 'stale-context';
+      info.message = 'Save the shared text again first.';
       return info;
     }
     if (card.contextType === 'cloze' && !item.contextSlot) {
       info.blocked = true;
-      info.message = 'This cloze question has no matching [[gap:N]] slot.';
+      info.reason = 'missing-gap';
+      info.message = 'Choose the right gap number.';
     }
     return info;
   }
@@ -463,6 +475,8 @@
     var doc = options.document || (typeof document !== 'undefined' ? document : null);
     var armedId = '';
     var syncing = false;
+    var pageEditing = false;
+    var pageContextId = '';
 
     function questionForm() {
       var action = doc.querySelector('input[name=action][value=save_question]');
@@ -519,9 +533,7 @@
     }
 
     function isEditing() {
-      var form = contextForm();
-      var action = field(form, 'action', '');
-      return Boolean(action && String(action.value) === 'update_context');
+      return pageEditing;
     }
 
     function setVisible(visible) {
@@ -566,10 +578,10 @@
         var wrap = targetWrap();
         if (wrap) wrap.hidden = false;
         var button = contextButton(form);
-        if (button) button.textContent = saved ? 'Update Context' : 'Create Context';
+        if (button) button.textContent = saved ? 'Save Changes' : 'Save Shared Text';
         setStatus(saved
-          ? (card.adopted ? 'Matched saved context #' : 'Editing context #') + card.serverId
-          : 'New context draft');
+          ? 'Using saved text #' + card.serverId
+          : 'New text - not saved');
         armedId = card.localId;
       } finally {
         syncing = false;
@@ -605,20 +617,29 @@
       return card;
     }
 
+    function snapshot() {
+      var card = model.emptyContext({});
+      read(card);
+      var form = contextForm();
+      var idField = form ? field(form, 'context_id', '') : null;
+      var id = idField ? Number(idField.value) : 0;
+      card.serverId = isFinite(id) && Math.floor(id) === id && id > 0 ? id : null;
+      card.stale = false;
+      return card;
+    }
+
     function prepare(state, item) {
-      var info = { blocked: false, message: '', card: null };
+      var info = { blocked: false, reason: '', message: '', card: null };
       if (item) info = model.linkInfo(state, item);
       var manualId = item && item.manualContextId ? String(item.manualContextId) : '';
       var cardId = info.card && info.card.serverId !== null && info.card.serverId !== undefined
         ? String(info.card.serverId)
         : '';
       setValue('context_id', manualId || cardId);
-      if (!(manualId && !info.card)) {
-        setValue('context_position', item && item.contextPosition ? item.contextPosition : '');
-        setValue('context_slot', info.card && info.card.contextType === 'cloze' && item ? item.contextSlot : '');
-      }
+      setValue('context_position', item && item.contextPosition ? item.contextPosition : '');
+      setValue('context_slot', item && item.contextSlot ? item.contextSlot : '');
       var button = questionButton();
-      if (button) button.disabled = Boolean(info.blocked);
+      if (button) button.disabled = Boolean(info.blocked && info.reason !== 'unsaved-context');
       return info;
     }
 
@@ -630,8 +651,8 @@
         try {
           var action = field(form, 'action', '');
           var contextId = contextIdField(form);
-          if (action) action.value = 'save_context';
-          contextId.value = '';
+          if (action) action.value = pageEditing ? 'update_context' : 'save_context';
+          contextId.value = pageEditing ? pageContextId : '';
           Object.keys({
             context_type: 'comprehension',
             title: '',
@@ -653,8 +674,10 @@
           var wrap = targetWrap();
           if (wrap) wrap.hidden = true;
           var contextSubmit = contextButton(form);
-          if (contextSubmit) contextSubmit.textContent = 'Create Context';
-          setStatus('Paste a context or choose Add Context.');
+          if (contextSubmit) contextSubmit.textContent = pageEditing ? 'Save Changes' : 'Save Shared Text';
+          setStatus(pageEditing && pageContextId
+            ? 'Editing shared text #' + pageContextId
+            : 'Paste shared text or tap Add.');
         } finally {
           syncing = false;
         }
@@ -667,7 +690,11 @@
     }
 
     function changed() {
-      if (syncing || !armedId) return;
+      if (syncing) return;
+      if (!armedId) {
+        if (pageEditing && options.onNativeChange) options.onNativeChange(snapshot());
+        return;
+      }
       var card = options.getCard(armedId);
       if (!card) return;
       var before = model.fingerprint(card);
@@ -679,6 +706,12 @@
 
     var form = contextForm();
     if (form) {
+      var initialAction = field(form, 'action', '');
+      pageEditing = Boolean(initialAction && String(initialAction.value) === 'update_context');
+      var initialId = field(form, 'context_id', '');
+      if (pageEditing && initialId && /^[1-9][0-9]*$/.test(String(initialId.value || ''))) {
+        pageContextId = String(initialId.value);
+      }
       form.addEventListener('submit', function (event) {
         if (!armedId) return event;
         var card = options.getCard(armedId);
@@ -706,6 +739,7 @@
       hasForm: Boolean(form),
       isEditing: isEditing,
       setVisible: setVisible,
+      snapshot: snapshot,
       armedId: function () { return armedId; }
     };
   }
@@ -718,11 +752,10 @@
   function create() {
     function status(card) {
       if (card.serverId !== null && card.serverId !== undefined && card.stale) {
-        return 'Context #' + card.serverId + ': update required';
+        return 'Text #' + card.serverId + ': save changes first';
       }
-      if (card.adopted) return 'Context #' + card.serverId + ': saved (matched)';
-      if (card.serverId === null || card.serverId === undefined) return 'Draft: not created';
-      return 'Context #' + card.serverId + ': saved';
+      if (card.serverId === null || card.serverId === undefined) return 'Not saved yet';
+      return 'Text #' + card.serverId + ': saved';
     }
     return { status: status };
   }
@@ -742,6 +775,7 @@
     var panelWarning = '';
     var panelNotice = '';
     var selectedLocalId = '';
+    var expandedLocalId = '';
     function state() {
       return options.getState();
     }
@@ -749,6 +783,12 @@
       var data = state();
       if (!data || !Array.isArray(data.items) || !data.items.length) return null;
       return data.items[data.currentIndex] || null;
+    }
+    function editorVisible(card) {
+      if (form.isEditing()) return true;
+      if (!card) return false;
+      if (card.serverId === null || card.serverId === undefined) return true;
+      return expandedLocalId === card.localId;
     }
     function make(tag, props, text) {
       var element = doc.createElement(tag);
@@ -768,7 +808,8 @@
       document: doc,
       getCard: function (localId) { return model.findById(state().contexts, localId); },
       onSubmit: function (card) { submitCard(card); },
-      onChange: function (card) { nativeChanged(card); }
+      onChange: function (card) { nativeChanged(card); },
+      onNativeChange: function (card) { duplicateNotice(card); }
     });
     function showWarning(text) {
       panelWarning = text || '';
@@ -784,15 +825,30 @@
       element.textContent = text || '';
       element.hidden = !text;
     }
+    function duplicateNotice(card) {
+      var element = doc.getElementById('owner_context_duplicate');
+      if (!element) return;
+      var duplicate = card && options.findDuplicateContext
+        ? options.findDuplicateContext(card)
+        : null;
+      element.textContent = duplicate
+        ? 'This looks like saved shared text #' + duplicate.context_id + '. You can still save.'
+        : '';
+      element.hidden = !duplicate;
+    }
     function refreshStatus() {
       var data = state();
       var conflicts = model.syncLinks(data);
       var element = doc.getElementById('owner_context_status');
       if (element) {
-        var text = data.contexts.length + (data.contexts.length === 1 ? ' context' : ' contexts');
+        if (form.isEditing() && !selectedLocalId) {
+          element.textContent = 'Editing saved shared text.';
+          return;
+        }
+        var text = data.contexts.length + (data.contexts.length === 1 ? ' shared text' : ' shared texts');
         var selected = model.findById(data.contexts, selectedLocalId);
         if (selected) text += '. ' + cards.status(selected) + '.';
-        if (conflicts.length) text += '. Target ' + conflicts.join(', ') + ' is assigned more than once.';
+        if (conflicts.length) text += ' Question ' + conflicts.join(', ') + ' is used twice.';
         if (panelNotice) text += ' ' + panelNotice;
         element.textContent = text;
       }
@@ -804,29 +860,35 @@
     }
     function nativeChanged(card) {
       panelNotice = card.serverId !== null && card.serverId !== undefined
-        ? 'Submit Update Context before saving linked questions.'
-        : 'Draft changes are kept in this browser until Create Context is submitted.';
+        ? 'Save the shared text first.'
+        : 'This browser keeps your unsaved text.';
       model.syncLinks(state());
       options.persist();
+      if (options.onContextChange) options.onContextChange(card);
       render();
       prepare(current());
     }
     function fillContext(card) {
       selectedLocalId = card.localId;
       if (!form.fill(card)) {
-        showWarning('The native context form is unavailable. Apply the context migration before creating contexts.');
+        showWarning('Shared text is not set up yet.');
         return false;
       }
-      form.setVisible(true);
+      if (card.serverId === null || card.serverId === undefined || form.isEditing()) {
+        expandedLocalId = card.localId;
+      }
+      form.setVisible(editorVisible(card));
       panelNotice = card.serverId !== null && card.serverId !== undefined
-        ? 'This saved context is ready for linked questions; submit Update Context only after editing it.'
-        : 'Submit Create Context when the fields are correct.';
+        ? 'This shared text is saved. Save again after changes.'
+        : 'Check the boxes, then save.';
       refreshStatus();
       return true;
     }
     function autoFillDraft() {
       var data = state();
-      var card = model.findById(data.contexts, selectedLocalId) || data.contexts[0];
+      var card = model.findById(data.contexts, selectedLocalId) || data.contexts.find(function (context) {
+        return context.serverId === null || context.serverId === undefined;
+      }) || data.contexts[0];
       return card ? fillContext(card) : false;
     }
     function removeSelected() {
@@ -835,11 +897,12 @@
       var index = data.contexts.indexOf(card);
       if (!card || index < 0) return;
       if (card.serverId !== null && card.serverId !== undefined) {
-        showWarning('Removed this browser draft only. Server context #' + card.serverId + ' was not deleted.');
+        showWarning('Removed this browser copy. Saved text #' + card.serverId + ' is still there.');
       } else {
         showWarning('');
       }
       data.contexts.splice(index, 1);
+      if (expandedLocalId === card.localId) expandedLocalId = '';
       selectedLocalId = data.contexts[index]
         ? data.contexts[index].localId
         : data.contexts[index - 1] ? data.contexts[index - 1].localId : '';
@@ -854,45 +917,89 @@
     function render() {
       var data = state();
       if (!model.findById(data.contexts, selectedLocalId)) {
-        selectedLocalId = data.contexts[0] ? data.contexts[0].localId : '';
+        var firstDraft = data.contexts.find(function (context) {
+          return context.serverId === null || context.serverId === undefined;
+        });
+        selectedLocalId = form.isEditing() ? ''
+          : firstDraft ? firstDraft.localId : data.contexts[0] ? data.contexts[0].localId : '';
       }
+      var selected = model.findById(data.contexts, selectedLocalId);
       root.textContent = '';
       var head = add(root, 'div', { className: 'owner-context-head' });
-      var addButton = add(head, 'button', {
-        type: 'button',
-        className: 'admin-btn admin-btn-muted',
-        id: 'owner_context_add'
-      }, 'Add Context');
-      addButton.onclick = function () {
-        var card = model.emptyContext(data.metadata);
-        data.contexts.push(card);
-        selectedLocalId = card.localId;
-        panelNotice = 'New context draft added.';
-        showWarning('');
-        model.syncLinks(data);
-        options.persist();
-        render();
-        fillContext(card);
-        prepare(current());
-      };
-      if (selectedLocalId) {
+      if (!form.isEditing()) {
+        var addButton = add(head, 'button', {
+          type: 'button',
+          className: 'admin-btn admin-btn-muted',
+          id: 'owner_context_add'
+        }, 'Add Shared Text');
+        addButton.onclick = function () {
+          var card = model.emptyContext(data.metadata);
+          data.contexts.push(card);
+          selectedLocalId = card.localId;
+          expandedLocalId = card.localId;
+          panelNotice = 'New shared text added.';
+          showWarning('');
+          model.syncLinks(data);
+          options.persist();
+          render();
+          fillContext(card);
+          prepare(current());
+        };
+      }
+      if (selectedLocalId && !form.isEditing()) {
         var removeButton = add(head, 'button', {
           type: 'button',
           className: 'admin-btn admin-btn-muted',
           id: 'owner_context_remove'
-        }, 'Remove Current Draft');
+        }, 'Remove This Copy');
         removeButton.onclick = removeSelected;
       }
-      add(head, 'span', { className: 'owner-context-hint' }, 'Paste fills this form. Add Context starts one manually. Subject and category use the named lists below.');
-      if (data.contexts.length > 1) {
+      if (selected && selected.serverId !== null && selected.serverId !== undefined && !form.isEditing()) {
+        if (!editorVisible(selected)) {
+          var showButton = add(head, 'button', {
+            type: 'button',
+            className: 'admin-btn admin-btn-muted',
+            id: 'owner_context_show'
+          }, 'Show');
+          showButton.onclick = function () {
+            expandedLocalId = selected.localId;
+            form.setVisible(true);
+            render();
+          };
+        } else {
+          var hideButton = add(head, 'button', {
+            type: 'button',
+            className: 'admin-btn admin-btn-muted',
+            id: 'owner_context_hide'
+          }, 'Hide');
+          hideButton.onclick = function () {
+            expandedLocalId = '';
+            form.setVisible(false);
+            render();
+            prepare(current());
+          };
+        }
+      }
+      add(head, 'span', { className: 'owner-context-hint' }, form.isEditing()
+        ? 'Paste can replace these fields.'
+        : 'Paste fills this in. Tap Add to make one.');
+      if (data.contexts.length > 1 && (!form.isEditing() || selectedLocalId)) {
+        add(root, 'label', {
+          id: 'owner_context_select_label',
+          htmlFor: 'owner_context_select',
+          className: 'owner-context-hint'
+        }, 'Shared text to edit');
         var select = add(root, 'select', { id: 'owner_context_select', className: 'owner-context-select' });
         data.contexts.forEach(function (card, index) {
-          add(select, 'option', { value: card.localId }, (index + 1) + '. ' + (card.title || 'Untitled') + ' — ' + cards.status(card));
+          add(select, 'option', { value: card.localId }, (index + 1) + '. ' + (card.title || 'No name') + ' - ' + cards.status(card));
         });
         select.value = selectedLocalId;
         select.onchange = function () {
           var card = model.findById(data.contexts, select.value);
-          if (card) fillContext(card);
+          if (card) {
+            fillContext(card);
+            render();
+          }
           prepare(current());
         };
       }
@@ -908,10 +1015,15 @@
         className: 'admin-alert owner-tool-error owner-context-warning'
       });
       link.hidden = true;
-      form.setVisible(Boolean(data.contexts.length) || form.isEditing());
-      var selected = model.findById(data.contexts, selectedLocalId);
+      var duplicate = add(root, 'div', {
+        id: 'owner_context_duplicate',
+        className: 'admin-alert owner-tool-duplicate owner-context-warning'
+      });
+      duplicate.hidden = true;
+      form.setVisible(editorVisible(selected));
       if (selected && form.armedId() !== selected.localId) form.fill(selected);
       refreshStatus();
+      duplicateNotice(selected || (form.isEditing() ? form.snapshot() : null));
     }
     function submitCard(card) {
       var data = state();
@@ -937,7 +1049,11 @@
       if (hasError) {
         data.pendingSubmission = null;
         options.persist();
-        showWarning('The server rejected that context save. The card and native form were left in place.');
+        if (card) {
+          selectedLocalId = card.localId;
+          expandedLocalId = card.localId;
+        }
+        showWarning('It did not save. Fix the form and try again.');
         render();
         return 'error';
       }
@@ -946,7 +1062,11 @@
       if (!match) {
         data.pendingSubmission = null;
         options.persist();
-        showWarning('Could not confirm whether the context saved. Check Shared Contexts before submitting it again. Nothing was retried.');
+        if (card) {
+          selectedLocalId = card.localId;
+          expandedLocalId = card.localId;
+        }
+        showWarning('I am not sure it saved. Check Saved Shared Texts first.');
         render();
         return 'ambiguous';
       }
@@ -960,7 +1080,11 @@
       if (boundWrong || duplicate) {
         data.pendingSubmission = null;
         options.persist();
-        showWarning('The returned context ID could not be bound safely. Check Shared Contexts before continuing.');
+        if (card) {
+          selectedLocalId = card.localId;
+          expandedLocalId = card.localId;
+        }
+        showWarning('I could not match the saved text. Check Saved Shared Texts.');
         render();
         return 'ambiguous';
       }
@@ -969,13 +1093,15 @@
       data.pendingSubmission = null;
       model.syncLinks(data);
       options.persist();
+      var nextDraft = data.contexts.find(function (other) {
+        return other !== card && (other.serverId === null || other.serverId === undefined);
+      });
       panelWarning = '';
-      panelNotice = 'Context #' + serverId + ' confirmed.';
-      selectedLocalId = card.localId;
+      panelNotice = 'Shared text #' + serverId + ' saved.' + (nextDraft ? ' Save the next shared text.' : '');
+      selectedLocalId = nextDraft ? nextDraft.localId : card.localId;
+      expandedLocalId = nextDraft ? nextDraft.localId : '';
       showWarning('');
       render();
-      form.fill(card);
-      form.setVisible(true);
       prepare(current());
       if (options.onContextResolved) options.onContextResolved(card);
       return 'success';
@@ -984,6 +1110,7 @@
       panelWarning = '';
       panelNotice = '';
       selectedLocalId = '';
+      expandedLocalId = '';
       form.clear();
       render();
       linkWarning('');
@@ -993,13 +1120,23 @@
       render: render,
       fillQuestion: function (item) {
         model.syncLinks(state());
+        if (form.isEditing() && !selectedLocalId) return prepare(item);
         var card = item && item.contextRef ? model.findById(state().contexts, item.contextRef) : null;
-        if (card && form.armedId() !== card.localId) fillContext(card);
+        var selected = model.findById(state().contexts, selectedLocalId);
+        var canFollowQuestion = !selected || selected === card
+          || (selected.serverId !== null && selected.serverId !== undefined);
+        if (card && form.armedId() !== card.localId && canFollowQuestion) fillContext(card);
         return prepare(item);
       },
       canSaveQuestion: function () {
         model.syncLinks(state());
         return prepare(current());
+      },
+      questionBlocker: function () {
+        model.syncLinks(state());
+        var info = form.prepare(state(), current());
+        linkWarning(info.message);
+        return info.blocked ? info : null;
       },
       prepare: prepare,
       autoFillDraft: autoFillDraft,
@@ -1013,7 +1150,7 @@
 
   function startOwnerTool() {
     'use strict';
-  var TOOL_VERSION = '1.3.0';
+  var TOOL_VERSION = '1.5.2';
   var SUCCESS_FLASH = /^Question saved successfully \(Question ID: \d+\)\.$/;
   var META_FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   var OPTION_FIELDS = ['option_a', 'option_b', 'option_c', 'option_d'];
@@ -1057,6 +1194,16 @@
       return [];
     }
   })();
+  var recentQuestions = (function () {
+    var element = document.getElementById('owner_tool_recent_questions');
+    if (!element) return [];
+    try {
+      var data = JSON.parse(String(element.textContent || '[]'));
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      return [];
+    }
+  })();
 
   function $(id) {
     return document.getElementById(id);
@@ -1067,7 +1214,7 @@
     loaded.parserVersion = parserVersion;
     loaded.version = stateApi.STATE_VERSION;
     var written = stateApi.writeState(storage, loaded);
-    if (!written.ok) warn('Browser storage is unavailable, so the queue cannot be saved: ' + written.detail);
+    if (!written.ok) warn('This browser cannot save your work.');
     return written.ok;
   }
 
@@ -1086,6 +1233,288 @@
   function hint(text) {
     var el = $('owner_tool_hint');
     if (el) el.textContent = text || '';
+  }
+
+  function plainFlag(value) {
+    var text = String(value || '');
+    if (text === 'question number missing') return 'no question number';
+    if (text === 'question text missing or very short') return 'question is empty or too short';
+    if (text === 'a letter appears twice (merged questions?)') return 'two questions may be joined';
+    if (text === 'E/F options present') return 'option E or F was found';
+    if (text === 'OCR boundaries repaired; verify question and option split') return 'I fixed the text split. Please check it.';
+    var optionMissing = text.match(/^option ([A-F]) missing$/);
+    if (optionMissing) return 'option ' + optionMissing[1] + ' is empty';
+    var optionLong = text.match(/^option ([A-F]) over 500 characters$/);
+    if (optionLong) return 'option ' + optionLong[1] + ' is too long';
+    var oneMissing = text.match(/^question (\d+) missing \(numbering gap\)$/);
+    if (oneMissing) return 'question ' + oneMissing[1] + ' is missing';
+    var manyMissing = text.match(/^questions (\d+)-(\d+) missing \(numbering gap\)$/);
+    if (manyMissing) return 'questions ' + manyMissing[1] + '-' + manyMissing[2] + ' are missing';
+    return 'please check this question';
+  }
+
+  function plainParserWarning(value) {
+    var text = String(value || '');
+    if (/fewer than two|links fewer than two/.test(text)) return 'This shared text has too few questions. Please check it.';
+    if (/has no passage text|has no shared text/.test(text)) return 'The shared text is missing.';
+    if (/not contiguous|out of order/.test(text)) return 'The questions are out of order. Please check them.';
+    if (/duplicate cloze group/.test(text)) return 'I found the same gaps twice. I kept the first set.';
+    if (/collide with an ordinary question/.test(text)) return 'Some gap numbers clash with a question. Please check them.';
+    if (/no numbered gaps/.test(text)) return 'The shared text has no numbered gaps.';
+    if (/does not match the passage gaps/.test(text)) return 'The gap numbers do not match.';
+    if (/no stable four-column alignment/.test(text)) return 'The answer columns do not line up.';
+    if (/missing the [A-D] option/.test(text)) return 'A gap needs all four answers.';
+    if (/option longer than 500 characters/.test(text)) return 'A gap answer is too long.';
+    if (/fewer than two rows/.test(text)) return 'The gap table has too few rows.';
+    if (/was not parsed/.test(text)) return 'I could not read one question. Please check it.';
+    if (/claimed by more than one passage/.test(text)) return 'One question is in two shared texts.';
+    if (/no complete \(a\)-\(d\) option set/.test(text)) return 'One question needs answers A to D.';
+    if (/more than one letter/.test(text)) return 'One question has two answers.';
+    if (/no answer-key entry/.test(text)) return 'One question has no answer.';
+    if (/names questions/.test(text)) return 'The question numbers do not match the shared text.';
+    return 'Please check the paste.';
+  }
+
+  function plainContextMessage(value) {
+    var text = String(value || '');
+    var rules = [
+      [/The context could not be saved\.[^.]*\./gi, 'The shared text did not save. Ask for help.'],
+      [/Context tables are not available\.[^.]*\./gi, 'Shared text is not set up yet.'],
+      [/Shared contexts could not be loaded\.[^.]*\./gi, 'Shared text did not load. Ask for help.'],
+      [/The selected context no longer exists\.[^.]*\./gi, 'That shared text is gone. Reload the page.'],
+      [/That context no longer exists\.[^.]*\./gi, 'That shared text is gone. Reload the page.'],
+      [/The selected context was not found\./gi, 'That shared text was not found.'],
+      [/Invalid context selected for editing\./gi, 'Choose shared text to change.'],
+      [/Choose a valid context type \(comprehension or cloze\)\./gi, 'Choose a reading passage or gap passage.'],
+      [/Please enter a context title\./gi, 'Give the shared text a name.'],
+      [/The context title must be 200 characters or fewer\./gi, 'The name is too long.'],
+      [/Please enter the shared context text\./gi, 'Add the shared text.'],
+      [/The shared context text is too long\./gi, 'The shared text is too long.'],
+      [/Choose a valid subject for the context pool\./gi, 'Choose a subject.'],
+      [/The context subject is inactive or does not exist\./gi, 'That subject is not ready.'],
+      [/Choose a valid exam category for the context pool\./gi, 'Choose an exam.'],
+      [/The context exam category is inactive or does not exist\./gi, 'That exam is not ready.'],
+      [/Enter a context exam year between 1900 and 2100\./gi, 'Enter a year from 1900 to 2100.'],
+      [/The expected member count must equal the number of distinct \[\[gap:N\]\] tokens\./gi, 'The question count must match the gap count.'],
+      [/The expected member count must be between 1 and \d+\./gi, 'Enter 1 to 500 questions.'],
+      [/A comprehension context must not contain cloze gap tokens\./gi, 'A reading passage cannot use [[gap:N]].'],
+      [/A cloze context needs at least one \[\[gap:N\]\] token\./gi, 'Add at least one [[gap:N]].'],
+      [/Cloze tokens must use numbers from 1 to 999\./gi, 'Gap numbers must be from 1 to 999.'],
+      [/The context type cannot change while linked questions exist\./gi, 'Remove its questions before changing the text type.'],
+      [/The context pool cannot change while linked questions exist\./gi, 'Remove its questions before changing subject, exam, or year.'],
+      [/A context position or cloze slot requires a selected context\./gi, 'Choose shared text before adding an order or gap.'],
+      [/The question does not match the context subject, exam category, and year pool\./gi, 'The question and shared text need the same subject, exam, and year.'],
+      [/Enter a context position between 1 and \d+\./gi, 'Enter a question order from 1 to 500.'],
+      [/A comprehension member must not have a cloze slot\./gi, 'A reading passage does not use a gap number.'],
+      [/Enter a cloze slot between 1 and 999\./gi, 'Enter a gap number from 1 to 999.'],
+      [/The cloze slot \[\[gap:\d+\]\] is not present in the context text\./gi, 'That gap number is not in the shared text.'],
+      [/The context type is invalid\./gi, 'Choose a reading passage or gap passage.'],
+      [/The context already has its expected number of members\./gi, 'This shared text already has enough questions.'],
+      [/Another question already uses that context position\./gi, 'Another question already uses that order number.'],
+      [/Another question already uses that cloze slot\./gi, 'Another question already uses that gap number.'],
+      [/The [^.]+ has an invalid submitted value\./gi, 'One box has a value I cannot use.'],
+      [/[A-Za-z ]+ must be a positive whole number\./g, 'Use a number that is 1 or more.'],
+      [/Context #(\d+) cannot be activated: /gi, 'Shared text #$1 cannot be turned on. '],
+      [/The context has no title\./gi, 'Give the shared text a name.'],
+      [/The context has no shared text\./gi, 'Add the shared text.'],
+      [/The context exam year is invalid\./gi, 'Fix the year.'],
+      [/The expected member count is invalid\./gi, 'Fix the question count.'],
+      [/The context has no linked questions\./gi, 'Add questions to this shared text.'],
+      [/The context has (\d+) linked question\(s\) but expects (\d+)\./gi, 'It has $1 questions. It needs $2.'],
+      [/Question #(\d+) has no valid context position\./gi, 'Question #$1 needs an order number.'],
+      [/Question #(\d+) has no question text\./gi, 'Question #$1 is empty.'],
+      [/Question #(\d+) is missing one of its four options\./gi, 'Question #$1 needs four answers.'],
+      [/Question #(\d+) has no valid correct answer\./gi, 'Question #$1 needs a right answer.'],
+      [/Question #(\d+) does not match the context pool\./gi, 'Question #$1 has the wrong subject, exam, or year.'],
+      [/Question #(\d+) must stay inactive while linked to a context\./gi, 'Question #$1 must stay off while it uses shared text.'],
+      [/Question #(\d+) has no cloze slot\./gi, 'Question #$1 needs a gap number.'],
+      [/Question #(\d+) must not have a cloze slot in a comprehension context\./gi, 'Question #$1 must not have a gap number here.'],
+      [/Context positions must be unique and run from 1 to (\d+)\./gi, 'Order numbers must run from 1 to $1.'],
+      [/Cloze slots must be unique\./gi, 'Each gap number can be used once.'],
+      [/The linked cloze slots must match the \[\[gap:N\]\] tokens in the context text\./gi, 'Gap numbers must match the [[gap:N]] marks.']
+    ];
+    var next = text;
+    rules.forEach(function (rule) { next = next.replace(rule[0], rule[1]); });
+    return next === text ? '' : next;
+  }
+
+  function plainServerMessage(value) {
+    var text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!text) return '';
+    if (/session token is invalid|expired/.test(text)) return 'This page is too old. Reload it and try again.';
+    var contextMessage = plainContextMessage(text);
+    if (contextMessage) return contextMessage;
+    if (/valid subject and exam category|subject or exam category is inactive/.test(text)) return 'Choose a subject and exam.';
+    if (/No active subjects or exam categories/.test(text)) return 'No subjects or exams are ready yet.';
+    if (/valid exam year/.test(text)) return 'Enter a year from 1900 to 2100.';
+    if (/enter the question text|question text is required/.test(text)) return 'Write the question.';
+    if (/question text is too long/.test(text)) return 'The question is too long.';
+    if (/answer explanation is too long/.test(text)) return 'The explanation is too long.';
+    if (/all four answer options/.test(text)) return 'Fill in all four answers.';
+    if (/answer option must be 500|answer options? must be 500/.test(text)) return 'Each answer must be 500 letters or less.';
+    if (/select the correct answer/.test(text)) return 'Pick the right answer.';
+    if (/question no longer exists|question was not found/.test(text)) return 'That question is gone. Reload the page.';
+    if (/valid question to update|valid question selected/.test(text)) return 'Choose a question to change.';
+    if (/valid question to delete/.test(text)) return 'Choose a question to delete.';
+    if (/question could not be saved|question did not save/i.test(text)) return 'The question did not save. Ask for help.';
+    if (/context tables|context migration|shared contexts could not be loaded/.test(text)) return 'Shared text is not set up yet.';
+    if (/context no longer exists|selected context was not found|context does not exist/i.test(text)) return 'That shared text is gone. Reload the page.';
+    if (/valid context to activate|valid context selected|Invalid context selected/i.test(text)) return 'Choose shared text first.';
+    if (/cannot be activated/i.test(text)) return 'This shared text cannot be turned on. Please check its questions.';
+    if (/context could not be activated/i.test(text)) return 'The shared text could not be turned on.';
+    if (/context could not be deactivated/i.test(text)) return 'The shared text could not be turned off.';
+    if (/context could not be deleted|referenced by linked questions/i.test(text)) return 'This shared text is still used by questions.';
+    if (/context could not be saved/i.test(text)) return 'The shared text did not save. Ask for help.';
+    if (/context position or cloze slot requires/i.test(text)) return 'Choose shared text before adding an order or gap.';
+    if (/does not match the context subject|does not match the context pool/i.test(text)) return 'The question and shared text need the same subject, exam, and year.';
+    if (/positive whole number/i.test(text)) return 'Use a number that is 1 or more.';
+    if (/invalid submitted value/i.test(text)) return 'One box has a value I cannot use.';
+    if (/valid context type|context type is invalid/i.test(text)) return 'Choose a reading passage or gap passage.';
+    if (/enter a context title|context has no title/i.test(text)) return 'Give the shared text a name.';
+    if (/context title must be 200/i.test(text)) return 'The name is too long.';
+    if (/enter the shared context text|context has no shared text/i.test(text)) return 'Add the shared text.';
+    if (/shared context text is too long/i.test(text)) return 'The shared text is too long.';
+    if (/valid subject for the context pool|context subject is inactive/i.test(text)) return 'Choose a subject.';
+    if (/valid exam category for the context pool|context exam category is inactive/i.test(text)) return 'Choose an exam.';
+    if (/context exam year|exam year is invalid/i.test(text)) return 'Enter a year from 1900 to 2100.';
+    if (/expected member count must equal/i.test(text)) return 'The question count must match the gap count.';
+    if (/expected member count/i.test(text)) return 'Enter 1 to 500 questions.';
+    if (/comprehension context must not contain cloze gap tokens/i.test(text)) return 'A reading passage cannot use [[gap:N]].';
+    if (/cloze context needs at least one/i.test(text)) return 'Add at least one [[gap:N]].';
+    if (/cloze tokens must use numbers/i.test(text)) return 'Gap numbers must be from 1 to 999.';
+    if (/context type cannot change while linked questions exist/i.test(text)) return 'Remove its questions before changing the text type.';
+    if (/context pool cannot change while linked questions exist/i.test(text)) return 'Remove its questions before changing subject, exam, or year.';
+    if (/enter a context position/i.test(text)) return 'Enter a question order from 1 to 500.';
+    if (/comprehension member must not have a cloze slot/i.test(text)) return 'A reading passage does not use a gap number.';
+    if (/enter a cloze slot/i.test(text)) return 'Enter a gap number from 1 to 999.';
+    if (/cloze slot .* is not present/i.test(text)) return 'That gap number is not in the shared text.';
+    if (/already has its expected number of members/i.test(text)) return 'This shared text already has enough questions.';
+    if (/already uses that context position/i.test(text)) return 'Another question already uses that order number.';
+    if (/already uses that cloze slot/i.test(text)) return 'Another question already uses that gap number.';
+    if (/question changed/i.test(text)) return 'The question changed. Reload and try again.';
+    if (/upload|uploaded file|fileinfo|picture|image|video|illustration/i.test(text)) return 'The file did not upload. Please try again.';
+    return text;
+  }
+
+  function simplifyServerErrors() {
+    var errors = document.querySelectorAll('.admin-error');
+    for (var i = 0; i < errors.length; i++) {
+      errors[i].textContent = plainServerMessage(errors[i].textContent);
+    }
+  }
+
+  function fieldContainer(element) {
+    if (!element) return null;
+    if (typeof element.closest === 'function') return element.closest('.admin-field');
+    var node = element.parentNode;
+    while (node && node !== form) {
+      if (String(node.className || '').split(/\s+/).indexOf('admin-field') !== -1) return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  function setFieldCopy(id, labelText, noteText, placeholder) {
+    var element = $(id);
+    var wrap = fieldContainer(element);
+    if (!element || !wrap) return;
+    var label = wrap.querySelector('label[for="' + id + '"]');
+    if (label && labelText) label.textContent = labelText;
+    var note = wrap.querySelector('.admin-note');
+    if (note && noteText !== undefined) note.textContent = noteText;
+    if (placeholder !== undefined) element.placeholder = placeholder;
+  }
+
+  function replaceLabelTail(label, text) {
+    if (!label) return;
+    for (var i = label.childNodes ? label.childNodes.length - 1 : label.children.length - 1; i >= 0; i--) {
+      var child = label.childNodes ? label.childNodes[i] : label.children[i];
+      if (child && (child.nodeType === 3 || child.tagName === '#TEXT')) {
+        child.textContent = ' ' + text;
+        return;
+      }
+    }
+  }
+
+  function simplifyNativeFormCopy() {
+    function setPrompt(id, text) {
+      var select = $(id);
+      if (!select || !select.options || !select.options.length) return;
+      if (select.options[0].text !== undefined) select.options[0].text = text;
+      if (select.options[0].textContent !== undefined) select.options[0].textContent = text;
+    }
+    setPrompt('subject_id', 'Choose a subject');
+    setPrompt('exam_category_id', 'Choose an exam');
+    setFieldCopy('exam_category_id', 'Exam');
+    setFieldCopy('exam_year', 'Year', 'Example: 2024.');
+    setFieldCopy('context_id', 'Shared text');
+    setFieldCopy('context_position', 'Passage question number');
+    setFieldCopy('context_slot', 'Gap number');
+    setFieldCopy('question_text', 'Question Text');
+    setFieldCopy('question_image', 'Question picture (optional)', 'Add a JPG, PNG, WebP, or GIF picture. Up to 8 MB.');
+    setFieldCopy('answer_explanation', 'Why this answer is right', 'Optional. Students may see this after the test.', 'Why is this right?');
+    setFieldCopy('answer_video', 'Answer video or picture (optional)', 'Video: up to 50 MB. Picture: up to 8 MB.');
+    var correct = form.querySelector('.admin-correct');
+    var correctWrap = correct ? correct.parentNode : null;
+    if (correctWrap) {
+      var correctLabel = correctWrap.querySelector('label');
+      var correctNote = correctWrap.querySelector('.admin-note');
+      if (correctLabel) correctLabel.textContent = 'Right answer';
+      if (correctNote) correctNote.textContent = 'Pick the right answer.';
+    }
+    var active = $('is_active');
+    var activeLabel = active && typeof active.closest === 'function' ? active.closest('label') : null;
+    replaceLabelTail(activeLabel, 'Show this question to students now');
+    var activeWrap = fieldContainer(active);
+    var activeNote = activeWrap ? activeWrap.querySelector('.admin-note') : null;
+    if (activeNote) activeNote.textContent = 'Shared-text questions stay off. Turn on the shared text instead.';
+
+    var exact = {
+      'Current picture/diagram': 'Current picture',
+      'Uploading a new image replaces the current image.': 'A new picture replaces this one.',
+      'Current answer illustration': 'Current answer file',
+      'Leave the upload empty to keep the current illustration, unless you select the removal checkbox.': 'Leave this empty to keep the file.',
+      'Cancel Edit': 'Cancel'
+    };
+    ['p', 'strong', 'a'].forEach(function (selector) {
+      var nodes = form.querySelectorAll(selector);
+      for (var i = 0; i < nodes.length; i++) {
+        var text = String(nodes[i].textContent || '').trim();
+        if (exact[text]) nodes[i].textContent = exact[text];
+      }
+    });
+    var removeImage = form.querySelector('input[name="remove_question_image"]');
+    var removeAnswer = form.querySelector('input[name="remove_answer_video"]');
+    replaceLabelTail(removeImage && removeImage.closest ? removeImage.closest('label') : null, 'Remove this picture');
+    replaceLabelTail(removeAnswer && removeAnswer.closest ? removeAnswer.closest('label') : null, 'Remove this file');
+    var images = form.querySelectorAll('img');
+    for (var imageIndex = 0; imageIndex < images.length; imageIndex++) {
+      if (/question diagram/i.test(String(images[imageIndex].alt || ''))) images[imageIndex].alt = 'Current question picture';
+      if (/answer illustration/i.test(String(images[imageIndex].alt || ''))) images[imageIndex].alt = 'Current answer picture';
+    }
+  }
+
+  function groupQuestionForm() {
+    var linkGroup = $('owner_context_link_fields');
+    if (!linkGroup || linkGroup.parentNode !== form || $('owner_question_fields')) return;
+    var details = document.createElement('fieldset');
+    details.id = 'owner_question_fields';
+    details.className = 'owner-form-group owner-question-fields';
+    var legend = document.createElement('legend');
+    legend.textContent = 'Question details';
+    details.appendChild(legend);
+    var children = Array.prototype.slice.call(form.children || []);
+    var firstVisible = null;
+    children.forEach(function (child) {
+      if (!firstVisible && !(child.tagName === 'INPUT' && child.type === 'hidden')) firstVisible = child;
+    });
+    if (firstVisible && firstVisible !== linkGroup) form.insertBefore(linkGroup, firstVisible);
+    form.insertBefore(details, linkGroup.nextSibling);
+    children.forEach(function (child) {
+      if (child === linkGroup || child === details) return;
+      if (child.tagName === 'INPUT' && child.type === 'hidden') return;
+      details.appendChild(child);
+    });
   }
 
   function currentItem() {
@@ -1155,26 +1584,36 @@
 
   function normalizeContextText(value) {
     return String(value === null || value === undefined ? '' : value)
+      .replace(/<u>/g, '')
+      .replace(/<\/u>/g, '')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
   }
 
-  function contextHardKey(subject, category, year, type, title) {
+  function contextHardKey(subject, category, year, type, title, text) {
     return [String(subject || ''), String(category || ''), String(year || ''),
-      String(type || ''), normalizeContextText(title)].join('\u0001');
+      String(type || ''), normalizeContextText(title), normalizeContextText(text)].join('\u0001');
   }
 
   function cardHardKey(card) {
-    return contextHardKey(card.subjectId, card.examCategoryId, card.examYear, card.contextType, card.title);
+    return contextHardKey(card.subjectId, card.examCategoryId, card.examYear,
+      card.contextType, card.title, card.text);
   }
 
   function serverHardKey(server) {
-    return contextHardKey(server.subject_id, server.exam_category_id, server.exam_year, server.context_type, server.title);
+    var title = server.title_key === undefined
+      ? normalizeContextText(server.title)
+      : String(server.title_key || '');
+    var text = server.text_key === undefined
+      ? normalizeContextText(server.context_text)
+      : String(server.text_key || '');
+    return [String(server.subject_id || ''), String(server.exam_category_id || ''),
+      String(server.exam_year || ''), String(server.context_type || ''), title, text].join('\u0001');
   }
 
   function matchServerContexts(card) {
-    if (!card.subjectId || !card.examCategoryId || !card.examYear) return [];
+    if (!card.subjectId || !card.examCategoryId || !card.examYear || !card.title || !card.text) return [];
     var key = cardHardKey(card);
     var matches = [];
     serverContexts.forEach(function (server) {
@@ -1183,12 +1622,152 @@
     return matches;
   }
 
+  function duplicateServerContext(card) {
+    if (!card || !card.subjectId || !card.examCategoryId || !card.examYear || !card.title || !card.text) {
+      return null;
+    }
+    var key = cardHardKey(card);
+    for (var i = 0; i < serverContexts.length; i++) {
+      var server = serverContexts[i];
+      if (card.serverId !== null && card.serverId !== undefined
+        && String(server.context_id) === String(card.serverId)) continue;
+      if (serverHardKey(server) === key) return server;
+    }
+    return null;
+  }
+
   function serverContextById(id) {
     var wanted = String(id || '');
     for (var i = 0; i < serverContexts.length; i++) {
       if (String(serverContexts[i].context_id) === wanted) return serverContexts[i];
     }
     return null;
+  }
+
+  function usedServerValues(server, key, manualId, exceptItem) {
+    var used = {};
+    (Array.isArray(server && server.members) ? server.members : []).forEach(function (member) {
+      var value = Number(member[key]);
+      if (isFinite(value) && Math.floor(value) === value && value > 0) used[value] = true;
+    });
+    loaded.items.forEach(function (item) {
+      if (!item || item === exceptItem || String(item.manualContextId || '') !== String(manualId || '')) return;
+      var value = Number(key === 'context_slot' ? item.contextSlot : item.contextPosition);
+      if (isFinite(value) && Math.floor(value) === value && value > 0) used[value] = true;
+    });
+    return used;
+  }
+
+  function nextFreePosition(server, manualId, item) {
+    var used = usedServerValues(server, 'context_position', manualId, item);
+    for (var number = 1; number <= 500; number++) {
+      if (!used[number]) return String(number);
+    }
+    return '';
+  }
+
+  function nextFreeSlot(server, manualId, item) {
+    var used = usedServerValues(server, 'context_slot', manualId, item);
+    var slots = Array.isArray(server && server.slots) ? server.slots : [];
+    if (!slots.length && contextModel && server && server.context_text) {
+      slots = contextModel.clozeSlots(server.context_text);
+    }
+    for (var i = 0; i < slots.length; i++) {
+      var slot = Number(slots[i]);
+      if (slot > 0 && !used[slot]) return String(slot);
+    }
+    return '';
+  }
+
+  function applyManualContext(item, manualId) {
+    if (!item) return;
+    var targets = item.contextRef
+      ? loaded.items.filter(function (other) { return other && other.contextRef === item.contextRef; })
+      : [item];
+    if (!manualId) {
+      targets.forEach(function (target) {
+        target.manualContextId = '';
+        target.manualContextType = '';
+      });
+      if (item.contextRef && contextModel) {
+        contextModel.syncLinks(loaded);
+      } else {
+        targets.forEach(function (target) {
+          target.contextPosition = '';
+          target.contextSlot = '';
+        });
+      }
+      return;
+    }
+    var server = serverContextById(manualId);
+    targets.forEach(function (target) {
+      target.manualContextId = manualId;
+      target.manualContextType = server ? String(server.context_type || '') : '';
+      if (!server) return;
+      if (!target.contextPosition) target.contextPosition = nextFreePosition(server, manualId, target);
+      if (server.context_type === 'cloze') {
+        if (!target.contextSlot) target.contextSlot = nextFreeSlot(server, manualId, target);
+      } else {
+        target.contextSlot = '';
+      }
+    });
+  }
+
+  function contextForItem(item) {
+    if (!item) return null;
+    if (item.manualContextId) return serverContextById(item.manualContextId);
+    return item.contextRef && contextModel
+      ? contextModel.findById(loaded.contexts, item.contextRef)
+      : null;
+  }
+
+  function syncLinkVisibility(item) {
+    var group = $('owner_context_link_fields');
+    var context = contextForItem(item);
+    if (group) group.hidden = !item || (!item.manualContextId && !item.contextRef);
+    var slotField = $('owner_context_slot_field') || fieldContainer($('context_slot'));
+    if (slotField) {
+      var type = context && (context.contextType || context.context_type);
+      slotField.hidden = type !== 'cloze';
+    }
+  }
+
+  function matchingRecentQuestion() {
+    if (!currentItem()) return null;
+    var values = {
+      subject_id: $('subject_id') ? String($('subject_id').value || '') : '',
+      exam_category_id: $('exam_category_id') ? String($('exam_category_id').value || '') : '',
+      exam_year: $('exam_year') ? String($('exam_year').value || '') : '',
+      question_text: $('question_text') ? normalizeQuestionText($('question_text').value) : '',
+      option_a: $('option_a') ? normalizeQuestionText($('option_a').value) : '',
+      option_b: $('option_b') ? normalizeQuestionText($('option_b').value) : '',
+      option_c: $('option_c') ? normalizeQuestionText($('option_c').value) : '',
+      option_d: $('option_d') ? normalizeQuestionText($('option_d').value) : ''
+    };
+    if (!values.subject_id || !values.exam_category_id || !values.exam_year || !values.question_text) return null;
+    for (var i = 0; i < recentQuestions.length; i++) {
+      var saved = recentQuestions[i];
+      if (String(saved.subject_id || '') !== values.subject_id
+        || String(saved.exam_category_id || '') !== values.exam_category_id
+        || String(saved.exam_year || '') !== values.exam_year
+        || normalizeQuestionText(saved.question_text) !== values.question_text
+        || normalizeQuestionText(saved.option_a) !== values.option_a
+        || normalizeQuestionText(saved.option_b) !== values.option_b
+        || normalizeQuestionText(saved.option_c) !== values.option_c
+        || normalizeQuestionText(saved.option_d) !== values.option_d) continue;
+      return saved;
+    }
+    return null;
+  }
+
+  function updateQuestionDuplicateNotice() {
+    var element = $('owner_tool_duplicate');
+    if (!element) return;
+    var duplicate = matchingRecentQuestion();
+    element.textContent = duplicate
+      ? 'This looks like Question #' + duplicate.id + '. You can still save.'
+      : '';
+    element.hidden = !duplicate;
   }
 
   function editingContextId() {
@@ -1218,7 +1797,7 @@
       var matches = matchServerContexts(card);
       if (matches.length !== 1) {
         if (matches.length > 1) {
-          warnings.push('More than one saved context matches "' + card.title + '". Pick the right one from the Shared Context dropdown.');
+          warnings.push('I found two saved texts named "' + card.title + '". Pick one.');
         }
         return;
       }
@@ -1227,17 +1806,15 @@
       card.adopted = true;
       card.stale = false;
       if (Number(match.member_count) !== Number(card.expectedCount)) {
-        warnings.push('Context #' + match.context_id + ' has ' + match.member_count + ' saved member(s); the parsed card expects ' + card.expectedCount + '.');
+        warnings.push('Saved text #' + match.context_id + ' has ' + match.member_count
+          + ' questions. This paste has ' + card.expectedCount + '.');
       }
     });
     return warnings;
   }
 
   function normalizeQuestionText(value) {
-    return String(value === null || value === undefined ? '' : value)
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
+    return normalizeContextText(value);
   }
 
   function refreshAlreadySaved(state) {
@@ -1282,16 +1859,48 @@
     return skipped;
   }
 
-  function applyMetadata() {
+  function metadataForItem(item) {
+    if (item && item.manualContextId) {
+      var server = serverContextById(item.manualContextId);
+      if (server) {
+        return {
+          strict: true,
+          values: {
+            subject_id: String(server.subject_id || ''),
+            exam_category_id: String(server.exam_category_id || ''),
+            exam_year: String(server.exam_year || '')
+          }
+        };
+      }
+    }
+    if (item && item.contextRef && contextModel) {
+      var card = contextModel.findById(loaded.contexts, item.contextRef);
+      if (card) {
+        return {
+          strict: true,
+          values: {
+            subject_id: String(card.subjectId || ''),
+            exam_category_id: String(card.examCategoryId || ''),
+            exam_year: String(card.examYear || '')
+          }
+        };
+      }
+    }
+    return { strict: false, values: loaded.metadata };
+  }
+
+  function applyMetadata(item) {
+    var source = metadataForItem(item);
     META_FIELDS.forEach(function (id) {
       var el = $(id);
-      var value = loaded.metadata[id];
-      if (!el || value === undefined || value === null || value === '') return;
-      el.value = String(value);
+      var value = source.values[id];
+      if (!el) return;
+      el.value = value === undefined || value === null ? '' : String(value);
     });
   }
 
-  function saveMetadata() {
+  function saveMetadata(item) {
+    if (item && (item.manualContextId || item.contextRef)) return;
     META_FIELDS.forEach(function (id) {
       var el = $(id);
       if (el) loaded.metadata[id] = String(el.value === null || el.value === undefined ? '' : el.value);
@@ -1307,6 +1916,18 @@
     clearRadios();
     var preview = $('owner_tool_preview');
     if (preview) textApi.render(preview, '');
+  }
+
+  function clearPasteMemory() {
+    savedSelection = null;
+    clearQuestionForm();
+    if (contextPanel) contextPanel.clear();
+    syncLinkVisibility(null);
+    var duplicate = $('owner_tool_duplicate');
+    if (duplicate) {
+      duplicate.textContent = '';
+      duplicate.hidden = true;
+    }
   }
 
   function clearRadios() {
@@ -1385,6 +2006,7 @@
     if (typeof box.setSelectionRange === 'function') box.setSelectionRange(selectionStart, selectionEnd);
     savedSelection = { start: selectionStart, end: selectionEnd };
     updatePreview();
+    updateQuestionDuplicateNotice();
   }
 
   function selectionTouchesMarker(value, start, end) {
@@ -1418,7 +2040,7 @@
       end = savedSelection.end;
     }
     if (start === end) {
-      hint('Select the words to underline first, then press Ctrl+U.');
+      hint('Select words first.');
       if (typeof box.focus === 'function') box.focus();
       return false;
     }
@@ -1429,23 +2051,23 @@
     var openBefore = value.lastIndexOf('<u>', start);
     var closeBefore = value.lastIndexOf('</u>', start);
     if (!already && (openBefore > closeBefore || selectionTouchesMarker(value, start, end))) {
-      hint('Select the entire underlined text to remove it; overlapping underline markers are not allowed.');
+      hint('Select all underlined words first.');
       if (typeof box.focus === 'function') box.focus();
       return false;
     }
     if (already) {
       replaceRange(box, start - 3, end + 4, selected, start - 3, start - 3 + selected.length);
-      hint('Underline removed.');
+      hint('Underline off.');
     } else {
       replaceRange(box, start, end, '<u>' + selected + '</u>', start + 3, end + 3);
-      hint('Underlined. Press Ctrl+U on it again to remove the underline.');
+      hint('Underline on. Tap again to remove it.');
     }
     if (typeof box.focus === 'function') box.focus();
     return true;
   }
 
   function fillForm(item) {
-    applyMetadata();
+    applyMetadata(item);
     var questionBox = $('question_text');
     questionBox.value = item.question || '';
     savedSelection = null;
@@ -1461,6 +2083,8 @@
     tick(options.tick);
     updatePreview();
     if (contextPanel) contextPanel.fillQuestion(item);
+    syncLinkVisibility(item);
+    updateQuestionDuplicateNotice();
   }
 
   function refreshTick() {
@@ -1494,13 +2118,13 @@
     if (pending.kind === 'context-create' || pending.kind === 'context-update') {
       loaded.pendingSubmission = null;
       persist();
-      warn('Could not confirm the context save. Check Shared Contexts before continuing.');
+      warn('I am not sure it saved. Check Saved Shared Texts.');
       return 'ambiguous';
     }
     if (errorEl) {
       loaded.pendingSubmission = null;
       persist();
-      warn('The server rejected that save. The same question is still loaded; fix it and save again.');
+      warn('The question did not save. Fix it and try again.');
       return 'error';
     }
     if (matches && SUCCESS_FLASH.test(flash)) {
@@ -1510,49 +2134,54 @@
       refreshAlreadySaved(loaded);
       var skipped = skipAlreadySaved(loaded);
       persist();
-      note('Question ' + savedNum + ' saved. The next question is loaded.');
-      if (skipped.length) warn('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
+      note('Question ' + savedNum + ' saved. Here is the next one.');
+      if (skipped.length) warn('Already saved, so I skipped: ' + skipped.join(', ') + '.');
       return 'success';
     }
     var pendingNum = item && item.num !== null && item.num !== undefined ? item.num : '?';
     loaded.pendingSubmission = null;
     persist();
-    warn('Could not confirm whether question ' + pendingNum
-      + ' saved. Check Recently Added Questions before saving again. Nothing was retried or advanced.');
+    warn('I am not sure question ' + pendingNum + ' saved. Check Saved Questions first.');
     return 'ambiguous';
   }
+
+  simplifyServerErrors();
+  simplifyNativeFormCopy();
+  groupQuestionForm();
 
   var panel = document.createElement('div');
   panel.className = 'admin-field owner-tool' + (editMode ? ' owner-tool-format-only' : '');
   panel.id = editMode ? 'owner_format_tool' : 'owner_tool';
   panel.innerHTML = ''
-    + '<div class="owner-tool-head"><strong>' + (editMode ? 'Question formatting' : 'Owner tool') + '</strong>'
-    + '<span>' + (editMode ? 'Underline selected question text and review the candidate preview.' : 'Paste one block: questions, contexts, and the answer key.') + '</span></div>'
+    + '<div class="owner-tool-head"><strong>' + (editMode ? 'Question Tools' : 'Question Helper') + '</strong>'
+    + '<span>' + (editMode ? 'Select words, then tap Underline.' : 'Paste questions, shared text, and answers.') + '</span></div>'
     + (editMode ? '' : '<div id="owner_tool_input">'
-      + '<label for="owner_tool_text">OCR paste</label>'
+      + '<label for="owner_tool_text">Paste here</label>'
       + '<textarea id="owner_tool_text" rows="8"></textarea>'
-      + '<button type="button" class="admin-btn" id="owner_tool_load">Load</button>'
+      + '<button type="button" class="admin-btn" id="owner_tool_load">Use Paste</button>'
       + '</div>'
       + '<div id="owner_tool_status" class="admin-note"></div>'
       + '<div id="owner_tool_flags" class="owner-tool-flags"></div>'
       + '<div id="owner_tool_warning" class="admin-alert owner-tool-error" hidden></div>')
     + '<div class="owner-tool-format">'
-    + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_underline" title="Underline the selected text (Ctrl+U)">Underline</button>'
+    + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_underline" title="Underline selected words (Ctrl+U)">Underline</button>'
     + '<span id="owner_tool_hint" class="owner-tool-hint"></span>'
     + '</div>'
     + '<div class="owner-tool-preview-wrap">'
-    + '<span class="owner-tool-hint">Preview (options stay plain):</span>'
+    + '<span class="owner-tool-hint">What students will see</span>'
     + '<div id="owner_tool_preview" class="owner-tool-preview"></div>'
+    + (editMode ? '' : '<div id="owner_tool_duplicate" class="admin-alert owner-tool-duplicate" hidden></div>')
     + '</div>'
     + (editMode ? '' : '<div id="owner_context_panel" class="owner-context-panel"></div>')
     + (editMode ? '' : '<div class="owner-tool-actions">'
       + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_show">Show Paste</button>'
-      + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_skip">Skip</button>'
+      + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_skip">Skip This</button>'
       + '<button type="button" class="admin-btn admin-btn-muted" id="owner_tool_reset">Reset</button>'
       + '</div>');
   form.before(panel);
 
   var formatToolbar = panel.querySelector('.owner-tool-format');
+  var previewWrap = panel.querySelector('.owner-tool-preview-wrap');
   var questionBoxForFormat = $('question_text');
   if (formatToolbar && questionBoxForFormat && questionBoxForFormat.parentNode) {
     if (typeof questionBoxForFormat.parentNode.insertBefore === 'function') {
@@ -1560,6 +2189,9 @@
     } else {
       questionBoxForFormat.parentNode.appendChild(formatToolbar);
     }
+  }
+  if (previewWrap && questionBoxForFormat && questionBoxForFormat.parentNode) {
+    questionBoxForFormat.parentNode.insertBefore(previewWrap, questionBoxForFormat.nextSibling);
   }
 
   var nativeContextSection = (function () {
@@ -1571,8 +2203,10 @@
     return null;
   })();
   var contextPanelRoot = $('owner_context_panel');
-  if (nativeContextSection && nativeContextSection.parentNode && panel.parentNode) {
-    panel.parentNode.insertBefore(nativeContextSection, panel.nextSibling);
+  if (!editMode && nativeContextSection && form.parentNode) {
+    form.parentNode.insertBefore(nativeContextSection, form);
+  }
+  if (nativeContextSection && contextPanelRoot) {
     var nativeContextForm = $('context_text') && $('context_text').form;
     if (contextPanelRoot && nativeContextForm && nativeContextForm.parentNode === nativeContextSection) {
       nativeContextSection.insertBefore(contextPanelRoot, nativeContextForm);
@@ -1584,7 +2218,7 @@
     var skipped = skipAlreadySaved(loaded);
     if (skipped.length) {
       persist();
-      warn('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
+      warn('Already saved, so I skipped: ' + skipped.join(', ') + '.');
     }
     render();
   }
@@ -1597,7 +2231,13 @@
       persist: persist,
       formApi: contextFormApi,
       cardApi: contextCardApi,
-      onContextResolved: onContextResolved
+      findDuplicateContext: duplicateServerContext,
+      onContextResolved: onContextResolved,
+      onContextChange: function () {
+        applyMetadata(currentItem());
+        syncLinkVisibility(currentItem());
+        updateQuestionDuplicateNotice();
+      }
     });
   }
 
@@ -1608,24 +2248,25 @@
       if (!item) return;
       var value = String(contextSelect.value || '');
       var manualId = /^[1-9][0-9]*$/.test(value) ? value : '';
-      if (item.contextRef) {
-        loaded.items.forEach(function (other) {
-          if (other && other.contextRef === item.contextRef) other.manualContextId = manualId;
-        });
-      } else {
-        item.manualContextId = manualId;
-      }
+      var position = $('context_position');
+      var slot = $('context_slot');
+      if (position && position.value) item.contextPosition = String(position.value);
+      if (slot && slot.value) item.contextSlot = String(slot.value);
+      applyManualContext(item, manualId);
       loaded.pendingSubmission = null;
       refreshAlreadySaved(loaded);
       var skipped = skipAlreadySaved(loaded);
       persist();
       if (skipped.length) {
-        warn('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
+        warn('Already saved, so I skipped: ' + skipped.join(', ') + '.');
       } else {
         warn('');
       }
+      applyMetadata(currentItem());
       if (contextPanel) contextPanel.prepare(currentItem());
-      render(true);
+      syncLinkVisibility(currentItem());
+      updateQuestionDuplicateNotice();
+      render(skipped.length === 0);
     });
   }
 
@@ -1642,7 +2283,7 @@
       var skipped = skipAlreadySaved(loaded);
       if (skipped.length) {
         persist();
-        warn('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
+        warn('Already saved, so I skipped: ' + skipped.join(', ') + '.');
         item = currentItem();
       }
     }
@@ -1655,11 +2296,13 @@
     if (resetButton) resetButton.hidden = !(total || blocked);
     var showButton = $('owner_tool_show');
     if (showButton) showButton.hidden = !item;
+    syncLinkVisibility(item);
+    if (!item || keepForm) updateQuestionDuplicateNotice();
 
     var flags = $('owner_tool_flags');
     if (flags) {
       if (item && Array.isArray(item.flags) && item.flags.length) {
-        flags.textContent = 'Check this one: ' + item.flags.join(', ');
+        flags.textContent = 'Please check: ' + item.flags.map(plainFlag).join(', ');
         flags.hidden = false;
       } else {
         flags.textContent = '';
@@ -1668,36 +2311,36 @@
     }
 
     if (blocked) {
-      note('Saved state was not loaded. Paste the block again, or press Reset.');
+      note('Saved work did not open. Paste again or tap Reset.');
       return;
     }
     if (!total) {
-      note('No queue yet. Paste one block to begin.');
+      note('Paste questions to begin.');
       return;
     }
     if (!item) {
-      note('All ' + total + ' questions done.');
+      note('All ' + total + ' questions are done.');
       return;
     }
     var keyCount = Object.keys(loaded.answerKey || {}).length;
     var bookNumber = item.num === null || item.num === undefined ? '?' : item.num;
     note('Question ' + (loaded.currentIndex + 1) + ' of ' + total
-      + ' · book number ' + bookNumber
-      + (keyCount ? ' · key: ' + keyCount + ' answers' : ' · no key'));
+      + '. Number ' + bookNumber + '. '
+      + (keyCount ? keyCount + ' answers.' : 'No answers yet.'));
     if (!keepForm) fillForm(item);
   }
 
   function loadPaste() {
     var text = String($('owner_tool_text').value || '');
     if (!text.trim()) {
-      warn('Paste the OCR text first.');
+      warn('Paste the text first.');
       return;
     }
     var parsed;
     try {
       parsed = parser.parsePaste(text);
     } catch (error) {
-      warn('Could not parse that text: ' + ((error && error.message) || error));
+      warn('I could not read that paste. Please check it.');
       return;
     }
     var keyOnly = Boolean(parsed.sections && parsed.sections.how === 'key-only');
@@ -1705,11 +2348,11 @@
     var items = parsed.items || [];
     if (keyOnly) {
       if (blocked) {
-        warn('Saved state cannot accept a replacement key. Paste the full block again, or press Reset first.');
+        warn('This answer list cannot be used. Paste everything again or tap Reset.');
         return;
       }
       if (!Object.keys(key).length) {
-        warn('No answer key found in that paste. The queue was not changed.');
+        warn('I found no answers. Nothing changed.');
         return;
       }
       loaded.answerKey = key;
@@ -1719,33 +2362,34 @@
       warn('');
       showPaste(false);
       render(true);
-      note('Answer key replaced (' + Object.keys(key).length + ' answers). The queue was kept.');
+      note('Answers changed: ' + Object.keys(key).length + '. Questions stayed.');
       return;
     }
     if (!items.length) {
-      warn('No questions found in that paste. Nothing was changed.');
+      warn('I found no questions. Nothing changed.');
       return;
     }
     blocked = false;
     loaded = stateApi.emptyState(parserVersion, stateApi.makeQueueId());
+    clearPasteMemory();
     loaded.items = items;
     loaded.answerKey = key;
     loaded.metadata = inferMetadata(parsed);
     loaded.contexts = mapContexts(parsed.contexts, loaded.items);
-    var warnings = Array.isArray(parsed.warnings) ? parsed.warnings.slice() : [];
+    var warnings = Array.isArray(parsed.warnings) ? parsed.warnings.map(plainParserWarning) : [];
     if (contextModel && loaded.contexts.length) {
       contextModel.syncLinks(loaded).forEach(function (number) {
-        warnings.push('question ' + number + ' is linked to more than one context');
+        warnings.push('Question ' + number + ' is in two shared texts.');
       });
     }
     adoptMatchingContexts(loaded).forEach(function (text) { warnings.push(text); });
     refreshAlreadySaved(loaded);
     var skipped = skipAlreadySaved(loaded);
-    if (skipped.length) warnings.push('Skipped already-saved question(s): ' + skipped.join(', ') + '.');
+    if (skipped.length) warnings.push('Already saved, so I skipped: ' + skipped.join(', ') + '.');
     if (!persist()) return;
     warn(warnings.join(' '));
     showPaste(false);
-    if (!skipped.length && contextPanel) contextPanel.autoFillDraft();
+    if (contextPanel) contextPanel.autoFillDraft();
     render();
   }
 
@@ -1761,9 +2405,7 @@
   function reset() {
     loaded = stateApi.emptyState(parserVersion, stateApi.makeQueueId());
     blocked = false;
-    savedSelection = null;
-    clearQuestionForm();
-    if (contextPanel) contextPanel.clear();
+    clearPasteMemory();
     persist();
     warn('');
     render();
@@ -1775,6 +2417,7 @@
       updatePreview();
       rememberSelection();
       hint('');
+      updateQuestionDuplicateNotice();
     });
     questionBox.addEventListener('select', rememberSelectionForToolbar);
     questionBox.addEventListener('click', rememberSelection);
@@ -1786,6 +2429,12 @@
       wrapUnderline();
     });
   }
+  META_FIELDS.concat(OPTION_FIELDS).forEach(function (id) {
+    var element = $(id);
+    if (!element) return;
+    element.addEventListener('input', updateQuestionDuplicateNotice);
+    element.addEventListener('change', updateQuestionDuplicateNotice);
+  });
   form.addEventListener('reset', function () {
     setTimeout(function () {
       updatePreview();
@@ -1804,6 +2453,10 @@
   rememberSelection();
 
   if (editMode) {
+    var sharedSection = $('owner-shared-texts');
+    var allQuestionsSection = $('owner-all-questions');
+    if (sharedSection) sharedSection.hidden = true;
+    if (allQuestionsSection) allQuestionsSection.hidden = true;
     window.CBTOwnerTool = { version: TOOL_VERSION, parserVersion: parserVersion, formattingOnly: true };
     return;
   }
@@ -1816,11 +2469,22 @@
     render(true);
   };
 
-  form.addEventListener('submit', function () {
-    if (blocked) return;
-    saveMetadata();
-    if (contextPanel && !contextPanel.canSaveQuestion()) return;
-    var item = blocked ? null : currentItem();
+  function blockQuestionSave(event) {
+    if (blocked) return false;
+    var blocker = contextPanel ? contextPanel.questionBlocker() : null;
+    if (!blocker) return false;
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    warn(blocker.message);
+    return true;
+  }
+
+  var questionSubmitButton = form.querySelector('button[type=submit]');
+  if (questionSubmitButton) questionSubmitButton.addEventListener('click', blockQuestionSave);
+
+  form.addEventListener('submit', function (event) {
+    if (blocked || blockQuestionSave(event)) return;
+    var item = currentItem();
+    saveMetadata(item);
     loaded.pendingSubmission = item ? {
       kind: 'question',
       queueId: loaded.queueId,
@@ -1835,21 +2499,21 @@
 
   var legacy = stateApi.legacyKeys(storage);
   if (decision.status === 'stale-parser') {
-    warn('Saved state was parsed by ' + decision.detail.replace('state was parsed by ', '')
-      + '. It was not loaded and was not deleted. Paste the block again, or press Reset.');
+    warn('This saved work is from an older tool. Paste again or tap Reset.');
     render();
     return;
   }
   if (decision.status === 'corrupt' || decision.status === 'future-version' || decision.status === 'storage-error') {
-    warn('Saved state could not be used (' + decision.detail + '). It was not deleted. Paste the block again, or press Reset.');
+    warn('Saved work could not open. Paste again or tap Reset.');
     render();
     return;
   }
   if (legacy.length) {
-    warn('Old bookmarklet state found (' + legacy.join(', ') + '). It was not imported or deleted; reset it in your browser if you want a clean start.');
+    warn('Old saved work was found. It was left alone.');
   }
   var pendingResult = resolvePending();
-  render(pendingResult === 'error' || Boolean(document.querySelector('.admin-error')));
+  render(pendingResult === 'error' || pendingResult === 'ambiguous'
+    || Boolean(document.querySelector('.admin-error')));
   }
 
   if (root) {

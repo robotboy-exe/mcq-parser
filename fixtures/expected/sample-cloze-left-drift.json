@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "input_origin": "user_sample",
+  "id": "sample-cloze-left-drift",
+  "source": [
+    "new-sample.txt supplied 2026-11-12"
+  ],
+  "provenance": "User-supplied comprehension and cloze paste whose gap-75 table row is one column left of the dominant alignment.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/sample-cloze-left-drift.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 15,
+    "nums": [11, 12, 13, 14, 15, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+    "contexts": [
+      {
+        "order": 1,
+        "type": "comprehension",
+        "title": "PASSAGE III",
+        "targets": [11, 12, 13, 14, 15],
+        "expected_count": 5
+      },
+      {
+        "order": 2,
+        "type": "cloze",
+        "title": "SECTION 6",
+        "text_contains": ["[[gap:71]]", "[[gap:75]]", "[[gap:80]]"],
+        "targets": [71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+        "expected_count": 10
+      }
+    ],
+    "warnings": [],
+    "key": {
+      "11": "B",
+      "12": "C",
+      "13": "A",
+      "14": "D",
+      "15": "B",
+      "71": "A",
+      "72": "B",
+      "73": "A",
+      "74": "C",
+      "75": "A",
+      "76": "C",
+      "77": "B",
+      "78": "C",
+      "79": "C",
+      "80": "B"
+    },
+    "questions": [
+      {
+        "num": 75,
+        "question": "Choose the option that best fills gap 75.",
+        "a": "confession",
+        "b": "suggestion",
+        "c": "permission",
+        "d": "complaint",
+        "flags": [],
+        "context_ref": "ctx-2",
+        "context_position": "5"
+      },
+      {
+        "num": 80,
+        "a": "discharged",
+        "b": "sentenced",
+        "c": "released",
+        "d": "pardoned",
+        "context_ref": "ctx-2",
+        "context_position": "10"
+      }
+    ]
+  },
+  "must_not": [
+    "Reject gap 75 as missing option D",
+    "Merge confession and suggestion into option A",
+    "Drop gaps 71-80 from the mixed paste"
+  ],
+  "notes": [
+    "The source row has one space between confession and suggestion and two later starts one character left of the dominant row starts."
+  ]
+}

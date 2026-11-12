@@ -114,8 +114,23 @@ function cbt_admin_context_page_data(
     int $editingContextId,
     array $contextValues
 ): array {
+    $contextPageSize = 10;
+    $contextPage = 1;
+    $contextTotal = 0;
+    $contextTotalPages = 1;
+    $contextOptions = [];
     try {
-        $contexts = cbt_context_list($pdo);
+        $contextTotal = cbt_context_count($pdo);
+        $contextOptions = cbt_context_option_list($pdo);
+        $contextTotalPages = max(1, (int) ceil($contextTotal / $contextPageSize));
+        $contextPageValue = filter_var($query['context_page'] ?? 1, FILTER_VALIDATE_INT);
+        $contextPage = ($contextPageValue !== false && $contextPageValue !== null && $contextPageValue > 0)
+            ? (int) $contextPageValue
+            : 1;
+        if ($contextPage > $contextTotalPages) {
+            $contextPage = $contextTotalPages;
+        }
+        $contexts = cbt_context_list($pdo, $contextPageSize, ($contextPage - 1) * $contextPageSize);
         foreach ($contexts as &$contextItem) {
             $memberCount = (int) ($contextItem['member_count'] ?? 0);
             $validation = cbt_context_validate_activation($pdo, (int) $contextItem['id']);
@@ -150,22 +165,42 @@ function cbt_admin_context_page_data(
         error_log('Admin context page loading failed: ' . $error->getMessage());
         return [
             'contexts' => [],
+            'context_options' => [],
             'context_categories' => $categories,
             'schema_available' => false,
             'editing_context_id' => $editingContextId,
             'context_values' => $contextValues,
-            'error' => 'Shared contexts could not be loaded. Check that the context migration has been imported.',
+            'context_page' => 1,
+            'context_page_size' => $contextPageSize,
+            'context_total' => 0,
+            'context_total_pages' => 1,
+            'error' => 'Shared text did not load. Ask for help.',
         ];
     }
 
     return [
         'contexts' => $contexts,
+        'context_options' => $contextOptions,
         'context_categories' => $categories,
         'schema_available' => true,
         'editing_context_id' => $editingContextId,
         'context_values' => $contextValues,
+        'context_page' => $contextPage,
+        'context_page_size' => $contextPageSize,
+        'context_total' => $contextTotal,
+        'context_total_pages' => $contextTotalPages,
         'error' => $error,
     ];
+}
+
+function cbt_admin_owner_text_key($value): string
+{
+    $text = str_replace(['<u>', '</u>'], '', (string) $value);
+    $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+    $text = trim($text);
+    return function_exists('mb_strtolower')
+        ? mb_strtolower($text, 'UTF-8')
+        : strtolower($text);
 }
 
 function cbt_admin_owner_context_payload(?PDO $pdo): array
@@ -179,12 +214,15 @@ function cbt_admin_owner_context_payload(?PDO $pdo): array
                 'context_id' => (int) $context['id'],
                 'context_type' => (string) $context['context_type'],
                 'title' => (string) $context['title'],
+                'title_key' => cbt_admin_owner_text_key($context['title']),
+                'text_key' => cbt_admin_owner_text_key($context['context_text']),
                 'subject_id' => (string) $context['subject_id'],
                 'exam_category_id' => (string) $context['exam_category_id'],
                 'exam_year' => (string) $context['exam_year'],
                 'expected_member_count' => (int) $context['expected_member_count'],
                 'member_count' => (int) $context['member_count'],
                 'is_active' => (int) $context['is_active'],
+                'slots' => cbt_context_slot_tokens((string) $context['context_text']),
                 'members' => array_map(static function (array $member): array {
                     return [
                         'question_text' => (string) $member['question_text'],
@@ -197,6 +235,36 @@ function cbt_admin_owner_context_payload(?PDO $pdo): array
     } catch (Throwable $error) {
         return [];
     }
+}
+
+function cbt_admin_owner_recent_questions(?PDO $pdo): array
+{
+    if ($pdo === null) {
+        return [];
+    }
+    try {
+        $stmt = $pdo->query(
+            'SELECT id, subject_id, exam_category_id, exam_year, question_text,
+                    option_a, option_b, option_c, option_d
+             FROM questions
+             ORDER BY id DESC
+             LIMIT 20'
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $error) {
+        return [];
+    }
+}
+
+function cbt_admin_owner_payload_scripts(?PDO $pdo, bool $enabled): string
+{
+    $contexts = $enabled ? cbt_admin_owner_context_payload($pdo) : [];
+    $questions = $enabled ? cbt_admin_owner_recent_questions($pdo) : [];
+    $flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+    $contextJson = json_encode($contexts, $flags) ?: '[]';
+    $questionJson = json_encode($questions, $flags) ?: '[]';
+    return '<script type="application/json" id="owner_tool_context_data">' . $contextJson . '</script>' . "\n"
+        . '<script type="application/json" id="owner_tool_recent_questions">' . $questionJson . '</script>';
 }
 
 function cbt_admin_load_context_page(
@@ -218,20 +286,30 @@ function cbt_admin_load_context_page(
         );
         return [
             'contexts' => $contextPage['contexts'],
+            'contextOptions' => $contextPage['context_options'],
             'contextCategories' => $contextPage['context_categories'],
             'contextSchemaAvailable' => $contextPage['schema_available'],
             'editingContextId' => $contextPage['editing_context_id'],
             'contextValues' => $contextPage['context_values'],
+            'contextPage' => $contextPage['context_page'],
+            'contextTotal' => $contextPage['context_total'],
+            'contextTotalPages' => $contextPage['context_total_pages'],
+            'contextPageSize' => $contextPage['context_page_size'],
             'contextError' => $contextPage['error'],
         ];
     } catch (PDOException $e) {
         error_log('Admin context page loading failed: ' . $e->getMessage());
         return [
             'contexts' => [],
+            'contextOptions' => [],
             'contextCategories' => [],
             'contextSchemaAvailable' => false,
             'editingContextId' => $editingContextId,
             'contextValues' => $contextValues,
+            'contextPage' => 1,
+            'contextTotal' => 0,
+            'contextTotalPages' => 1,
+            'contextPageSize' => 10,
             'contextError' => '',
         ];
     }
@@ -686,35 +764,39 @@ function cbt_admin_delete_question(PDO $pdo, int $questionId, ?int $formerContex
 function cbt_admin_render_question_context_fields(array $variables): string
 {
     extract($variables, EXTR_SKIP);
+    $contextOptions = $contextOptions ?? ($contexts ?? []);
     ob_start();
-    if (!$contextSchemaAvailable): ?>
-    <div class="admin-alert admin-error">Context tables are not available. Apply <code>deployed/sql/01-context-migration.sql</code> before saving or linking questions.</div>
-<?php endif; ?>
-<div class="admin-grid">
+    ?><fieldset class="owner-form-group owner-link-fields" id="owner_context_link_fields">
+    <legend>Shared text for this question</legend>
+    <?php if (!$contextSchemaAvailable): ?>
+        <div class="admin-alert admin-error">Shared text is not set up yet.</div>
+    <?php endif; ?>
+    <div class="admin-grid">
     <div class="admin-field">
-        <label for="context_id">Shared Context (optional)</label>
+        <label for="context_id">Shared text</label>
         <select id="context_id" name="context_id">
-            <option value="">Not linked</option>
-            <?php foreach ($contexts as $contextOption): ?>
+            <option value="">No shared text</option>
+            <?php foreach ($contextOptions as $contextOption): ?>
                 <option value="<?php echo (int) $contextOption['id']; ?>" <?php echo ((string) $contextOption['id'] === $formValues['context_id']) ? 'selected' : ''; ?>>
-                    #<?php echo (int) $contextOption['id']; ?> — <?php echo h(ucfirst((string) $contextOption['context_type'])); ?> — <?php echo h($contextOption['title']); ?>
-                    (<?php echo h((string) ($contextOption['subject_name'] ?? 'subject?')); ?> / <?php echo h((string) ($contextOption['category_name'] ?? 'category?')); ?> / <?php echo (int) $contextOption['exam_year']; ?>)
+                    #<?php echo (int) $contextOption['id']; ?>: <?php echo h($contextOption['title']); ?> -
+                    <?php echo h((string) ($contextOption['subject_name'] ?? 'unknown subject')); ?>, <?php echo h((string) ($contextOption['category_name'] ?? 'unknown exam')); ?>, <?php echo (int) $contextOption['exam_year']; ?>
                 </option>
             <?php endforeach; ?>
         </select>
-        <p class="admin-note">A linked question stays inactive. The context must use the same subject, exam category, and exam year.</p>
+        <p class="admin-note">The question and shared text must have the same subject, exam, and year.</p>
     </div>
-    <div class="admin-field">
-        <label for="context_position">Context Position</label>
-        <input id="context_position" name="context_position" type="number" min="1" max="500" step="1" value="<?php echo h($formValues['context_position']); ?>" placeholder="Required when linked">
-        <p class="admin-note">Unique within the context; activation requires positions 1 through the expected member count.</p>
+    <div class="admin-field" id="owner_context_position_field">
+        <label for="context_position">Passage question number</label>
+        <input id="context_position" name="context_position" type="number" min="1" max="500" step="1" value="<?php echo h($formValues['context_position']); ?>" placeholder="Example: 1">
+        <p class="admin-note">Use 1, 2, 3... Each number can be used once.</p>
     </div>
-    <div class="admin-field">
-        <label for="context_slot">Cloze Slot (optional)</label>
-        <input id="context_slot" name="context_slot" type="number" min="1" max="999" step="1" value="<?php echo h($formValues['context_slot']); ?>" placeholder="Cloze contexts only">
-        <p class="admin-note">Must match one <code>[[gap:N]]</code> token in the linked cloze context.</p>
+    <div class="admin-field" id="owner_context_slot_field">
+        <label for="context_slot">Gap number</label>
+        <input id="context_slot" name="context_slot" type="number" min="1" max="999" step="1" value="<?php echo h($formValues['context_slot']); ?>" placeholder="For gap text only">
+        <p class="admin-note">Use the N from <code>[[gap:N]]</code>.</p>
     </div>
 </div>
+</fieldset>
 
 <?php
     return (string) ob_get_clean();
@@ -724,16 +806,17 @@ function cbt_admin_render_context_management(array $variables): string
 {
     extract($variables, EXTR_SKIP);
     ob_start();
-    ?><section class="admin-card" id="shared_context_editor">
+    ?><div class="owner-workflow-section" id="owner-shared-texts"<?php echo (int) ($editingQuestionId ?? 0) > 0 ? ' hidden' : ''; ?>>
+<section class="admin-card" id="shared_context_editor">
     <div class="admin-topline">
-        <h2>Shared Context</h2>
-        <span class="admin-note" id="owner_context_native_status"><?php echo $editingContextId > 0 ? 'Editing context #' . (int) $editingContextId : 'Paste a context or choose Add Context.'; ?></span>
+        <h2>Edit Shared Text</h2>
+        <span class="admin-note" id="owner_context_native_status"><?php echo $editingContextId > 0 ? 'Editing shared text #' . (int) $editingContextId : 'Paste shared text or tap Add.'; ?></span>
         <?php if ($editingContextId > 0): ?>
-            <a class="admin-btn admin-btn-muted" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>" style="display:inline-block;text-decoration:none">Cancel Context Edit</a>
+            <a class="admin-btn admin-btn-muted" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>?context_page=<?php echo (int) ($contextPage ?? 1); ?>" style="display:inline-block;text-decoration:none">Cancel</a>
         <?php endif; ?>
     </div>
     <?php if (!$contextSchemaAvailable): ?>
-        <div class="admin-alert admin-error">Context tables are not available. Apply <code>deployed/sql/01-context-migration.sql</code> and run the preflight before creating contexts.</div>
+        <div class="admin-alert admin-error">Shared text is not set up yet.</div>
     <?php else: ?>
         <form method="post" autocomplete="off">
             <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['cbt_admin_csrf']); ?>">
@@ -744,34 +827,34 @@ function cbt_admin_render_context_management(array $variables): string
 
             <div class="admin-grid">
                 <div class="admin-field">
-                    <label for="context_type">Context Type</label>
+                    <label for="context_type">Text type</label>
                     <select id="context_type" name="context_type" required>
                         <?php foreach (cbt_context_types() as $contextType): ?>
-                            <option value="<?php echo h($contextType); ?>" <?php echo $contextValues['context_type'] === $contextType ? 'selected' : ''; ?>><?php echo h(ucfirst($contextType)); ?></option>
+                            <option value="<?php echo h($contextType); ?>" <?php echo $contextValues['context_type'] === $contextType ? 'selected' : ''; ?>><?php echo $contextType === 'cloze' ? 'Gap passage' : 'Reading passage'; ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="admin-field">
-                    <label for="context_title">Context Title</label>
+                    <label for="context_title">Name</label>
                     <input id="context_title" name="title" type="text" maxlength="200" value="<?php echo h($contextValues['title']); ?>" required>
                 </div>
             </div>
-            <p class="admin-note">Type, title, subject, category, and year identify a shared context. The owner tool matches a pasted context to these values.</p>
+            <p class="admin-note">These boxes help find the same saved text.</p>
 
             <div class="admin-grid">
                 <div class="admin-field">
                     <label for="context_subject_id">Subject</label>
                     <select id="context_subject_id" name="subject_id" required>
-                        <option value="">-- Select Subject --</option>
+                        <option value="">Choose a subject</option>
                         <?php foreach ($subjects as $subject): ?>
                             <option value="<?php echo (int) $subject['id']; ?>" <?php echo ((string) $subject['id'] === (string) $contextValues['subject_id']) ? 'selected' : ''; ?>><?php echo h($subject['subject_name']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="admin-field">
-                    <label for="context_exam_category_id">Exam Category</label>
+                    <label for="context_exam_category_id">Exam</label>
                     <select id="context_exam_category_id" name="exam_category_id" required>
-                        <option value="">-- Select Exam Category --</option>
+                        <option value="">Choose an exam</option>
                         <?php foreach ($contextCategories as $category): ?>
                             <option value="<?php echo (int) $category['id']; ?>" <?php echo ((string) $category['id'] === (string) $contextValues['exam_category_id']) ? 'selected' : ''; ?>><?php echo h($category['category_name']); ?></option>
                         <?php endforeach; ?>
@@ -781,77 +864,76 @@ function cbt_admin_render_context_management(array $variables): string
 
             <div class="admin-grid">
                 <div class="admin-field">
-                    <label for="context_exam_year">Exam Year</label>
+                    <label for="context_exam_year">Year</label>
                     <input id="context_exam_year" name="exam_year" type="number" min="1900" max="2100" step="1" value="<?php echo h($contextValues['exam_year']); ?>" required>
                 </div>
                 <div class="admin-field">
-                    <label for="expected_member_count">Expected Member Count</label>
+                    <label for="expected_member_count">Number of questions</label>
                     <input id="expected_member_count" name="expected_member_count" type="number" min="1" max="500" step="1" value="<?php echo h($contextValues['expected_member_count']); ?>" required>
-                    <p class="admin-note">Activation requires exactly this many linked questions with positions 1 through this count.</p>
                 </div>
             </div>
 
             <div class="admin-field" id="owner_context_targets_field" hidden>
-                <label for="owner_context_targets">Linked Question Numbers</label>
+                <label for="owner_context_targets">Questions using this text</label>
                 <input id="owner_context_targets" type="text" autocomplete="off" placeholder="Example: 11, 12, 13">
-                <p class="admin-note">Filled from the paste. This controls question order in the current browser queue and is not stored in the context record.</p>
+                <p class="admin-note">List question numbers in order.</p>
             </div>
 
             <div class="admin-field">
-                <label for="context_text">Shared Context Text</label>
+                <label for="context_text">Shared text</label>
                 <textarea id="context_text" name="context_text" maxlength="60000" required><?php echo "\n" . h($contextValues['context_text']); ?></textarea>
-                <p class="admin-note">Use exact <code>&lt;u&gt;</code> / <code>&lt;/u&gt;</code> markers for underline. A cloze context uses <code>[[gap:N]]</code> tokens; the expected member count must equal the number of distinct tokens.</p>
+                <p class="admin-note">Use <code>&lt;u&gt;words&lt;/u&gt;</code> to underline. Use <code>[[gap:N]]</code> for each gap.</p>
             </div>
 
-            <button class="admin-btn" type="submit"><?php echo $editingContextId > 0 ? 'Update Context' : 'Create Context'; ?></button>
-            <p class="admin-note" style="margin-top:10px">A context stays inactive until it is validated and activated. Editing it, or editing/deleting a linked question, deactivates it again.</p>
+            <button class="admin-btn" type="submit"><?php echo $editingContextId > 0 ? 'Save Changes' : 'Save Shared Text'; ?></button>
+            <p class="admin-note" style="margin-top:10px">This stays off until checked and turned on. Changes turn it off again.</p>
         </form>
     <?php endif; ?>
 </section>
 
 <section class="admin-card">
-    <h2>Shared Contexts</h2>
+    <h2>Saved Shared Texts</h2>
     <?php if (!$contextSchemaAvailable): ?>
-        <p class="admin-note">No context listing is available until the migration is applied.</p>
+        <p class="admin-note">Saved shared texts are not ready yet.</p>
     <?php elseif (!$contexts): ?>
-        <p class="admin-note">No shared contexts have been created yet.</p>
+        <p class="admin-note">No shared text has been saved yet.</p>
     <?php else: ?>
         <div class="admin-table-wrap">
             <table class="admin-table">
-                <thead><tr><th>ID</th><th>Type</th><th>Title</th><th>Pool</th><th>Members</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>ID</th><th>Type</th><th>Name</th><th>Subject, Exam, Year</th><th>Questions</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
                 <?php foreach ($contexts as $contextItem): ?>
                     <?php
                         $contextMemberCount = (int) ($contextItem['member_count'] ?? 0);
-                        $contextStatus = (string) ($contextItem['status_label'] ?? 'Status unavailable');
+                        $contextStatus = (string) ($contextItem['status_label'] ?? 'Please check');
                         $contextIsActive = (int) $contextItem['is_active'] === 1;
                     ?>
                     <tr>
                         <td><?php echo (int) $contextItem['id']; ?></td>
-                        <td><?php echo h(ucfirst((string) $contextItem['context_type'])); ?></td>
+                        <td><?php echo $contextItem['context_type'] === 'cloze' ? 'Gap passage' : 'Reading passage'; ?></td>
                         <td><?php echo h((string) $contextItem['title']); ?></td>
                         <td><?php echo h((string) ($contextItem['subject_name'] ?? '—')); ?> / <?php echo h((string) ($contextItem['category_name'] ?? '—')); ?> / <?php echo (int) $contextItem['exam_year']; ?></td>
                         <td><?php echo $contextMemberCount; ?> of <?php echo (int) $contextItem['expected_member_count']; ?></td>
                         <td><span class="admin-status <?php echo $contextIsActive ? 'active' : 'inactive'; ?>"><?php echo h($contextStatus); ?></span></td>
                         <td>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-                                <a class="admin-btn admin-btn-edit" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>?edit_context=<?php echo (int) $contextItem['id']; ?>" style="display:inline-block;text-decoration:none;padding:8px 11px">Edit</a>
+                                <a class="admin-btn admin-btn-edit" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>?edit_context=<?php echo (int) $contextItem['id']; ?>&amp;context_page=<?php echo (int) ($contextPage ?? 1); ?>" style="display:inline-block;text-decoration:none;padding:8px 11px">Edit</a>
                                 <?php if ($contextIsActive): ?>
                                     <form method="post" style="margin:0">
                                         <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['cbt_admin_csrf']); ?>">
                                         <input type="hidden" name="action" value="deactivate_context">
                                         <input type="hidden" name="context_id" value="<?php echo (int) $contextItem['id']; ?>">
-                                        <button class="admin-btn admin-btn-muted" type="submit" style="padding:8px 11px">Deactivate</button>
+                                        <button class="admin-btn admin-btn-muted" type="submit" style="padding:8px 11px">Turn Off</button>
                                     </form>
                                 <?php else: ?>
                                     <form method="post" style="margin:0">
                                         <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['cbt_admin_csrf']); ?>">
                                         <input type="hidden" name="action" value="activate_context">
                                         <input type="hidden" name="context_id" value="<?php echo (int) $contextItem['id']; ?>">
-                                        <button class="admin-btn" type="submit" style="padding:8px 11px">Activate</button>
+                                        <button class="admin-btn" type="submit" style="padding:8px 11px">Turn On</button>
                                     </form>
                                 <?php endif; ?>
-                                <form method="post" onsubmit="return confirm('Delete context #<?php echo (int) $contextItem['id']; ?>? Linked questions block deletion.');" style="margin:0">
+                                <form method="post" onsubmit="return confirm('Delete shared text #<?php echo (int) $contextItem['id']; ?>? Questions using it will stop this.');" style="margin:0">
                                     <input type="hidden" name="csrf_token" value="<?php echo h($_SESSION['cbt_admin_csrf']); ?>">
                                     <input type="hidden" name="action" value="delete_context">
                                     <input type="hidden" name="context_id" value="<?php echo (int) $contextItem['id']; ?>">
@@ -864,8 +946,48 @@ function cbt_admin_render_context_management(array $variables): string
                 </tbody>
             </table>
         </div>
+        <?php
+            $contextPage = (int) ($contextPage ?? 1);
+            $contextTotal = (int) ($contextTotal ?? count($contexts));
+            $contextTotalPages = (int) ($contextTotalPages ?? 1);
+            $contextPageSize = (int) ($contextPageSize ?? 10);
+            $contextFirst = $contextTotal > 0 ? (($contextPage - 1) * $contextPageSize) + 1 : 0;
+            $contextLast = min($contextFirst + count($contexts) - 1, $contextTotal);
+            $contextWindowStart = max(1, $contextPage - 2);
+            $contextWindowEnd = min($contextTotalPages, $contextPage + 2);
+        ?>
+        <div class="admin-pagination">
+            <div class="admin-pagination-summary">
+                Showing <?php echo $contextFirst; ?>–<?php echo $contextLast; ?> of <?php echo $contextTotal; ?> shared texts
+                (<?php echo $contextPageSize; ?> per page)
+            </div>
+            <?php if ($contextTotalPages > 1): ?>
+                <nav class="admin-pagination-links" aria-label="Shared text pages">
+                    <?php if ($contextPage > 1): ?>
+                        <a class="admin-page-link" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>?context_page=<?php echo $contextPage - 1; ?>" aria-label="Previous shared text page">&laquo; Prev</a>
+                    <?php else: ?>
+                        <span class="admin-page-link" aria-disabled="true" style="opacity:.45">&laquo; Prev</span>
+                    <?php endif; ?>
+
+                    <?php for ($pageNumber = $contextWindowStart; $pageNumber <= $contextWindowEnd; $pageNumber++): ?>
+                        <?php if ($pageNumber === $contextPage): ?>
+                            <span class="admin-page-link active" aria-current="page"><?php echo $pageNumber; ?></span>
+                        <?php else: ?>
+                            <a class="admin-page-link" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>?context_page=<?php echo $pageNumber; ?>"><?php echo $pageNumber; ?></a>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+
+                    <?php if ($contextPage < $contextTotalPages): ?>
+                        <a class="admin-page-link" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>?context_page=<?php echo $contextPage + 1; ?>" aria-label="Next shared text page">Next &raquo;</a>
+                    <?php else: ?>
+                        <span class="admin-page-link" aria-disabled="true" style="opacity:.45">Next &raquo;</span>
+                    <?php endif; ?>
+                </nav>
+            <?php endif; ?>
+        </div>
     <?php endif; ?>
 </section>
+</div>
 
 <?php
     return (string) ob_get_clean();

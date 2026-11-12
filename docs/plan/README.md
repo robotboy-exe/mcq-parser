@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-08.
+Last updated: 2026-11-12.
 
 ## Current state
 
@@ -51,8 +51,9 @@ Last updated: 2026-11-08.
   progress: PHP 8.3.16 lint/suites, MySQL 8.0.41 migration preflight/forward/
   rerun/rollback, adversarial schema/rollback probes, and a desktop Chromium 155
   harness pass. The Brave/Android phone check was performed on 2026-11-09 and
-  passed; it surfaced three owner-workflow refinements, routed by the owner to
-  the independent OT11 package (phase 12). OT10 remains blocked on the
+  passed; it surfaced owner-workflow refinements routed to the independent OT11
+  package (phase 12). A later phone session recorded six follow-up requirements;
+  their local implementation now passes all suites. OT10 remains blocked on the
   independent final review and the live deployment artifacts; it is not done.
 - Working branch: `owner-tool-integration` is the authoritative integration and
   implementation line. `main` is the published baseline, not the current work
@@ -109,16 +110,29 @@ Last updated: 2026-11-08.
   phone check passed on 2026-11-09; the independent final review and live
   artifacts remain open. The known Windows/CRLF `extract-bank` pre-2026
   mismatch remains pre-existing. No live write and no commit.
-- OT11 evidence (uncommitted, 2026-11-09): 59 runner PASS; 162 unit PASS; 61
-  owner-tool PASS; 14 context-migration PASS; 5 cbt-context PASS; 13 context-lib
-  PASS; 20 context-admin PASS; 6 context-preflight PASS; 9 PHP renderer PASS; 7
+- OT11 evidence (uncommitted, updated 2026-11-12): 60 runner PASS; 163 unit PASS; 79
+  owner-tool PASS; 14 context-migration PASS; 5 cbt-context PASS; 14 context-lib
+  PASS; 23 context-admin PASS; 6 context-preflight PASS; 9 PHP renderer PASS; 7
   cbt-candidate PASS; PHP/JS syntax PASS. The first phone re-check found that the JS/native
   context editors were still separate; the owner required one native editor and
   the correction removed the duplicate fields, numeric pool inputs, toggle, and
   Fill action. Chromium 155 then passed the merged-card DOM, Add reveal,
-  one-match adoption/member skip, and multi-context selector probes. The final
-  owner Brave/Android re-check and rigorous review remain open. No live write and
-  no commit.
+  one-match adoption/member skip, and multi-context selector probes. The six
+  later requirements add an exact unsaved-context stop, context-owned metadata,
+  saved-card Show/Hide, native form boundaries, plain owner copy, and one
+  preview beside Question Text. The 2026-11-12 consolidation adds stacked
+  no-tab sections, authoritative full-paste clearing, full passage identity,
+  advisory duplicate notices, next-free links, and 10-row shared-text paging
+  without narrowing the question selector. The final owner follow-up places
+  Edit Shared Text below the paste panel and prevents restored context state
+  from replacing `?edit_context=N`; desktop and 390px Chromium probes pass. The
+  latest owner re-check found that an adopted/saved first passage hid the
+  unsaved cloze passage and that `new-sample.txt` gap 75 was one character left
+  of the table modes. Tool 1.5.2 now keeps the first unsaved text open; parser
+  2.3.3 applies only a corroborated two-anchor local correction. Exact cloze and
+  adopted-member Chromium probes pass. Focused review findings are closed; final
+  owner Brave/Android confirmation and independent rigorous review remain open.
+  No live write and no commit.
 - Selected clean experiments base: `d5a62f0`; verified by OT00 at 43 runner and
   140 unit passes.
 - Dirty experiments P20-P22: reviewed `BLOCK`, shelved, and excluded.
@@ -251,7 +265,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed | cloze key supplied 2026-11-08 (OT10 validates) |
 | 10A | OT09A | [Production Consolidation](owner-tool/ot-09a-production-consolidation.md) | OT09 boundary | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed | none; OT10 gates unchanged |
 | 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked: local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; final review and live artifacts pending | local PHP, staging, all prior artifacts |
-| 12 | OT11 | [Owner Workflow Refinements](owner-tool/ot-11-owner-workflow-refinements.md) | OT10 phone check (2026-11-09) | implementation corrected during phone re-check; local/Chromium checks pass; final owner Brave/Android re-check and rigorous review pending | owner Brave/Android re-check |
+| 12 | OT11 | [Owner Workflow Refinements](owner-tool/ot-11-owner-workflow-refinements.md) | OT10 phone check (2026-11-09) | in progress: latest next-unsaved and parser 2.3.3 phone fixes complete locally; 60 runner, 163 unit, 79 owner-tool and full suites pass; final owner Brave/Android confirmation and rigorous review pending | owner Brave/Android re-check |
 
 The active map duplicates these statuses for session resolution. Update both
 files in the same package handoff; a mismatch blocks the next Gate 1.
@@ -373,10 +387,12 @@ NEXT COMMAND: NONE - complete the owner Brave/Android OT11 re-check before rigor
 ```
 
 OT10 is mid-package, not at a clean boundary. The Brave/Android phone check was
-performed on 2026-11-09 and passed; its three owner-workflow refinements are
-routed to OT11 (phase 12). OT11's first re-check found the duplicate-editor
-workflow defect; the one-native-editor correction now passes local and Chromium
-checks. The final owner Brave/Android re-check and rigorous review are pending. OT10 remains
+performed on 2026-11-09 and passed; its owner-workflow refinements are routed to
+OT11 (phase 12). OT11's re-checks found the duplicate-editor workflow defect,
+six follow-up requirements, a hidden unsaved cloze editor, and one-character
+cloze row drift. The one-editor correction and all follow-up fixes now pass the
+full local suites and focused Chromium checks. Final owner Brave/Android
+confirmation and rigorous review are pending. OT10 remains
 blocked on the independent final review and the live deployment artifacts. The
 local PHP/DB/desktop evidence is recorded in the OT10 handoff and
 [`../DEPLOYMENT.md`](../DEPLOYMENT.md).

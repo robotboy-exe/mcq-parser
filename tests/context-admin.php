@@ -443,6 +443,45 @@ admin_test('context page data loads lists and preserves failed POST values', fun
     admin_same($invalid['error'], 'Invalid context selected for editing.', 'invalid edit query');
 });
 
+admin_test('context page data paginates ten per page and clamps context_page', function (): void {
+    $pdo = admin_new_db();
+    for ($number = 1; $number <= 12; $number++) {
+        admin_insert_context($pdo, ['title' => 'Passage ' . $number]);
+    }
+    $pageTwo = cbt_admin_context_page_data(
+        $pdo,
+        [['id' => 1]],
+        'GET',
+        ['context_page' => '2'],
+        0,
+        cbt_admin_context_default_values()
+    );
+    admin_same($pageTwo['context_page'], 2, 'context page');
+    admin_same($pageTwo['context_page_size'], 10, 'page size');
+    admin_same($pageTwo['context_total'], 12, 'total contexts');
+    admin_same($pageTwo['context_total_pages'], 2, 'total pages');
+    admin_same(count($pageTwo['contexts']), 2, 'second-page rows');
+    admin_same(count($pageTwo['context_options']), 12, 'question selector keeps every saved context');
+    admin_same((int) $pageTwo['contexts'][0]['id'], 2, 'newest row on page two');
+    $fieldHtml = cbt_admin_render_question_context_fields([
+        'contextSchemaAvailable' => true,
+        'contexts' => $pageTwo['contexts'],
+        'contextOptions' => $pageTwo['context_options'],
+        'formValues' => ['context_id' => '', 'context_position' => '', 'context_slot' => ''],
+    ]);
+    admin_contains($fieldHtml, 'Passage 12', 'selector includes a context outside the visible management page');
+
+    $clamped = cbt_admin_context_page_data(
+        $pdo,
+        [],
+        'GET',
+        ['context_page' => '99'],
+        0,
+        cbt_admin_context_default_values()
+    );
+    admin_same($clamped['context_page'], 2, 'page clamps to the last page');
+});
+
 admin_test('context page preparation contains status query failures before rendering', function (): void {
     $pdo = admin_new_db();
     admin_insert_context($pdo);
@@ -456,7 +495,7 @@ admin_test('context page preparation contains status query failures before rende
         cbt_context_normalize_input(admin_context_input(['title' => 'Preserved']))
     );
     admin_check(!$data['schema_available'], 'failed status preparation marks the schema unavailable');
-    admin_contains($data['error'], 'could not be loaded', 'status preparation error');
+    admin_contains($data['error'], 'did not load', 'status preparation error');
     admin_same($data['editing_context_id'], 7, 'failed status preparation keeps edit id');
     admin_same($data['context_values']['title'], 'Preserved', 'failed status preparation keeps values');
 });
@@ -470,14 +509,48 @@ admin_test('owner context payload executes the production list and member querie
     admin_same(count($payload), 1, 'one context is embedded');
     admin_same($payload[0]['context_id'], $contextId, 'context id is preserved');
     admin_same($payload[0]['title'], 'Reading passage', 'context title is preserved');
+    admin_same($payload[0]['title_key'], 'reading passage', 'normalized title identity is embedded');
+    admin_same($payload[0]['text_key'], 'first paragraph. second paragraph.', 'normalized text identity is embedded');
+    admin_same($payload[0]['subject_id'], '1', 'context subject is preserved');
+    admin_same($payload[0]['exam_category_id'], '1', 'context exam is preserved');
+    admin_same($payload[0]['exam_year'], '2024', 'context year is preserved');
     admin_same($payload[0]['member_count'], 1, 'member count is preserved');
+    admin_same($payload[0]['slots'], [], 'reading passage has no gap slots');
     admin_same(count($payload[0]['members']), 1, 'one member is embedded');
     admin_same($payload[0]['members'][0]['question_text'], 'What is the answer?', 'member text is preserved');
     admin_same($payload[0]['members'][0]['context_position'], '1', 'member position is preserved');
+    $scripts = cbt_admin_owner_payload_scripts($pdo, true);
+    admin_contains($scripts, 'id="owner_tool_context_data"', 'context payload script is rendered');
+    admin_contains($scripts, 'id="owner_tool_recent_questions"', 'recent-question payload script is rendered');
+    admin_contains(cbt_admin_owner_payload_scripts(null, false), '>[]</script>', 'edit mode embeds empty payloads');
 
     $empty = new AdminTestPdo('sqlite::memory:');
     $empty->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     admin_same(cbt_admin_owner_context_payload($empty), [], 'missing schema is contained');
+});
+
+admin_test('owner context payload carries cloze slots and recent questions are capped at twenty', function (): void {
+    $pdo = admin_new_db();
+    $contextId = admin_insert_context($pdo, [
+        'context_type' => CBT_CONTEXT_TYPE_CLOZE,
+        'context_text' => 'One [[gap:72]] and [[gap:71]].',
+        'expected_member_count' => '2',
+    ]);
+    $payload = cbt_admin_owner_context_payload($pdo);
+    admin_same($payload[0]['context_id'], $contextId, 'cloze context id');
+    admin_same($payload[0]['slots'], [71, 72], 'sorted cloze slots are embedded');
+    admin_same(cbt_admin_owner_text_key(" A <u>Word</u>\n B "), 'a word b', 'identity ignores exact underline markers');
+
+    for ($number = 1; $number <= 22; $number++) {
+        admin_insert_question($pdo);
+    }
+    $recent = cbt_admin_owner_recent_questions($pdo);
+    admin_same(count($recent), 20, 'recent payload is capped');
+    admin_same((int) $recent[0]['id'], 22, 'recent payload starts with newest question');
+    admin_same((int) $recent[19]['id'], 3, 'recent payload ends at the twentieth newest question');
+    admin_check(!array_key_exists('correct_option', $recent[0]), 'correct answer is excluded');
+    admin_check(!array_key_exists('answer_explanation', $recent[0]), 'explanation is excluded');
+    admin_check(!array_key_exists('question_image_path', $recent[0]), 'media is excluded');
 });
 
 admin_test('real link, move, unlink, and delete paths deactivate actual affected contexts', function (): void {
@@ -646,14 +719,25 @@ admin_test('rendered context forms keep selectors and never nest forms', functio
         admin_contains($html, 'value="' . $action . '"', 'rendered action ' . $action);
     }
     admin_contains($html, 'id="shared_context_editor"', 'single shared-context editor card');
-    admin_contains($html, '<h2>Shared Context</h2>', 'single shared-context heading');
+    admin_contains($html, '<h2>Edit Shared Text</h2>', 'shared-text editor heading');
+    admin_contains($html, 'id="owner_context_link_fields"', 'semantic shared-text link group');
+    admin_contains($html, '<legend>Shared text for this question</legend>', 'plain link group heading');
+    admin_contains($html, '<label for="context_id">Shared text</label>', 'plain shared-text label');
+    admin_contains($html, '<label for="context_position">Passage question number</label>', 'plain passage number label');
+    admin_contains($html, '<label for="context_slot">Gap number</label>', 'plain gap label');
     admin_contains($html, 'id="owner_context_targets"', 'browser queue target field');
+    admin_contains($html, 'List question numbers in order.', 'short target instruction');
+    admin_contains($html, '>Edit</a>', 'saved shared-text action says Edit');
+    admin_check(!str_contains($html, 'Add this many questions, numbered from 1.'), 'expected-count helper is removed');
     admin_check(
         preg_match('/\bid="owner_context_targets"[^>]*\bname=/', $html) === 0,
         'browser queue target field is not posted'
     );
     foreach (['Subject Pool', 'Exam Category Pool', 'Exam Year Pool'] as $oldLabel) {
         admin_check(!str_contains($html, $oldLabel), 'old numeric pool label removed: ' . $oldLabel);
+    }
+    foreach (['Context Position', 'Cloze Slot', 'Expected Member Count', 'Shared Context Text'] as $oldLabel) {
+        admin_check(!str_contains($html, $oldLabel), 'owner-facing jargon removed: ' . $oldLabel);
     }
 
     $pdo->exec('UPDATE question_contexts SET is_active = 1 WHERE id = ' . $contextId);
@@ -667,6 +751,53 @@ admin_test('rendered context forms keep selectors and never nest forms', functio
         'contextCategories' => [['id' => 1, 'category_name' => 'UTME']],
     ]);
     admin_contains($activeHtml, 'value="deactivate_context"', 'rendered deactivate action');
+});
+
+admin_test('rendered shared-text list preserves independent pagination and edit page', function (): void {
+    $pdo = admin_new_db();
+    for ($number = 1; $number <= 12; $number++) {
+        admin_insert_context($pdo, ['title' => 'Passage ' . $number]);
+    }
+    $data = cbt_admin_context_page_data(
+        $pdo,
+        [['id' => 1]],
+        'GET',
+        ['context_page' => '2'],
+        0,
+        cbt_admin_context_default_values()
+    );
+    $_SESSION['cbt_admin_csrf'] = 'test-token';
+    $_SERVER['SCRIPT_NAME'] = '/admin_questions.php';
+    $html = cbt_admin_render_context_management([
+        'editingContextId' => 0,
+        'contextSchemaAvailable' => true,
+        'contextValues' => $data['context_values'],
+        'contexts' => $data['contexts'],
+        'contextPage' => $data['context_page'],
+        'contextTotal' => $data['context_total'],
+        'contextTotalPages' => $data['context_total_pages'],
+        'contextPageSize' => $data['context_page_size'],
+        'subjects' => [['id' => 1, 'subject_name' => 'English']],
+        'contextCategories' => [['id' => 1, 'category_name' => 'UTME']],
+    ]);
+    admin_contains($html, 'Showing 11–12 of 12 shared texts', 'page summary');
+    admin_contains($html, '?context_page=1', 'previous page link');
+    admin_contains($html, 'edit_context=2&amp;context_page=2', 'edit link keeps context page');
+
+    $editingHtml = cbt_admin_render_context_management([
+        'editingContextId' => 2,
+        'contextSchemaAvailable' => true,
+        'contextValues' => cbt_admin_context_default_values(),
+        'contexts' => $data['contexts'],
+        'contextPage' => 2,
+        'contextTotal' => 12,
+        'contextTotalPages' => 2,
+        'contextPageSize' => 10,
+        'subjects' => [['id' => 1, 'subject_name' => 'English']],
+        'contextCategories' => [['id' => 1, 'category_name' => 'UTME']],
+    ]);
+    admin_contains($editingHtml, 'Editing shared text #2', 'editing status copy');
+    admin_contains($editingHtml, '?context_page=2', 'cancel link keeps context page');
 });
 
 admin_test('failed context rendering preserves selected pools and a leading newline', function (): void {

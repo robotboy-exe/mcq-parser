@@ -13,11 +13,10 @@ features.
 ## Canonical parser core
 
 The pure, canonical parser implementation lives in `src/parser/core.js` (API
-version `2.3.2`). `src/parser/comprehension.js` holds the pure comprehension
-context detection and the scoped `(a)`-`(d)` parser; `src/parser/cloze.js` holds
-the pure cloze gap/table detection, column inference, and synthesized cloze
-items. The browser admin page must load both before `core.js`, and Node resolves
-them through `require`. It exports:
+version `2.3.3`). It contains the pure comprehension and cloze engines,
+including scoped `(a)`-`(d)` parsing, gap/table detection, column inference, and
+synthesized cloze items. The browser admin page loads this consolidated file,
+and Node resolves the same module through `require`. It exports:
 - Pure regexes: `FIXES`, `OPTION`, `KEY_LINE`, `PLACEHOLDER`, `STEM_LINE`, `KEY_WORD`, `INLINE_PAIR`, `LOOSE`.
 - Pure parsing & inference: `parseHeader`, `pickSubjectIndex`, `pickCategoryIndex`, `splitQuestions`, `splitBulletQuestions`, `splitQuestionItems`, `parseQuestion`, `parseStimulusRange`, `extractStimuli`, `applyStimulusFlags`, `flagNumberingGaps`, `splitSections`, `salvageNormalize`, `splitSectionsWithSalvage`, `keyPairs`, `parseKeyDetailed`, `parseKey`, `parsePaste`, `comprehensionEngine`, `linkComprehension`, `clozeEngine`, and `mergeClozeItems`.
 - Browser & Node compatibility: Works in Node (`module.exports`) and Browser (`window.OCRParser`).
@@ -102,7 +101,7 @@ delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
 | `OPTION` regex | Tightly coupled to inline options, dotless-newline options, and leading prose articles. Three separate regressions already occurred here. Never add `^` to the dotless branch; never remove the whitespace-prefixed dotted branch; never pre-collapse newlines (qwen-2 H05; R01–R04). Keep the `B.C.` abbreviation skip (D-48), the spaced-slash normalization (D-49), and the bounded missing-label repair (D-47) separate from the main regex. |
 | Blank `C.` / `[^\S\n]*` | The horizontal-whitespace class is what keeps a blank option from consuming the next label. Changing it can resurrect the "option D missing" bug (INV-23). |
 | Loose E/F (`LOOSE`) | Can mistake a continuation line such as `F = ma` for Option F. Do not broaden it (claude §5.3). |
-| `cloze.js` recognition and columns | Every refusal is deliberate. Column starts must stay row-derived (the header indent is shifted by the row labels), boundaries must stay word-safe, and no column work may follow a global whitespace collapse. A gap token is exactly `[[gap:N]]` with the source number; never renumber rows or keep dotted runs. Refuse the whole group on an empty cell, an option over 500 characters, unmatched row/gap numbers, fewer than two gaps, or unstable alignment (INV-104–INV-107, D-68). A later cloze group that repeats an earlier group's gap numbers is dropped whole with a naming warning; keep the first group and never emit a zero-member context (INV-109, D-70). |
+| Cloze recognition and columns in `core.js` | Every refusal is deliberate. Column starts must stay row-derived (the header indent is shifted by the row labels), boundaries must stay word-safe, and no column work may follow a global whitespace collapse. A one-character local left shift requires at least two row-derived modal-minus-one anchors; do not broaden it into nearest-column guessing (INV-128, D-80). A gap token is exactly `[[gap:N]]` with the source number; never renumber rows or keep dotted runs. Refuse the whole group on an empty cell, an option over 500 characters, unmatched row/gap numbers, fewer than two gaps, or unstable alignment (INV-104–INV-107, D-68). A later cloze group that repeats an earlier group's gap numbers is dropped whole with a naming warning; keep the first group and never emit a zero-member context (INV-109, D-70). |
 | `splitSections` | Rule order (divider → key-only → header → structure) is fragile. A false positive splits a question; a miss leaves key lines in the question stream (claude §5.9). Divider-only runs of three or more equals signs (`========`) are section separators and are blanked before line slicing. Keep that predicate narrow (D-46). |
 | `splitQuestions` numbering guard | `n <= last || n > last + 5` drops repeats and large jumps. It can merge real questions after a restart or OCR digit error (INV-21, INV-24). |
 | `salvageNormalize` / `splitSectionsWithSalvage` | The repair must stay a no-op on bank text. The `inserts >= 2` trigger and the `after > before` chunk gate are mandatory; a repair that does not add questions must be discarded and the strict result kept byte-for-byte (INV-72). |
@@ -124,6 +123,20 @@ delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
 
 - A key-only paste keeps the queue; a questions paste replaces or clears the
   key (INV-32, INV-33).
+- In the owner tool, a new full paste clears all prior native question/link and
+  context-editor values before applying the new parse; empty inferred pool
+  values stay empty. Key-only paste keeps the owner queue/contexts (D-77,
+  INV-122).
+- Saved-context auto-adoption uses full pool/type/title/passage-text identity,
+  not title alone. Duplicate notices are advisory and must never become a
+  server rejection or disabled Save (D-77, INV-111, INV-123).
+- Shared Texts management pagination is 10 rows on `context_page`, but the
+  question selector remains unpaginated. Never reuse the paginated table rows
+  as the selector source (D-78, INV-125).
+- The collapsible **Edit Shared Text** editor sits immediately below the paste
+  panel and above the light-blue question-link group. On `?edit_context=N`,
+  automatic restoration of the latest paste must not overwrite the server form;
+  only an explicit Use Paste may replace it (D-79, INV-127).
 - Blank options stay blank; a later option is not pulled into their place
   (INV-16).
 - A second complete A–D set with no visible question-number boundary is

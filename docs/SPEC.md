@@ -318,8 +318,11 @@ fully evidenced cloze blocks from the text handed on to `splitSections`.
 - **Column starts:** rows are split on runs of two or more spaces; the four
   start offsets are the per-column modes and each must cover at least half the
   rows. The header indent is ignored. A boundary inside a word snaps right to
-  the next word edge, so an overflowing cell keeps its last words. Tabs expand
-  to 8-column stops before any measurement.
+  the next word edge, so an overflowing cell keeps its last words. When one row
+  has at least two row-derived starts exactly one character left of absent modal
+  B-D starts, only that row's non-exact boundaries move left one character
+  before the same word-safe snap. Tabs expand to 8-column stops before any
+  measurement.
 - **Gap tokens:** every `.... N. ....` run becomes exactly `[[gap:N]]`, keeping
   source numbering (1–999), the two paragraphs as single blank lines, and the
   remaining prose trimmed per line.
