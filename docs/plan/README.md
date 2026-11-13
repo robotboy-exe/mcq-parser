@@ -271,7 +271,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed | cloze key supplied 2026-11-08 (OT10 validates) |
 | 10A | OT09A | [Production Consolidation](owner-tool/ot-09a-production-consolidation.md) | OT09 boundary | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed | none; OT10 gates unchanged |
 | 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked: local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; final review and live artifacts pending | local PHP, staging, all prior artifacts |
-| 12 | OT11 | [Owner Workflow Refinements](owner-tool/ot-11-owner-workflow-refinements.md) | OT10 phone check (2026-11-09) | in progress: owner accepted the final Brave/Android re-check on 2026-11-13; 60 runner, 163 unit, 81 owner-tool and full suites pass; independent rigorous review pending | satisfied 2026-11-13 |
+| 12 | OT11 | [Owner Workflow Refinements](owner-tool/ot-11-owner-workflow-refinements.md) | OT10 phone check (2026-11-09) | done 2026-11-13; owner accepted the final Brave/Android re-check; 60 runner, 163 unit, 81 owner-tool and full suites pass; independent rigorous review pending | satisfied 2026-11-13 |
 
 The active map duplicates these statuses for session resolution. Update both
 files in the same package handoff; a mismatch blocks the next Gate 1.
@@ -338,7 +338,7 @@ verifies the detail path with the rest of Release A.
 | phase 9 | OT08 | light at OT09 Gate 1 | pass at OT09 Gate 1 |
 | phase 10 close | OT09 Release C | rigorous | pass; implementation done 2026-11-06; `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed |
 | phase 11 close | OT10 final release | rigorous | pending; phone check passed 2026-11-09 |
-| phase 12 close | OT11 owner workflow refinements | rigorous | pending; owner phone re-check accepted 2026-11-13 |
+| phase 12 close | OT11 owner workflow refinements | rigorous | pending; package done 2026-11-13; next workflow step |
 
 OT05 implementation and its accepted Phase 6 fixes are complete. The third
 re-review remains immutable evidence. `BLOCK-3` and `BLOCK-6` are closed against
@@ -385,6 +385,33 @@ confirm final OT08 coverage; the OT09 key is complete. That phase 8 paragraph's
 manual-card workflow is now fed by the parser; target-runtime execution remains
 OT10. The audit carries forward the archived legacy-writer deployment check as
 an OT10 constraint.
+
+## Remaining path to cycle close (consolidated 2026-11-13)
+
+Phase 11 (OT10) is intentionally still open. OT10 is the release package: its
+final review must cover everything that ships, so it runs after phase 12 (OT11),
+which was carved out of OT10's 2026-11-09 phone check. The phase numbers record
+creation order, not execution order. Remaining steps, in order:
+
+1. **Review phase 12 (OT11).** OT11 is done (owner phone re-check accepted
+   2026-11-13). Run the rigorous review; any first-round `BLOCK`/`FIX` goes to a
+   fix session and a closure re-review until settled.
+2. **OT10 external gate (owner decision).** Live `cbt_db.php`, `header.php`,
+   `footer.php`, and the `cbt_exam_attempts` DDL are not supplied. The owner
+   either supplies them, or records a `defer`/`accept risk` disposition (for
+   example, verify at deployment time under the `docs/DEPLOYMENT.md` stop
+   conditions). Without one of these, OT10 cannot be marked done.
+3. **Finish OT10.** Refresh the handoff against the post-OT11 tip (counts,
+   manifest/guide hashes, Q11-Q12 comprehension-key coverage note) and mark it
+   done.
+4. **Review phase 11 (OT10 final release).** Rigorous review of the full
+   release at the post-OT11 tip, then any fix/re-review rounds.
+5. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md):
+   final boundary commit, optional `main` fast-forward, and a separate owner
+   archive decision.
+
+New product scope (for example, the mathematics editor) belongs in a new cycle
+started after cycle close, not in appended phases of this cycle.
 
 Current workflow stop:
 

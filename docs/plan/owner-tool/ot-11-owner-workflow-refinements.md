@@ -1,8 +1,8 @@
 # OT11 — Owner Workflow Refinements
 
-- **Status:** in progress; owner accepted the final Brave/Android re-check on
-  2026-11-13; 60 runner, 163 unit, 81 owner-tool and full local suites pass;
-  independent rigorous review pending
+- **Status:** done 2026-11-13; owner accepted the final Brave/Android re-check;
+  60 runner, 163 unit, 81 owner-tool and full local suites pass; independent
+  rigorous review pending
 - **Depends on:** OT10 phone check (recorded 2026-11-09) and the OT09A boundary
 - **Blocks:** OT10 final review and cycle close
 - **External gate:** owner Brave/Android re-check satisfied 2026-11-13 without a
