@@ -1,8 +1,8 @@
 # OT11 Phone Feedback Scratch
 
 Date: 2026-11-11
-Status: follow-ups and latest re-check fixes implemented locally through
-2026-11-12; owner Brave/Android confirmation and rigorous review pending
+Status: follow-ups and latest re-check fixes implemented; owner Brave/Android
+confirmation accepted 2026-11-13; rigorous review pending
 
 The owner tested the current staging build in Brave on Android. It works well
 enough for now, but the following changes are required before the final OT11
@@ -53,7 +53,7 @@ Local implementation evidence is recorded in
 Implemented as tool 1.5.1. A focused local Chromium check reproduced context
 #11 being replaced by stored context #6 before the fix, then confirmed #11's
 server values, the new order, and the 390px mobile layout after the fix. The
-owner Brave/Android re-check remains pending.
+owner accepted the final Brave/Android re-check on 2026-11-13.
 
 ## Latest Re-check Fixes (2026-11-12)
 
@@ -67,10 +67,11 @@ owner Brave/Android re-check remains pending.
    accepts only this corroborated two-anchor, one-character row drift and keeps
    all existing whole-group refusals.
 
-Local evidence: 60 runner, 163 unit, and 79 owner-tool PASS; full PHP/context
+Local evidence: 60 runner, 163 unit, and 81 owner-tool PASS; full PHP/context
 suites PASS; exact cloze probe emits 15 items and zero warnings; focused staging
-Chromium shows the unsaved second context open after adoption/member skip. Final
-owner Brave/Android confirmation remains pending.
+Chromium shows the unsaved second context open after adoption/member skip. The
+owner accepted the final Brave/Android confirmation on 2026-11-13 without a new
+live write.
 
 ## After These Fixes
 

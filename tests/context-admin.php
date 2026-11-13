@@ -719,7 +719,9 @@ admin_test('rendered context forms keep selectors and never nest forms', functio
         admin_contains($html, 'value="' . $action . '"', 'rendered action ' . $action);
     }
     admin_contains($html, 'id="shared_context_editor"', 'single shared-context editor card');
-    admin_contains($html, '<h2>Edit Shared Text</h2>', 'shared-text editor heading');
+    admin_contains($html, 'owner-context-editor-draft', 'new shared-text form has draft mode styling');
+    admin_contains($html, '>New Shared Text</h2>', 'new shared-text form has draft heading');
+    admin_contains($html, 'New text - draft mode', 'new shared-text form has draft badge');
     admin_contains($html, 'id="owner_context_link_fields"', 'semantic shared-text link group');
     admin_contains($html, '<legend>Shared text for this question</legend>', 'plain link group heading');
     admin_contains($html, '<label for="context_id">Shared text</label>', 'plain shared-text label');
@@ -797,6 +799,9 @@ admin_test('rendered shared-text list preserves independent pagination and edit 
         'contextCategories' => [['id' => 1, 'category_name' => 'UTME']],
     ]);
     admin_contains($editingHtml, 'Editing shared text #2', 'editing status copy');
+    admin_contains($editingHtml, 'owner-context-editor-edit', 'saved shared-text form has edit mode styling');
+    admin_contains($editingHtml, '>Edit Saved Shared Text</h2>', 'saved shared-text form has edit heading');
+    admin_contains($editingHtml, 'Saved text #2 - edit mode', 'saved shared-text form has edit badge');
     admin_contains($editingHtml, '?context_page=2', 'cancel link keeps context page');
 });
 

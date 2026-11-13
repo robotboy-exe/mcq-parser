@@ -1058,8 +1058,8 @@ if (is_file(__DIR__ . '/header.php')) {
 </main>
 
 <?php echo cbt_admin_owner_payload_scripts($pdo ?? null, $isLoggedIn && $editingQuestionId === 0); ?>
-<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2g">
-<script src="src/parser/core.js?v=2.3.3"></script><script src="src/owner-tool/render.js?v=2.3.2g"></script><script src="src/owner-tool/owner-tool.js?v=2.3.3c"></script>
+<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.3a">
+<script src="src/parser/core.js?v=2.3.3"></script><script src="src/owner-tool/render.js?v=2.3.2g"></script><script src="src/owner-tool/owner-tool.js?v=2.3.3e"></script>
 
 
 <?php if (is_file(__DIR__ . '/footer.php')) { include __DIR__ . '/footer.php'; } ?>

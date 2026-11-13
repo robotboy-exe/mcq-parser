@@ -1,12 +1,12 @@
 # OT11 — Owner Workflow Refinements
 
-- **Status:** in progress; latest next-unsaved and parser 2.3.3 phone fixes
-  complete locally; 60 runner, 163 unit, 79 owner-tool and full local suites
-  pass; final Brave/Android confirmation and rigorous review pending
+- **Status:** in progress; owner accepted the final Brave/Android re-check on
+  2026-11-13; 60 runner, 163 unit, 81 owner-tool and full local suites pass;
+  independent rigorous review pending
 - **Depends on:** OT10 phone check (recorded 2026-11-09) and the OT09A boundary
 - **Blocks:** OT10 final review and cycle close
-- **External gate:** owner Brave/Android re-check after implementation; no new
-  server artifact
+- **External gate:** owner Brave/Android re-check satisfied 2026-11-13 without a
+  new live write; independent rigorous review remains
 - **Release:** B/C owner workflow refinement
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -90,7 +90,7 @@ writes:
 - Name the section **Edit Shared Text**.
 - Opening `?edit_context=N` must keep the server-loaded record even when
   `cbtOwnerTool:v1` contains a linked context from the latest paste. An explicit
-  **Use Paste** remains allowed to replace those fields.
+  **Use Paste** does not replace those fields.
 
 ### 6. Latest phone re-check fixes (2026-11-12)
 
@@ -100,6 +100,15 @@ writes:
 - Parse the exact `new-sample.txt` cloze table without weakening strict refusal:
   gap 75 may use a one-character local left correction only when at least two
   row-derived starts corroborate it.
+
+### 7. Saved-edit isolation and visible modes (2026-11-13)
+
+- **Use Paste** may fill or replace only a new shared-text draft. It must never
+  alter fields, action, or context ID while the native form is editing a saved
+  context.
+- Make the modes unmistakable on the form: amber **New Shared Text** / **New
+  text - draft mode** for drafts, and blue **Edit Saved Shared Text** / **Saved
+  text #N - edit mode** for saved edits.
 
 ## Decisions
 
@@ -148,10 +157,12 @@ writes:
 - **D-OT11-14 — Independent shared-text paging.** The management table uses
   `context_page` at 10 rows while the question selector remains unpaginated.
   Manual selection fills the next unused position/gap when one is absent.
-- **D-OT11-15 — Explicit shared-text Edit owns the editor.** Edit Shared Text is
-  placed between the paste panel and native question form. Automatic queue
-  restoration cannot fill it on `?edit_context=N`; Use Paste is the explicit
-  replacement action. Saved Shared Texts stays in its paginated section below.
+- **D-OT11-15 — Saved shared-text Edit owns the editor.** The shared-text editor
+  is placed between the paste panel and native question form. Neither automatic
+  queue restoration nor Use Paste can fill it in `update_context` mode; Use
+  Paste fills only `save_context` drafts. Saved Shared Texts stays in its
+  paginated section below. Amber draft and blue edit treatments identify the
+  current mode without relying on button text alone.
 - **D-OT11-16 — Unsaved text selection outranks question-following.** Initial
   preparation and exact save success open the first remaining unsaved card. A
   selected unsaved card cannot be hidden by automatic question preparation;
@@ -190,8 +201,9 @@ writes:
 | Plain copy | Owner panel and native-form labels, help, states, flags, and warnings use the recorded short vocabulary; fixed flashes stay exact |
 | Preview placement | The single preview is beside Question Text for standalone and linked questions in Add/Edit flows |
 | Page shape | Add Question, Shared Texts, and All Questions are stacked full width; no tabs; Edit shows formatting/preview only |
-| Editor placement | Edit Shared Text is directly below paste and above the light-blue question-link group |
-| Explicit shared-text edit | Server values survive stored latest-paste state; Use Paste may intentionally replace them |
+| Editor placement | The shared-text editor is directly below paste and above the light-blue question-link group |
+| Shared-text form modes | Draft mode is amber and says New Shared Text / New text - draft mode; saved edit mode is blue and says Edit Saved Shared Text / Saved text #N - edit mode |
+| Explicit shared-text edit | Server values, action, and ID survive stored state and every Use Paste click; only a new draft is paste-filled |
 | Full re-paste | Prior metadata, link values, and context-editor values clear before the new parse; empty inference stays empty |
 | Duplicate notice | Latest-20 normal and full-identity shared notices are visible and non-blocking |
 | Shared-text paging | 10 rows per `context_page`; the question selector still contains every saved context |
@@ -266,8 +278,8 @@ Excluded artifacts: the untracked local staging tree and test-only shims.
   token `2.3.2e`, and one merged native editor. Chromium 155 confirmed the
   merged parent, hidden-until-paste/Add behavior, no duplicate cards or Fill
   action, named English/JAMB selects, exact context #6 adoption/member skip,
-  and two-context selector switching. The final Brave/Android re-check remains
-  pending.
+  and two-context selector switching. The owner accepted the final
+  Brave/Android re-check on 2026-11-13.
 
 ## Follow-up implementation notes (2026-11-11)
 
@@ -324,7 +336,8 @@ Excluded artifacts: the untracked local staging tree and test-only shims.
   `2.3.2h`. Unchanged parser, renderer, CSS, and CBT assets remain `2.3.2g`.
 - The native editor is moved after the injected paste panel and before the
   question form, so its collapsed controls precede the light-blue link group at
-  desktop and 390px mobile width. Its heading is **Edit Shared Text**.
+  desktop and 390px mobile width. At this checkpoint its heading was **Edit
+  Shared Text**; the 2026-11-13 mode-specific headings supersede it.
 - A stored-paste regression now includes a current item linked to a stale local
   context. On `?edit_context=N`, automatic `fillQuestion` preparation leaves the
   server editor untouched until Use Paste explicitly selects a new local card.
@@ -334,7 +347,8 @@ Excluded artifacts: the untracked local staging tree and test-only shims.
 
 ## Latest re-check implementation notes (2026-11-12)
 
-- Tool version `1.5.2`; changed `owner-tool.js` uses cache token `2.3.3c`.
+- At this checkpoint, tool version `1.5.3` and cache token `2.3.3d` applied;
+  the 2026-11-13 mode correction supersedes both.
   Multi-context preparation chooses the first unsaved card, exact save success
   advances to the next unsaved card, and question preparation cannot hide that
   draft. The selector is labelled **Shared text to edit**.
@@ -352,6 +366,19 @@ Excluded artifacts: the untracked local staging tree and test-only shims.
   disposable local staging context (#12) was created during pre-fix PRG
   reproduction and left in the local staging database.
 
+## Handoff package verification (2026-11-13)
+
+- The owner clarified the original mode boundary: **Use Paste** fills only new
+  drafts and never saved edits. Tool `1.5.4` enforces that rule for restored,
+  explicit-route, and currently saved form states. Amber draft and blue edit
+  headings, badges, borders, and backgrounds identify the modes.
+- The changed tool uses cache token `2.3.3e`; changed CSS uses `2.3.3a`. The
+  packaged production copies match their repository sources byte-for-byte. The
+  full local suites, PHP/JavaScript syntax, and handoff manifest pass.
+- Local staging at desktop and 390px confirms saved context #6 remains visible
+  and unchanged through Use Paste; Add Shared Text then switches the same form
+  to the amber draft heading, badge, hint, action, and empty ID without a write.
+
 ## Correction measurements
 
 Package base remains `79a6a57`. Counts and hashes use LF-normalized UTF-8.
@@ -359,19 +386,20 @@ Package base remains `79a6a57`. Counts and hashes use LF-normalized UTF-8.
 | Production file | Base delta +/− | Final lines / bytes | SHA-256 | Responsibility / deployment | Direct evidence |
 |---|---:|---:|---|---|---|
 | `src/parser/core.js` | +9 / −3 | 1432 / 49296 | `1321d95f046151e202c44eb8a18f9b1c9df39e2d31e001a73b639e49b4a71f67` | Parser 2.3.3 and bounded row-local cloze drift; deploy to `src/parser/` | 60 runner, 163 unit, exact `new-sample.txt` cloze probe, staging Chromium |
-| `src/owner-tool/owner-tool.js` | +1199 / −276 | 2536 / 104816 | `c89a5dc3d9788c0b20b39ed969e5d5392e41e31918dbc2cfadb510613ab81b8a` | State/controller, next-unsaved selection, paste-adjacent editor placement, explicit-edit isolation, full-paste reset, full identity, next-free links, advisory duplicates, Show/Hide; deploy to `src/owner-tool/` | `node tests/owner-tool.js` 79 PASS; focused desktop/mobile Chromium |
-| `src/owner-tool/owner-tool.css` | +56 / −59 | 254 / 3934 | `39bb772adb0a18f67c6c4b5e03e52936e36f49cf43be2208e3867f3108f43a4b` | Owner/context/CBT styling, stacked section boundaries, duplicate notices, native form boundaries; deploy to `src/owner-tool/` | production stylesheet assertions; owner-tool tests |
-| `deployed/admin_context.php` | +209 / −48 | 994 / 46189 | `36e411d2535eec08f5c55687c78841b16c5511574a572c7c18dbcac695960be2` | Native Edit Shared Text section, pagination, semantic link group, identity/recent payloads; deploy to site root | `php tests/context-admin.php` 23 PASS; PHP lint; real rendered fragments |
+| `src/owner-tool/owner-tool.js` | +1231 / −278 | 2566 / 106477 | `c8f86b8f6ca61cb7b2f73750e442c564c07ecdb7f409fcdc9b2a1434b067818d` | State/controller, next-unsaved selection, draft-only paste filling, reachable saved-edit isolation, synchronized dynamic mode labels/hints, full-paste reset, full identity, next-free links, advisory duplicates, Show/Hide; deploy to `src/owner-tool/` | `node tests/owner-tool.js` 81 PASS |
+| `src/owner-tool/owner-tool.css` | +85 / −51 | 291 / 4606 | `405a769288849033451e1a9f06cecedc4d7d29a6a90a10bccae89a411a5c1b8c` | Owner/context/CBT styling, stacked section boundaries, amber draft and blue saved-edit modes, duplicate notices, native form boundaries; deploy to `src/owner-tool/` | production stylesheet assertions; owner-tool tests |
+| `deployed/admin_context.php` | +211 / −48 | 996 / 46688 | `0c5e1b83c30bb29b0892b2d3f00be36d1faca9f50e4aed68368dde649bcbf5c2` | Native shared-text draft/edit modes, pagination, semantic link group, identity/recent payloads; deploy to site root | `php tests/context-admin.php` 23 PASS; PHP lint; real rendered fragments |
 | `deployed/context_lib.php` | +34 / −9 | 505 / 20353 | `0b1051a97708b9e8fddce9ec10b2637eee1b2b236ed10aae3d2c0f6a82a78673` | Context validation/query contract, paginated management list, unpaginated selector options; deploy to site root | `php tests/context-lib.php` 14 PASS; PHP lint |
-| `deployed/admin_questions.php` | +7 / −6 | 1065 / 62892 | `e73f7f63e88c3fa8c0b4e190c936dbeb11aa3c9dac28a3f4e353b69de711ab83` | Narrow stacked-section/payload wiring; changed parser/tool use `2.3.3`/`2.3.3c`; deploy to site root | context-migration and owner-tool tests; PHP lint |
-| `deployed/cbt.php` | +2 / −2 | 1008 / 44515 | `42ebf711ccff3ffca1a56d26938524af953bcfa6ccaf5018c640881c246c467e` | Owner CSS/render `2.3.2g` cache token only; deploy to site root | PHP lint; prior OT10 candidate/runtime evidence remains applicable |
+| `deployed/admin_questions.php` | +7 / −6 | 1065 / 62892 | `7ec150d924cb834627745ac4d9c8f989276421e6ce36dc77b6b8081bf76817cb` | Narrow stacked-section/payload wiring; parser/tool/CSS use `2.3.3`/`2.3.3e`/`2.3.3a`; deploy to site root | context-migration and owner-tool tests; PHP lint |
+| `deployed/cbt.php` | +2 / −2 | 1008 / 44515 | `697407e6022ce9f543a271664f69bc27816b52170389c0381544aa2b170b2de9` | Owner CSS `2.3.3a` and unchanged renderer `2.3.2g`; deploy to site root | PHP lint; prior OT10 candidate/runtime evidence remains applicable |
 
 Live-origin cumulative additions remain within the contract:
 `admin_questions.php` +100/−81 and `cbt.php` +53/−89 against their archived
 2026-10-31 snapshots. The local `mcq-staging` copy, test-only DB/config shims,
 `mcq_ot10_browser` rows/title labels, and temporary Chromium profile/probe are
-excluded test artifacts and are not deployment files. The unrelated untracked
-`session-ses_e35a.md` owner/session note is also excluded. The supplied root
+excluded test artifacts and are not deployment files. The unrelated
+`session-ses_e35a.md` owner/session note in the earlier WIP checkpoint is also
+excluded from this package and deployment. The supplied root
 `new-sample.txt`, local phone-staging tree/database (including context #12), and
 temporary Chromium profile/probes are evidence/test artifacts, not deployment
 files; the tracked `sample-cloze-left-drift` fixture is test input.
@@ -379,8 +407,8 @@ files; the tracked `sample-cloze-left-drift` fixture is test input.
 ## Handoff
 
 ```text
-Date: 2026-11-12
-Result: all follow-ups plus next-unsaved shared-text selection and parser 2.3.3 row-drift handling implemented; full local suites pass; final owner phone confirmation and rigorous review pending
+Date: 2026-11-13
+Result: draft-only Use Paste, visibly distinct saved-edit mode, next-unsaved shared-text selection, and parser 2.3.3 row-drift handling implemented; full local suites pass; owner accepted the final Brave/Android re-check; independent rigorous review pending
 Files changed: src/parser/core.js, src/owner-tool/owner-tool.js, src/owner-tool/owner-tool.css,
   deployed/admin_questions.php, deployed/admin_context.php, deployed/context_lib.php,
   deployed/cbt.php, tests/unit.js, tests/owner-tool.js, tests/context-admin.php,
@@ -394,7 +422,7 @@ Files changed: src/parser/core.js, src/owner-tool/owner-tool.js, src/owner-tool/
   docs/plan/owner-tool/next-steps.md,
   docs/plan/owner-tool/ot-11-phone-feedback-scratch.md,
   docs/plan/owner-tool/ot-11-owner-refinement-plan-2026-11-12.md, this file
-Tests: node tests/owner-tool.js 79 PASS; node tests/runner.js 60 PASS;
+Tests: node tests/owner-tool.js 81 PASS; node tests/runner.js 60 PASS;
   node tests/unit.js 163 PASS; context-migration 14 PASS; cbt-context 5 PASS;
   PHP context-lib 14 PASS; context-admin 23 PASS; context-preflight 6 PASS;
   php-render 9 PASS; cbt-candidate 7 PASS; extract-bank PASS; PHP/JS syntax and
@@ -407,8 +435,8 @@ Phone-feedback evidence: exact click/submit stop, metadata precedence, saved-car
   next-free links, independent pagination, multi-context ambiguity, editor
   placement, stored-paste edit isolation, next-unsaved selection, and bounded
   one-character cloze drift covered
-Phone re-check: latest two reports fixed locally; final owner Brave/Android confirmation pending
+Phone re-check: owner accepted the final Brave/Android confirmation on 2026-11-13 without a new live write
 Review: focused implementation review findings closed; independent rigorous review pending
-Commit: deferred
-Next: owner Brave/Android re-check, then rigorous OT11 review
+Commit: owner-authorized checkpoint commit/push requested 2026-11-13
+Next: independent rigorous OT11 review
 ```

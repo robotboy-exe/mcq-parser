@@ -1154,7 +1154,7 @@ display text is easier to follow on a phone.
 **Risk.** Parser flags/warnings and fixed PRG flashes remain contract values.
 Only their owner-facing presentation is translated. The native form field names,
 CSRF/PRG flow, storage shape, parser version, and automatic-write policy do not
-change. Mobile visual acceptance still requires the owner Brave/Android re-check.
+change. The owner accepted the final Brave/Android visual re-check on 2026-11-13.
 
 ## D-76 — The admin workflow is one stacked page, not a tab shell
 
@@ -1170,8 +1170,8 @@ three jobs understandable on desktop and phone without a second navigation
 model or PRG tab restoration.
 
 **Risk.** The sections make the page longer. Independent question and
-shared-text pagination limit the long lists, and the final phone re-check still
-owns visual acceptance.
+shared-text pagination limit the long lists; the owner accepted the final phone
+visual re-check on 2026-11-13.
 
 ## D-77 — Full paste owns inferred state and full passage identity
 
@@ -1215,26 +1215,29 @@ table stays manageable.
 contexts. This is deliberate for correctness; only the management table is
 paginated.
 
-## D-79 — Edit Shared Text follows the paste and explicit edits own their form
+## D-79 — Use Paste fills drafts but never saved edits
 
-**Choice.** The one collapsible native context editor is named **Edit Shared
-Text** and sits immediately below the paste panel, before the light-blue shared-
-text link group and Question details. The paginated Saved Shared Texts table
-remains below Add Question. On `?edit_context=N`, server-loaded context values
-are authoritative: restoring the latest browser queue must not fill that editor.
-Tapping **Use Paste** on that page remains an explicit request to replace the
-editor fields and bind the parsed context to `N`.
+**Choice.** The one collapsible native context editor sits immediately below the
+paste panel, before the light-blue shared-text link group and Question details.
+The paginated Saved Shared Texts table remains below Add Question. **Use Paste**
+may fill or replace the form only while it is a new draft (`save_context`). When
+the form represents a saved context (`update_context`), neither restored state
+nor **Use Paste** may change its fields, action, or context ID. Draft mode is
+labelled **New Shared Text** / **New text - draft mode** with amber styling;
+saved edit mode is labelled **Edit Saved Shared Text** / **Saved text #N - edit
+mode** with blue styling.
 
 **Why.** The owner phone workflow needs the passage editor before the question
 that uses it. A reproduced staging defect showed that opening shared text #11
 loaded its server values and then immediately replaced them with shared text #6
 from `cbtOwnerTool:v1`, making Edit appear broken.
 
-**Risk.** The latest pasted question may still be visible in the separate native
-question form; it cannot overwrite the explicit shared-text edit. Moving the
-editor changes presentation only and does not change its form, CSRF/PRG action,
-storage shape, automatic-write policy, or Saved Shared Texts pagination. This
-supersedes only D-76's editor placement.
+**Risk.** A paste may still replace the separate question queue and question
+form while the saved shared-text edit remains untouched. To use pasted text in
+the shared-text form, the owner must return to draft mode. The mode styling does
+not change the CSRF/PRG action, storage shape, automatic-write policy, or Saved
+Shared Texts pagination. This owner change supersedes the earlier D-79 rule that
+allowed an explicit **Use Paste** click to replace saved edit fields.
 
 ## D-80 — Corroborated one-character cloze row drift is local
 
@@ -1264,7 +1267,7 @@ exact context-create or update success select and open the first remaining
 unsaved text. The selector is visibly labelled **Shared text to edit**, and
 automatic question preparation does not replace a selected unsaved editor. When
 no unsaved text remains, the editor may follow the current question as before.
-Tool version `1.5.2`.
+Tool version `1.5.4`.
 
 **Why.** `sample-passages.txt` contains a reading passage followed by a cloze
 passage. After the first shared text saved, the editor immediately returned to

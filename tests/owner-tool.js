@@ -553,6 +553,7 @@ function createForm(doc, options) {
 
 function createContextForm(doc, options) {
   const opts = options || {};
+  const editMode = opts.contextAction === 'update_context';
   const form = createElement(doc, 'form', { id: 'context_form' });
   const fields = {
     action: createElement(doc, 'input', {
@@ -592,19 +593,33 @@ function createContextForm(doc, options) {
   const targetsWrap = createElement(doc, 'div', { id: 'owner_context_targets_field', hidden: true });
   const status = createElement(doc, 'span', {
     id: 'owner_context_native_status',
-    textContent: 'Paste a context or choose Add Context.',
+    textContent: editMode ? 'Editing shared text #' + opts.contextId : 'Paste shared text or tap Add.',
   });
   doc.byId.set(targetsWrap.id, targetsWrap);
   doc.byId.set(status.id, status);
   doc.contextSubmitButton = createElement(doc, 'button', {
     id: 'save_context',
     type: 'submit',
-    textContent: 'Create Context',
+    textContent: editMode ? 'Save Changes' : 'Save Shared Text',
   });
   doc.contextSubmitButton.form = form;
   doc.contextForm = form;
   doc.byId.set('context_form', form);
-  const section = createElement(doc, 'section', { id: 'shared_context_editor', className: 'admin-card' });
+  const section = createElement(doc, 'section', {
+    id: 'shared_context_editor',
+    className: 'admin-card owner-context-editor owner-context-editor-' + (editMode ? 'edit' : 'draft'),
+  });
+  const heading = createElement(doc, 'h2', {
+    id: 'owner_context_editor_heading',
+    textContent: editMode ? 'Edit Saved Shared Text' : 'New Shared Text',
+  });
+  const mode = createElement(doc, 'strong', {
+    id: 'owner_context_mode',
+    className: 'owner-context-mode owner-context-mode-' + (editMode ? 'edit' : 'draft'),
+    textContent: editMode ? 'Saved text #' + opts.contextId + ' - edit mode' : 'New text - draft mode',
+  });
+  section.appendChild(heading);
+  section.appendChild(mode);
   section.appendChild(status);
   section.appendChild(form);
   form.appendChild(fields.action);
@@ -1266,6 +1281,12 @@ test('a comprehension paste fills the context card and the native options', () =
   assertEqual(env.field('option_d'), 'currently in use.', 'option d');
   assertEqual(env.contextField('title'), 'PASSAGE III', 'single native title is editable');
   assertEqual(env.contextField('context_text'), state.contexts[0].text, 'single native text is editable');
+  assert(env.byId('shared_context_editor').className.indexOf('owner-context-editor-draft') > -1,
+    'new shared text keeps the visible draft mode');
+  assertEqual(env.text('owner_context_editor_heading'), 'New Shared Text', 'draft heading is explicit');
+  assertEqual(env.text('owner_context_mode'), 'New text - draft mode', 'draft badge is explicit');
+  assert(env.text('owner_context_mode_hint').indexOf('fills this new draft') > -1,
+    'draft hint matches draft mode');
   assertEqual(env.byId('owner_context_targets').value, '11, 12, 13, 14, 15', 'linked numbers share the native card');
   assertEqual(env.text('owner_tool_warning'), '', 'no warning');
   assertEqual(state.pendingSubmission, null, 'nothing is submitted');
@@ -1693,6 +1714,72 @@ test('a saved context auto-matches and an already-saved member is skipped', () =
   assertEqual(env.state().pendingSubmission, null, 'matching never submits the context');
 });
 
+test('Use Paste fills drafts but preserves a currently saved shared-text edit', () => {
+  const server = [{
+    context_id: 5,
+    context_type: 'comprehension',
+    title: 'PASSAGE I',
+    context_text: 'The elephant is the largest land animal. It lives in herds led by an older female.',
+    subject_id: '1',
+    exam_category_id: '2',
+    exam_year: '2021',
+    expected_member_count: 2,
+    member_count: 0,
+    is_active: 0,
+    members: [],
+  }];
+  const env = createEnv({ contextData: server });
+  env.paste(HEADERED_COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  env.edit('context_title', 'Owner saved edit');
+  env.edit('context_text', 'Keep this saved edit.');
+
+  env.paste(COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.contextField('action'), 'update_context', 'saved form stays in edit mode');
+  assertEqual(env.contextField('context_id'), '5', 'saved form keeps its context ID');
+  assertEqual(env.contextField('title'), 'Owner saved edit', 'saved title is not replaced');
+  assertEqual(env.contextField('context_text'), 'Keep this saved edit.', 'saved passage is not replaced');
+  assertEqual(env.state().contexts[0].serverId, null, 'new parsed text remains a separate draft');
+  assertEqual(env.visible('context_form'), true, 'preserved saved edit remains visible');
+  assert(env.byId('owner_context_add'), 'Add Shared Text remains available to leave saved edit mode');
+  env.click('owner_context_add');
+  assertEqual(env.contextField('action'), 'save_context', 'Add Shared Text intentionally starts draft mode');
+  assert(env.byId('shared_context_editor').className.indexOf('owner-context-editor-draft') > -1,
+    'intentional Add transition uses draft styling');
+  assert(env.text('owner_context_mode_hint').indexOf('fills this new draft') > -1,
+    'intentional Add transition updates the draft hint');
+});
+
+test('Use Paste keeps full-identity adoption while preserving saved form edits', () => {
+  const server = [{
+    context_id: 5,
+    context_type: 'comprehension',
+    title: 'PASSAGE I',
+    context_text: 'The elephant is the largest land animal. It lives in herds led by an older female.',
+    subject_id: '1',
+    exam_category_id: '2',
+    exam_year: '2021',
+    expected_member_count: 2,
+    member_count: 0,
+    is_active: 0,
+    members: [],
+  }];
+  const env = createEnv({ contextData: server });
+  env.paste(HEADERED_COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  env.edit('context_title', 'Owner saved edit');
+
+  env.paste(HEADERED_COMPREHENSION_PASTE);
+  env.click('owner_tool_load');
+  assertEqual(env.state().contexts[0].serverId, 5, 'new parsed state still adopts its exact saved match');
+  assertEqual(env.contextField('title'), 'Owner saved edit', 'adoption does not replace the saved form edit');
+  assertEqual(env.visible('context_form'), true, 'saved form remains reachable after repeated paste');
+  assertEqual(env.byId('save_question').disabled, false, 'adopted parsed context does not block question save');
+  assert(env.text('owner_context_mode_hint').indexOf('will not change this saved text') > -1,
+    'repeated paste keeps the saved-edit hint');
+});
+
 test('saved shared text matches by normalized title and full passage text', () => {
   const wrongText = createEnv({
     contextData: [{
@@ -1850,12 +1937,17 @@ test('shared-text edit survives the latest stored paste and excludes its own dup
 
   env.paste(HEADERED_COMPREHENSION_PASTE);
   env.click('owner_tool_load');
-  assertEqual(env.state().contexts[0].serverId, 7, 'paste on shared-text edit stays bound to the edited ID');
-  assertEqual(env.contextField('action'), 'update_context', 'paste keeps update mode');
+  assertEqual(env.state().contexts[0].serverId, null, 'paste does not bind a parsed draft to the saved edit');
+  assertEqual(env.contextField('action'), 'update_context', 'paste keeps saved edit mode');
   assertEqual(env.contextField('context_id'), '7', 'paste keeps the edited context ID');
-  assertEqual(env.contextField('title'), 'PASSAGE I', 'Use Paste explicitly replaces the edited title');
-  assert(env.contextField('context_text').indexOf('largest land animal') > -1,
-    'Use Paste explicitly replaces the edited passage');
+  assertEqual(env.contextField('title'), 'Shared passage', 'Use Paste does not replace the saved title');
+  assertEqual(env.contextField('context_text'), 'A unique replacement.', 'Use Paste does not replace the saved passage');
+  assert(env.byId('shared_context_editor').className.indexOf('owner-context-editor-edit') > -1,
+    'saved context keeps the visible edit mode');
+  assertEqual(env.text('owner_context_editor_heading'), 'Edit Saved Shared Text', 'edit heading is explicit');
+  assertEqual(env.text('owner_context_mode'), 'Saved text #7 - edit mode', 'edit badge is explicit');
+  assert(env.text('owner_context_mode_hint').indexOf('will not change this saved text') > -1,
+    'saved edit hint matches edit mode');
 });
 
 test('a member-count mismatch only warns and still allows linked saves', () => {
@@ -1966,7 +2058,8 @@ test('owner copy uses short plain words while fixed flashes stay exact', () => {
   env.click('owner_tool_load');
   assert(env.text('owner_tool_flags').indexOf('option E or F was found') > -1, 'parser flag is translated for display');
   assert(env.text('owner_tool_status').indexOf('queue') === -1, 'status does not say queue');
-  assert(ADMIN_CONTEXT_SOURCE.indexOf('<h2>Edit Shared Text</h2>') > -1, 'native context heading names the editor');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('Edit Saved Shared Text') > -1, 'saved context heading names edit mode');
+  assert(ADMIN_CONTEXT_SOURCE.indexOf('New Shared Text') > -1, 'draft heading names draft mode');
   assert(ADMIN_CONTEXT_SOURCE.indexOf('Context Position') === -1, 'native link jargon is removed');
   assert(OWNER_TOOL_SOURCE.indexOf('Question saved successfully \\(Question ID: \\d+\\)') > -1,
     'exact question flash detector remains');
@@ -1995,6 +2088,8 @@ test('the owner tool uses one native shared-context editor', () => {
   ['Subject pool', 'Category pool', 'Year pool', 'owner_context_toggle']
     .forEach(term => assert(OWNER_TOOL_SOURCE.indexOf(term) === -1, term + ' is absent'));
   assert(ADMIN_CONTEXT_SOURCE.indexOf('id="shared_context_editor"') > -1, 'native editor has one stable card');
+  assert(STYLE_SOURCE.indexOf('.owner-context-editor-draft') > -1, 'draft mode has distinct styling');
+  assert(STYLE_SOURCE.indexOf('.owner-context-editor-edit') > -1, 'saved edit mode has distinct styling');
   assert(ADMIN_CONTEXT_SOURCE.indexOf('id="owner_context_targets"') > -1, 'browser queue targets share the native card');
   assert(!/id="owner_context_targets"[^>]*\bname=/.test(ADMIN_CONTEXT_SOURCE),
     'browser-only targets do not change the server contract');
@@ -2214,10 +2309,10 @@ test('the admin page loads the consolidated parser, renderer, and owner tool in 
   assert(renderAt > -1, 'shared renderer is loaded');
   assert(toolAt > -1, 'owner tool bundle is loaded');
   assert(coreAt < renderAt && renderAt < toolAt, 'core, renderer, and owner tool load in order');
-  ['src/parser/core.js?v=2.3.3', 'src/owner-tool/owner-tool.css?v=2.3.2g',
-    'src/owner-tool/owner-tool.js?v=2.3.3c']
+  ['src/parser/core.js?v=2.3.3', 'src/owner-tool/owner-tool.css?v=2.3.3a',
+    'src/owner-tool/owner-tool.js?v=2.3.3e']
     .forEach(asset => assert(ADMIN_SOURCE.indexOf(asset) > -1, asset + ' uses the current admin token'));
-  ['src/owner-tool/owner-tool.css?v=2.3.2g', 'src/owner-tool/render.js?v=2.3.2g']
+  ['src/owner-tool/owner-tool.css?v=2.3.3a', 'src/owner-tool/render.js?v=2.3.2g']
     .forEach(asset => assert(CBT_SOURCE.indexOf(asset) > -1, asset + ' uses the current CBT token'));
   ['src/parser/comprehension.js', 'src/parser/cloze.js', 'src/owner-tool/state.js', 'src/owner-tool/controller.js']
     .forEach(relative => assert(ADMIN_SOURCE.indexOf(relative) === -1, relative + ' is consolidated away'));

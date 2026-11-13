@@ -806,10 +806,12 @@ function cbt_admin_render_context_management(array $variables): string
 {
     extract($variables, EXTR_SKIP);
     ob_start();
+    $contextEditMode = $editingContextId > 0;
     ?><div class="owner-workflow-section" id="owner-shared-texts"<?php echo (int) ($editingQuestionId ?? 0) > 0 ? ' hidden' : ''; ?>>
-<section class="admin-card" id="shared_context_editor">
+<section class="admin-card owner-context-editor owner-context-editor-<?php echo $contextEditMode ? 'edit' : 'draft'; ?>" id="shared_context_editor">
     <div class="admin-topline">
-        <h2>Edit Shared Text</h2>
+        <h2 id="owner_context_editor_heading"><?php echo $contextEditMode ? 'Edit Saved Shared Text' : 'New Shared Text'; ?></h2>
+        <strong class="owner-context-mode owner-context-mode-<?php echo $contextEditMode ? 'edit' : 'draft'; ?>" id="owner_context_mode"><?php echo $contextEditMode ? 'Saved text #' . (int) $editingContextId . ' - edit mode' : 'New text - draft mode'; ?></strong>
         <span class="admin-note" id="owner_context_native_status"><?php echo $editingContextId > 0 ? 'Editing shared text #' . (int) $editingContextId : 'Paste shared text or tap Add.'; ?></span>
         <?php if ($editingContextId > 0): ?>
             <a class="admin-btn admin-btn-muted" href="<?php echo h($_SERVER['SCRIPT_NAME']); ?>?context_page=<?php echo (int) ($contextPage ?? 1); ?>" style="display:inline-block;text-decoration:none">Cancel</a>

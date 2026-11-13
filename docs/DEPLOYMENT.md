@@ -1,6 +1,6 @@
 # Deployment Manifest — Owner Tool and Context Release
 
-Recorded: 2026-11-08; updated for OT11 on 2026-11-12. Target: PHP 8.3, MySQL 8.0.41, InnoDB,
+Recorded: 2026-11-08; updated for OT11 on 2026-11-13. Target: PHP 8.3, MySQL 8.0.41, InnoDB,
 `utf8mb4_unicode_ci`. This manifest is the OT10 handoff for the
 `owner-tool-2026-11` cycle. It does **not** authorize a production deploy. A
 deploy needs a separate explicit owner instruction. See
@@ -48,18 +48,18 @@ ops directory, not the public web root.
 
 | File | Lines / LF bytes | SHA-256 (LF) | Deploy to | Notes |
 |---|---:|---|---|---|
-| `deployed/admin_questions.php` | 1065 / 62892 | `e73f7f63e88c3fa8c0b4e190c936dbeb11aa3c9dac28a3f4e353b69de711ab83` | site root | narrow admin entry point; stacked workflow sections, assets, and extracted read-only payload wiring |
-| `deployed/cbt.php` | 1008 / 44515 | `42ebf711ccff3ffca1a56d26938524af953bcfa6ccaf5018c640881c246c467e` | site root | CBT delivery; loads `owner-tool.css`, `render.js` |
+| `deployed/admin_questions.php` | 1065 / 62892 | `7ec150d924cb834627745ac4d9c8f989276421e6ce36dc77b6b8081bf76817cb` | site root | narrow admin entry point; stacked workflow sections, assets, and extracted read-only payload wiring |
+| `deployed/cbt.php` | 1008 / 44515 | `697407e6022ce9f543a271664f69bc27816b52170389c0381544aa2b170b2de9` | site root | CBT delivery; loads `owner-tool.css`, `render.js` |
 | `deployed/answer_details.php` | 251 / 12157 | `b796fc097c0b6651590116e37d38c1d5c0632073f351a696fc40a7c8932d955c` | site root | supplied detail page; loads `render.php` |
 | `deployed/render.php` | 78 / 2447 | `205af86993d8bf2adcbcd262476e64fcc90fe9a2b3fd379cba9488c1d1450d2f` | site root | server safe renderer |
 | `deployed/context_lib.php` | 505 / 20353 | `0b1051a97708b9e8fddce9ec10b2637eee1b2b236ed10aae3d2c0f6a82a78673` | site root | context validation/queries, 10-row paging, and unpaginated selector options |
-| `deployed/admin_context.php` | 994 / 46189 | `36e411d2535eec08f5c55687c78841b16c5511574a572c7c18dbcac695960be2` | site root | context handling/mutations, paginated Saved Shared Texts, identity/recent payloads, and one native Edit Shared Text editor |
+| `deployed/admin_context.php` | 996 / 46688 | `0c5e1b83c30bb29b0892b2d3f00be36d1faca9f50e4aed68368dde649bcbf5c2` | site root | context handling/mutations, paginated Saved Shared Texts, identity/recent payloads, and visibly distinct native draft/edit modes |
 | `deployed/cbt_candidate.php` | 423 / 16714 | `8d1383ef11bd2963af521af62d20c123663642f0149702714620a5a516463dc6` | site root | candidate selection/repository |
 | `deployed/sql/01-context-migration.sql` | 250 / 17870 | `e963b739a26f20e5b12db6525266b580c0472d494fd29a6fb44a3a3f076b55f7` | ops directory | forward migration |
 | `src/parser/core.js` | 1432 / 49296 | `1321d95f046151e202c44eb8a18f9b1c9df39e2d31e001a73b639e49b4a71f67` | site root `src/parser/` | parser 2.3.3 with internal comprehension/cloze engines and bounded row-local drift correction |
 | `src/owner-tool/render.js` | 209 / 6339 | `008325f404e435747fe33d57aa84380b0977c8bed38e6c1bcff01515ff7129c3` | site root `src/owner-tool/` | shared renderer and context cards |
-| `src/owner-tool/owner-tool.js` | 2536 / 104816 | `c89a5dc3d9788c0b20b39ed969e5d5392e41e31918dbc2cfadb510613ab81b8a` | site root `src/owner-tool/` | tool 1.5.2; paste-adjacent Edit Shared Text, explicit-edit isolation, next-unsaved selection, full-paste reset, full identity, next-free links, advisory duplicates, Show/Hide, and formatting-only Question Edit |
-| `src/owner-tool/owner-tool.css` | 254 / 3934 | `39bb772adb0a18f67c6c4b5e03e52936e36f49cf43be2208e3867f3108f43a4b` | site root `src/owner-tool/` | owner/context/CBT styles, stacked section boundaries, form groups, and duplicate notices |
+| `src/owner-tool/owner-tool.js` | 2566 / 106477 | `c8f86b8f6ca61cb7b2f73750e442c564c07ecdb7f409fcdc9b2a1434b067818d` | site root `src/owner-tool/` | tool 1.5.4; draft-only paste filling, reachable saved-edit isolation, synchronized dynamic mode labels/hints, next-unsaved selection, full-paste reset, full identity, next-free links, advisory duplicates, Show/Hide, and formatting-only Question Edit |
+| `src/owner-tool/owner-tool.css` | 291 / 4606 | `405a769288849033451e1a9f06cecedc4d7d29a6a90a10bccae89a411a5c1b8c` | site root `src/owner-tool/` | owner/context/CBT styles, stacked section boundaries, amber draft and blue saved-edit treatments, form groups, and duplicate notices |
 | `deployed/sql/README.md` (ops) | 172 / 8065 | `7f474ffe65523a957b656db380e01520e30cc7a7373309754274700f5789e861` | ops directory | runbook |
 | `deployed/sql/02-context-rollback.sql` (ops) | 64 / 2512 | `047e11005acf8194c66151ebcc1a6510fd6983aab5643552ab9d3d064dbde694` | ops directory | guarded rollback |
 
@@ -75,10 +75,11 @@ Do **not** deploy `deployed/sql/base-schema.working.sql` or the
 4. Upload the three entry points: `admin_questions.php`, `cbt.php`,
    `answer_details.php`.
 5. Leave `cbt_practice.php` unchanged; it is outside the remaining cycle scope.
-6. Cache-busting: changed `core.js` uses `?v=2.3.3` and changed
-   `owner-tool.js` uses `?v=2.3.3c` in `admin_questions.php`. The unchanged
-   renderer and CSS assets remain `?v=2.3.2g` in
-   `admin_questions.php`/`cbt.php`; `cbt_practice.php` remains on `?v=2.3.2c`.
+6. Cache-busting: changed `core.js` uses `?v=2.3.3`, changed
+   `owner-tool.js` uses `?v=2.3.3e`, and changed `owner-tool.css` uses
+   `?v=2.3.3a` in `admin_questions.php`; `cbt.php` uses the same CSS token. The
+   unchanged renderer remains `?v=2.3.2g`; `cbt_practice.php` remains on
+   `?v=2.3.2c`.
    If any asset changes, bump its token in every page that loads it before
    upload.
 7. Run the migration preflight. It must exit 0 and print literal
@@ -149,8 +150,9 @@ Stop and do not continue on the first mismatch:
 - context data exists when a rollback is attempted;
 - the target lacks a verified backup, the live `cbt_db.php`, `header.php`,
   `footer.php`, or `cbt_exam_attempts`;
-- the required Brave/Android check has not been performed. It was performed on
-  2026-11-09; the OT11 follow-up/consolidation still needs a re-check.
+- the required Brave/Android check has not been performed. The initial check
+  passed on 2026-11-09, and the owner accepted the final OT11 re-check on
+  2026-11-13.
 
 ## 8. Known limitations and open gates
 
@@ -166,8 +168,9 @@ Stop and do not continue on the first mismatch:
   cycle scope.
 - The Brave/Android staging check was performed on 2026-11-09 and passed.
   Desktop Chromium 155 passed 33/33 local checks. OT11's expanded follow-up and
-  2026-11-12 consolidation pass local suites/focused Chromium checks and need
-  the final owner phone re-check before acceptance.
+  2026-11-12 consolidation pass local suites/focused Chromium checks; the owner
+  accepted the final Brave/Android re-check on 2026-11-13. The independent
+  rigorous review remains open.
 - The Windows/CRLF `extract-bank` `bank-pre-2026` output-hash mismatch is a
   pre-existing baseline artifact, not a release regression.
 - This package does not deploy to production, clean live data, or archive the

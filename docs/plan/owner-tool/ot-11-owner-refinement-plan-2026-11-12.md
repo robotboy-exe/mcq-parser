@@ -1,12 +1,12 @@
 # OT11 Owner Refinement Plan — 2026-11-12
 
-- **Status:** implemented locally 2026-11-12; full suites pass; owner phone
-  re-check and rigorous review remain pending
-- **Applies to:** the uncommitted OT11 work on `owner-tool-integration`
+- **Status:** implemented; full suites pass; owner phone re-check accepted
+  2026-11-13; rigorous review remains pending
+- **Applies to:** the OT11 checkpoint work on `owner-tool-integration`
 - **Supersedes:** the in-page tab shell in the 2026-11-12 discussion and the
   title-only auto-match in D-73 / D-OT11-2
-- **External gate:** owner Brave/Android re-check and the independent rigorous
-  review after implementation
+- **External gate:** owner Brave/Android re-check satisfied 2026-11-13;
+  independent rigorous review remains
 - **No change:** parser contract, database schema, CSRF/PRG field names, context
   activation contract, or the four-option rule
 
@@ -201,7 +201,7 @@ In `deployed/context_lib.php`, `deployed/admin_context.php`, and
   a filtered scope.
 - This plan does not change the parser, the bookmarklet build, or database
   schema. `src/bookmarklet.js` must not be edited.
-- Current uncommitted OT11 work is the base; do not discard existing phone
+- The existing OT11 implementation is the base; do not discard earlier phone
   feedback changes while applying this plan.
 
 ## Implementation result
@@ -216,10 +216,14 @@ In `deployed/context_lib.php`, `deployed/admin_context.php`, and
   title/text keys and cloze slots.
 - Production contracts remain unchanged: no schema/parser/bookmarklet change,
   no automatic write, and no duplicate server rejection.
-- The final owner follow-up places Edit Shared Text directly below paste and
-  prevents stored queue/context state from overwriting `?edit_context=N` before
-  an explicit Use Paste.
-- Verification: 59 runner, 162 unit, 77 owner-tool, 14 context-migration, 5
+- The final owner follow-up places the shared-text editor directly below paste.
+  The 2026-11-13 owner clarification supersedes the earlier explicit-paste
+  exception: Use Paste fills only new drafts and never changes a saved edit.
+  Amber draft and blue edit treatments make the mode explicit.
+- The owner accepted the final Brave/Android re-check on 2026-11-13 and
+  explicitly requested the checkpoint commit/push. Independent rigorous review
+  remains pending.
+- Verification: 60 runner, 163 unit, 81 owner-tool, 14 context-migration, 5
   cbt-context, 14 context-lib, 23 context-admin, 6 context-preflight, 9 PHP
   renderer, and 7 cbt-candidate tests pass. Cloze probe, seven bank hashes, PHP
   lint, JS syntax, and `git diff --check` pass.

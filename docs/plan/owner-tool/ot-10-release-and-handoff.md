@@ -7,8 +7,8 @@
 - **Blocks:** cycle close
 - **External gate:** live `cbt_db.php`, `header.php`, `footer.php`, and
   `cbt_exam_attempts`; independent final review. The Brave/Android phone check
-  passed on 2026-11-09; OT11's expanded follow-up and latest cloze/save-flow
-  fixes are locally complete and await final owner phone confirmation.
+  passed on 2026-11-09; the owner accepted OT11's expanded follow-up and latest
+  cloze/save-flow fixes in the final phone re-check on 2026-11-13.
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal
@@ -112,8 +112,8 @@ Next: cycle close only after settled review and explicit authorization
 ## Handoff
 
 Date: 2026-11-08
-Result: blocked — local release proof passes; Brave/Android phone check and
-independent final review remain open.
+Result: blocked — local release proof and all owner Brave/Android checks pass;
+independent final review and live deployment artifacts remain open.
 
 Node/fixture/PHP results: runner 59 PASS / 0 PENDING; unit 162; owner-tool 53;
 context-migration 14; cbt-context 5; context-lib 13; context-admin 19;
@@ -152,17 +152,17 @@ Brave/Android phone check executed 2026-11-09; passed. It surfaced three
 owner-workflow refinements, routed to OT11. A later phone session recorded six
 additional workflow requirements; the 2026-11-12 no-tab consolidation and full
 local suites pass. The final placement/edit-isolation follow-up passes focused
-desktop and 390px Chromium without a write; the owner phone re-check remains
-pending.
+desktop and 390px Chromium without a write; the owner accepted the final
+Brave/Android re-check on 2026-11-13.
 
 Security evidence: PHP 8.3.16 `tests/php-render.php` 9 PASS; desktop XSS probes
 show no execution, exact `<u>` only, and plain options/explanations.
 
 Current post-OT11 deployment manifest path/hash: `docs/DEPLOYMENT.md`
-`FD14E38C804B250027400D9B898B4E6F02417C546F0D01CED6629F07801D4AA3` (173 lines)
+`5F86C9197B37E2632B534C97D37A197A59869B23DDC6F04A4516D4EC5EA6E225` (177 lines)
 
 Current post-OT11 developer guide path/hash: `docs/DEVELOPER-GUIDE.md`
-`76556B289461E8264E032F414CAA44359FB86F6ED078F89B7D827ADC79DDD351` (228 lines)
+`7E342A7D79BEDAD2DC5085E71767A49632444E341A7D760B038E4B97F22EF1AB` (234 lines)
 
 Files changed: `docs/DEPLOYMENT.md` (new), `docs/DEVELOPER-GUIDE.md` (new),
 `docs/STATUS.md`, `docs/DECISIONS.md` (D-72), `docs/INVARIANTS.md` (INV-97,
@@ -172,14 +172,13 @@ counts), `docs/EDGE_CASES.md`, `docs/AGENTS.md` (consolidated module names),
 via `.git/info/exclude`, not committed): `deployed/cbt_db.php`,
 `deployed/cbt_admin_config.php`.
 
-Open questions/known limits: OT11 owner Brave/Android re-check and rigorous review;
+Open questions/known limits: OT11 rigorous review;
 connection collation (`utf8mb4_unicode_ci` vs PDO `utf8mb4_general_ci`);
 `practice_title` `NOT NULL` without a default vs the admin INSERT; missing live
 header/footer/attempts artifacts; `extract-bank` pre-existing CRLF mismatch;
 final rigorous review pending.
 
 Review: pending rigorous final review
-Commit: deferred
-Next: settle OT11 and re-run the Brave/Android phone check, then run the
-independent final review; cycle close only after a settled review and explicit
-authorization.
+Commit: owner-requested OT11 acceptance checkpoint; OT10 final boundary deferred
+Next: run the independent OT11/OT10 final review; cycle close only after a
+settled review and explicit authorization.

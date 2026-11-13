@@ -205,10 +205,14 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-12.
 - [x] Fix the two latest phone re-check reports: a multi-text paste now selects
   and opens its first unsaved shared text after adoption/save, and parser 2.3.3
   reads `new-sample.txt` gap 75 using a corroborated one-character local drift.
-  Full suites pass at 60 runner, 163 unit, and 79 owner-tool; focused staging
+  Full suites pass at 60 runner, 163 unit, and 81 owner-tool; focused staging
   Chromium confirms the adopted-member path.
-- [ ] Run the final owner Brave/Android OT11 re-check without a live write, then
-  run the independent rigorous OT11 review.
+- [x] Apply the 2026-11-13 owner clarification: Use Paste fills only new drafts,
+  never saved edits; amber draft and blue edit headings, badges, borders, and
+  backgrounds make the form mode explicit.
+- [x] Run the final owner Brave/Android OT11 re-check without a live write. The
+  owner accepted it on 2026-11-13 and requested the checkpoint commit/push.
+- [ ] Run the independent rigorous OT11 review.
 - [x] Complete the deployment manifest and developer guide:
   `docs/DEPLOYMENT.md`, `docs/DEVELOPER-GUIDE.md`.
 - [ ] Independent final review and cycle close.

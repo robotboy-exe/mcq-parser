@@ -304,6 +304,10 @@ recognized passage blocks from the text handed to `splitSections`.
 - **Keys:** the same-paste key is parsed by the existing rules;
   `keyConflicts` reports duplicate letters and missing entries for linked
   targets raise warnings. A key-only paste keeps the queue and contexts.
+- **Native shared-text form:** Use Paste may fill or replace a new
+  `save_context` draft. It never changes the fields, action, or context ID of an
+  `update_context` saved edit. Draft mode has an amber **New Shared Text** label;
+  saved edit mode has a blue **Edit Saved Shared Text** label (D-79).
 
 ### Stage 3d — Cloze contexts (`cloze.detect` / `parsePaste`)
 

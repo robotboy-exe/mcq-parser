@@ -133,10 +133,12 @@ delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
 - Shared Texts management pagination is 10 rows on `context_page`, but the
   question selector remains unpaginated. Never reuse the paginated table rows
   as the selector source (D-78, INV-125).
-- The collapsible **Edit Shared Text** editor sits immediately below the paste
-  panel and above the light-blue question-link group. On `?edit_context=N`,
-  automatic restoration of the latest paste must not overwrite the server form;
-  only an explicit Use Paste may replace it (D-79, INV-127).
+- The shared-text editor sits immediately below the paste panel and above the
+  light-blue question-link group. **Use Paste** may fill only a new
+  `save_context` draft. It must never change fields, action, or ID while the
+  form is in saved `update_context` edit mode. Keep the amber draft and blue
+  saved-edit headings, badges, borders, and backgrounds distinct (D-79,
+  INV-127).
 - Blank options stay blank; a later option is not pulled into their place
   (INV-16).
 - A second complete A–D set with no visible question-number boundary is

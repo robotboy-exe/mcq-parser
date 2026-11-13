@@ -1,6 +1,6 @@
 # Developer Guide — Owner Tool, Context Schema, and CBT Delivery
 
-Recorded: 2026-11-08; updated for OT11 on 2026-11-12. This is the human-developer handoff for the
+Recorded: 2026-11-08; updated for OT11 on 2026-11-13. This is the human-developer handoff for the
 `owner-tool-2026-11` cycle. It covers the shipped architecture, source of truth,
 stored state, parser extension rules, the context lifecycle, the security
 renderer, testing commands, and known limitations. Deployment steps are in
@@ -85,8 +85,8 @@ Rules:
 - Keep `src/parser/core.js` pure: no DOM, storage, network, or UI references.
 - Bump `PARSER_VERSION` and the relevant asset token (`?v=…`) for any behavior
   change. The current parser version is `2.3.3`; `core.js` uses `2.3.3` and
-  `owner-tool.js` uses `2.3.3c`, while unchanged renderer/style assets use
-  `2.3.2g`.
+  `owner-tool.js` uses `2.3.3e`, `owner-tool.css` uses `2.3.3a`, and the
+  unchanged renderer uses `2.3.2g`.
 - Add doc-backed fixtures in `fixtures/inputs/` and
   `fixtures/expected/*.json`. Never generate expected output from the parser;
   mark doc-unsupported fields `PENDING`.
@@ -114,8 +114,10 @@ Rules:
    normalized full passage text, the card adopts it; a count mismatch only
    warns. A manual `#context_id` selection is authoritative and always
    available.
-   The card is labelled **Edit Shared Text** and sits directly below the paste
-   controls, before the light-blue question-link group.
+   The card sits directly below the paste controls, before the light-blue
+   question-link group. A new draft is labelled **New Shared Text** with an
+   amber draft badge; a saved edit is labelled **Edit Saved Shared Text** with a
+   blue edit badge.
 2. The administrator saves a draft context with the native form. The server
    validates input and returns a PRG flash. The owner tool embeds a read-only
    context/member payload for matching and member dedupe; it never writes a
@@ -147,9 +149,9 @@ Shared Text, and the question form in that order. Saved Shared Texts and All
 Questions follow as full-width sections. Saved Shared Texts uses `context_page`
 at 10 rows; All Questions keeps `page` at 20. The question selector is
 deliberately unpaginated. Duplicate notices are browser-only review hints and
-never block a native save. On `?edit_context=N`, stored queue restoration must
-not replace the server-loaded shared text; only an explicit **Use Paste** may do
-that.
+never block a native save. **Use Paste** may fill `save_context` drafts, but it
+must not change any shared-text field, action, or ID while the form is in
+`update_context` saved-edit mode.
 
 ## 6. Security renderer
 
@@ -217,8 +219,8 @@ No live site, staging database, or production cleanup was used.
 - `cbt_practice.php` and `practice_title` behavior remain outside the remaining
   cycle scope.
 - The Brave/Android staging check was performed on 2026-11-09 and passed.
-  Desktop Chromium passed. The OT11 owner-workflow refinements need a phone
-  re-check before final acceptance.
+  Desktop Chromium passed. The owner accepted the final OT11 Brave/Android
+  re-check on 2026-11-13; the independent rigorous review remains open.
 - The `extract-bank` Windows/CRLF `bank-pre-2026` mismatch is pre-existing.
 - This cycle does not deploy to production, clean live data, or archive itself
   without explicit owner instructions.

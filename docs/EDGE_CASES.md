@@ -173,7 +173,7 @@ this table during review.
 | EC-112 | New context blocks question save without an explanation | A pasted linked question points to a context that has no saved ID | Save Question remains tappable; click and submit are cancelled before a post and say exactly `Save the shared context first.` | CONFIRMED | D-75; `tests/owner-tool.js` native-click/default-submit regression |
 | EC-113 | Context pool differs from paste metadata | The owner links or manually selects a context with another subject, exam, or year | The selected/linked context fills all three native question fields; a later standalone question returns to paste metadata | CONFIRMED | D-75; `tests/owner-tool.js` metadata regressions |
 | EC-114 | Saved or failed context editor takes phone space | A context create/update succeeds, fails, or returns an unconfirmed flash | Exact success collapses the card behind Show; failure or ambiguity reopens the exact pending card, including the second of several contexts | CONFIRMED | D-75; `tests/owner-tool.js` context visibility regressions |
-| EC-115 | Link fields blend into question fields | The owner reviews the long native form on a phone | Shared-text ID/order/gap fields have one semantic visual boundary; all remaining question fields have another | CONFIRMED | D-75; `tests/owner-tool.js`; `tests/context-admin.php`; phone visual re-check pending |
+| EC-115 | Link fields blend into question fields | The owner reviews the long native form on a phone | Shared-text ID/order/gap fields have one semantic visual boundary; all remaining question fields have another | CONFIRMED | D-75; `tests/owner-tool.js`; `tests/context-admin.php`; owner phone visual re-check accepted 2026-11-13 |
 | EC-116 | Technical owner copy hides the next action | A parser flag, warning, storage problem, or server validation error appears | The UI translates it to short plain text while preserving all validation reasons and leaving parser/fixed-flash contracts unchanged | CONFIRMED | D-75; `tests/owner-tool.js`; PHP context tests |
 | EC-117 | Preview is far from the loaded stem | A normal, linked, Add, or Edit question is loaded | The one safe preview sits beside Question Text and follows every programmatic fill/reset | CONFIRMED | D-75; `tests/owner-tool.js` placement/refresh tests |
 | EC-118 | Second full paste inherits the first paste | A headered/context paste is followed by a full paste with no inferable pool or passage | Native subject/category/year, link fields, and the shared-text editor are cleared before the second parse; no stale value survives. A key-only paste still keeps the queue and contexts | CONFIRMED | D-77; `tests/owner-tool.js` full-repaste regression |
@@ -182,7 +182,7 @@ this table during review.
 | EC-121 | Shared-text page two hides link choices | More than 10 shared texts exist and the management table shows `context_page=2` | The table shows 10/page, while the question selector uses a separate all-context option list and still includes contexts from every page | CONFIRMED | D-78; `tests/context-lib.php`; `tests/context-admin.php` |
 | EC-122 | Manual saved context needs an order/gap | A question selects a saved reading or cloze context without an existing position/slot | The first unused passage number is filled; cloze also receives the first unused token. Existing values stay. The saved context type overrides a parsed local type | CONFIRMED | D-78; `tests/owner-tool.js` next-free/type tests |
 | EC-123 | Consolidated workflow appears as tabs or puts the passage editor below its question | The owner opens Add or Edit Question after consolidation | Add stays one vertical page: paste controls, Edit Shared Text, the light-blue link group/question form, Saved Shared Texts, then All Questions. Edit Question shows formatting/preview only and server-hides shared-text management and All Questions | CONFIRMED | D-76, D-79; `tests/owner-tool.js` layout/edit tests; focused mobile-width Chromium 2026-11-12 |
-| EC-124 | Explicit shared-text edit is replaced by the latest paste | `?edit_context=11` opens while `cbtOwnerTool:v1` contains a linked local copy of shared text #6 | The editor keeps #11's server-rendered title, pool, count, and full text. Automatic queue restore may fill the separate question form but cannot fill Edit Shared Text; only tapping Use Paste replaces it | CONFIRMED | D-79; `tests/owner-tool.js` stored-paste edit regression; focused Chromium #11/#6 reproduction and closure 2026-11-12 |
+| EC-124 | Saved shared-text edit is replaced by restored state or Use Paste | The form is in `update_context` mode and the owner restores state or taps Use Paste | The saved editor keeps its title, text, pool, count, action, and context ID. Use Paste fills only `save_context` drafts. Amber draft and blue edit styling make the modes explicit. | CONFIRMED | D-79; `tests/owner-tool.js` draft/saved-mode regressions; `tests/context-admin.php` render assertions |
 | EC-125 | One cloze row is one character left | The table has stable modal starts, but one row has at least two later starts at modal-minus-one and an earlier single-space separator | Only that row's non-exact boundaries move left one character; `new-sample.txt` gap 75 becomes `confession / suggestion / permission / complaint`, while strict missing-column refusal remains | CONFIRMED | D-80; `sample-cloze-left-drift`; runner/unit regressions |
 | EC-126 | A second parsed shared text appears impossible to save | The first context in full `sample-passages.txt` is adopted or just saved, then the editor returns to its current reading question while the cloze context remains unsaved | The labelled editor selects and opens `SECTION 6`; after its explicit save, Q71 posts with context position 1 and slot 71 | CONFIRMED | D-81; `tests/owner-tool.js` full-sample save-flow regressions; local staging PRG probe |
 
@@ -230,8 +230,8 @@ closed by the archived PHP/HTML sources:
 - EC-87, EC-88, and EC-89 are CONFIRMED by the P13 fixtures and unit checks for
   the shared table, marker fallback, and image-plan gate.
 - EC-90 through EC-94 are CONFIRMED by the OT04 parser/owner-tool regressions,
-  the PHP 8.3.16 suites, and the desktop Chromium harness; the Brave/Android
-  staging check remains owner-deferred.
+  the PHP 8.3.16 suites, the desktop Chromium harness, the 2026-11-09
+  Brave/Android check, and the owner-accepted OT11 re-check on 2026-11-13.
 - EC-95 through EC-99 are CONFIRMED by the OT08 comprehension fixtures and
   owner-tool tests. The owner supplied same-paste comprehension keys for Q13-Q15
   in `sample-passages.txt` on 2026-11-08; Q11-Q12 remain missing.
@@ -243,8 +243,9 @@ closed by the archived PHP/HTML sources:
   the review's refuse-later criterion with keep-first deduplication, so the
   first evidenced group survives and every later colliding group is dropped
   whole with a warning naming its gap numbers.
-- EC-107 through EC-126 are CONFIRMED by the OT11 owner-tool/PHP tests and the
-  guarded read-only payload on `admin_questions.php`.
+- EC-107 through EC-126 are CONFIRMED by the OT11 owner-tool/PHP tests, the
+  guarded read-only payload on `admin_questions.php`, and the owner-accepted
+  Brave/Android re-check on 2026-11-13.
 
 ## Counts
 

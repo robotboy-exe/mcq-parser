@@ -532,8 +532,41 @@
       if (status) status.textContent = text || '';
     }
 
+    function setMode(editing, contextId) {
+      var section = doc.getElementById('shared_context_editor');
+      var heading = doc.getElementById('owner_context_editor_heading');
+      var badge = doc.getElementById('owner_context_mode');
+      var hint = doc.getElementById('owner_context_mode_hint');
+      var mode = editing ? 'edit' : 'draft';
+      if (section) {
+        var className = String(section.className || '')
+          .replace(/\s*owner-context-editor-(?:draft|edit)\b/g, '')
+          .trim();
+        if (className.indexOf('owner-context-editor') === -1) className += ' owner-context-editor';
+        section.className = (className + ' owner-context-editor-' + mode).trim();
+      }
+      if (heading) heading.textContent = editing ? 'Edit Saved Shared Text' : 'New Shared Text';
+      if (badge) {
+        badge.className = 'owner-context-mode owner-context-mode-' + mode;
+        badge.textContent = editing
+          ? 'Saved text' + (contextId ? ' #' + contextId : '') + ' - edit mode'
+          : 'New text - draft mode';
+      }
+      if (hint) {
+        hint.textContent = editing
+          ? 'Use Paste will not change this saved text.'
+          : 'Use Paste fills this new draft. Tap Add to make one.';
+      }
+    }
+
     function isEditing() {
       return pageEditing;
+    }
+
+    function isSavedMode() {
+      var form = contextForm();
+      var action = form ? field(form, 'action', '') : null;
+      return Boolean(action && String(action.value) === 'update_context');
     }
 
     function setVisible(visible) {
@@ -551,6 +584,7 @@
         var saved = card.serverId !== null && card.serverId !== undefined;
         if (action) action.value = saved ? 'update_context' : 'save_context';
         contextId.value = saved ? String(card.serverId) : '';
+        setMode(saved, saved ? card.serverId : '');
         var values = {
           context_type: card.contextType,
           title: card.title,
@@ -653,6 +687,7 @@
           var contextId = contextIdField(form);
           if (action) action.value = pageEditing ? 'update_context' : 'save_context';
           contextId.value = pageEditing ? pageContextId : '';
+          setMode(pageEditing, pageEditing ? pageContextId : '');
           Object.keys({
             context_type: 'comprehension',
             title: '',
@@ -712,6 +747,7 @@
       if (pageEditing && initialId && /^[1-9][0-9]*$/.test(String(initialId.value || ''))) {
         pageContextId = String(initialId.value);
       }
+      setMode(pageEditing, pageEditing ? pageContextId : '');
       form.addEventListener('submit', function (event) {
         if (!armedId) return event;
         var card = options.getCard(armedId);
@@ -738,6 +774,7 @@
       clear: clear,
       hasForm: Boolean(form),
       isEditing: isEditing,
+      isSavedMode: isSavedMode,
       setVisible: setVisible,
       snapshot: snapshot,
       armedId: function () { return armedId; }
@@ -786,6 +823,7 @@
     }
     function editorVisible(card) {
       if (form.isEditing()) return true;
+      if (form.isSavedMode() && !card) return true;
       if (!card) return false;
       if (card.serverId === null || card.serverId === undefined) return true;
       return expandedLocalId === card.localId;
@@ -841,7 +879,7 @@
       var conflicts = model.syncLinks(data);
       var element = doc.getElementById('owner_context_status');
       if (element) {
-        if (form.isEditing() && !selectedLocalId) {
+        if (form.isSavedMode() && !selectedLocalId) {
           element.textContent = 'Editing saved shared text.';
           return;
         }
@@ -885,6 +923,7 @@
       return true;
     }
     function autoFillDraft() {
+      if (form.isSavedMode()) return false;
       var data = state();
       var card = model.findById(data.contexts, selectedLocalId) || data.contexts.find(function (context) {
         return context.serverId === null || context.serverId === undefined;
@@ -920,7 +959,7 @@
         var firstDraft = data.contexts.find(function (context) {
           return context.serverId === null || context.serverId === undefined;
         });
-        selectedLocalId = form.isEditing() ? ''
+        selectedLocalId = form.isSavedMode() ? ''
           : firstDraft ? firstDraft.localId : data.contexts[0] ? data.contexts[0].localId : '';
       }
       var selected = model.findById(data.contexts, selectedLocalId);
@@ -980,10 +1019,10 @@
           };
         }
       }
-      add(head, 'span', { className: 'owner-context-hint' }, form.isEditing()
-        ? 'Paste can replace these fields.'
-        : 'Paste fills this in. Tap Add to make one.');
-      if (data.contexts.length > 1 && (!form.isEditing() || selectedLocalId)) {
+      add(head, 'span', { id: 'owner_context_mode_hint', className: 'owner-context-hint' }, form.isSavedMode()
+        ? 'Use Paste will not change this saved text.'
+        : 'Use Paste fills this new draft. Tap Add to make one.');
+      if (data.contexts.length > 1 && (!form.isSavedMode() || selectedLocalId)) {
         add(root, 'label', {
           id: 'owner_context_select_label',
           htmlFor: 'owner_context_select',
@@ -1021,9 +1060,9 @@
       });
       duplicate.hidden = true;
       form.setVisible(editorVisible(selected));
-      if (selected && form.armedId() !== selected.localId) form.fill(selected);
+      if (selected && form.armedId() !== selected.localId && !form.isSavedMode()) form.fill(selected);
       refreshStatus();
-      duplicateNotice(selected || (form.isEditing() ? form.snapshot() : null));
+      duplicateNotice(selected || (form.isSavedMode() ? form.snapshot() : null));
     }
     function submitCard(card) {
       var data = state();
@@ -1038,7 +1077,7 @@
       };
       options.persist();
     }
-    function resolvePending(flash, hasError) {
+    function resolvePending(flash, hasError, plainError) {
       var data = state();
       var pending = data.pendingSubmission;
       if (!pending || (pending.kind !== 'context-create' && pending.kind !== 'context-update')) return null;
@@ -1053,7 +1092,7 @@
           selectedLocalId = card.localId;
           expandedLocalId = card.localId;
         }
-        showWarning('It did not save. Fix the form and try again.');
+        showWarning(plainError || 'Not saved. Check the form and try again.');
         render();
         return 'error';
       }
@@ -1120,7 +1159,7 @@
       render: render,
       fillQuestion: function (item) {
         model.syncLinks(state());
-        if (form.isEditing() && !selectedLocalId) return prepare(item);
+        if (form.isSavedMode()) return prepare(item);
         var card = item && item.contextRef ? model.findById(state().contexts, item.contextRef) : null;
         var selected = model.findById(state().contexts, selectedLocalId);
         var canFollowQuestion = !selected || selected === card
@@ -1150,7 +1189,7 @@
 
   function startOwnerTool() {
     'use strict';
-  var TOOL_VERSION = '1.5.2';
+  var TOOL_VERSION = '1.5.4';
   var SUCCESS_FLASH = /^Question saved successfully \(Question ID: \d+\)\.$/;
   var META_FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   var OPTION_FIELDS = ['option_a', 'option_b', 'option_c', 'option_d'];
@@ -1783,17 +1822,8 @@
 
   function adoptMatchingContexts(state) {
     var warnings = [];
-    var editingId = editingContextId();
-    var editingApplied = false;
     state.contexts.forEach(function (card) {
       if (card.serverId !== null && card.serverId !== undefined) return;
-      if (editingId && !editingApplied) {
-        card.serverId = editingId;
-        card.adopted = true;
-        card.stale = false;
-        editingApplied = true;
-        return;
-      }
       var matches = matchServerContexts(card);
       if (matches.length !== 1) {
         if (matches.length > 1) {
@@ -1921,7 +1951,7 @@
   function clearPasteMemory() {
     savedSelection = null;
     clearQuestionForm();
-    if (contextPanel) contextPanel.clear();
+    if (contextPanel && !editingContextId()) contextPanel.clear();
     syncLinkVisibility(null);
     var duplicate = $('owner_tool_duplicate');
     if (duplicate) {
@@ -2112,7 +2142,7 @@
     var flash = successFlash();
     var errorEl = document.querySelector('.admin-error');
     if (contextPanel) {
-      var contextResult = contextPanel.resolvePending(flash, Boolean(errorEl));
+      var contextResult = contextPanel.resolvePending(flash, Boolean(errorEl), errorEl ? String(errorEl.textContent || '') : '');
       if (contextResult) return contextResult;
     }
     if (pending.kind === 'context-create' || pending.kind === 'context-update') {

@@ -16,12 +16,14 @@
   with no tabs, authoritative full-paste clearing, full passage identity,
   advisory duplicates, next-free links, Show/Hide, and 10-row Shared Texts
   pagination with an unpaginated question selector. The latest owner follow-up
-  moves the collapsible Edit Shared Text editor directly below the paste panel
-  and prevents stored paste state from overwriting an explicit shared-text edit;
+  moves the shared-text editor directly below the paste panel. Use Paste fills
+  only new drafts and never changes a saved shared-text edit; amber draft and
+  blue saved-edit treatments make the modes explicit;
   focused desktop/mobile-width Chromium passes. The latest phone re-check fixes
   keep the next unsaved shared text open and parse a corroborated one-character
-  cloze row drift with parser 2.3.3. Final owner phone confirmation and rigorous
-  review remain pending.
+  cloze row drift with parser 2.3.3. The owner accepted the final Brave/Android
+  re-check on 2026-11-13 and explicitly requested the checkpoint commit/push;
+  the independent rigorous review remains pending.
 - Do not archive the active phase map when the last phase stops; archive only when the user confirms the cycle is complete or asks to shelve it.
 - Commit only at a phase boundary: at the start of a new phase, after the previous phase's review settles. Do not commit current-phase work; commit the final phase before archiving the cycle.
 - Rigorous reviews are separate sessions using `docs/plan/prompts/review-session.md`; they may write only `docs/plan/reviews/` and never commit.
@@ -36,7 +38,7 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 60 fixtures: 60 PASS, 0 PENDING; `node tests/unit.js` is 163 PASS; `node tests/owner-tool.js` is 79 PASS; `node tests/context-migration.js` is 14 static context probes; `php tests/context-lib.php` is 14 helper-behavior tests; `php tests/context-admin.php` is 23 context request/real-transaction/render tests; `php tests/context-preflight.php` is 6 real contract/inspector/CLI-failure tests when PHP 8.3 is available.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 60 fixtures: 60 PASS, 0 PENDING; `node tests/unit.js` is 163 PASS; `node tests/owner-tool.js` is 81 PASS; `node tests/context-migration.js` is 14 static context probes; `php tests/context-lib.php` is 14 helper-behavior tests; `php tests/context-admin.php` is 23 context request/real-transaction/render tests; `php tests/context-preflight.php` is 6 real contract/inspector/CLI-failure tests when PHP 8.3 is available.
 - PHP renderer check: `php tests/php-render.php`; also run `php -l` on every changed file under `deployed/` on the target PHP runtime.
 - Context migration artifacts: `tools/context-migration-preflight.php` and `deployed/sql/01-context-migration.sql` are executed only against a disposable database in OT10. Do not run them against production.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.

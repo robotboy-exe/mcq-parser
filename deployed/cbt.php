@@ -173,7 +173,7 @@ $questionsForBrowser = array_map(static function (array $row): array {
 include __DIR__ . '/header.php';
 ?>
 
-<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.2g">
+<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.3a">
 <style>
 /* =========================================================
    SKYMENU ONLINE CBT
