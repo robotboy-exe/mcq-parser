@@ -1,11 +1,11 @@
 # OT08 — Comprehension OCR
 
-- **Status:** done 2026-11-06; light review PASS at OT09 Gate 1; same-paste key partially supplied 2026-11-08 (Q13-Q15; Q11-Q12 pending OT10 confirmation)
+- **Status:** done 2026-11-06; light review PASS at OT09 Gate 1; same-paste key supplied 2026-11-08 (Q13-Q15); revised Q11-Q15 key (Q11 B, Q12 C, Q13 A→D) owner-confirmed 2026-11-13; final coverage confirmed in OT10
 - **Depends on:** OT07 and its settled rigorous review
 - **Blocks:** OT09, OT10
 - **External gate:** representative same-paste answer-key evidence required for
   final package acceptance; supplied for Q13-Q15 in `sample-passages.txt` on
-  2026-11-08
+  2026-11-08; revised Q11-Q15 key owner-confirmed 2026-11-13
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal

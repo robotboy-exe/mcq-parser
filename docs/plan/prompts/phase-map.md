@@ -22,7 +22,8 @@ session applied that rule (parser 2.3.2), and the closure-focused second
 re-review returned `PASS` and closed `FIX-2` on 2026-11-08. Phase 10 is
 review-settled and included in the 2026-11-08 boundary commit. Same-paste answer
 keys were supplied in `sample-passages.txt` on 2026-11-08 (comprehension
-Q13-Q15, cloze Q71-Q80) for OT10 validation. OT09A production consolidation is
+Q13-Q15, cloze Q71-Q80) for OT10 validation; the owner confirmed the revised
+comprehension key Q11-Q15 (Q11 B, Q12 C, Q13 A→D) on 2026-11-13. OT09A production consolidation is
 done and records a 12-production-file plus 2-ops handoff; it does not change the
 OT10 gates. Its documentation-only `FIX-1` was closed by the closure-focused
 re-review on 2026-11-08, so phase 10A is review-settled and included in the
@@ -53,11 +54,11 @@ Intent: [`../../../INTENT.md`](../../../INTENT.md)
 | 6 | OT05 — Context Schema and Admin | [`../owner-tool/ot-05-context-schema-and-admin.md`](../owner-tool/ot-05-context-schema-and-admin.md) | done; `BLOCK-8` rejected, review/disposition settled, boundary commit authorized; `NOTE-4` non-blocking; runtime migration deferred to OT10 |
 | 7 | OT06 — Candidate Group Delivery | [`../owner-tool/ot-06-candidate-group-delivery.md`](../owner-tool/ot-06-candidate-group-delivery.md) | done; light review PASS at OT07 Gate 1; `cbt.php` only |
 | 8 | OT07 — Owner Context Workflow | [`../owner-tool/ot-07-owner-context-workflow.md`](../owner-tool/ot-07-owner-context-workflow.md) | done; Release B review PASS WITH ACCEPTED FINDINGS; `FIX-1` closed by re-review 2026-11-06; phase 8 boundary committed; `NOTE-1` non-blocking |
-| 9 | OT08 — Comprehension OCR | [`../owner-tool/ot-08-comprehension-ocr.md`](../owner-tool/ot-08-comprehension-ocr.md) | done 2026-11-06; light review PASS at OT09 Gate 1; same-paste key partially supplied 2026-11-08 (Q13-Q15; Q11-Q12 pending) |
+| 9 | OT08 — Comprehension OCR | [`../owner-tool/ot-08-comprehension-ocr.md`](../owner-tool/ot-08-comprehension-ocr.md) | done 2026-11-06; light review PASS at OT09 Gate 1; same-paste key supplied 2026-11-08; revised Q11-Q15 key owner-confirmed 2026-11-13 |
 | 10 | OT09 — Cloze OCR | [`../owner-tool/ot-09-cloze-ocr.md`](../owner-tool/ot-09-cloze-ocr.md) | done 2026-11-06; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed; cloze key supplied 2026-11-08 |
 | 10A | OT09A — Production Consolidation | [`../owner-tool/ot-09a-production-consolidation.md`](../owner-tool/ot-09a-production-consolidation.md) | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed; OT10 gates unchanged |
 | 11 | OT10 — Release and Handoff | [`../owner-tool/ot-10-release-and-handoff.md`](../owner-tool/ot-10-release-and-handoff.md) | blocked: local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; final review and live artifacts pending |
-| 12 | OT11 — Owner Workflow Refinements | [`../owner-tool/ot-11-owner-workflow-refinements.md`](../owner-tool/ot-11-owner-workflow-refinements.md) | done 2026-11-13: owner accepted the final Brave/Android re-check; 60 runner, 163 unit, 81 owner-tool and full suites pass; independent rigorous review pending (next step); OT10 final review and live artifacts remain external |
+| 12 | OT11 — Owner Workflow Refinements | [`../owner-tool/ot-11-owner-workflow-refinements.md`](../owner-tool/ot-11-owner-workflow-refinements.md) | done 2026-11-13: owner accepted the final Brave/Android re-check; 60 runner, 163 unit, 81 owner-tool and full suites pass; rigorous review PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` closed by re-review 2026-11-13; `FIX-3` fixed 2026-11-13 (docs only); second re-review pending (next step); OT10 final review and live artifacts remain external |
 
 Run one phase per implementation session. A blocked phase stops at Gate 1; do
 not skip ahead unless the coordinator explicitly identifies an independent

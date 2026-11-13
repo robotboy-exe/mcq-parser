@@ -15,8 +15,10 @@ for the consolidation measurements.
 2. Confirm the target already has the live `cbt_db.php`, `header.php`,
    `footer.php`, and `cbt_exam_attempts` table. They are live-site artifacts and
    are not part of this release. Do **not** deploy the local test shims
-   (`deployed/cbt_db.php`, `deployed/cbt_admin_config.php`) or the inferred
-   local `cbt_exam_attempts` table.
+   (`deployed/cbt_db.php`, `deployed/cbt_admin_config.php`), the tracked
+   phone-staging tooling (`tools/phone-staging/`, including its SQLite
+   `cbt_db.php` shim, `tools/start-phone-staging.sh`, and
+   `tools/stop-phone-staging.sh`), or the inferred local `cbt_exam_attempts` table.
 3. Confirm the connection collation. The migration preflight requires
    `utf8mb4_unicode_ci`. On MySQL 8.0.41 a PDO `charset=utf8mb4` connection alone
    reports `utf8mb4_general_ci`. The target `cbt_db.php`/server must set the

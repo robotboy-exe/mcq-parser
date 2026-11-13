@@ -43,7 +43,7 @@ Last updated: 2026-11-13.
   returned `PASS` and closed `FIX-2` on 2026-11-08. Phase 10 is review-settled
   and included in the 2026-11-08 boundary commit. Same-paste answer keys were
   supplied in `sample-passages.txt` on 2026-11-08 (comprehension Q13-Q15, cloze
-  Q71-Q80); OT10 validates the remaining coverage. OT09A production
+  Q71-Q80); the owner confirmed on 2026-11-13 the revised comprehension key (Q11 B, Q12 C, Q13 A→D; phase 12 `FIX-1`), so the key now covers Q11-Q15. OT10 validates final coverage. OT09A production
   consolidation is done and recorded; it changes the handoff file set, not the
   OT10 gates. Its `FIX-1` documentation evidence gap was fixed and closed by the
   closure-focused re-review on 2026-11-08, so phase 10A is review-settled and
@@ -267,11 +267,11 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 6 | OT05 | [Context Schema and Admin](owner-tool/ot-05-context-schema-and-admin.md) | OT04 review (settled) | done; `BLOCK-8` rejected, review/disposition settled, boundary commit authorized | none; runtime migration deferred to OT10 |
 | 7 | OT06 | [Candidate Group Delivery](owner-tool/ot-06-candidate-group-delivery.md) | OT05 | done; light review PASS at OT07 Gate 1 | satisfied: [reader/writer audit](owner-tool/ot-06-reader-writer-audit.md) |
 | 8 | OT07 | [Owner Context Workflow](owner-tool/ot-07-owner-context-workflow.md) | OT06 | done; Release B review PASS WITH ACCEPTED FINDINGS; `FIX-1` closed by re-review 2026-11-06; phase 8 boundary committed; `NOTE-1` non-blocking | inherited server contract |
-| 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | done; parser 2.2.0; light review PASS at OT09 Gate 1 | key sample partially supplied 2026-11-08 (Q13-Q15; Q11-Q12 pending) |
+| 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | done; parser 2.2.0; light review PASS at OT09 Gate 1 | key supplied 2026-11-08; revised Q11-Q15 key owner-confirmed 2026-11-13 |
 | 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed | cloze key supplied 2026-11-08 (OT10 validates) |
 | 10A | OT09A | [Production Consolidation](owner-tool/ot-09a-production-consolidation.md) | OT09 boundary | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed | none; OT10 gates unchanged |
 | 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | blocked: local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; final review and live artifacts pending | local PHP, staging, all prior artifacts |
-| 12 | OT11 | [Owner Workflow Refinements](owner-tool/ot-11-owner-workflow-refinements.md) | OT10 phone check (2026-11-09) | done 2026-11-13; owner accepted the final Brave/Android re-check; 60 runner, 163 unit, 81 owner-tool and full suites pass; independent rigorous review pending | satisfied 2026-11-13 |
+| 12 | OT11 | [Owner Workflow Refinements](owner-tool/ot-11-owner-workflow-refinements.md) | OT10 phone check (2026-11-09) | done 2026-11-13; owner accepted the final Brave/Android re-check; 60 runner, 163 unit, 81 owner-tool and full suites pass; rigorous review PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` closed by re-review; `FIX-3` fixed 2026-11-13; second re-review pending | satisfied 2026-11-13 |
 
 The active map duplicates these statuses for session resolution. Update both
 files in the same package handoff; a mismatch blocks the next Gate 1.
@@ -338,7 +338,7 @@ verifies the detail path with the rest of Release A.
 | phase 9 | OT08 | light at OT09 Gate 1 | pass at OT09 Gate 1 |
 | phase 10 close | OT09 Release C | rigorous | pass; implementation done 2026-11-06; `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed |
 | phase 11 close | OT10 final release | rigorous | pending; phone check passed 2026-11-09 |
-| phase 12 close | OT11 owner workflow refinements | rigorous | pending; package done 2026-11-13; next workflow step |
+| phase 12 close | OT11 owner workflow refinements | rigorous | review PASS WITH ACCEPTED FINDINGS 2026-11-13; `FIX-1`/`FIX-2` closed by re-review 2026-11-13; new `FIX-3` fixed 2026-11-13 (docs only); second re-review pending |
 
 OT05 implementation and its accepted Phase 6 fixes are complete. The third
 re-review remains immutable evidence. `BLOCK-3` and `BLOCK-6` are closed against
@@ -380,7 +380,8 @@ the closure-focused second re-review returned `PASS` and closed `FIX-2` on
 2026-11-08. The immutable review record is unchanged. Phase 10 is review-settled
 and included in the 2026-11-08 boundary commit. The owner supplied same-paste
 answer keys in `sample-passages.txt` on 2026-11-08: comprehension Q13-Q15 and
-cloze Q71-Q80. The comprehension key does not cover Q11-Q12, so OT10 must
+cloze Q71-Q80. On 2026-11-13 the owner confirmed the revised comprehension key
+(Q11 B, Q12 C, Q13 A→D; phase 12 `FIX-1`), so it covers Q11-Q15; OT10 must
 confirm final OT08 coverage; the OT09 key is complete. That phase 8 paragraph's
 manual-card workflow is now fed by the parser; target-runtime execution remains
 OT10. The audit carries forward the archived legacy-writer deployment check as
@@ -416,7 +417,7 @@ started after cycle close, not in appended phases of this cycle.
 Current workflow stop:
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/review-session.md review phase 12
+NEXT COMMAND: @docs/plan/prompts/review-session.md re-review phase 12 OT11 FIX-3
 ```
 
 OT10 is mid-package, not at a clean boundary. The Brave/Android phone check was

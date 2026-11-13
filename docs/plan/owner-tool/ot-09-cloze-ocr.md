@@ -345,9 +345,10 @@ The review measured HEAD `adaeb7c` plus the uncommitted fix. `core.js` is
 bytes are larger only by the CRLF line count; the LF hashes match.
 
 The owner supplied same-paste answer keys in `sample-passages.txt` on
-2026-11-08: comprehension Q13-Q15 and cloze Q71-Q80. The comprehension key does
-not cover Q11-Q12, so OT10 must confirm whether the supplied sample satisfies
-final OT08 acceptance; the OT09 cloze key is complete. Parser mechanics remain
+2026-11-08: comprehension Q13-Q15 and cloze Q71-Q80. On 2026-11-13 the owner
+confirmed the revised comprehension key (Q11 B, Q12 C, Q13 A→D), so it covers
+Q11-Q15; OT10 still confirms whether the supplied sample satisfies final OT08
+acceptance. The OT09 cloze key is complete. Parser mechanics remain
 proven synthetically by the fixtures and unit suite.
 
 `Commit: included in the 2026-11-08 phase 10 boundary commit.` Next: OT10 after

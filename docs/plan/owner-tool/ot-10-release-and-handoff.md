@@ -159,7 +159,8 @@ Security evidence: PHP 8.3.16 `tests/php-render.php` 9 PASS; desktop XSS probes
 show no execution, exact `<u>` only, and plain options/explanations.
 
 Current post-OT11 deployment manifest path/hash: `docs/DEPLOYMENT.md`
-`5F86C9197B37E2632B534C97D37A197A59869B23DDC6F04A4516D4EC5EA6E225` (177 lines)
+`121A265382A46AB29E8FA72E067DEECD863D79F35AF47E1C1A998634BB860352` (179 lines;
+refreshed 2026-11-13 by the phase 12 `FIX-2` fix)
 
 Current post-OT11 developer guide path/hash: `docs/DEVELOPER-GUIDE.md`
 `7E342A7D79BEDAD2DC5085E71767A49632444E341A7D760B038E4B97F22EF1AB` (234 lines)

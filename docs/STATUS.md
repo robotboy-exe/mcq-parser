@@ -39,7 +39,7 @@ Last updated: 2026-11-13.
   returned `PASS` and closed `FIX-2` on 2026-11-08. Phase 10 is review-settled
   and included in the 2026-11-08 boundary commit. The owner supplied same-paste
   answer keys in `sample-passages.txt` on 2026-11-08 (comprehension Q13-Q15,
-  cloze Q71-Q80); the comprehension key does not cover Q11-Q12, so OT10 must
+  cloze Q71-Q80); the owner confirmed on 2026-11-13 the revised comprehension key (Q11 B, Q12 C, Q13 A→D; phase 12 `FIX-1`), so it covers Q11-Q15; OT10 must
   confirm final OT08 coverage. OT09A records a 12-production-file plus 2-ops
   handoff; its documentation-only `FIX-1` was closed by the closure-focused
   re-review on 2026-11-08, with no behavior change, so phase 10A is review-settled
@@ -68,7 +68,9 @@ Last updated: 2026-11-13.
   2.3.3 applies only a two-anchor one-character row correction. The full local
   suites and focused staging Chromium pass. The owner accepted the final
   Brave/Android re-check on 2026-11-13 and requested the checkpoint commit/push;
-  the independent rigorous review remains pending.
+  the rigorous review returned PASS WITH ACCEPTED FINDINGS on 2026-11-13; its
+  docs-only `FIX-1`/`FIX-2` were fixed and closed by re-review the same day; the
+  re-review's docs-only `FIX-3` is fixed and awaits a second re-review.
   OT10 remains blocked on the independent final review and the live deployment
   artifacts; it is not done.
 - Product implementation: parser 2.3.3 (comprehension and cloze contexts), exact
@@ -178,7 +180,7 @@ Supplied DDL SHA-256:
 | Artifact | Required by | Reason |
 |---|---|---|
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
-| Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); OT10 validates the remaining Q11-Q12 coverage |
+| Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); revised comprehension key Q11-Q15 (Q11 B, Q12 C, Q13 A→D) owner-confirmed 2026-11-13; OT10 validates final coverage |
 | Brave/Android staging check | OT10 final acceptance | Initial check satisfied 2026-11-09; desktop Chromium passed 33/33; owner accepted the final OT11 re-check on 2026-11-13 |
 | Live `cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts` | OT10 deployment | Live-site artifacts, not supplied; the local smoke used test-only shims |
 

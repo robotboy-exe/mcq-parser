@@ -1,8 +1,10 @@
 # OT11 — Owner Workflow Refinements
 
 - **Status:** done 2026-11-13; owner accepted the final Brave/Android re-check;
-  60 runner, 163 unit, 81 owner-tool and full local suites pass; independent
-  rigorous review pending
+  60 runner, 163 unit, 81 owner-tool and full local suites pass; rigorous
+  review PASS WITH ACCEPTED FINDINGS 2026-11-13; `FIX-1`/`FIX-2` closed
+  by re-review 2026-11-13; `FIX-3` fixed 2026-11-13 (docs only); second
+  closure-focused re-review pending
 - **Depends on:** OT10 phone check (recorded 2026-11-09) and the OT09A boundary
 - **Blocks:** OT10 final review and cycle close
 - **External gate:** owner Brave/Android re-check satisfied 2026-11-13 without a
@@ -248,7 +250,8 @@ Gate 1 records exact baselines. Expected production files:
   `docs/EDGE_CASES.md`, `docs/DEVELOPER-GUIDE.md`, `docs/DEPLOYMENT.md`,
   `docs/plan/README.md`, and `docs/plan/prompts/phase-map.md`.
 
-Excluded artifacts: the untracked local staging tree and test-only shims.
+Excluded artifacts: the untracked local staging tree and test-only shims
+(see the full excluded list in the closing summary and the phase 12 fix note).
 
 ## Implementation notes (2026-11-09)
 
@@ -402,7 +405,14 @@ excluded test artifacts and are not deployment files. The unrelated
 excluded from this package and deployment. The supplied root
 `new-sample.txt`, local phone-staging tree/database (including context #12), and
 temporary Chromium profile/probes are evidence/test artifacts, not deployment
-files; the tracked `sample-cloze-left-drift` fixture is test input.
+files; the tracked `sample-cloze-left-drift` fixture is test input. The
+tracked phone-staging tooling added in `50b95bb` is local test tooling, not a
+deployment file: `tools/phone-staging/cbt_db.php` (a SQLite PDO shim for the
+local staging copy that strips `FOR UPDATE`), `tools/start-phone-staging.sh`
+(starts the local phone-staging server and database), and
+`tools/stop-phone-staging.sh` (stops it). `docs/DEPLOYMENT.md` §1 says not to
+deploy them. `sample-passages.txt` is owner-supplied evidence, not a deployment
+file.
 
 ## Handoff
 
@@ -413,9 +423,13 @@ Files changed: src/parser/core.js, src/owner-tool/owner-tool.js, src/owner-tool/
   deployed/admin_questions.php, deployed/admin_context.php, deployed/context_lib.php,
   deployed/cbt.php, tests/unit.js, tests/owner-tool.js, tests/context-admin.php,
   tests/context-lib.php, fixtures/inputs/sample-cloze-left-drift.txt,
+  sample-passages.txt (answer key; owner-confirmed 2026-11-13, see fix note),
+  tools/phone-staging/cbt_db.php, tools/start-phone-staging.sh,
+  tools/stop-phone-staging.sh (local staging tooling, excluded from deployment),
   fixtures/expected/sample-cloze-left-drift.json, AGENTS.md, docs/AGENTS.md,
   docs/SPEC.md, docs/DECISIONS.md,
-  docs/STATUS.md, docs/INVARIANTS.md, docs/EDGE_CASES.md,
+  docs/STATUS.md, docs/INVARIANTS.md, docs/EDGE_CASES.md (phase 12 `FIX-3`),
+  docs/plan/owner-tool/ot-09-cloze-ocr.md (phase 12 `FIX-3`),
   docs/DEVELOPER-GUIDE.md, docs/DEPLOYMENT.md,
   docs/plan/README.md, docs/plan/prompts/phase-map.md,
   docs/plan/owner-tool/ot-10-release-and-handoff.md,
@@ -439,4 +453,73 @@ Phone re-check: owner accepted the final Brave/Android confirmation on 2026-11-1
 Review: focused implementation review findings closed; independent rigorous review pending
 Commit: owner-authorized checkpoint commit/push requested 2026-11-13
 Next: independent rigorous OT11 review
+```
+
+## Fix note — phase 12 `FIX-1`, `FIX-2` (2026-11-13)
+
+Authority: the review record `docs/plan/reviews/owner-tool-2026-11-phase-12.md`
+(first review round, recommended fix session). Docs only; no production, test,
+fixture, or tool file changed. Production per-file counters from `79a6a57` are
+unchanged from the review table (`admin_questions.php` stays +100/−81 against
+its live snapshot).
+
+`FIX-1` (answer-key provenance). Owner choice: keep the revised key. On
+2026-11-13 the owner confirmed that the `sample-passages.txt` comprehension key
+edited in `9c7b475` is correct: Q11 `B` and Q12 `c` were added, and Q13 was
+corrected from `A` to `d`; Q14 `B` and Q15 `A` are unchanged. The file was not
+edited by this fix. SHA-256 at `79a6a57`:
+`d286f77a6c267306d130f89013516effe388eef8cc3710c86dfb63d78bd02780`; current
+(confirmed) SHA-256:
+`f0640b5f1aae796442f8eeb159042a3f93dbaca41f5ed8d16a3ea1e64edb32b7` (77 lines,
+4699 bytes). `git diff 79a6a57 -- sample-passages.txt` shows only that hunk at
+line 37.
+
+| Criterion | Implementation / evidence |
+|---|---|
+| 1. Owner confirmation recorded with date, Q11/Q12, Q13 A→D, new hash | this note |
+| 2. Cited statements match the file | `docs/plan/README.md` (status paragraph, OT08 row, phase 10 paragraph), `docs/STATUS.md` (status paragraph, external-gate row), `docs/plan/owner-tool/next-steps.md` (OT08 coverage item), `docs/plan/owner-tool/ot-08-comprehension-ocr.md` (status, external gate), and `docs/plan/prompts/phase-map.md` (summary, OT08 row) now say the revised Q11-Q15 key was owner-confirmed 2026-11-13 |
+| 3. Handoff "Files changed" names the file | Handoff above |
+
+Non-goal kept: OT10's own final-coverage validation (`docs/plan/README.md`
+remaining-path step 3) stays in OT10.
+
+`FIX-2` (tracked staging tooling). The scripts' behavior is unchanged and they
+are not deleted.
+
+| Criterion | Implementation / evidence |
+|---|---|
+| 1. Handoff "Files changed" and excluded list name all three paths and purpose | Handoff above; excluded-artifact paragraph above the handoff |
+| 2. `DEPLOYMENT.md` says not to deploy them | `docs/DEPLOYMENT.md` §1 item 2 names `tools/phone-staging/` (its SQLite `cbt_db.php` shim), `tools/start-phone-staging.sh`, and `tools/stop-phone-staging.sh` |
+| Manifest hash refresh | `docs/DEPLOYMENT.md` now 179 lines / 11612 bytes, SHA-256 `121A265382A46AB29E8FA72E067DEECD863D79F35AF47E1C1A998634BB860352`; recorded in the OT10 handoff |
+
+Excluded artifacts (unchanged, not deployment files): `session-ses_e35a.md`,
+`new-sample.txt`, `sample-passages.txt`, the `sample-cloze-left-drift` fixture
+and spec, the three phone-staging tools, the untracked `deployed/cbt_db.php`
+and `deployed/cbt_admin_config.php`, and the local staging tree/database and
+Chromium profiles/probes.
+
+Tests: docs-only edits; `node tests/owner-tool.js` rerun as a sanity check (see
+below). Re-review: closure-focused re-review of `FIX-1`/`FIX-2` required.
+
+```text
+Commit: deferred
+Next: @docs/plan/prompts/review-session.md re-review phase 12 OT11 FIX-1 FIX-2
+```
+
+## Fix note — phase 12 `FIX-3` (2026-11-13)
+
+Authority: `docs/plan/reviews/owner-tool-2026-11-phase-12-re-review.md`
+(first review round). Docs only; production counters unchanged.
+
+| Criterion | Implementation / evidence |
+|---|---|
+| Both passages state the revised Q11-Q15 key (Q11 B, Q12 C, Q13 A→D) was owner-confirmed 2026-11-13, OT10 keeps final coverage | `docs/plan/owner-tool/ot-09-cloze-ocr.md` (owner-supplied key paragraph) and `docs/EDGE_CASES.md` (EC-95–EC-99 note) |
+| Probe repeat finds no contradicting non-review statement | grep for `Q11-Q12 pending`, `does not cover Q11`, `Q11-Q12 remain missing`, `Q11-Q12 are still missing`, `remaining Q11-Q12`, `partially supplied` outside `docs/plan/reviews/` and this file returns nothing |
+
+Non-goals kept: `sample-passages.txt`, parser, tests, fixtures, and review
+records unchanged.
+
+```text
+Commit: deferred
+Next: @docs/plan/prompts/review-session.md re-review phase 12 OT11 FIX-3
 ```

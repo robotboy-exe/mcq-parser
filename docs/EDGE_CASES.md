@@ -234,7 +234,8 @@ closed by the archived PHP/HTML sources:
   Brave/Android check, and the owner-accepted OT11 re-check on 2026-11-13.
 - EC-95 through EC-99 are CONFIRMED by the OT08 comprehension fixtures and
   owner-tool tests. The owner supplied same-paste comprehension keys for Q13-Q15
-  in `sample-passages.txt` on 2026-11-08; Q11-Q12 remain missing.
+  in `sample-passages.txt` on 2026-11-08 and confirmed the revised Q11-Q15 key
+  (Q11 B, Q12 C, Q13 A→D) on 2026-11-13; OT10 confirms final coverage.
 - EC-100 through EC-104 are CONFIRMED by the OT09 cloze fixtures, unit checks,
   and owner-tool tests. The owner supplied the complete same-paste cloze key for
   Q71-Q80 in `sample-passages.txt` on 2026-11-08.

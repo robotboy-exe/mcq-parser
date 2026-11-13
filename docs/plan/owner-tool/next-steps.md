@@ -173,7 +173,8 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-12.
   commit.
 - [ ] Confirm final OT08 coverage. The owner supplied same-paste keys in
   `sample-passages.txt` on 2026-11-08: comprehension Q13-Q15 and cloze Q71-Q80.
-  The cloze key is complete; comprehension Q11-Q12 are still missing. Both
+  The cloze key is complete. On 2026-11-13 the owner confirmed the revised
+  comprehension key (Q11 B, Q12 C, Q13 A→D), so Q11-Q15 are covered. Both
   same-paste mechanics are also proven synthetically.
 
 ## OT10 Deferred Verification
@@ -212,7 +213,13 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-12.
   backgrounds make the form mode explicit.
 - [x] Run the final owner Brave/Android OT11 re-check without a live write. The
   owner accepted it on 2026-11-13 and requested the checkpoint commit/push.
-- [ ] Run the independent rigorous OT11 review.
+- [x] Run the independent rigorous OT11 review (2026-11-13: PASS WITH ACCEPTED
+  FINDINGS `FIX-1`, `FIX-2`).
+- [x] Fix phase 12 `FIX-1`/`FIX-2` (2026-11-13, docs only).
+- [x] Run the closure-focused phase 12 re-review of `FIX-1`/`FIX-2` (closed;
+  new `FIX-3`).
+- [x] Fix phase 12 `FIX-3` (2026-11-13, docs only).
+- [ ] Run the closure-focused second phase 12 re-review of `FIX-3`.
 - [x] Complete the deployment manifest and developer guide:
   `docs/DEPLOYMENT.md`, `docs/DEVELOPER-GUIDE.md`.
 - [ ] Independent final review and cycle close.
