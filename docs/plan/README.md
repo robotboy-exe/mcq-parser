@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-13.
+Last updated: 2026-11-14.
 
 ## Current state
 
@@ -55,8 +55,7 @@ Last updated: 2026-11-13.
   package (phase 12). A later phone session recorded six follow-up requirements;
   their local implementation now passes all suites. The owner accepted the final
   OT11 Brave/Android re-check and requested the checkpoint commit/push on
-  2026-11-13. OT10 remains blocked on the independent final review and the live
-  deployment artifacts; it is not done.
+  2026-11-13. OT10 is done 2026-11-14: its handoff was refreshed at `f84518e`, where every suite was re-run, and the phase-11 review returned PASS WITH ACCEPTED FINDINGS on 2026-11-14 (`NOTE-1`–`NOTE-3` non-blocking); only the owner-deferred live artifacts remain.
 - Working branch: `owner-tool-integration` is the authoritative integration and
   implementation line. `main` is the published baseline, not the current work
   branch. See [Branch strategy](#branch-strategy).
@@ -270,7 +269,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 9 | OT08 | [Comprehension OCR](owner-tool/ot-08-comprehension-ocr.md) | OT07 review | done; parser 2.2.0; light review PASS at OT09 Gate 1 | key supplied 2026-11-08; revised Q11-Q15 key owner-confirmed 2026-11-13 |
 | 10 | OT09 | [Cloze OCR](owner-tool/ot-09-cloze-ocr.md) | OT08 | done; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed | cloze key supplied 2026-11-08 (OT10 validates) |
 | 10A | OT09A | [Production Consolidation](owner-tool/ot-09a-production-consolidation.md) | OT09 boundary | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed | none; OT10 gates unchanged |
-| 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | open (ready to finish): local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; live-artifact gate deferred to deployment time by the owner 2026-11-14; handoff refresh and final review pending | local PHP, staging, all prior artifacts |
+| 11 | OT10 | [Release and Handoff](owner-tool/ot-10-release-and-handoff.md) | OT09 review | done 2026-11-14: handoff refreshed at `f84518e`; 60 runner / 163 unit / 81 owner-tool / full PHP suites and 17-file lint re-run and PASS; Q11-Q15 key coverage and the manifest writer audit confirmed; phase-11 review PASS WITH ACCEPTED FINDINGS 2026-11-14 (`NOTE-1`–`NOTE-3` non-blocking) | live-artifact gate owner-deferred to deployment time 2026-11-14 |
 | 12 | OT11 | [Owner Workflow Refinements](owner-tool/ot-11-owner-workflow-refinements.md) | OT10 phone check (2026-11-09) | done 2026-11-13; owner accepted the final Brave/Android re-check; 60 runner, 163 unit, 81 owner-tool and full suites pass; rigorous review PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` closed by re-review; `FIX-3` closed by second re-review PASS 2026-11-13; review-settled | satisfied 2026-11-13 |
 
 The active map duplicates these statuses for session resolution. Update both
@@ -337,7 +336,7 @@ verifies the detail path with the rest of Release A.
 | phase 8 close | OT07 Release B | rigorous | pass; review PASS WITH ACCEPTED FINDINGS, `FIX-1` closed by re-review 2026-11-06, boundary committed |
 | phase 9 | OT08 | light at OT09 Gate 1 | pass at OT09 Gate 1 |
 | phase 10 close | OT09 Release C | rigorous | pass; implementation done 2026-11-06; `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed |
-| phase 11 close | OT10 final release | rigorous | pending; phone check passed 2026-11-09 |
+| phase 11 close | OT10 final release | rigorous | OT10 done 2026-11-14; review PASS WITH ACCEPTED FINDINGS 2026-11-14 (`NOTE-1`–`NOTE-3` non-blocking); release review-settled |
 | phase 12 close | OT11 owner workflow refinements | rigorous | review PASS WITH ACCEPTED FINDINGS 2026-11-13; `FIX-1`/`FIX-2` closed by re-review 2026-11-13; new `FIX-3` closed by second re-review PASS 2026-11-13 (docs only); review-settled |
 
 OT05 implementation and its accepted Phase 6 fixes are complete. The third
@@ -387,12 +386,13 @@ manual-card workflow is now fed by the parser; target-runtime execution remains
 OT10. The audit carries forward the archived legacy-writer deployment check as
 an OT10 constraint.
 
-## Remaining path to cycle close (consolidated 2026-11-13)
+## Remaining path to cycle close (updated 2026-11-14)
 
-Phase 11 (OT10) is intentionally still open. OT10 is the release package: its
-final review must cover everything that ships, so it runs after phase 12 (OT11),
-which was carved out of OT10's 2026-11-09 phone check. The phase numbers record
-creation order, not execution order. Remaining steps, in order:
+Phase 11 (OT10) is finished; its handoff was refreshed at `f84518e` on
+2026-11-14. OT10 is the release package, so its final review must cover
+everything that ships; it runs after phase 12 (OT11), which was carved out of
+OT10's 2026-11-09 phone check. The phase numbers record creation order, not
+execution order. Remaining steps, in order:
 
 1. **Review phase 12 (OT11).** Done. The rigorous review, first re-review, and
    second re-review settled on 2026-11-13 (`FIX-1`, `FIX-2`, `FIX-3` closed).
@@ -403,14 +403,17 @@ creation order, not execution order. Remaining steps, in order:
    `db_conn.php` sets `charset=utf8mb4` only, with no collation, so the
    deployment-time collation prerequisite (`utf8mb4_unicode_ci`, DEPLOYMENT §1.3)
    stays a live stop condition.
-3. **Finish OT10.** Refresh the handoff against the post-OT11 tip (counts,
-   manifest/guide hashes, Q11-Q12 comprehension-key coverage note) and mark it
-   done.
-4. **Review phase 11 (OT10 final release).** Rigorous review of the full
-   release at the post-OT11 tip, then any fix/re-review rounds.
-5. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md):
-   final boundary commit, optional `main` fast-forward, and a separate owner
-   archive decision.
+3. **Finish OT10.** Done 2026-11-14: the handoff was refreshed against the
+   post-OT11 tip `f84518e` (current counts, re-verified manifest/guide hashes,
+   Q11-Q15 comprehension-key coverage note, writer audit) and OT10 is marked
+   done in the package, this table, the active map, and the status.
+4. **Review phase 11 (OT10 final release).** Done 2026-11-14: PASS WITH ACCEPTED
+   FINDINGS, `NOTE-1`–`NOTE-3` non-blocking; no fix or re-review round was
+   needed.
+5. **Cycle close. In progress.** Gate 1 passed and the final status fields are
+   updated. The boundary commit needs one explicit owner authorization; an
+   optional `main` fast-forward and cycle archiving each need a separate
+   explicit owner decision.
 
 New product scope (for example, the mathematics editor) belongs in a new cycle
 started after cycle close, not in appended phases of this cycle.
@@ -418,20 +421,22 @@ started after cycle close, not in appended phases of this cycle.
 Current workflow stop:
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 11
+NEXT COMMAND: commit
 ```
 
-OT10 is mid-package, not at a clean boundary. The Brave/Android phone check was
+OT10 is finished at a clean boundary and its release review is settled. The Brave/Android phone check was
 performed on 2026-11-09 and passed; its owner-workflow refinements are routed to
 OT11 (phase 12). OT11's re-checks found the duplicate-editor workflow defect,
 six follow-up requirements, a hidden unsaved cloze editor, and one-character
 cloze row drift. The one-editor correction and all follow-up fixes now pass the
 full local suites and focused Chromium checks. The owner accepted the final
 Brave/Android re-check on 2026-11-13 and requested the checkpoint commit/push;
-the independent rigorous review is settled. OT10 stays open for its handoff
-refresh and independent final review; the owner deferred the live deployment
-artifacts to deployment time on 2026-11-14. The
-local PHP/DB/desktop evidence is recorded in the OT10 handoff and
+the independent rigorous review is settled. OT10 is now done: its handoff was
+refreshed at `f84518e` on 2026-11-14 and every Node/PHP suite was re-run there;
+the owner deferred the live deployment artifacts to deployment time on
+2026-11-14. Cycle close is in progress: the boundary commit awaits explicit
+owner authorization, and archiving needs a separate owner decision. The local
+PHP/DB/desktop evidence is recorded in the OT10 handoff and
 [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
 
 Rigorous reviews use [`prompts/review-session.md`](prompts/review-session.md)

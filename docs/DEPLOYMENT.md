@@ -1,6 +1,8 @@
 # Deployment Manifest — Owner Tool and Context Release
 
-Recorded: 2026-11-08; updated for OT11 on 2026-11-13. Target: PHP 8.3, MySQL 8.0.41, InnoDB,
+Recorded: 2026-11-08; updated for OT11 on 2026-11-13; file table and
+supplied-sample coverage re-verified 2026-11-14 at `f84518e`. Target: PHP 8.3,
+MySQL 8.0.41, InnoDB,
 `utf8mb4_unicode_ci`. This manifest is the OT10 handoff for the
 `owner-tool-2026-11` cycle. It does **not** authorize a production deploy. A
 deploy needs a separate explicit owner instruction. See
@@ -67,6 +69,15 @@ ops directory, not the public web root.
 
 Do **not** deploy `deployed/sql/base-schema.working.sql` or the
 `tools/context-migration-*.php` support files; they are repo-only test support.
+
+All 14 rows above were re-measured on 2026-11-14 at `f84518e`: `wc -l`, LF bytes,
+and SHA-256 match the table exactly.
+
+Supplied-sample coverage: `parsePaste(sample-passages.txt)` returns the
+comprehension key `Q11 B, Q12 C, Q13 D, Q14 B, Q15 A` and the cloze key
+`Q71-Q80`, with one 5-member comprehension context and one 10-member cloze
+context. The owner-confirmed revised comprehension key is therefore covered by
+the shipped parser.
 
 ## 3. Upload order
 
@@ -171,8 +182,8 @@ Stop and do not continue on the first mismatch:
 - The Brave/Android staging check was performed on 2026-11-09 and passed.
   Desktop Chromium 155 passed 33/33 local checks. OT11's expanded follow-up and
   2026-11-12 consolidation pass local suites/focused Chromium checks; the owner
-  accepted the final Brave/Android re-check on 2026-11-13. The independent
-  rigorous review remains open.
+  accepted the final Brave/Android re-check on 2026-11-13. The phase-11 release
+  review returned PASS WITH ACCEPTED FINDINGS on 2026-11-14.
 - The Windows/CRLF `extract-bank` `bank-pre-2026` output-hash mismatch is a
   pre-existing baseline artifact, not a release regression.
 - This package does not deploy to production, clean live data, or archive the

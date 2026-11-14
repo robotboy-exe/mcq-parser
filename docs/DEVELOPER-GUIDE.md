@@ -1,6 +1,7 @@
 # Developer Guide — Owner Tool, Context Schema, and CBT Delivery
 
-Recorded: 2026-11-08; updated for OT11 on 2026-11-13. This is the human-developer handoff for the
+Recorded: 2026-11-08; updated for OT11 on 2026-11-13; suite evidence re-run
+2026-11-14 at `f84518e`. This is the human-developer handoff for the
 `owner-tool-2026-11` cycle. It covers the shipped architecture, source of truth,
 stored state, parser extension rules, the context lifecycle, the security
 renderer, testing commands, and known limitations. Deployment steps are in
@@ -184,18 +185,25 @@ php tests/php-render.php
 php tests/cbt-candidate.php
 ```
 
-Current local evidence on PHP 8.3.16 / MySQL 8.0.41:
+Current local evidence, re-run 2026-11-14 at `f84518e` on PHP 8.3.32 (the 8.3
+target line; the owner's 8.3.16 runs gave the same results) plus the recorded
+MySQL 8.0.41 migration run of 2026-11-08:
 
-- runner: 59 fixtures, 59 PASS, 0 FAIL, 0 PENDING;
-- unit: 162 PASS; owner-tool: 77 PASS; context-migration: 14 PASS;
+- runner: 60 fixtures, 60 PASS, 0 FAIL, 0 PENDING;
+- unit: 163 PASS; owner-tool: 81 PASS; context-migration: 14 PASS;
   cbt-context: 5 PASS;
 - context-lib: 14 PASS; context-admin: 23 PASS; context-preflight: 6 PASS;
   php-render: 9 PASS; cbt-candidate: 7 PASS;
-- `php -l` on 10 deployed PHP files and `node --check` on 15 JS files: PASS;
+- `php -l` on 17 PHP files (8 under `deployed/`, `db_conn.php`, 3
+  `tools/context-migration-*.php`, 5 `tests/*.php`) and `node --check` on all 25
+  tracked JS files (15 under `src/`, `tools/`, `tests/`): PASS;
 - `node tools/cloze-probe.js`: exit 0;
-- `node tools/extract-bank.js --check`: PASS on the LF checkout; the recorded
-  Windows/CRLF `bank-pre-2026` mismatch remains a pre-existing target-worktree
-  artifact;
+- `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
+  output hashes matching on the LF checkout; the recorded Windows/CRLF
+  `bank-pre-2026` mismatch remains a pre-existing target-worktree artifact;
+- `parsePaste(sample-passages.txt)`: key `Q11 B, Q12 C, Q13 D, Q14 B, Q15 A` and
+  `Q71-Q80`, with one 5-member comprehension context and one 10-member cloze
+  context;
 - desktop Chromium 155.0.8059.40 local harness: 33/33 checks passed (admin
   login, comprehension/cloze load, underline/paragraph preview, native PRG save,
   edit formatting tool, CBT complete-group delivery, answer-details XSS probes).
@@ -220,7 +228,8 @@ No live site, staging database, or production cleanup was used.
   cycle scope.
 - The Brave/Android staging check was performed on 2026-11-09 and passed.
   Desktop Chromium passed. The owner accepted the final OT11 Brave/Android
-  re-check on 2026-11-13; the independent rigorous review remains open.
+  re-check on 2026-11-13; the phase-11 release review returned PASS WITH
+  ACCEPTED FINDINGS on 2026-11-14.
 - The `extract-bank` Windows/CRLF `bank-pre-2026` mismatch is pre-existing.
 - This cycle does not deploy to production, clean live data, or archive itself
   without explicit owner instructions.

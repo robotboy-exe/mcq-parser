@@ -238,3 +238,25 @@ readable lines. No live/staging write or browser runtime check was used. The
 known Windows/CRLF bank-extractor hash mismatch remains pre-existing. The owner
 then requested a machine-transfer checkpoint commit before the rigorous Release
 B review.
+
+## Owner Tool Cycle — owner-tool-2026-11 (closed 2026-11-14)
+
+OT00-OT11 delivered the readable owner tool, underline/multiline rendering, the
+shared-context schema and admin workflow, complete-group CBT delivery,
+comprehension and cloze OCR (parser 2.3.3), the deployment manifest, and the
+developer guide. The final release tip is `f84518e`.
+
+Final evidence at that tip: 60 runner fixtures PASS with 0 PENDING, 163 unit,
+81 owner-tool, 14 context-migration, 5 cbt-context, 14 context-lib, 23
+context-admin, 6 context-preflight, 9 PHP renderer, 7 cbt-candidate; PHP 8.3
+lint and JS syntax PASS; the bank extractor matches all 7 hashes. MySQL 8.0.41
+migration preflight/forward/rerun/rollback with adversarial schema and rollback
+probes passed on 2026-11-08. Desktop Chromium 155 passed 33/33, and the owner
+accepted the final Brave/Android re-check on 2026-11-13.
+
+Live-origin additions stayed at `admin_questions.php` +100/−81 (at the cap),
+`cbt.php` +53, `admin_context.php` +20, and `context_lib.php` +2. Phase 11
+reviewed the full release on 2026-11-14 and returned PASS WITH ACCEPTED FINDINGS
+with three non-blocking notes. The only open item is the owner-deferred live
+artifact set (`cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts`),
+held to the deployment-time stop conditions in `DEPLOYMENT.md`.

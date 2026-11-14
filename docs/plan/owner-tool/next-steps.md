@@ -128,8 +128,11 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-12.
 - [x] Record the available-source filename/search inventory for the main
   `cbt.php` read path and every current writer that can mutate linked
   `questions` rows in `ot-06-reader-writer-audit.md`.
-- [ ] At OT10, verify the deployment manifest installs the current context-aware
-  admin writer and exposes no archived or alternate question writer.
+- [x] At OT10, verify the deployment manifest installs the current context-aware
+  admin writer and exposes no archived or alternate question writer (2026-11-14:
+  only `deployed/admin_context.php` contains `INSERT/UPDATE/DELETE` on
+  `questions`, and it is the writer in the manifest; `cbt_practice.php` writes
+  none).
 - [x] Implement complete-group candidate delivery in OT06; light review passed
   at OT07 Gate 1.
 - [x] Implement the manual owner context workflow in OT07; local acceptance
@@ -171,10 +174,9 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-12.
   `652c891`. The closure-focused re-review returned `PASS` and closed `FIX-1` on
   2026-11-08; phase 10A is review-settled and included in the 2026-11-08 boundary
   commit.
-- [ ] Confirm final OT08 coverage. The owner supplied same-paste keys in
-  `sample-passages.txt` on 2026-11-08: comprehension Q13-Q15 and cloze Q71-Q80.
-  The cloze key is complete. On 2026-11-13 the owner confirmed the revised
-  comprehension key (Q11 B, Q12 C, Q13 A→D), so Q11-Q15 are covered. Both
+- [x] Confirm final OT08 coverage (2026-11-14): `parsePaste(sample-passages.txt)`
+  returns comprehension `Q11 B, Q12 C, Q13 D, Q14 B, Q15 A` and cloze `Q71-Q80`,
+  with one 5-member comprehension context and one 10-member cloze context. Both
   same-paste mechanics are also proven synthetically.
 
 ## OT10 Deferred Verification
@@ -222,7 +224,14 @@ Recorded: 2026-11-02. Reconciled: 2026-11-03. Updated: 2026-11-12.
 - [ ] Run the closure-focused second phase 12 re-review of `FIX-3`.
 - [x] Complete the deployment manifest and developer guide:
   `docs/DEPLOYMENT.md`, `docs/DEVELOPER-GUIDE.md`.
-- [ ] Independent final review and cycle close.
+- [x] Refresh the OT10 handoff at `f84518e` (2026-11-14): current counts, exact
+  lint/syntax sets, re-verified manifest/guide hashes, writer audit, and the
+  Q11-Q15 coverage note. OT10 is marked done in the package, coordinator, map,
+  and status.
+- [x] Independent phase-11 review (2026-11-14: PASS WITH ACCEPTED FINDINGS;
+  `NOTE-1`–`NOTE-3` non-blocking).
+- [ ] Cycle close: the boundary commit awaits explicit owner authorization, and
+  archiving needs a separate owner decision.
 - [x] OT10 is the sole owner of runtime/staging verification. No OT05 completion
   gate may require these checks.
 

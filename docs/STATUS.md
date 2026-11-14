@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-13.
+Last updated: 2026-11-14.
 
 ## Active cycle
 
@@ -8,8 +8,11 @@ Last updated: 2026-11-13.
 - Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
-- Last review-settled package: OT05, Context Schema and Admin, including the accepted
-  Phase 6 repairs. The third re-review is complete. Its repaired direction/CHECK
+- Last review-settled package: OT10, Release and Handoff (phase 11), PASS WITH
+  ACCEPTED FINDINGS on 2026-11-14 (`NOTE-1`–`NOTE-3` non-blocking); the cycle is
+  closing and the boundary commit awaits explicit owner authorization. Earlier
+  state: OT05, Context Schema and Admin, including the accepted Phase 6 repairs.
+  The third re-review is complete. Its repaired direction/CHECK
   and post-`ALTER` relock vectors close `BLOCK-3` and `BLOCK-6` under the frozen
   lifecycle. On 2026-11-05 the owner rejected `BLOCK-8`: authoritative
   `questions.sql` and the corroborating `questions1.sql` export are
@@ -72,8 +75,11 @@ Last updated: 2026-11-13.
   docs-only `FIX-1`/`FIX-2` were fixed and closed by re-review the same day; the
   re-review's docs-only `FIX-3` was closed by the second re-review (PASS) on
   2026-11-13, so phase 12 is review-settled. On 2026-11-14 the owner deferred the
-  live deployment artifacts to deployment time. OT10 stays open for its handoff
-  refresh and independent final review; it is not done.
+  live deployment artifacts to deployment time, and OT10 was finished: its
+  handoff was refreshed at `f84518e` and every Node/PHP suite, the 17-file lint,
+  the bank extractor, and the supplied-sample key probe were re-run there. Only
+  the phase-11 review is settled (PASS WITH ACCEPTED FINDINGS 2026-11-14,
+  `NOTE-1`–`NOTE-3` non-blocking) and only the deferred live artifacts remain.
 - Product implementation: parser 2.3.3 (comprehension and cloze contexts), exact
   underline rendering, multiline stems, Add/Edit formatting, native PRG
   preservation, shared-context schema/admin/candidate delivery, and the manual
@@ -128,6 +134,7 @@ Last updated: 2026-11-13.
 | OT09 `FIX-2` fix and second re-review (phase 10 boundary, committed 2026-11-08, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `node tools/extract-bank.js --check`, and `node --check` on 2026-11-07; independent re-review reproduced them on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; cloze probe exit 0; all 7 source/slice/extracted bank hashes match (the CLI still reports the known Windows/CRLF on-disk fixture mismatch); cloze.js 242 lines; PHP not executed |
 | OT09A production consolidation (phase 10A boundary, committed 2026-11-08, base `652c891`, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, and `node --check` on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; 12 production files plus 2 ops; live-origin additions +95/+53/+20/+2; known Windows/CRLF `extract-bank` pre-2026 mismatch remains; `FIX-1` docs-only evidence closed by re-review 2026-11-08 |
 | OT10 local execution (2026-11-08, base `79a6a57`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, `node --check`, MySQL 8.0.41 migration/rollback probes, and a desktop Chromium 155 local harness on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; migration preflight/forward/rerun/rollback and adversarial probes PASS; desktop Chromium 33/33 PASS; initial Brave/Android check passed 2026-11-09; final OT11 re-check accepted 2026-11-13 |
+| OT10 finish (2026-11-14, `f84518e`; docs-only refresh) | all Node suites, all PHP suites, `php -l` on 17 files, `node --check` on 25 JS files, `extract-bank --check`, `cloze-probe`, and the `sample-passages.txt` key probe | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP 8.3.32 lint 17/17 PASS; JS syntax 25/25 PASS; bank extractor 7 hashes OK; key `Q11 B, Q12 C, Q13 D, Q14 B, Q15 A` with a 5-member comprehension and a 10-member cloze context; migration/rollback and browser checks not re-run in this docs session |
 | OT11 owner-accepted checkpoint (2026-11-13) | full Node/PHP suite, syntax/lint, bank extractor, exact `new-sample.txt` cloze probe, and focused owner-flow probes | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; cloze probe and 7 bank hashes PASS; PHP/JS syntax PASS; draft-only paste filling, saved-edit reachability/adoption, and distinct draft/edit mode regressions PASS; live-origin additions remain at +100/+53; final owner phone confirmation accepted; independent rigorous review pending at checkpoint (settled 2026-11-13: PASS, FIX-1..FIX-3 closed) |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
@@ -181,7 +188,7 @@ Supplied DDL SHA-256:
 | Artifact | Required by | Reason |
 |---|---|---|
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
-| Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); revised comprehension key Q11-Q15 (Q11 B, Q12 C, Q13 A→D) owner-confirmed 2026-11-13; OT10 validates final coverage |
+| Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); revised comprehension key Q11-Q15 (Q11 B, Q12 C, Q13 A→D) owner-confirmed 2026-11-13; coverage confirmed by OT10 on 2026-11-14 |
 | Brave/Android staging check | OT10 final acceptance | Initial check satisfied 2026-11-09; desktop Chromium passed 33/33; owner accepted the final OT11 re-check on 2026-11-13 |
 | Live `cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts` | OT10 deployment | Live-site artifacts, not supplied; owner deferred to deployment time 2026-11-14 (DEPLOYMENT stop conditions); the local smoke used test-only shims |
 
@@ -199,8 +206,10 @@ confirmation (settled above), or another `exam_category` export for the
 `exam_category2` naming question (correction rule settled).
 
 The OT06 audit accounts for every direct `questions` SQL site in the available
-production source. OT10 must still verify the deployment manifest contains the
-current context-aware admin writer and no alternate legacy writer. OT06
+production source. OT10 verified on 2026-11-14 that the deployment manifest
+contains the current context-aware admin writer and no alternate legacy writer:
+only `deployed/admin_context.php` contains `INSERT/UPDATE/DELETE` on `questions`,
+and it is the manifest's writer. OT06
 suppresses the dead `answer_details.php` link for inactive linked members and
 passed its light review at OT07 Gate 1. OT07 now supplies the manual context
 card/native-form workflow; its rigorous Release B review returned PASS WITH
@@ -227,8 +236,11 @@ proved them on the target runtime on 2026-11-08:
   comprehension/cloze load, underline/paragraph preview, native PRG save, edit
   formatting tool, CBT complete-group delivery, answer-details XSS probes).
 
-Still open: the independent final review. Deferred to deployment time (owner,
-2026-11-14): the live deployment artifacts.
+Settled: the phase-11 review returned PASS WITH ACCEPTED FINDINGS on 2026-11-14
+(`NOTE-1`–`NOTE-3` non-blocking) and OT10 is done. Cycle close is in progress,
+with the boundary commit awaiting explicit owner authorization. The only open
+item is the owner-deferred live deployment artifact set (owner decision
+2026-11-14), a deployment-time gate.
 The Brave/Android staging phone check passed on 2026-11-09; the owner accepted
 OT11's final follow-up re-check on 2026-11-13. The deployment manifest is
 [`DEPLOYMENT.md`](DEPLOYMENT.md); the developer handoff is
