@@ -156,7 +156,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | OT12 | [Shared-Text Page Isolation](owner-tool/ot-12-shared-text-page-isolation.md) | archived cycle close | in progress: PHP isolation done, owner-tool split open | none; disposable database only |
+| 1 | OT12 | [Shared-Text Page Isolation](owner-tool/ot-12-shared-text-page-isolation.md) | archived cycle close | implemented at `73009ac`, light review PASS WITH NOTES 2026-11-14; merge pending | none; disposable database only |
 | 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | OT12 review | not started | owner approval for +1 addition in `admin_questions.php`; Brave/Android and desktop checks |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
 
@@ -232,7 +232,7 @@ verifies the detail path with the rest of Release A.
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | OT12 shared-text page isolation | light at ME01 Gate 1 | pending |
+| phase 1 | OT12 shared-text page isolation | light at ME01 Gate 1 | light review recorded 2026-11-14 (`PASS WITH NOTES`); merge pending |
 | phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | pending |
 | phase 3 close | ME02 release, evidence, and handoff | rigorous | pending |
 

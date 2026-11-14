@@ -1,10 +1,11 @@
 # Deployment Manifest — Owner Tool and Context Release
 
-Recorded: 2026-11-08; updated for OT11 on 2026-11-13; file table and
-supplied-sample coverage re-verified 2026-11-14 at `f84518e`. Target: PHP 8.3,
-MySQL 8.0.41, InnoDB,
+Recorded: 2026-11-08; updated for OT11 on 2026-11-13; updated for the OT12
+shared-text split on 2026-11-14; file table and supplied-sample coverage
+re-verified 2026-11-14. Target: PHP 8.3, MySQL 8.0.41, InnoDB,
 `utf8mb4_unicode_ci`. This manifest is the OT10 handoff for the
-`owner-tool-2026-11` cycle. It does **not** authorize a production deploy. A
+`owner-tool-2026-11` cycle, with the OT12 file rows replacing the single admin
+page. It does **not** authorize a production deploy. A
 deploy needs a separate explicit owner instruction. See
 [`DEVELOPER-GUIDE.md`](DEVELOPER-GUIDE.md) for the architecture and
 [`plan/owner-tool/ot-09a-production-consolidation.md`](plan/owner-tool/ot-09a-production-consolidation.md)
@@ -42,7 +43,7 @@ for the consolidation measurements.
 6. Put the site in maintenance mode and stop every web worker, importer, cron
    job, and CLI process that can write `questions` or `question_contexts`.
 
-## 2. File manifest (12 production files + 2 ops)
+## 2. File manifest (15 production files + 2 ops)
 
 Line counts are `wc -l`; bytes are LF-normalized UTF-8 bytes; SHA-256 is over the
 LF-normalized content. The Windows working tree carries CRLF on five files; the
@@ -52,7 +53,8 @@ ops directory, not the public web root.
 
 | File | Lines / LF bytes | SHA-256 (LF) | Deploy to | Notes |
 |---|---:|---|---|---|
-| `deployed/admin_questions.php` | 1065 / 62892 | `7ec150d924cb834627745ac4d9c8f989276421e6ce36dc77b6b8081bf76817cb` | site root | narrow admin entry point; stacked workflow sections, assets, and extracted read-only payload wiring |
+| `deployed/admin_questions.php` | 1196 / 68152 | `486cd2d597fcc73619e6febf287f2b31e4136e2af9d4ba6c5ddf990d1cf6210b` | site root | standalone question management only; context-free save/delete inlined behind a column probe, grouped rows filtered and refused, no context include; +229/−79 vs the live snapshot (D-82) |
+| `deployed/admin_shared.php` | 874 / 49259 | `e7fa3f5f31981a47fc2c05660e68fc636f579014fc7c3d955551f70dd9717d3d` | site root | shared-text page: login/CSRF/PRG, shared-text CRUD, member questions with their own media uploads, combined recent-questions table, paste-to-draft client |
 | `deployed/cbt.php` | 1008 / 44515 | `697407e6022ce9f543a271664f69bc27816b52170389c0381544aa2b170b2de9` | site root | CBT delivery; loads `owner-tool.css`, `render.js` |
 | `deployed/answer_details.php` | 251 / 12157 | `b796fc097c0b6651590116e37d38c1d5c0632073f351a696fc40a7c8932d955c` | site root | supplied detail page; loads `render.php` |
 | `deployed/render.php` | 78 / 2447 | `205af86993d8bf2adcbcd262476e64fcc90fe9a2b3fd379cba9488c1d1450d2f` | site root | server safe renderer |
@@ -62,7 +64,9 @@ ops directory, not the public web root.
 | `deployed/sql/01-context-migration.sql` | 250 / 17870 | `e963b739a26f20e5b12db6525266b580c0472d494fd29a6fb44a3a3f076b55f7` | ops directory | forward migration |
 | `src/parser/core.js` | 1432 / 49296 | `1321d95f046151e202c44eb8a18f9b1c9df39e2d31e001a73b639e49b4a71f67` | site root `src/parser/` | parser 2.3.3 with internal comprehension/cloze engines and bounded row-local drift correction |
 | `src/owner-tool/render.js` | 209 / 6339 | `008325f404e435747fe33d57aa84380b0977c8bed38e6c1bcff01515ff7129c3` | site root `src/owner-tool/` | shared renderer and context cards |
-| `src/owner-tool/owner-tool.js` | 2566 / 106477 | `c8f86b8f6ca61cb7b2f73750e442c564c07ecdb7f409fcdc9b2a1434b067818d` | site root `src/owner-tool/` | tool 1.5.4; draft-only paste filling, reachable saved-edit isolation, synchronized dynamic mode labels/hints, next-unsaved selection, full-paste reset, full identity, next-free links, advisory duplicates, Show/Hide, and formatting-only Question Edit |
+| `src/owner-tool/owner-tool.js` | 1579 / 69336 | `385dac26799c6aceea151d836df94d67fc630ab367dbfb4921b1b2de045dd147` | site root `src/owner-tool/` | tool 1.5.4 without the context APIs: paste/parse/fill, preview, underline, and the controller; reads the context APIs from `window` and tolerates their absence |
+| `src/owner-tool/shared-texts.js` | 1002 / 37427 | `e6c6ea8e7f0792ab072be1dac678f8a47bfd52d7642f29c6f4d66949c10d0c29` | site root `src/owner-tool/` | the four context APIs moved out of `owner-tool.js` (`window.CBTOwnerContext*`); loaded by `admin_shared.php` before its paste client |
+| `src/owner-tool/shared-paste.js` | 230 / 7523 | `67c51efa921caccc4972b2b03836b369697a7c84e842cb0de2d830fb1d3bdecc` | site root `src/owner-tool/` | shared-page paste client: parses a paste, queues drafts under `cbtSharedPaste:v1`, fills the native shared-text editor, never overwrites a saved text |
 | `src/owner-tool/owner-tool.css` | 291 / 4606 | `405a769288849033451e1a9f06cecedc4d7d29a6a90a10bccae89a411a5c1b8c` | site root `src/owner-tool/` | owner/context/CBT styles, stacked section boundaries, amber draft and blue saved-edit treatments, form groups, and duplicate notices |
 | `deployed/sql/README.md` (ops) | 172 / 8065 | `7f474ffe65523a957b656db380e01520e30cc7a7373309754274700f5789e861` | ops directory | runbook |
 | `deployed/sql/02-context-rollback.sql` (ops) | 64 / 2512 | `047e11005acf8194c66151ebcc1a6510fd6983aab5643552ab9d3d064dbde694` | ops directory | guarded rollback |
@@ -70,8 +74,9 @@ ops directory, not the public web root.
 Do **not** deploy `deployed/sql/base-schema.working.sql` or the
 `tools/context-migration-*.php` support files; they are repo-only test support.
 
-All 14 rows above were re-measured on 2026-11-14 at `f84518e`: `wc -l`, LF bytes,
-and SHA-256 match the table exactly.
+The five admin/owner-tool rows were re-measured for OT12 on 2026-11-14 (`wc -l`,
+LF bytes, SHA-256); the other twelve rows are unchanged from the 2026-11-14
+`f84518e` measurement and still match.
 
 Supplied-sample coverage: `parsePaste(sample-passages.txt)` returns the
 comprehension key `Q11 B, Q12 C, Q13 D, Q14 B, Q15 A` and the cloze key
@@ -82,17 +87,23 @@ the shipped parser.
 ## 3. Upload order
 
 1. Back up files and the database.
-2. Upload the four `src/` assets.
-3. Upload the four PHP includes: `render.php`, `context_lib.php`,
-   `admin_context.php`, `cbt_candidate.php`.
-4. Upload the three entry points: `admin_questions.php`, `cbt.php`,
-   `answer_details.php`.
+2. Upload the six `src/` assets: `src/parser/core.js`,
+   `src/owner-tool/render.js`, `src/owner-tool/owner-tool.js`,
+   `src/owner-tool/owner-tool.css`, `src/owner-tool/shared-texts.js`,
+   `src/owner-tool/shared-paste.js`.
+3. Upload the five PHP includes: `render.php`, `context_lib.php`,
+   `admin_context.php`, `cbt_candidate.php`, `admin_shared.php`.
+4. Upload the four entry points: `admin_questions.php`, `admin_shared.php`,
+   `cbt.php`, `answer_details.php` (the same `admin_shared.php` file serves as
+   both include-host and entry point; it is listed once per role).
 5. Leave `cbt_practice.php` unchanged; it is outside the remaining cycle scope.
 6. Cache-busting: changed `core.js` uses `?v=2.3.3`, changed
    `owner-tool.js` uses `?v=2.3.3e`, and changed `owner-tool.css` uses
    `?v=2.3.3a` in `admin_questions.php`; `cbt.php` uses the same CSS token. The
    unchanged renderer remains `?v=2.3.2g`; `cbt_practice.php` remains on
-   `?v=2.3.2c`.
+   `?v=2.3.2c`. `admin_shared.php` loads `core.js` (`2.3.3`), `render.js`
+   (`2.3.2g`), `shared-texts.js` (`2.3.3e`), and `shared-paste.js` (`2.3.3e`) in
+   that order; `owner-tool.js` is deliberately not loaded there.
    If any asset changes, bump its token in every page that loads it before
    upload.
 7. Run the migration preflight. It must exit 0 and print literal
@@ -122,6 +133,9 @@ after it. A second run performs no destructive operation and no data change.
 |---|---|---|
 | Migration | preflight before/after | `PREFLIGHT OK`; `not applied (ready)` then `already applied (rerun safe)` |
 | Admin | log in, paste a comprehension section, click Load | passage appears in a comprehension context card; preview keeps exact `<u>` and paragraphs; no automatic write |
+| Shared page | log in to `admin_shared.php`, paste a section, click Use Paste | the draft editor fills with the first shared text; Fill Next Draft moves through the paste; nothing is written until Save Shared Text |
+| Shared page | save a shared text, add a member question, then open the combined table | the member appears in Recent shared questions, newest first, 20 per page |
+| Shared page | upload an answer illustration and a question picture on a member, save, then remove the member | files land under `uploads/question-videos` and `uploads/question-images`; removing the member deletes both files |
 | Admin | paste a cloze section, click Load | cloze context card with `[[gap:N]]` tokens; no automatic write |
 | Admin | fill the native form and click Save Question | exact flash `Question saved successfully (Question ID: …).`; one new row |
 | Admin | open the saved row's Edit page | formatting tool is present; no owner state is written |
@@ -179,6 +193,14 @@ Stop and do not continue on the first mismatch:
   `cbt_exam_attempts` table and no header; do not deploy either.
 - `cbt_practice.php` and `practice_title` behavior remain outside the remaining
   cycle scope.
+- `admin_questions.php` works on a database without the context migration (its
+  column probe hides the guards). `admin_shared.php` needs the migration: its
+  shared-text and combined-question sections do not render without the context
+  schema. Deploy the code only together with the migration, as step 7-9 order
+  already requires.
+- The shared page's paste panel, media uploads, and combined table have no
+  browser test: they are covered by static probes plus a Node VM smoke run of the
+  paste client. The required Brave/Android check predates them.
 - The Brave/Android staging check was performed on 2026-11-09 and passed.
   Desktop Chromium 155 passed 33/33 local checks. OT11's expanded follow-up and
   2026-11-12 consolidation pass local suites/focused Chromium checks; the owner

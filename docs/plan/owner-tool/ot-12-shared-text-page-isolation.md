@@ -1,7 +1,9 @@
 # OT12 — Shared-Text Page Isolation
 
-- **Status:** in progress; Gate 1 passed 2026-11-14; PHP isolation implemented,
-  owner-tool script not yet split; phase 1 of `math-editor-2026-11`
+- **Status:** implemented and light-reviewed 2026-11-14 (`PASS WITH NOTES`,
+  [`reviews/ot-12-light-review.md`](../reviews/ot-12-light-review.md)); committed
+  at `73009ac` on the topic branch; merge into `owner-tool-integration` is the
+  owner's next step; phase 1 of `math-editor-2026-11`
 - **Package base:** `a3b93b7` (`owner-tool-integration`, 2026-11-14, after the
   `owner-tool-2026-11` cycle close and archive)
 - **Branch:** `ot12-shared-text-isolation`, short-lived topic branch off

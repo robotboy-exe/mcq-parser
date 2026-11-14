@@ -10,8 +10,9 @@ Last updated: 2026-11-14.
   Unicode symbol palette plus an advisory UTF-8 byte counter.
 - Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — phase 1 OT12,
   phase 2 ME01, phase 3 ME02. Statuses live in [`plan/README.md`](plan/README.md).
-- Packages: [`OT12`](plan/owner-tool/ot-12-shared-text-page-isolation.md) (in
-  progress: PHP isolation implemented, owner-tool script split open),
+- Packages: [`OT12`](plan/owner-tool/ot-12-shared-text-page-isolation.md)
+  (implemented at `73009ac`, light review `PASS WITH NOTES` 2026-11-14, merge
+  pending),
   [`ME01`](plan/math-editor/me-01-math-palette.md),
   [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (not started).
 - Ordering: the math-editor packages were planned before the first live
@@ -24,11 +25,11 @@ Last updated: 2026-11-14.
   in a new owner-tool module; reuse `#owner_tool_preview`; editor-side byte
   counter only; `cbt_practice.php` excluded; plan against the `deployed/`
   working copies.
-- Planning constraint: `deployed/admin_questions.php` sat exactly at the
-  externalize-first 100-addition cap before OT12. OT12 removes the context
-  integration from that file, so ME01 must re-measure its cumulative additions;
-  the +1 approval request applies only if the post-OT12 measurement still
-  exceeds 100.
+- Planning constraint: `deployed/admin_questions.php` is now at **+229/−79**
+  against its live snapshot after OT12 inlined the context-free save path. The
+  owner approved that 129-addition excess on 2026-11-14 (D-82), and the cap tests
+  encode 229 as this file's limit, so any further growth fails the suite. ME01
+  must still re-measure before adding its script tag.
 - Last review-settled package: OT10 of the archived cycle (`PASS WITH ACCEPTED
   FINDINGS`, 2026-11-14; `NOTE-1`–`NOTE-3` non-blocking). Archived cycle close
   `45807ea`, archive commit `134305c`.
