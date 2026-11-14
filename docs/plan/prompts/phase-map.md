@@ -8,8 +8,9 @@ Updated: 2026-11-14
 
 | Phase | Package |
 |---|---|
-| 1 | `ME01` — `math-editor/me-01-math-palette.md` |
-| 2 | `ME02` — `math-editor/me-02-release-and-handoff.md` |
+| 1 | `OT12` — `owner-tool/ot-12-shared-text-page-isolation.md` |
+| 2 | `ME01` — `math-editor/me-01-math-palette.md` |
+| 3 | `ME02` — `math-editor/me-02-release-and-handoff.md` |
 
 ## Starting a new cycle
 

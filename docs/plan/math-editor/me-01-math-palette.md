@@ -1,14 +1,19 @@
 # ME01 — Math Symbol Palette and Byte Counter
 
 - **Status:** not started
-- **Depends on:** archived cycle close (`134305c`); shipped underline, preview, and
+- **Depends on:** OT12 review settled (phase 1); shipped underline, preview, and
   renderer behavior (OT04, OT11)
 - **Blocks:** ME02
 - **External gate:** explicit owner approval for a **+1 addition over the
   externalize-first 100-addition cap** in `deployed/admin_questions.php` (one
   script-tag line; cumulative +101 against
-  `archive/live-sources/admin_questions-2026-10-31.php`), plus the manual
-  Brave/Android and desktop Chromium checks in the acceptance table
+  `archive/live-sources/admin_questions-2026-10-31.php`) **only if the post-OT12
+  re-measurement still exceeds 100**; plus the manual Brave/Android and desktop
+  Chromium checks in the acceptance table.
+- **Baseline note:** plan against the post-OT12 `deployed/` working copies. OT12
+  removes the context integration from `admin_questions.php`, so ME01's Gate 1
+  must re-measure its cumulative additions; the +1 request may no longer be
+  needed.
 - **Intent:** [`docs/24-question-underline-and-math.md`](../../24-question-underline-and-math.md)
   as amended by the owner's 2026-11-14 answers (see "Resolved spec delta")
 
