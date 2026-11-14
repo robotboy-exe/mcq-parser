@@ -70,9 +70,10 @@ Last updated: 2026-11-13.
   Brave/Android re-check on 2026-11-13 and requested the checkpoint commit/push;
   the rigorous review returned PASS WITH ACCEPTED FINDINGS on 2026-11-13; its
   docs-only `FIX-1`/`FIX-2` were fixed and closed by re-review the same day; the
-  re-review's docs-only `FIX-3` is fixed and awaits a second re-review.
-  OT10 remains blocked on the independent final review and the live deployment
-  artifacts; it is not done.
+  re-review's docs-only `FIX-3` was closed by the second re-review (PASS) on
+  2026-11-13, so phase 12 is review-settled. On 2026-11-14 the owner deferred the
+  live deployment artifacts to deployment time. OT10 stays open for its handoff
+  refresh and independent final review; it is not done.
 - Product implementation: parser 2.3.3 (comprehension and cloze contexts), exact
   underline rendering, multiline stems, Add/Edit formatting, native PRG
   preservation, shared-context schema/admin/candidate delivery, and the manual
@@ -127,7 +128,7 @@ Last updated: 2026-11-13.
 | OT09 `FIX-2` fix and second re-review (phase 10 boundary, committed 2026-11-08, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `node tools/extract-bank.js --check`, and `node --check` on 2026-11-07; independent re-review reproduced them on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 13 context-migration; 4 cbt-context; cloze probe exit 0; all 7 source/slice/extracted bank hashes match (the CLI still reports the known Windows/CRLF on-disk fixture mismatch); cloze.js 242 lines; PHP not executed |
 | OT09A production consolidation (phase 10A boundary, committed 2026-11-08, base `652c891`, parser 2.3.2) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, and `node --check` on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; 12 production files plus 2 ops; live-origin additions +95/+53/+20/+2; known Windows/CRLF `extract-bank` pre-2026 mismatch remains; `FIX-1` docs-only evidence closed by re-review 2026-11-08 |
 | OT10 local execution (2026-11-08, base `79a6a57`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, `node --check`, MySQL 8.0.41 migration/rollback probes, and a desktop Chromium 155 local harness on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; migration preflight/forward/rerun/rollback and adversarial probes PASS; desktop Chromium 33/33 PASS; initial Brave/Android check passed 2026-11-09; final OT11 re-check accepted 2026-11-13 |
-| OT11 owner-accepted checkpoint (2026-11-13) | full Node/PHP suite, syntax/lint, bank extractor, exact `new-sample.txt` cloze probe, and focused owner-flow probes | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; cloze probe and 7 bank hashes PASS; PHP/JS syntax PASS; draft-only paste filling, saved-edit reachability/adoption, and distinct draft/edit mode regressions PASS; live-origin additions remain at +100/+53; final owner phone confirmation accepted; independent rigorous review pending |
+| OT11 owner-accepted checkpoint (2026-11-13) | full Node/PHP suite, syntax/lint, bank extractor, exact `new-sample.txt` cloze probe, and focused owner-flow probes | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; cloze probe and 7 bank hashes PASS; PHP/JS syntax PASS; draft-only paste filling, saved-edit reachability/adoption, and distinct draft/edit mode regressions PASS; live-origin additions remain at +100/+53; final owner phone confirmation accepted; independent rigorous review pending at checkpoint (settled 2026-11-13: PASS, FIX-1..FIX-3 closed) |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -182,7 +183,7 @@ Supplied DDL SHA-256:
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); revised comprehension key Q11-Q15 (Q11 B, Q12 C, Q13 A→D) owner-confirmed 2026-11-13; OT10 validates final coverage |
 | Brave/Android staging check | OT10 final acceptance | Initial check satisfied 2026-11-09; desktop Chromium passed 33/33; owner accepted the final OT11 re-check on 2026-11-13 |
-| Live `cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts` | OT10 deployment | Live-site artifacts, not supplied; the local smoke used test-only shims |
+| Live `cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts` | OT10 deployment | Live-site artifacts, not supplied; owner deferred to deployment time 2026-11-14 (DEPLOYMENT stop conditions); the local smoke used test-only shims |
 
 OT05 implementation, accepted fixes, third re-review, and `BLOCK-8` owner
 disposition are complete. The owner rejected `BLOCK-8` for the authoritative,
@@ -226,7 +227,8 @@ proved them on the target runtime on 2026-11-08:
   comprehension/cloze load, underline/paragraph preview, native PRG save, edit
   formatting tool, CBT complete-group delivery, answer-details XSS probes).
 
-Still deferred: the independent final review and the live deployment artifacts.
+Still open: the independent final review. Deferred to deployment time (owner,
+2026-11-14): the live deployment artifacts.
 The Brave/Android staging phone check passed on 2026-11-09; the owner accepted
 OT11's final follow-up re-check on 2026-11-13. The deployment manifest is
 [`DEPLOYMENT.md`](DEPLOYMENT.md); the developer handoff is

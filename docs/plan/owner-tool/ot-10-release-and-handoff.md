@@ -1,12 +1,16 @@
 # OT10 — Release and Handoff
 
-- **Status:** blocked: local PHP/DB/desktop checks pass; Brave/Android phone
-  check passed 2026-11-09; final rigorous review and live deployment artifacts
-  pending
+- **Status:** open (ready to finish): local PHP/DB/desktop checks pass;
+  Brave/Android phone check passed 2026-11-09; live-artifact gate deferred to
+  deployment time by the owner 2026-11-14; handoff refresh and final rigorous
+  review pending
 - **Depends on:** OT09 and its settled rigorous review
 - **Blocks:** cycle close
 - **External gate:** live `cbt_db.php`, `header.php`, `footer.php`, and
-  `cbt_exam_attempts`; independent final review. The Brave/Android phone check
+  `cbt_exam_attempts` (owner disposition 2026-11-14: `defer` to deployment time;
+  verify under the `docs/DEPLOYMENT.md` stop conditions, including the
+  `utf8mb4_unicode_ci` session-collation prerequisite, since the supplied
+  `db_conn.php` sets `charset=utf8mb4` only); independent final review. The Brave/Android phone check
   passed on 2026-11-09; the owner accepted OT11's expanded follow-up and latest
   cloze/save-flow fixes in the final phone re-check on 2026-11-13.
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)

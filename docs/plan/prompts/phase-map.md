@@ -38,9 +38,10 @@ one-editor correction, consolidation, placement/edit-isolation follow-up,
 next-unsaved editor fix, and parser 2.3.3 row-drift fix now pass 60 runner, 163
 unit, 81 owner-tool, the full PHP suites, and focused desktop/mobile Chromium
 checks. The owner accepted the final Brave/Android re-check on 2026-11-13; the
-independent rigorous review remains pending.
-OT10 remains blocked only on the independent final review and the live
-deployment artifacts; it is not done.
+independent rigorous review is settled (phase 12, 2026-11-13).
+On 2026-11-14 the owner deferred the live deployment artifacts to deployment
+time. OT10 stays open for its handoff refresh and independent final review; it
+is not done.
 
 Intent: [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -57,8 +58,8 @@ Intent: [`../../../INTENT.md`](../../../INTENT.md)
 | 9 | OT08 — Comprehension OCR | [`../owner-tool/ot-08-comprehension-ocr.md`](../owner-tool/ot-08-comprehension-ocr.md) | done 2026-11-06; light review PASS at OT09 Gate 1; same-paste key supplied 2026-11-08; revised Q11-Q15 key owner-confirmed 2026-11-13 |
 | 10 | OT09 — Cloze OCR | [`../owner-tool/ot-09-cloze-ocr.md`](../owner-tool/ot-09-cloze-ocr.md) | done 2026-11-06; parser 2.3.2; Release C `BLOCK-1`/`FIX-1` closed by re-review 2026-11-07; `FIX-2` closed by second re-review 2026-11-08; phase 10 boundary committed; cloze key supplied 2026-11-08 |
 | 10A | OT09A — Production Consolidation | [`../owner-tool/ot-09a-production-consolidation.md`](../owner-tool/ot-09a-production-consolidation.md) | done; 12 production files + 2 ops; no behavior change; `FIX-1` closed by re-review 2026-11-08; phase 10A boundary committed; OT10 gates unchanged |
-| 11 | OT10 — Release and Handoff | [`../owner-tool/ot-10-release-and-handoff.md`](../owner-tool/ot-10-release-and-handoff.md) | blocked: local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; final review and live artifacts pending |
-| 12 | OT11 — Owner Workflow Refinements | [`../owner-tool/ot-11-owner-workflow-refinements.md`](../owner-tool/ot-11-owner-workflow-refinements.md) | done 2026-11-13: owner accepted the final Brave/Android re-check; 60 runner, 163 unit, 81 owner-tool and full suites pass; rigorous review PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` closed by re-review 2026-11-13; `FIX-3` fixed 2026-11-13 (docs only); second re-review pending (next step); OT10 final review and live artifacts remain external |
+| 11 | OT10 — Release and Handoff | [`../owner-tool/ot-10-release-and-handoff.md`](../owner-tool/ot-10-release-and-handoff.md) | blocked: local PHP/DB/desktop checks pass; Brave/Android phone check passed 2026-11-09; live-artifact gate deferred to deployment time by the owner 2026-11-14; handoff refresh and final review pending |
+| 12 | OT11 — Owner Workflow Refinements | [`../owner-tool/ot-11-owner-workflow-refinements.md`](../owner-tool/ot-11-owner-workflow-refinements.md) | done 2026-11-13: owner accepted the final Brave/Android re-check; 60 runner, 163 unit, 81 owner-tool and full suites pass; rigorous review PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` closed by re-review 2026-11-13; `FIX-3` closed by second re-review PASS 2026-11-13; review-settled; OT10 final review remains |
 
 Run one phase per implementation session. A blocked phase stops at Gate 1; do
 not skip ahead unless the coordinator explicitly identifies an independent

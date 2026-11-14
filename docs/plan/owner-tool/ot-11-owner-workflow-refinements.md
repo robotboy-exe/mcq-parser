@@ -3,12 +3,12 @@
 - **Status:** done 2026-11-13; owner accepted the final Brave/Android re-check;
   60 runner, 163 unit, 81 owner-tool and full local suites pass; rigorous
   review PASS WITH ACCEPTED FINDINGS 2026-11-13; `FIX-1`/`FIX-2` closed
-  by re-review 2026-11-13; `FIX-3` fixed 2026-11-13 (docs only); second
-  closure-focused re-review pending
+  by re-review 2026-11-13; `FIX-3` closed by the second
+  re-review (PASS) 2026-11-13; review-settled
 - **Depends on:** OT10 phone check (recorded 2026-11-09) and the OT09A boundary
 - **Blocks:** OT10 final review and cycle close
 - **External gate:** owner Brave/Android re-check satisfied 2026-11-13 without a
-  new live write; independent rigorous review remains
+  new live write; independent rigorous review settled 2026-11-13
 - **Release:** B/C owner workflow refinement
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
@@ -418,7 +418,7 @@ file.
 
 ```text
 Date: 2026-11-13
-Result: draft-only Use Paste, visibly distinct saved-edit mode, next-unsaved shared-text selection, and parser 2.3.3 row-drift handling implemented; full local suites pass; owner accepted the final Brave/Android re-check; independent rigorous review pending
+Result: draft-only Use Paste, visibly distinct saved-edit mode, next-unsaved shared-text selection, and parser 2.3.3 row-drift handling implemented; full local suites pass; owner accepted the final Brave/Android re-check; independent rigorous review pending at checkpoint (settled 2026-11-13: PASS, FIX-1..FIX-3 closed)
 Files changed: src/parser/core.js, src/owner-tool/owner-tool.js, src/owner-tool/owner-tool.css,
   deployed/admin_questions.php, deployed/admin_context.php, deployed/context_lib.php,
   deployed/cbt.php, tests/unit.js, tests/owner-tool.js, tests/context-admin.php,
@@ -450,9 +450,9 @@ Phone-feedback evidence: exact click/submit stop, metadata precedence, saved-car
   placement, stored-paste edit isolation, next-unsaved selection, and bounded
   one-character cloze drift covered
 Phone re-check: owner accepted the final Brave/Android confirmation on 2026-11-13 without a new live write
-Review: focused implementation review findings closed; independent rigorous review pending
+Review: PASS WITH ACCEPTED FINDINGS 2026-11-13; FIX-1/FIX-2 closed by re-review; FIX-3 closed by second re-review PASS 2026-11-13; review-settled
 Commit: owner-authorized checkpoint commit/push requested 2026-11-13
-Next: independent rigorous OT11 review
+Next: finish OT10 (@docs/plan/prompts/phase-session.md phase 11)
 ```
 
 ## Fix note — phase 12 `FIX-1`, `FIX-2` (2026-11-13)
