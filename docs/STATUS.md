@@ -4,100 +4,25 @@ Last updated: 2026-11-14.
 
 ## Active cycle
 
-- Cycle: none active. `owner-tool-2026-11` was archived on 2026-11-14 after the
-  phase-11 release review settled; its map is preserved at
-  [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md).
-  The cycle's final status is recorded below as history.
-- Active map: none. [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
-  declares no cycle until the owner confirms a new scope.
-- Coordinator: [`plan/README.md`](plan/README.md)
-- Intent: [`../INTENT.md`](../INTENT.md)
-- Last review-settled package: OT10, Release and Handoff (phase 11), PASS WITH
-  ACCEPTED FINDINGS on 2026-11-14 (`NOTE-1`–`NOTE-3` non-blocking); the cycle is
-  closing and the boundary commit awaits explicit owner authorization. Earlier
-  state: OT05, Context Schema and Admin, including the accepted Phase 6 repairs.
-  The third re-review is complete. Its repaired direction/CHECK
-  and post-`ALTER` relock vectors close `BLOCK-3` and `BLOCK-6` under the frozen
-  lifecycle. On 2026-11-05 the owner rejected `BLOCK-8`: authoritative
-  `questions.sql` and the corroborating `questions1.sql` export are
-  unpartitioned, and partitioning requires an out-of-contract schema change
-  rather than a supported admin-form write. Reconnect after failure of the
-  mandatory write freeze remains non-blocking `NOTE-4`.
-- Phase 6 is review-settled and included in the 2026-11-05 boundary commit.
-  OT06's OT05 dependency is satisfied. The owner removed `cbt_practice.php` and
-  `practice_title` from the remaining cycle scope. The available-source
-  reader/writer audit passed on 2026-11-05. OT06 passed its light review at OT07
-  Gate 1. OT07 is implemented; its rigorous Release B review returned PASS WITH
-  ACCEPTED FINDINGS, and `FIX-1` (handoff hash/byte accuracy) was fixed and
-  closed by the closure-focused re-review on 2026-11-06. Phase 8 is
-  review-settled and included in the 2026-11-06 boundary commit. OT08 is
-  implemented with parser 2.2.0 and passed its light review at OT09 Gate 1. OT09
-  cloze OCR is implemented with parser 2.3.2; its rigorous Release C review
-  returned `BLOCK` on 2026-11-07 (`BLOCK-1`: unapproved 274-line new module;
-  `FIX-1`: silent partial cloze group on duplicate numbering), the owner
-  authorized `fix` for both under their frozen closure contracts, and the
-  2026-11-07 fix applied both (`cloze.js` 242 lines; colliding groups refused;
-  parser 2.3.1). The first independent re-review closed both findings and
-  recorded `FIX-2` (two cloze groups sharing numbering lose the later group's
-  options) in its first review round. On 2026-11-07 the owner changed the
-  `FIX-2` requirement to keep the first evidenced group and drop later colliding
-  groups with a warning naming the shared gap numbers; the 2026-11-07 fix
-  applied that rule (parser 2.3.2), and the closure-focused second re-review
-  returned `PASS` and closed `FIX-2` on 2026-11-08. Phase 10 is review-settled
-  and included in the 2026-11-08 boundary commit. The owner supplied same-paste
-  answer keys in `sample-passages.txt` on 2026-11-08 (comprehension Q13-Q15,
-  cloze Q71-Q80); the owner confirmed on 2026-11-13 the revised comprehension key (Q11 B, Q12 C, Q13 A→D; phase 12 `FIX-1`), so it covers Q11-Q15; OT10 must
-  confirm final OT08 coverage. OT09A records a 12-production-file plus 2-ops
-  handoff; its documentation-only `FIX-1` was closed by the closure-focused
-  re-review on 2026-11-08, with no behavior change, so phase 10A is review-settled
-  and included in the 2026-11-08 boundary commit. OT10 local execution is in
-  progress: PHP 8.3.16 lint/suites, MySQL 8.0.41 migration preflight/forward/
-  rerun/rollback, adversarial schema/rollback probes, and a desktop Chromium 155
-  harness all pass. The Brave/Android phone check was performed on 2026-11-09 and
-  passed; it surfaced three owner-workflow refinements, routed by the owner to
-  the independent OT11 package (phase 12). OT11's first re-check found that the
-  JS and native context editors were still separate; the owner required one
-  native editor and the correction was applied immediately. Local tests and a
-  Chromium DOM check pass. A later phone session recorded six follow-up
-  requirements; their implementation plus the 2026-11-12 consolidation now
-  passes the full local suites. A final owner follow-up
-  moves the collapsible shared-text editor below the paste panel and above
-  the light-blue question-link group. A reproduced `?edit_context=11` defect no
-  longer lets stored paste context #6 overwrite the server-loaded edit. Focused
-  Chromium passes at desktop and 390px mobile width. Full paste clearing, full
-  passage identity, advisory duplicates, next-free links, Show/Hide, and
-  independent shared-text pagination remain covered. The latest phone re-check
-  then found that a saved/adopted first passage hid the unsaved cloze passage
-  and that `new-sample.txt` gap 75 was one character left of the modal columns.
-  Tool 1.5.4 now keeps the first unsaved shared text selected/open and allows
-  Use Paste to fill only new drafts, never saved edits. Amber draft and blue
-  saved-edit labels and styling make the form mode explicit. Parser
-  2.3.3 applies only a two-anchor one-character row correction. The full local
-  suites and focused staging Chromium pass. The owner accepted the final
-  Brave/Android re-check on 2026-11-13 and requested the checkpoint commit/push;
-  the rigorous review returned PASS WITH ACCEPTED FINDINGS on 2026-11-13; its
-  docs-only `FIX-1`/`FIX-2` were fixed and closed by re-review the same day; the
-  re-review's docs-only `FIX-3` was closed by the second re-review (PASS) on
-  2026-11-13, so phase 12 is review-settled. On 2026-11-14 the owner deferred the
-  live deployment artifacts to deployment time, and OT10 was finished: its
-  handoff was refreshed at `f84518e` and every Node/PHP suite, the 17-file lint,
-  the bank extractor, and the supplied-sample key probe were re-run there. Only
-  the phase-11 review is settled (PASS WITH ACCEPTED FINDINGS 2026-11-14,
-  `NOTE-1`–`NOTE-3` non-blocking) and only the deferred live artifacts remain.
-- Product implementation: parser 2.3.3 (comprehension and cloze contexts), exact
-  underline rendering, multiline stems, Add/Edit formatting, native PRG
-  preservation, shared-context schema/admin/candidate delivery, and the manual
-  owner context workflow are in place. OT11 adds one native Shared Context
-  editor, the merged context selector, saved-context adoption, manual selection,
-  member dedupe, an explained unsaved-context stop, context-owned metadata,
-  saved-card Show/Hide, form boundaries, plain owner copy, one preview beside
-  Question Text, full-paste replacement, full passage identity, advisory
-  duplicate notices, next-free link values, 10-row Shared Texts pagination, the
-  paste-adjacent shared-text editor placement, draft-only paste filling,
-  explicit saved-edit isolation, visibly distinct draft/edit modes,
-  next-unsaved multi-text selection, and bounded cloze row drift handling.
-- Working branch: `owner-tool-integration`; `main` is the published baseline.
-  See [`plan/README.md`](plan/README.md#branch-strategy).
+- Cycle: `math-editor-2026-11` (created 2026-11-14). Scope: the P24
+  mathematics-editor delta — a curated Tier 1 Unicode symbol palette plus an
+  advisory UTF-8 byte counter in the shipped owner tool.
+- Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — phase 1 ME01,
+  phase 2 ME02. Statuses live in [`plan/README.md`](plan/README.md).
+- Packages: [`ME01`](plan/math-editor/me-01-math-palette.md),
+  [`ME02`](plan/math-editor/me-02-release-and-handoff.md). Neither has started.
+- Owner decisions settled 2026-11-14: keep exact lowercase `<u>` only; palette
+  in a new owner-tool module; reuse `#owner_tool_preview`; editor-side byte
+  counter only; `cbt_practice.php` excluded; plan against the `deployed/`
+  working copies.
+- Planning constraint: `deployed/admin_questions.php` is exactly at the
+  externalize-first 100-addition cap, so ME01 needs explicit approval for a +1
+  script-tag line at its Gate 1.
+- Last review-settled package: OT10 of the archived cycle (`PASS WITH ACCEPTED
+  FINDINGS`, 2026-11-14; `NOTE-1`–`NOTE-3` non-blocking). Archived cycle close
+  `45807ea`, archive commit `134305c`.
+- Archived cycle: [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md);
+  summary in [`plan/history.md`](plan/history.md).
 
 ## Confirmed facts (not gates)
 
@@ -140,6 +65,7 @@ Last updated: 2026-11-14.
 | OT10 local execution (2026-11-08, base `79a6a57`) | `node tests/runner.js`, `tests/unit.js`, `tests/owner-tool.js`, `tests/context-migration.js`, `tests/cbt-context.js`, `node tools/cloze-probe.js`, `php tests/context-lib.php`, `tests/context-admin.php`, `tests/context-preflight.php`, `tests/php-render.php`, `tests/cbt-candidate.php`, `php -l`, `node --check`, MySQL 8.0.41 migration/rollback probes, and a desktop Chromium 155 local harness on 2026-11-08 | 59 PASS, 0 FAIL, 0 PENDING runner; 162 unit; 53 owner-tool; 14 context-migration; 5 cbt-context; 13 context-lib; 19 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP/JS syntax PASS; migration preflight/forward/rerun/rollback and adversarial probes PASS; desktop Chromium 33/33 PASS; initial Brave/Android check passed 2026-11-09; final OT11 re-check accepted 2026-11-13 |
 | OT10 finish (2026-11-14, `f84518e`; docs-only refresh) | all Node suites, all PHP suites, `php -l` on 17 files, `node --check` on 25 JS files, `extract-bank --check`, `cloze-probe`, and the `sample-passages.txt` key probe | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP 8.3.32 lint 17/17 PASS; JS syntax 25/25 PASS; bank extractor 7 hashes OK; key `Q11 B, Q12 C, Q13 D, Q14 B, Q15 A` with a 5-member comprehension and a 10-member cloze context; migration/rollback and browser checks not re-run in this docs session |
 | OT11 owner-accepted checkpoint (2026-11-13) | full Node/PHP suite, syntax/lint, bank extractor, exact `new-sample.txt` cloze probe, and focused owner-flow probes | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; cloze probe and 7 bank hashes PASS; PHP/JS syntax PASS; draft-only paste filling, saved-edit reachability/adoption, and distinct draft/edit mode regressions PASS; live-origin additions remain at +100/+53; final owner phone confirmation accepted; independent rigorous review pending at checkpoint (settled 2026-11-13: PASS, FIX-1..FIX-3 closed) |
+| Math-editor cycle start (2026-11-14, `134305c`) | full Node/PHP suite re-run at `f84518e` before the archive; no product byte changed since | 60 runner, 163 unit, 81 owner-tool, 14 context-migration, 5 cbt-context; PHP 8.3.32 suites and 17-file lint PASS; baseline for ME01 |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -191,6 +117,8 @@ Supplied DDL SHA-256:
 
 | Artifact | Required by | Reason |
 |---|---|---|
+| Owner approval for +1 addition in `deployed/admin_questions.php` | ME01 | The file is at the externalize-first 100-addition cap; the one script-tag line must be approved by name and measured excess |
+| Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Owner-accepted check required on the final tree; no live write |
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); revised comprehension key Q11-Q15 (Q11 B, Q12 C, Q13 A→D) owner-confirmed 2026-11-13; coverage confirmed by OT10 on 2026-11-14 |
 | Brave/Android staging check | OT10 final acceptance | Initial check satisfied 2026-11-09; desktop Chromium passed 33/33; owner accepted the final OT11 re-check on 2026-11-13 |
@@ -226,7 +154,7 @@ are not requested up front. OT10's local smoke used a test-only `cbt_db.php`,
 those shims. The supplied detail page is part of OT04; OT10 repeats Release A
 acceptance instead of performing first-time integration.
 
-## Deferred to OT10
+## Archived release evidence — owner-tool-2026-11
 
 OT05 wrote the migration, preflight, and rollback artifacts. OT10 executed and
 proved them on the target runtime on 2026-11-08:
@@ -253,13 +181,10 @@ gates.
 
 ## Delivery stages
 
-- Release A: OT03-OT04 implement the owner-tool replacement, underline/multiline,
-  and detail-page formatting; OT10 independently verifies the release.
-- Release B: OT05-OT07, manual shared-context persistence and delivery in
-  `cbt.php`; `cbt_practice.php` and `practice_title` are excluded.
-- Release C: OT08-OT09, comprehension and cloze OCR automation.
-- OT10 performs final release verification, target-PHP checks, Brave/Android
-  staging smoke, and human-developer handoff.
+- ME01: curated Tier 1 palette, insertion helpers, byte counter, and the single
+  admin script-tag wiring (with the approved +1).
+- ME02: token/version, decisions, docs, deployment manifest and developer guide,
+  browser evidence, and the rigorous release review.
 
 ## Source of truth
 
@@ -267,5 +192,6 @@ gates.
 - Current work state: this file
 - Package state, review cadence, and branch strategy: `docs/plan/README.md`
 - Active phase order: `docs/plan/prompts/phase-map.md`
-- Package contracts: `docs/plan/owner-tool/`
+- Package contracts: `docs/plan/math-editor/` (active) and
+  `docs/plan/owner-tool/` (archived cycle)
 - Historical parser packages: `docs/plan/01-*.md` through `09-*.md`

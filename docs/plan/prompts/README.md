@@ -1,8 +1,8 @@
 # Plan Session Protocols
 
-The active cycle, if any, is defined in [`phase-map.md`](phase-map.md). It
-declares no cycle after the 2026-11-14 archive of `owner-tool-2026-11`; archived
-maps live under [`cycles/`](cycles/README.md). Package state,
+The active cycle is defined in [`phase-map.md`](phase-map.md); the current one
+is `math-editor-2026-11`. Archived maps live under
+[`cycles/`](cycles/README.md). Package state,
 external gates, review checkpoints, and the next action are maintained in
 [`../README.md`](../README.md).
 

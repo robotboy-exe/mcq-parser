@@ -1,13 +1,16 @@
-# Active Phase Map
+# Current Phase Map
 
-Current cycle: none.
+Current cycle: `math-editor-2026-11`
+Updated: 2026-11-14
 
-`owner-tool-2026-11` was archived on 2026-11-14. Its map is preserved unchanged
-at [`cycles/owner-tool-2026-11.md`](cycles/owner-tool-2026-11.md); status
-history lives in [`../README.md`](../README.md) and [`../history.md`](../history.md).
+`phase N` means phase N of this cycle. Status lives in
+`docs/plan/README.md`; this file only maps phase numbers to packages.
 
-Do not reuse archived phase numbers. Do not edit the archived map. Start a new
-cycle only after the owner confirms its scope, following
-[`cycles/README.md`](cycles/README.md): that step creates the new package docs
-and replaces this map. `phase-session.md` reads this file, so no phase can run
-until a new map exists.
+| Phase | Package |
+|---|---|
+| 1 | `ME01` — `math-editor/me-01-math-palette.md` |
+| 2 | `ME02` — `math-editor/me-02-release-and-handoff.md` |
+
+## Starting a new cycle
+
+See `cycles/README.md`.
