@@ -260,3 +260,8 @@ reviewed the full release on 2026-11-14 and returned PASS WITH ACCEPTED FINDINGS
 with three non-blocking notes. The only open item is the owner-deferred live
 artifact set (`cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts`),
 held to the deployment-time stop conditions in `DEPLOYMENT.md`.
+
+Archived 2026-11-14: the phase map is preserved unchanged at
+`docs/plan/prompts/cycles/owner-tool-2026-11.md` and must not be edited. No
+cycle is active; new product scope starts a new cycle under
+`prompts/cycles/README.md` after the owner confirms it.

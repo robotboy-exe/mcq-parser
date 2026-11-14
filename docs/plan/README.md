@@ -8,7 +8,10 @@ Last updated: 2026-11-14.
 
 ## Current state
 
-- Active cycle: `owner-tool-2026-11`.
+- Active cycle: none. `owner-tool-2026-11` was archived on 2026-11-14 after its
+  phase-11 release review settled; its map is preserved at
+  [`prompts/cycles/owner-tool-2026-11.md`](prompts/cycles/owner-tool-2026-11.md)
+  and the package rows below are retained as history.
 - Product work: OT00-OT07 implementation is complete; Brave/Android staging is
   owner-deferred to OT10, and OT10 executed the target-runtime migration checks
   on 2026-11-08. OT07's
@@ -252,7 +255,7 @@ Reviews are rigorous without creating a moving target:
   concrete reproduced defect, named vectors, required fix, and evidence stated
   in the accepted review and fix Gate 1. Any ambiguity stops for owner decision.
 
-## Package states
+## Package states (archived cycle `owner-tool-2026-11`)
 
 Status values are `not started`, `in progress`, `blocked`, and `done`.
 

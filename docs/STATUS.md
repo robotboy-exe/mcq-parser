@@ -4,8 +4,12 @@ Last updated: 2026-11-14.
 
 ## Active cycle
 
-- Cycle: `owner-tool-2026-11`
-- Active map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
+- Cycle: none active. `owner-tool-2026-11` was archived on 2026-11-14 after the
+  phase-11 release review settled; its map is preserved at
+  [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md).
+  The cycle's final status is recorded below as history.
+- Active map: none. [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md)
+  declares no cycle until the owner confirms a new scope.
 - Coordinator: [`plan/README.md`](plan/README.md)
 - Intent: [`../INTENT.md`](../INTENT.md)
 - Last review-settled package: OT10, Release and Handoff (phase 11), PASS WITH
