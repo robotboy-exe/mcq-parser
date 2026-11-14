@@ -16,42 +16,47 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 $pdo->exec('PRAGMA foreign_keys = ON');
 
-$schemaExists = $pdo->query(
+$schemaExists = (bool) $pdo->query(
     "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'subjects'"
 )->fetchColumn();
 
+$hasConstantText = false;
+if ($schemaExists) {
+    $hasQuestions = (bool) $pdo->query(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'questions'"
+    )->fetchColumn();
+    if ($hasQuestions) {
+        foreach ($pdo->query('PRAGMA table_info(questions)')->fetchAll() as $column) {
+            if (($column['name'] ?? '') === 'constant_text') {
+                $hasConstantText = true;
+                break;
+            }
+        }
+    }
+}
+
+// The staging database is disposable. Replace a pre-ST01 schema instead of
+// trying to keep its context tables or columns.
+if ($schemaExists && !$hasConstantText) {
+    $pdo->exec('DROP TABLE IF EXISTS questions; DROP TABLE IF EXISTS question_contexts;');
+    $schemaExists = false;
+}
+
 if (!$schemaExists) {
     $pdo->exec(
-        'CREATE TABLE subjects (
+        "CREATE TABLE IF NOT EXISTS subjects (
             id INTEGER PRIMARY KEY,
             subject_name TEXT NOT NULL UNIQUE,
             description TEXT,
             is_active INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
-        CREATE TABLE exam_category (
+        CREATE TABLE IF NOT EXISTS exam_category (
             id INTEGER PRIMARY KEY,
             category_name TEXT NOT NULL UNIQUE,
             description TEXT,
             is_active INTEGER NOT NULL DEFAULT 1,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE question_contexts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            context_type TEXT NOT NULL,
-            title TEXT NOT NULL,
-            context_text TEXT NOT NULL,
-            subject_id INTEGER NOT NULL,
-            exam_category_id INTEGER NOT NULL,
-            exam_year INTEGER NOT NULL,
-            expected_member_count INTEGER NOT NULL,
-            is_active INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            activated_at TEXT,
-            idempotency_token TEXT UNIQUE,
-            FOREIGN KEY (subject_id) REFERENCES subjects (id),
-            FOREIGN KEY (exam_category_id) REFERENCES exam_category (id)
         );
         CREATE TABLE questions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,6 +64,7 @@ if (!$schemaExists) {
             exam_category_id INTEGER NOT NULL,
             exam_year INTEGER NOT NULL,
             question_text TEXT NOT NULL,
+            constant_text TEXT,
             question_image_path TEXT,
             option_a TEXT NOT NULL,
             option_b TEXT NOT NULL,
@@ -69,16 +75,10 @@ if (!$schemaExists) {
             answer_video_path TEXT,
             is_active INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            practice_title TEXT NOT NULL DEFAULT \'\',
-            context_id INTEGER,
-            context_position INTEGER,
-            context_slot INTEGER,
+            practice_title TEXT NOT NULL DEFAULT '',
             FOREIGN KEY (subject_id) REFERENCES subjects (id),
-            FOREIGN KEY (exam_category_id) REFERENCES exam_category (id),
-            FOREIGN KEY (context_id) REFERENCES question_contexts (id),
-            UNIQUE (context_id, context_position),
-            UNIQUE (context_id, context_slot)
-        )'
+            FOREIGN KEY (exam_category_id) REFERENCES exam_category (id)
+        )"
     );
 
     $subjects = [
@@ -90,7 +90,7 @@ if (!$schemaExists) {
         19 => 'Marketing',
     ];
     $insertSubject = $pdo->prepare(
-        'INSERT INTO subjects (id, subject_name) VALUES (:id, :name)'
+        'INSERT OR IGNORE INTO subjects (id, subject_name) VALUES (:id, :name)'
     );
     foreach ($subjects as $id => $name) {
         $insertSubject->execute([':id' => $id, ':name' => $name]);
@@ -103,27 +103,20 @@ if (!$schemaExists) {
         5 => 'POST UTME',
     ];
     $insertCategory = $pdo->prepare(
-        'INSERT INTO exam_category (id, category_name) VALUES (:id, :name)'
+        'INSERT OR IGNORE INTO exam_category (id, category_name) VALUES (:id, :name)'
     );
     foreach ($categories as $id => $name) {
         $insertCategory->execute([':id' => $id, ':name' => $name]);
     }
 
     $pdo->exec(
-        "INSERT INTO question_contexts
-            (id, context_type, title, context_text, subject_id, exam_category_id,
-             exam_year, expected_member_count, is_active)
-         VALUES
-            (6, 'comprehension', 'PASSAGE I',
-             'The elephant is the largest land animal. It lives in herds led by an older female.',
-             14, 3, 2021, 2, 0);
-         INSERT INTO questions
-            (id, subject_id, exam_category_id, exam_year, question_text,
-             option_a, option_b, option_c, option_d, correct_option, is_active,
-             context_id, context_position)
+        "INSERT OR REPLACE INTO questions
+            (id, subject_id, exam_category_id, exam_year, question_text, constant_text,
+             option_a, option_b, option_c, option_d, correct_option, is_active)
          VALUES
             (101, 14, 3, 2021, 'An elephant herd is usually led by',
+             'The elephant is the largest land animal. It lives in herds led by an older female.',
              'the oldest male', 'an older female', 'the youngest calf', 'a lone bull',
-             1, 0, 6, 1)"
+             1, 1)"
     );
 }

@@ -1335,3 +1335,132 @@ save and delete helpers in this cycle only. It does not weaken the cap for any
 other live-origin file, and the measurement must be re-taken at handoff if the
 page changes again. The separate `admin_question_save.php` module is removed as
 part of the same change.
+
+**Superseded by ST01 (2026-11-14).** Extracting `admin_question_store.php`,
+removing the context code, and restoring the focused read-only preview
+re-measured `admin_questions.php` at **+87/−80** against its live snapshot, so
+the +229 exception is retired.
+
+## D-83 — Reset supersedes the shared-text/context subsystem
+
+**Choice.** The production path returns to root `ocr_helper.js` and the native
+admin form. Shared-text/context creation, its modules, tests, tools, SQL, and
+CSS are archived under `archive/owner-tool-2026-11/`; none are loaded. This
+supersedes the context-promotion decisions in the owner-tool cycle.
+
+**Why.** The owner chose the Constant Text reset on 2026-11-14. The production
+context migration was never executed and no live context data was created, so
+the subsystem has no deployed state to preserve. A single optional passage per
+question is simpler than shared texts with targets.
+
+**Risk.** Context behavior and its tests disappear from the active tree. They
+are retained read-only in the archive and can be restored deliberately; the
+production helper intentionally has no context concepts.
+
+## D-84 — `constant_text` is a nullable per-question column with session prefill
+
+**Choice.** Add `questions.constant_text TEXT NULL CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci`, no default, after `question_text`. The admin form
+accepts an optional full-width passage, stores empty input as `NULL`, and
+prefills a new question only from `$_SESSION['cbt_admin_constant_text']`. The
+session value is set on a successful save/update, loaded from the row on edit,
+and cleared on login and logout. The forward migration is guarded and rerunnable;
+the rollback refuses to drop a column containing data.
+
+**Why.** The owner wanted a passage attached to the question without a shared
+text library. Session prefill supports entering a stem and its passage together
+without inventing a global "last value" or another database lookup.
+
+**Risk.** `questions.practice_title` remains `NOT NULL` with no default while
+the admin INSERT omits it; that is a legacy out-of-scope field and is not changed
+by ST01. No live schema change is performed in this phase.
+
+## D-85 — Underlining targets Constant Text, question text, and options
+
+**Choice.** One runtime Underline button targets the last-focused of
+`constant_text`, `question_text`, and `option_a`–`option_d`. It wraps the
+selection in exact lowercase `<u>`/`</u>`, unwraps a selection that is already
+exactly wrapped, and refuses partial marker overlap or nested underlining.
+
+**Why.** The Android request was exact lowercase tags around arbitrary
+selections. A single button keeps the editing model small and matches the
+markers both renderers restore.
+
+**Risk.** The button relies on native textarea selection state and `setRangeText`.
+Malformed input stays literal; the button never repairs existing text.
+
+## D-86 — Constant Text displays in the exam and answer pages only
+
+**Choice.** Render Constant Text above the question in `cbt.php` and
+`answer_details.php`. Do not add it to the result sheet or
+`cbt_practice.php`.
+
+**Why.** The passage is context for answering and reviewing a question. The
+result sheet is a compact score view, and `cbt_practice.php` is out of ST01
+scope.
+
+**Risk.** `cbt_practice.php` is intentionally untouched and therefore will not
+show Constant Text until a later package includes it.
+
+## D-87 — Root helper accepts common OCR option-label forms
+
+**Choice.** Root `ocr_helper.js` accepts `A.`, `A)`, `(A)`, `(A).`, `a)`,
+`(a)`, and `(A).` as option labels and normalizes the letter to uppercase. A
+civic fixture and a six-form label fixture are added. The question-split
+lookahead is unchanged: a number followed immediately by an option label is not
+a question boundary.
+
+**Why.** A real civic paper used lowercase and parenthesized labels; the old
+root helper missed them and produced missing-option flags. The civic fixture
+now parses its 50 questions with no missing-option flags.
+
+**Risk.** The option regex, numbering guard, and split lookahead are high-risk
+code. The bank corpus still parses 40 questions with no missing options; a
+duplicate-C flag on the last bank question comes from its OCR answer-key text
+and is pre-existing.
+
+## D-88 — Archive retired modules; do not drop unverified live schema
+
+**Choice.** Move retired context/owner-tool PHP, JS, CSS, tests, tools, and SQL
+into `archive/owner-tool-2026-11/` with `git mv` and an archive README. Do not
+run any live `DROP`/`ALTER`; the admin INSERT omits retired columns, and the
+forward Constant Text migration is for a disposable database first.
+
+**Why.** Archiving keeps history and reviewability without loading dead code.
+Avoiding live schema drops keeps the published site reversible and respects the
+no-destructive-live-write rule.
+
+**Risk.** The live production schema may retain unused context columns until the
+owner runs a migration. That is preferred to an unverified destructive change.
+
+## D-89 — Main helper has no Constant Text or cloze-context path
+
+**Choice.** Root `ocr_helper.js` does not extend the question-number lookahead
+for a label after a number and never reads or writes `constant_text`. A row such
+as `1. (a) One (b) Two ...` is not recognized as a numbered boundary; the
+legacy unnumbered fallback may still queue it with review flags. The civic
+fixture's six real label forms still parse, while cloze/passage extraction and
+Constant Text routing remain out of the root helper.
+
+**Why.** The main OCR paste box fills the native single-question form. Treating
+a table row as a question was unintended scope creep and made the helper appear
+to understand cloze blocks, which it does not.
+
+**Risk.** Passage/cloze-shaped text can still resemble an ordinary question and
+be loaded into Question/options with advisory flags. It cannot populate Constant
+Text; the administrator must enter that field manually or use its session
+prefill.
+
+## D-90 — Restore one read-only multiline admin preview
+
+**Choice.** Load `src/owner-tool/render.js`, `src/question-preview.js`, and
+`src/question-preview.css` on the native admin page. The generated panel sits
+beside Question, previews Constant Text and Question, uses the exact-tag renderer
+and `white-space: pre-wrap`, and contains no editable controls. The module reads
+field values only and has no storage, network, submit, or form-value writes.
+
+**Why.** The reset must preserve the administrator's safe multiline/underline
+preview without restoring the archived owner tool or its context workflow.
+
+**Risk.** If the renderer asset is missing, the preview does not mount; the
+native form remains usable and no entered value is changed.

@@ -248,9 +248,27 @@ closed by the archived PHP/HTML sources:
   guarded read-only payload on `admin_questions.php`, and the owner-accepted
   Brave/Android re-check on 2026-11-13.
 
+## G. Constant Text reset (ST01)
+
+EC-95 through EC-126 above belong to the archived context/owner-tool subsystem
+(D-83); they remain as history, not production requirements.
+
+| ID | Short name | Trigger | Expected behavior | Status | Source |
+|---|---|---|---|---|---|
+| EC-127 | Empty Constant Text | Whitespace-only or empty textarea | Stored as `NULL`; the question still saves | CONFIRMED | D-84; `php tests/admin-question-store.php` |
+| EC-128 | Constant Text size boundary | Exactly 60,000 vs 60,001 UTF-8 bytes | 60,000 accepted; 60,001 rejected with the native error and no partial save | CONFIRMED | `deployed/admin_questions.php`; `deployed/admin_question_store.php` |
+| EC-129 | Session prefill scope | New-question GET after save vs edit GET vs another session | Prefills only after a successful save in the same session; edit shows the row value; another session starts empty | CONFIRMED | D-84; static source checks; phone-staging source |
+| EC-130 | Login/logout reset | Log out, then log in and open Add Question | Constant Text starts empty; a prior successful passage does not leak | CONFIRMED | D-84; `deployed/admin_questions.php` |
+| EC-131 | Underline edge | Selection crosses a partial marker or contains a nested pair | Refused; text is unchanged and no malformed marker is created | CONFIRMED | D-85; `node tests/underline-toolbar.js` |
+| EC-132 | Underline target | Focus changes between Constant Text, question, and an option | The last-focused field is wrapped; other fields are untouched | CONFIRMED | D-85; `src/underline-toolbar.js`; `node tests/underline-toolbar.js` |
+| EC-133 | Civic option labels | `a)`, `(a)`, `(A).`, `A)`, `(A)`, `A.` | All parse as options, letters normalized to uppercase, no missing-option flag | CONFIRMED | D-87; `tests/ocr-helper.js`; `tests/fixtures/ocr-helper-option-labels.txt` |
+| EC-134 | Multiline stem | Single wrapped line plus a blank-line paragraph | Single wrap folds to one space; blank line survives as `\n\n`; option stays one line | CONFIRMED | D-66; `ocr_helper.js` `cleanBlock`; `tests/ocr-helper.js` |
+| EC-135 | Passage/cloze paste with Constant Text present | Load passage/cloze-shaped OCR while Constant Text already has a value | The helper may queue ordinary Question/options with review flags, but Constant Text remains byte-for-byte unchanged | CONFIRMED | D-89; `tests/ocr-helper.js`; disposable Chromium OCR-fill check |
+| EC-136 | Preview formatting and editability | Constant Text/Question contain blank lines, exact `<u>` markers, and unsafe-looking text | Preview preserves paragraphs, creates underlines only through `CBTText`, and exposes no editable control or form write | CONFIRMED | D-90; `tests/question-preview.js`; disposable Chromium 390px check |
+
 ## Counts
 
-- Total: 126
-- CONFIRMED: 122
+- Total: 136
+- CONFIRMED: 132
 - UNVERIFIED: 4
 - CONFLICTED: 0

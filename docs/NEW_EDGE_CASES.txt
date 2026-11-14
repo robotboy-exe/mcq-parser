@@ -25,3 +25,45 @@ added: full-year WASSCE CRS coverage exists for
 cases are already covered by `new-edge-dotless-c` (Q2),
 `new-edge-slash-option-a` (Q17), and the fused/slash fixtures. Status: parked,
 not a defect.
+
+CIVIC EDUCATION 2026 option labels — promoted 2026-11-14
+
+The source uses lowercase and parenthesized labels: `(a)`, `(b)` in the main
+paper and `a)`/`(A).` in variants. The old root helper recognized only `A.`, so
+items were flagged with missing options.
+
+Expected: 50 questions, four options each, no flags. Actual: 50/50 with no
+flags after the ST01 label-regex change; the question lookahead stays unchanged.
+
+Promoted to `tests/fixtures/ocr-helper-civic-2026.txt` and
+`tests/ocr-helper-option-labels.txt`, exercised by `tests/ocr-helper.js`.
+Status: fixed, regression-covered.
+
+Multiline stem — promoted 2026-11-14
+
+Root-helper parsing previously collapsed every whitespace run, which removed
+blank-line paragraph breaks from stems. Expected: single wraps fold to one
+space, real blank lines remain as `\n\n`, options stay single-line.
+
+Promoted to the paragraph vector in `tests/ocr-helper.js`. Status: fixed,
+regression-covered.
+
+OCR passage/cloze separation — promoted 2026-11-14
+
+The production helper may interpret passage/cloze-shaped text through its
+legacy ordinary-question fallback, but it has no `constant_text` reference and
+must never fill that field. A disposable Chromium check prefilled Constant Text,
+loaded a passage/cloze paste, and observed the value byte-for-byte unchanged.
+
+Promoted to `tests/ocr-helper.js` source/scope vectors and EC-135. Status:
+confirmed, regression-covered.
+
+Read-only multiline preview — promoted 2026-11-14
+
+The restored admin preview renders Constant Text and Question through
+`window.CBTText`, preserves blank-line paragraphs with `pre-wrap`, and exposes no
+editable controls or form writes. Exact lowercase markers underline; unsupported
+markup remains renderer-owned text.
+
+Promoted to `tests/question-preview.js`, INV-138, and EC-136. Status: fixed,
+regression-covered.

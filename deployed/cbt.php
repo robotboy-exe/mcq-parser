@@ -1,14 +1,11 @@
 <?php
 $page_title = "Online CBT Examination | Skymenu";
 require_once __DIR__ . '/cbt_db.php';
-require_once __DIR__ . '/cbt_candidate.php';
-
 $subjects = [];
 $examCategories = [];
 $examYears = [];
 $dbQuestions = [];
 $questionsForBrowser = [];
-$contextsForBrowser = [];
 $examStarted = false;
 $setupError = '';
 $selectedSubjectId = 0;
@@ -33,14 +30,45 @@ if (isset($_GET['action']) && $_GET['action'] === 'subject_options') {
             exit;
         }
 
-        $examCategories = cbt_candidate_categories($pdo, $subjectId);
+        $categoryStmt = $pdo->prepare(
+            "SELECT DISTINCT ec.id, ec.category_name
+             FROM questions q
+             INNER JOIN exam_category ec ON ec.id = q.exam_category_id
+             WHERE q.is_active = 1
+               AND q.subject_id = :subject_id
+               AND ec.is_active = 1
+               AND ec.id <= 10
+             ORDER BY ec.category_name"
+        );
+        $categoryStmt->execute([':subject_id' => $subjectId]);
 
         $categoryValue = filter_var($_GET['category_id'] ?? '', FILTER_VALIDATE_INT);
         $categoryId = ($categoryValue !== false && $categoryValue !== null) ? (int) $categoryValue : 0;
 
+        // Years are filtered by subject and, when selected, by exam category too.
+        if ($categoryId > 0) {
+            $yearStmt = $pdo->prepare(
+                "SELECT DISTINCT q.exam_year
+                 FROM questions q
+                 INNER JOIN exam_category ec ON ec.id = q.exam_category_id
+                 WHERE q.is_active = 1 AND q.subject_id = :subject_id
+                   AND q.exam_category_id = :category_id
+                   AND ec.is_active = 1 AND ec.id <= 10
+                 ORDER BY q.exam_year DESC"
+            );
+            $yearStmt->execute([':subject_id' => $subjectId, ':category_id' => $categoryId]);
+        } else {
+            $yearStmt = $pdo->prepare(
+                "SELECT DISTINCT exam_year FROM questions
+                 WHERE is_active = 1 AND subject_id = :subject_id
+                 ORDER BY exam_year DESC"
+            );
+            $yearStmt->execute([':subject_id' => $subjectId]);
+        }
+
         echo json_encode([
-            'categories' => $examCategories,
-            'years' => cbt_candidate_years($pdo, $subjectId, $categoryId > 0 ? $categoryId : null),
+            'categories' => $categoryStmt->fetchAll(PDO::FETCH_ASSOC),
+            'years' => array_map('intval', $yearStmt->fetchAll(PDO::FETCH_COLUMN)),
         ]);
     } catch (Throwable $e) {
         error_log('CBT subject options lookup failed: ' . $e->getMessage());
@@ -63,8 +91,24 @@ try {
     )->fetchAll();
 
     if ($selectedSubjectId > 0) {
-        $examCategories = cbt_candidate_categories($pdo, $selectedSubjectId);
-        $examYears = cbt_candidate_years($pdo, $selectedSubjectId, null);
+        $categoryStmt = $pdo->prepare(
+            "SELECT DISTINCT ec.id, ec.category_name
+             FROM questions q
+             INNER JOIN exam_category ec ON ec.id = q.exam_category_id
+             WHERE q.is_active = 1 AND q.subject_id = :subject_id
+               AND ec.is_active = 1 AND ec.id <= 10
+             ORDER BY ec.category_name"
+        );
+        $categoryStmt->execute([':subject_id' => $selectedSubjectId]);
+        $examCategories = $categoryStmt->fetchAll();
+
+        $yearStmt = $pdo->prepare(
+            "SELECT DISTINCT exam_year FROM questions
+             WHERE is_active = 1 AND subject_id = :subject_id
+             ORDER BY exam_year DESC"
+        );
+        $yearStmt->execute([':subject_id' => $selectedSubjectId]);
+        $examYears = array_map('intval', $yearStmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
     $subjectsById = [];
@@ -97,8 +141,19 @@ try {
         } elseif (!isset($subjectsById[$selectedSubjectId]) || !isset($categoriesById[$selectedCategoryId])) {
             $setupError = 'Please select a valid subject and exam category.';
         } else {
-            // Verify that this combination has a standalone question or complete context.
-            if (!cbt_candidate_pool_has_unit($pdo, $selectedSubjectId, $selectedCategoryId, $selectedExamYear)) {
+            // Verify that this exact subject/category/year combination has active questions.
+            $validCombination = $pdo->prepare(
+                "SELECT 1 FROM questions
+                 WHERE is_active = 1 AND subject_id = :subject_id
+                   AND exam_category_id = :category_id AND exam_year = :exam_year
+                 LIMIT 1"
+            );
+            $validCombination->execute([
+                ':subject_id' => $selectedSubjectId,
+                ':category_id' => $selectedCategoryId,
+                ':exam_year' => $selectedExamYear,
+            ]);
+            if (!$validCombination->fetchColumn()) {
                 $setupError = 'Please select an exam year that has active questions for the chosen subject and category.';
             }
         }
@@ -109,15 +164,22 @@ try {
             $questionLimit = ($selectedSubjectId === 6) ? 100
                 : (($selectedSubjectId === 12) ? 60 : 50);
 
-            $delivery = cbt_candidate_delivery(
-                $pdo,
-                $selectedSubjectId,
-                $selectedCategoryId,
-                $selectedExamYear,
-                $questionLimit
+            $stmt = $pdo->prepare(
+                "SELECT id, question_text, constant_text, question_image_path, option_a, option_b, option_c, option_d, correct_option
+                 FROM questions
+                 WHERE is_active = 1
+                   AND subject_id = :subject_id
+                   AND exam_category_id = :exam_category_id
+                   AND exam_year = :exam_year
+                 ORDER BY RAND()
+                 LIMIT " . (int) $questionLimit
             );
-            $dbQuestions = $delivery['questions'];
-            $contextsForBrowser = $delivery['contexts'];
+            $stmt->execute([
+                ':subject_id' => $selectedSubjectId,
+                ':exam_category_id' => $selectedCategoryId,
+                ':exam_year' => $selectedExamYear,
+            ]);
+            $dbQuestions = $stmt->fetchAll();
 
             if (!$dbQuestions) {
                 $setupError = 'There are no active questions for this subject and exam category yet. Please choose another combination.';
@@ -156,6 +218,7 @@ $questionsForBrowser = array_map(static function (array $row): array {
     return [
         'id' => (int) $row['id'],
         'question' => $row['question_text'],
+        'constant' => isset($row['constant_text']) && is_string($row['constant_text']) ? $row['constant_text'] : '',
         // Only expose image paths generated by the question-image uploader.
         'image' => (isset($row['question_image_path'])
             && is_string($row['question_image_path'])
@@ -164,16 +227,12 @@ $questionsForBrowser = array_map(static function (array $row): array {
                 : ''),
         'options' => [$row['option_a'], $row['option_b'], $row['option_c'], $row['option_d']],
         'answer' => (int) $row['correct_option'],
-        'contextId' => $row['context_id'] === null ? null : (int) $row['context_id'],
-        'contextPosition' => $row['context_position'] === null ? null : (int) $row['context_position'],
-        'contextSlot' => $row['context_slot'] === null ? null : (int) $row['context_slot'],
     ];
 }, $dbQuestions);
 
 include __DIR__ . '/header.php';
 ?>
 
-<link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.3a">
 <style>
 /* =========================================================
    SKYMENU ONLINE CBT
@@ -256,6 +315,18 @@ include __DIR__ . '/header.php';
     border-radius: 7px;
     font-weight: 800;
     margin-bottom: 15px;
+}
+.constant-text {
+    background: #f7f9fc;
+    border: 1px solid #dce3eb;
+    border-left: 4px solid #1769aa;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 0 0 20px;
+    font-size: 17px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 .question-text {
     font-size: 20px;
@@ -734,7 +805,6 @@ include __DIR__ . '/header.php';
 // Questions are randomly selected from MySQL for the chosen subject/category.\n// Subject 6 (English Language) allows 100; subject 12 (Oral English) allows 60; others allow 50.
 // JSON_HEX_* prevents question text from breaking the script context.
 const questions = <?php echo json_encode($questionsForBrowser, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-const contexts = <?php echo json_encode($contextsForBrowser, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 
 const SUBJECT_ID = <?php echo (int) $selectedSubjectId; ?>;
 const MAX_QUESTIONS = SUBJECT_ID === 6 ? 100 : (SUBJECT_ID === 12 ? 60 : 50);
@@ -772,8 +842,13 @@ function renderQuestion() {
 
     let html = `
         <div class="question-number">Question ${current + 1}</div>
-        <p class="question-text"></p>
     `;
+
+    if (q.constant) {
+        html += `<div class="constant-text"></div>`;
+    }
+
+    html += `<p class="question-text"></p>`;
 
     // The diagram is optional, so questions without one remain unchanged.
     if (q.image) {
@@ -794,15 +869,21 @@ function renderQuestion() {
             <label class="option ${selected}">
                 <input type="radio" name="answer" value="${index}"
                     ${answers[current] === index ? "checked" : ""}>
-                <span><strong>${String.fromCharCode(65 + index)}.</strong> ${escapeHtml(option)}</span>
+                <span><strong>${String.fromCharCode(65 + index)}.</strong> <span class="option-text" data-option-index="${index}"></span></span>
             </label>
         `;
     });
 
     html += "</div>";
     questionArea.innerHTML = html;
+    if (q.constant) {
+        renderQuestionText(questionArea.querySelector('.constant-text'), q.constant);
+    }
     renderQuestionText(questionArea.querySelector('.question-text'), q.question);
-    if (window.CBTContext) window.CBTContext.renderForQuestion(questionArea, contexts, q);
+    questionArea.querySelectorAll('.option-text').forEach(element => {
+        const index = Number(element.dataset.optionIndex);
+        renderQuestionText(element, q.options[index]);
+    });
 
     document.querySelectorAll('input[name="answer"]').forEach(input => {
         input.addEventListener("change", function() {
@@ -904,7 +985,6 @@ function submitTest(forceSubmit = false) {
         questionLabel.className = "result-question-text";
         renderQuestionText(questionLabel, q.question);
         questionCell.appendChild(questionLabel);
-        if (window.CBTContext) window.CBTContext.renderForQuestion(questionCell, contexts, q);
         if (q.image) {
             const questionImage = document.createElement("img");
             questionImage.className = "result-question-image";
@@ -917,7 +997,7 @@ function submitTest(forceSubmit = false) {
 
         [choiceText, correctText].forEach(value => {
             const cell = document.createElement("td");
-            cell.textContent = value;
+            renderQuestionText(cell, value);
             row.appendChild(cell);
         });
         const statusCell = document.createElement("td");
@@ -927,15 +1007,12 @@ function submitTest(forceSubmit = false) {
         statusCell.appendChild(statusPill);
         row.appendChild(statusCell);
 
-        // Linked context questions have no standalone detail page.
         const detailsCell = document.createElement("td");
-        if (q.contextId === null || q.contextId === undefined) {
-            const detailsLink = document.createElement("a");
-            detailsLink.className = "answer-details-btn";
-            detailsLink.href = "answer_details.php?id=" + encodeURIComponent(String(q.id));
-            detailsLink.textContent = "View Explanation & Video";
-            detailsCell.appendChild(detailsLink);
-        }
+        const detailsLink = document.createElement("a");
+        detailsLink.className = "answer-details-btn";
+        detailsLink.href = "answer_details.php?id=" + encodeURIComponent(String(q.id));
+        detailsLink.textContent = "View Explanation & Video";
+        detailsCell.appendChild(detailsLink);
         row.appendChild(detailsCell);
 
         resultBody.appendChild(row);

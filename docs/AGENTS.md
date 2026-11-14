@@ -15,8 +15,9 @@ features.
 The pure, canonical parser implementation lives in `src/parser/core.js` (API
 version `2.3.3`). It contains the pure comprehension and cloze engines,
 including scoped `(a)`-`(d)` parsing, gap/table detection, column inference, and
-synthesized cloze items. The browser admin page loads this consolidated file,
-and Node resolves the same module through `require`. It exports:
+synthesized cloze items. Node resolves this module through `require` for the
+historical parser suite; the production admin page does **not** load it. It
+exports:
 - Pure regexes: `FIXES`, `OPTION`, `KEY_LINE`, `PLACEHOLDER`, `STEM_LINE`, `KEY_WORD`, `INLINE_PAIR`, `LOOSE`.
 - Pure parsing & inference: `parseHeader`, `pickSubjectIndex`, `pickCategoryIndex`, `splitQuestions`, `splitBulletQuestions`, `splitQuestionItems`, `parseQuestion`, `parseStimulusRange`, `extractStimuli`, `applyStimulusFlags`, `flagNumberingGaps`, `splitSections`, `salvageNormalize`, `splitSectionsWithSalvage`, `keyPairs`, `parseKeyDetailed`, `parseKey`, `parsePaste`, `comprehensionEngine`, `linkComprehension`, `clozeEngine`, and `mergeClozeItems`.
 - Browser & Node compatibility: Works in Node (`module.exports`) and Browser (`window.OCRParser`).
@@ -27,29 +28,30 @@ compatibility with the legacy bookmarklet and auto-save test harnesses.
 The bookmarklet build and `src/ui/ui.js` are legacy artifacts maintained for
 historical regression testing, not the production delivery path.
 
-## Production path (owner tool)
+## Production path
 
-`src/owner-tool/owner-tool.js` (state, paste/parse/fill, and controller),
-`src/owner-tool/render.js` (shared renderer and candidate context cards), and
-`src/owner-tool/owner-tool.css` are the shipping tool loaded by
-`admin_questions.php`. The four context APIs behind `window.CBTOwnerContexts`,
-`window.CBTOwnerContextForm`, `window.CBTOwnerContextCard`, and
-`window.CBTOwnerContextPanel` live in `src/owner-tool/shared-texts.js`
-(OT12); `owner-tool.js` reads them from `window` and must tolerate their
-absence, and `node tests/owner-tool.js` loads both files in that order. The pre-OT09A module names (`controller.js`, `state.js`,
-`contexts.js`, `context-form.js`, `context-card.js`, `context-panel.js`,
-`style.css`, `context-workflow.css`) were consolidated into these three files;
-do not recreate them. The context modules support manual native-form review;
-they must never create, update, activate, or save automatically. `render.js` is
-also loaded by both CBT pages,
-and `deployed/render.php` is its server-side twin; both escape first and restore
-only the exact `<u>`/`</u>` markers (D-66). Never render stored question text
-with permissive `strip_tags` or unrestricted `innerHTML`.
-They are readable source files with no build step: edit them directly, then run
-`node tests/owner-tool.js`. The bookmarklet sections below describe the legacy
-artifact, which is retained as evidence and is not a production deliverable.
-Owner-tool state lives under `cbtOwnerTool:v1`; never read, import, migrate, or
-delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
+Root `ocr_helper.js` is the shipping OCR helper loaded by
+`admin_questions.php`. It parses pasted OCR text into the native question form;
+queue and metadata use `ocrQueue` and `ocrMeta`. Do not change those key names or
+shapes.
+
+`src/underline-toolbar.js` adds the runtime Underline button for Constant Text,
+question text, and options A–D. `src/owner-tool/render.js` remains the browser
+exact-`<u>` renderer used by `cbt.php`; `deployed/render.php` is its server-side
+twin and adds `cbt_format_text` for the other server pages. Both escape first
+and restore only exact lowercase `<u>`/`</u>` markers. Never render stored
+question text with permissive `strip_tags` or unrestricted `innerHTML`.
+
+`src/question-preview.js` creates the read-only admin preview for Constant Text
+and Question and uses `window.CBTText`; it must never write form values, storage,
+or the network. Root `ocr_helper.js` has no `constant_text` integration. A
+passage/cloze-shaped paste may follow the ordinary-question fallback and carry
+review flags, but it must never populate Constant Text.
+
+The shared-text/context subsystem is archived under
+`archive/owner-tool-2026-11/` and is not loaded. The bookmarklet sections below
+describe the legacy artifact, retained as evidence and not a production
+deliverable.
 
 ## Ground rules
 
@@ -65,21 +67,22 @@ delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
 2. **Do not refactor for style.** The docs repeatedly say the code is a working
    baseline, not a refactor target (qwen-2 H08). Make only changes you can
    test.
-3. **Do not modify the PHP server contract, the database, or `ocr_helper.js`.**
-   The `deployed/` copies are working copies: a package may change rendering,
-   asset includes, and style there only when that package says so, and never the
-   contract below. CSRF handling, upload handling, the PRG flow, field names
+3. **Do not modify the PHP server contract or the database.** The `deployed/`
+   copies are working copies: a package may change rendering, asset includes,
+   and style there only when that package says so, and never the contract below.
+   CSRF handling, upload handling, the PRG flow, field names
    (`save_question`, `correct_option`, `option_a`–`option_d`), the four-option
-   rule, and the success flash text are off-limits (qwen-2 H03; INV-06).
-4. **Do not change `localStorage` key names or shapes.** `ocrQueue`,
-   `ocrMeta`, and `ansKey` are shared with the live helper; `ocrSubmitted`
-   remains a shared key name but the bookmarklet no longer touches it
-   (INV-36, INV-55; D-22). Auto-Save adds `batchId`, `ansKeyBatch`,
-   `ansKeyConflicts`, `ocrSaving`, `ocrSavedLog`, `ocrBatchHistory`, and
-   `autoLock`; `ocrQueue` items may add `stimuli`/`needsImage` (D-59/D-60).
-   Additions are allowed, existing shapes must stay compatible
-   (D-30, D-32, D-36, D-57). Reset Queue keeps `ocrBatchHistory`; it is
-   display-only and must never block a save.
+   rule, and the success flash text are off-limits (qwen-2 H03; INV-06). Root
+   `ocr_helper.js` is production code; change it only for a package with a
+   regression test and preserve the queue/fill behavior.
+4. **Do not change `localStorage` key names or shapes.** The production helper
+   uses `ocrQueue` and `ocrMeta` only. `ansKey` and `ocrSubmitted` are legacy
+   key names shared with old helpers; do not rename or reshape them. Auto-Save
+   adds `batchId`, `ansKeyBatch`, `ansKeyConflicts`, `ocrSaving`, `ocrSavedLog`,
+   `ocrBatchHistory`, and `autoLock` for the archived bookmarklet; `ocrQueue`
+   items may add `stimuli`/`needsImage` (D-59/D-60). Additions are allowed,
+   existing shapes must stay compatible (D-30, D-32, D-36, D-57). Reset Queue
+   keeps `ocrBatchHistory`; it is display-only and must never block a save.
 5. **Edit modules, not the build output.** `src/bookmarklet.js` is generated.
    Change `src/parser/parser.js` or `src/ui/ui.js`, then rebuild
    `src/bookmarklet.js`. `src/bookmarklet.min.js` is an untracked local
@@ -125,24 +128,21 @@ delete the legacy `ocrQueue`/`ocrMeta`/`ansKey` values.
 
 ## What to preserve
 
+- Multiline rendering stays: single OCR wraps fold to one space, real blank-line
+  paragraphs remain as `\n\n`, Constant Text and question stems render with
+  `white-space: pre-wrap`, and options stay single-line. Do not replace this
+  with a blanket whitespace collapse or `innerHTML`.
 - A key-only paste keeps the queue; a questions paste replaces or clears the
   key (INV-32, INV-33).
-- In the owner tool, a new full paste clears all prior native question/link and
-  context-editor values before applying the new parse; empty inferred pool
-  values stay empty. Key-only paste keeps the owner queue/contexts (D-77,
-  INV-122).
-- Saved-context auto-adoption uses full pool/type/title/passage-text identity,
-  not title alone. Duplicate notices are advisory and must never become a
-  server rejection or disabled Save (D-77, INV-111, INV-123).
-- Shared Texts management pagination is 10 rows on `context_page`, but the
-  question selector remains unpaginated. Never reuse the paginated table rows
-  as the selector source (D-78, INV-125).
-- The shared-text editor sits immediately below the paste panel and above the
-  light-blue question-link group. **Use Paste** may fill only a new
-  `save_context` draft. It must never change fields, action, or ID while the
-  form is in saved `update_context` edit mode. Keep the amber draft and blue
-  saved-edit headings, badges, borders, and backgrounds distinct (D-79,
-  INV-127).
+- Constant Text is optional per question. A successful save/update stores it and
+  sets the session prefill; a new-question GET shows that session value; an edit
+  GET shows the row value and must not overwrite the session. Login and logout
+  clear the session value.
+- The underline tool acts on the last-focused of Constant Text, question text,
+  and options A–D. It writes exact lowercase `<u>`/`</u>` and refuses partial
+  marker overlap or nested pairs.
+- The root helper accepts `a)`, `(a)`, `(A).`, `A)`, `(A)`, and `A.`, normalizes
+  the letter to uppercase, and leaves queue/storage/fill behavior unchanged.
 - Blank options stay blank; a later option is not pulled into their place
   (INV-16).
 - A second complete A–D set with no visible question-number boundary is
@@ -206,24 +206,22 @@ Commands:
 ```sh
 node tests/runner.js
 node tests/unit.js
-node tests/owner-tool.js
-node tests/context-migration.js
-node tests/cbt-context.js
+node tests/ocr-helper.js
+node tests/underline-toolbar.js
+node tests/question-preview.js
 node tools/extract-bank.js --check
-php tests/context-lib.php
-php tests/context-admin.php
-php tests/context-preflight.php
 php tests/php-render.php
-php tests/cbt-candidate.php
+php tests/admin-question-store.php
 ```
 
 The fixture harness is parser-only; it does not execute DOM, storage,
-`fillForm`, `tick`, or save behavior. `tests/unit.js` covers the pure auto-save
-helpers. For the save write path, a test-only deterministic DOM/storage/fetch
-shim (`tests/ui-harness.js`) evaluates the real `src/ui/ui.js` and drives manual
-save, rejected/ambiguous save, and Reset/re-paste actions; it is not a browser
-test. None of these harnesses exercise the live admin page, its delete forms,
-or the confirm dialog; live checks follow `docs/LIVE-SAFETY.md`.
+`fillForm`, `tick`, or save behavior. `tests/unit.js` covers the legacy pure
+auto-save helpers. `tests/ocr-helper.js` covers the root production helper;
+`tests/underline-toolbar.js` covers the pure wrap/unwrap logic;
+`tests/question-preview.js` covers read-only preview mounting and refresh; and
+`php tests/admin-question-store.php` covers the extracted save/delete
+transaction. None of these harnesses exercise the live admin page, its delete
+forms, or the confirm dialog; live checks follow `docs/LIVE-SAFETY.md`.
 
 The mandatory regression set is the three documented cases (qwen-2 H04):
 

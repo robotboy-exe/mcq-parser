@@ -1,43 +1,35 @@
-# Developer Guide — Owner Tool, Context Schema, and CBT Delivery
+# Developer Guide — Constant Text Reset (ST01)
 
-Recorded: 2026-11-08; updated for OT11 on 2026-11-13; suite evidence re-run
-2026-11-14 at `f84518e`. This is the human-developer handoff for the
-`owner-tool-2026-11` cycle. It covers the shipped architecture, source of truth,
-stored state, parser extension rules, the context lifecycle, the security
-renderer, testing commands, and known limitations. Deployment steps are in
-[`DEPLOYMENT.md`](DEPLOYMENT.md).
+Recorded: 2026-11-14. This is the human-developer handoff for ST01 in the
+`math-editor-2026-11` cycle. It covers the production architecture, source of
+truth, stored state, parser extension rules, Constant Text lifecycle, the
+security renderer, testing commands, and known limitations. Deployment steps are
+in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## 1. Architecture map
 
 | File | Responsibility |
 |---|---|
-| `deployed/admin_questions.php` | Standalone-question entry point: session/CSRF, login, native question form, PRG dispatch, renderer/asset wiring, and an inlined context-free save/delete behind a column probe. Includes `render.php` only; it must not include `admin_context.php`. |
-| `deployed/admin_shared.php` | Shared-text entry point: login/CSRF/PRG, shared-text CRUD via `admin_context.php`, member questions with duplicated media uploads, combined recent-questions table, and the paste-to-draft panel. |
-| `deployed/admin_context.php` | Admin context request handling, context CRUD/question-link mutations, paginated management rendering, and read-only owner payloads. |
-| `deployed/context_lib.php` | Side-effect-free context validation and queries (slot tokens, member checks, link errors, status labels, paginated lists, and unpaginated selector options). |
-| `deployed/cbt_candidate.php` | Complete-group candidate selection and repository queries for `cbt.php`. |
-| `deployed/cbt.php` | Candidate setup, AJAX subject/category/year options, complete-group delivery, exam UI, result panel. Loads `render.js`. |
-| `deployed/answer_details.php` | Supplied answer-details page. Uses `render.php` for question text. |
+| `deployed/admin_questions.php` | Question entry point: session/CSRF, login, native question form, Constant Text, PRG dispatch, and asset wiring. Requires `admin_question_store.php`; loads root `ocr_helper.js`, the underline tool, and the read-only preview. |
+| `deployed/admin_question_store.php` | Extracted standalone save/delete transaction with explicit column lists and `constant_text` null-when-empty. |
+| `deployed/cbt.php` | Standalone CBT delivery: subject/category/year queries, exam UI, Constant Text block, exact-`<u>` questions/options, result panel. Loads `src/owner-tool/render.js`. |
+| `deployed/answer_details.php` | Answer explanation page. Uses `render.php` for Constant Text, questions, options, and explanations. |
 | `deployed/render.php` | Server-side safe renderer: escape first, restore only exact `<u>`/`</u>`. |
-| `src/parser/core.js` | Pure parser 2.3.3. Owns the comprehension and cloze engines as internal IIFEs; exposes the parser API and `comprehensionEngine()`/`clozeEngine()`. |
-| `src/owner-tool/render.js` | Shared client renderer and context-card renderer (`window.CBTText`, `window.CBTContext`). |
-| `src/owner-tool/owner-tool.js` | Owner-tool state, paste/parse/fill, preview, underline, and controller. Reads the context APIs from `window` and runs without them. |
-| `src/owner-tool/shared-texts.js` | The four context APIs (`window.CBTOwnerContexts`, `…Form`, `…Card`, `…Panel`) split out of `owner-tool.js`; loaded by `admin_shared.php`. |
-| `src/owner-tool/shared-paste.js` | Shared-page paste client: parses a paste, queues drafts under `cbtSharedPaste:v1`, fills the native shared-text editor, refuses to touch a saved text. |
-| `src/owner-tool/owner-tool.css` | Owner-tool, context-workflow, and CBT context styles. |
-| `deployed/sql/01-context-migration.sql` | Rerunnable forward migration. |
-| `deployed/sql/02-context-rollback.sql` | Guarded, non-destructive rollback. |
+| `ocr_helper.js` | Shipping OCR helper. Parses pasted OCR into the native form, preserves blank-line paragraphs, fills `ocrQueue`/`ocrMeta`, and never submits. |
+| `src/underline-toolbar.js` | Runtime Underline button for Constant Text, question text, and options A–D. |
+| `src/question-preview.js` / `.css` | Read-only Constant Text/Question preview, rendered with `window.CBTText` and `white-space: pre-wrap`; no form, storage, or network writes. |
+| `src/owner-tool/render.js` | Browser safe renderer (`window.CBTText`) used by `cbt.php`. The legacy context-card helpers remain in the file but no page calls them. |
+| `src/parser/core.js` | Pure parser 2.3.3, retained for the historical parser fixture suite. Not loaded by the production admin page. |
+| `deployed/sql/base-schema.working.sql` | Working schema copy, now including `constant_text`. |
+| `deployed/sql/01-constant-text.sql` | Guarded, rerunnable forward migration. |
+| `deployed/sql/02-constant-text-rollback.sql` | Guarded rollback that refuses non-empty data. |
 | `deployed/sql/README.md` | Migration/rollback runbook. |
 
-**Ownership split (OT12).** `questions.context_id IS NULL` belongs to
-`admin_questions.php`; everything else belongs to `admin_shared.php`. Each page
-hides and refuses the other page's rows. The standalone page may read the
-`context_id` column existence for its probe but must never write a context
-column; the only shared schema it depends on is `questions` itself.
-
-The owner tool is the production delivery path. `src/parser/parser.js`,
-`src/ui/ui.js`, `src/bookmarklet.js`, and `src/bookmarklet.min.js` are legacy
-evidence/test artifacts; do not extend them for product work.
+**Ownership.** The production path is root `ocr_helper.js` plus the native
+admin form. The shared-text/context subsystem and the legacy bookmarklet are
+archived under `archive/owner-tool-2026-11/`; do not load or extend them. The
+`src/owner-tool/context*` helper functions inside `render.js` are inert and
+kept only because that file is shared with `cbt_practice.php`.
 
 ## 2. Source of truth
 
@@ -52,116 +44,70 @@ evidence/test artifacts; do not extend them for product work.
   only working-copy correction is `exam_category2` → `exam_category` in
   `deployed/sql/base-schema.working.sql`.
 
-## 3. Stored state (`cbtOwnerTool:v1`)
+## 3. Stored state
 
-The owner tool uses one versioned key. Do not read, migrate, or delete the
-legacy `ocrQueue`, `ocrMeta`, or `ansKey` values.
+The production helper uses only:
 
 ```text
-cbtOwnerTool:v1 = {
-  version: 1,
-  parserVersion: "2.3.3",
-  queueId: string,
-  metadata: { subject_id, exam_category_id, exam_year },
-  contexts: [{
-    localId, contextType, title, text, targets, expectedCount,
-    subjectId, examCategoryId, examYear, serverId, stale
-  }],
-  items: [{
-    num, stem, options, answer, flags, contextRef, contextPosition, contextSlot, ...
-  }],
-  answerKey: { "<question number>": "<letter>" },
-  currentIndex: number,
-  pendingSubmission: null | {
-    queueId, index, fingerprint, kind, localId?
-  }
-}
+ocrQueue = { items: [question...], i: number }
+ocrMeta  = { subject_id, exam_category_id, exam_year }
 ```
 
-Rules:
-
-- A stored state with a different `parserVersion` is read-only until a full
-  re-paste or explicit Reset. Never stamp it with the current version.
-- `pendingSubmission` binds one native PRG request to the current queue and
-  fingerprint. It prevents a stale response from being treated as a save.
-- Loading, parsing, previewing, and filling the native form write no server row.
-  Only the native form submit saves.
-- Reset replaces the state with `emptyState` and clears the key/batch state.
-- A new full paste also replaces every paste-derived native/context value before
-  applying the parse. A key-only paste keeps the queue and contexts.
+- There is no queue version marker. After changing the helper, press Reset and
+  re-paste rather than trusting an old queue (EC-62/INV-56).
+- Do not rename either key or change their shapes. They are shared with the live
+  helper origin.
+- The helper does not read or write `ansKey`, `ocrSubmitted`, `cbtOwnerTool:v1`,
+  or any Auto-Save key.
+- Loading, parsing, and filling write no server row. Only the native form submit
+  saves.
+- Constant Text is server-side session state, not `localStorage`.
+- The OCR helper never reads or writes `constant_text`; the preview reads that
+  field but never changes it.
 
 ## 4. Parser extension rules
 
+- Root `ocr_helper.js` must stay usable both as a browser script and as a Node
+  module. Keep the pure exports `{ FIXES, OPTION, splitQuestions, parseQuestion }`
+  above the DOM guard.
+- Multiline rule: fold single wrapped stem lines to one space, preserve real
+  blank-line paragraphs as `\n\n`, and keep options single-line. Never replace
+  this with a blanket whitespace collapse; `tests/ocr-helper.js` guards it.
+- Option labels accept `A.`, `A)`, `(A)`, `(A).`, `a)`, `(a)`, and `(A).`; the
+  captured letter is normalized to uppercase. The question splitter's lookahead
+  is unchanged: a number followed immediately by a label is not a numbered
+  boundary. The legacy unnumbered fallback can still queue such text with review
+  flags, but it never writes Constant Text (D-89).
 - Keep `src/parser/core.js` pure: no DOM, storage, network, or UI references.
-- Bump `PARSER_VERSION` and the relevant asset token (`?v=…`) for any behavior
-  change. The current parser version is `2.3.3`; `core.js` uses `2.3.3` and
-  `owner-tool.js` uses `2.3.3e`, `owner-tool.css` uses `2.3.3a`, and the
-  unchanged renderer uses `2.3.2g`.
-- Add doc-backed fixtures in `fixtures/inputs/` and
-  `fixtures/expected/*.json`. Never generate expected output from the parser;
-  mark doc-unsupported fields `PENDING`.
-- Comprehension: a bounded heading/passage becomes one context; each linked
-  question carries one complete `(a)`–`(d)` set. Do not cross the passage
-  boundary or merge two sets.
-- Cloze: a gap passage plus an A–D table becomes one shared context. A gap token
-  is exactly `[[gap:N]]` with the source number. Column starts are row-derived;
-  boundaries stay word-safe. A local one-character left correction requires at
-  least two row-derived starts at modal-minus-one. Refuse the whole group on an
-  empty cell, an option over 500 characters, unmatched row/gap numbers, fewer
-  than two gaps, or unstable alignment. Keep the first evidenced group and drop
-  later colliding groups as a whole with a warning naming the shared gap numbers.
+  Bump `PARSER_VERSION` and relevant asset tokens for a behavior change to the
+  historical parser; the current version is `2.3.3`.
+- Add doc-backed fixtures in `fixtures/inputs/` and `fixtures/expected/*.json`.
+  Never generate expected output from the parser; mark doc-unsupported fields
+  `PENDING`. Root helper checks live in `tests/ocr-helper.js` with inputs under
+  `tests/fixtures/`.
 - Preserve the deliberate quirks and dangerous-area rules in `docs/AGENTS.md`
   (E/F→D, `splitQuestions` numbering guard, advisory flags, blank options,
   `FIXES` order, divider-only section separators, exact renderer markers).
 
-## 5. Context lifecycle
+## 5. Constant Text lifecycle
 
-1. The administrator loads a paste. The parser produces local context state and
-   linked-question items; nothing is posted. The native Shared Context card is
-   the only editor and is filled by the paste; Add Context reveals that same
-   card for manual entry. Multiple contexts switch through one selector. When
-   exactly one saved context matches pool, type, normalized title, and
-   normalized full passage text, the card adopts it; a count mismatch only
-   warns. A manual `#context_id` selection is authoritative and always
-   available.
-   The card sits directly below the paste controls, before the light-blue
-   question-link group. A new draft is labelled **New Shared Text** with an
-   amber draft badge; a saved edit is labelled **Edit Saved Shared Text** with a
-   blue edit badge.
-2. The administrator saves a draft context with the native form. The server
-   validates input and returns a PRG flash. The owner tool embeds a read-only
-   context/member payload for matching and member dedupe; it never writes a
-   context or question automatically. A linked question cannot post first: its
-   click/submit says `Save the shared context first.` Exact context-save success
-   collapses the saved editor; **Show/Hide** toggles it without a write, while
-   failed or ambiguous saves keep the pending card open. In a multi-text paste,
-   the labelled selector opens the first unsaved text initially and after an
-   exact success.
-3. The administrator links questions with a unique position (comprehension) or
-   a unique cloze slot (cloze). The selected saved context, then the linked
-   local context, fills Subject, Exam Category, and Exam Year so the pool
-   matches. Missing positions/gaps use the next unused saved value. Standalone
-   questions hide the link group; reading passages hide Gap number. The three
-   link fields are visually separate from Question details.
-4. Activation validates the complete group atomically: expected member count,
-   contiguous unique positions, required cloze slots, four options and a correct
-   answer, matching pool metadata, and every member staying inactive.
-5. An active context is delivered by `cbt.php` as a complete group. Its members
-   remain `is_active = 0`, so legacy `is_active = 1` queries cannot expose a
-   linked question alone.
-6. Editing, deleting, moving, or unlinking a member deactivates its context
-   until it is revalidated.
-7. The rollback script refuses populated context data. If context data exists,
-   restore the backup; do not run the automatic rollback.
-
-The admin page has no tab shell. Add Question contains the paste controls, Edit
-Shared Text, and the question form in that order. Saved Shared Texts and All
-Questions follow as full-width sections. Saved Shared Texts uses `context_page`
-at 10 rows; All Questions keeps `page` at 20. The question selector is
-deliberately unpaginated. Duplicate notices are browser-only review hints and
-never block a native save. **Use Paste** may fill `save_context` drafts, but it
-must not change any shared-text field, action, or ID while the form is in
-`update_context` saved-edit mode.
+1. The admin form always shows an optional full-width Constant Text textarea
+   named `constant_text`; the native CSRF/PRG form and four-option rule are
+   unchanged.
+2. On a successful save/update, the server stores the trimmed passage (or
+   `NULL`) and sets `$_SESSION['cbt_admin_constant_text']`.
+3. A new-question GET prefills only that session value. An `?edit=` GET shows the
+   row value and must not overwrite the session. Login and logout clear the
+   session value.
+4. Constant Text renders above the question in `cbt.php` and
+   `answer_details.php`. It is not shown in the result sheet or
+   `cbt_practice.php`.
+5. Exact lowercase `<u>`/`</u>` formatting applies to Constant Text, question
+   text, and options. The Underline button acts on the last-focused field and
+   refuses partial marker overlap or nested pairs.
+6. Blank-line paragraphs survive in Constant Text and question stems through
+   `white-space: pre-wrap`; single wraps fold to one space, and options stay
+   one line.
 
 ## 6. Security renderer
 
@@ -169,79 +115,68 @@ must not change any shared-text field, action, or ID while the form is in
   Everything else, including attributes, other tags, and encoded markers, stays
   text.
 - `deployed/render.php` and `src/owner-tool/render.js` are behaviorally paired.
-  Question and context text use the renderer; options and explanations stay
-  plain text.
-- Cloze gaps render as `<span class="cbt-context-gap">` or
-  `<mark class="cbt-context-gap cbt-context-gap-active">`; the token text is
-  escaped.
+  Question, Constant Text, and options use the renderer; explanations stay plain
+  text.
 - Never use permissive `strip_tags` or raw `innerHTML` for stored question,
-  option, explanation, or context text.
+  Constant Text, option, explanation, or context text.
+- The legacy cloze `[[gap:N]]` context helpers render only if a caller passes
+  context data; production pages do not.
 
 ## 7. Testing commands
 
 ```sh
 node tests/runner.js
 node tests/unit.js
-node tests/owner-tool.js
-node tests/context-migration.js
-node tests/cbt-context.js
-node tools/cloze-probe.js
+node tests/ocr-helper.js
+node tests/underline-toolbar.js
+node tests/question-preview.js
 node tools/extract-bank.js --check
-php tests/context-lib.php
-php tests/context-admin.php
-php tests/context-preflight.php
 php tests/php-render.php
-php tests/cbt-candidate.php
-php tests/standalone-admin.php
+php tests/admin-question-store.php
 ```
 
-Current local evidence, re-run 2026-11-14 on PHP 8.3.32 (the 8.3 target line;
-the owner's 8.3.16 runs gave the same results) plus the recorded MySQL 8.0.41
-migration run of 2026-11-08; the OT12 split was measured after commit `73009ac`:
+Current local evidence (2026-11-14, PHP 8.3.32 and the owner's 8.3.16 gave the
+same results):
 
 - runner: 60 fixtures, 60 PASS, 0 FAIL, 0 PENDING;
-- unit: 163 PASS; owner-tool: 81 PASS; context-migration: 14 PASS;
-  cbt-context: 5 PASS;
-- context-lib: 14 PASS; context-admin: 23 PASS; context-preflight: 6 PASS;
-  php-render: 9 PASS; cbt-candidate: 7 PASS; standalone-admin: 9 PASS;
-- `php -l` on every PHP file in this release (9 under `deployed/`,
-  `db_conn.php`, the 3 `tools/context-migration-*.php`, and the 6
-  `tests/*.php`) and `node --check` on the four changed owner-tool sources:
-  PASS;
-- `node tools/cloze-probe.js`: exit 0;
+- unit: 163 PASS;
+- root helper: 7 PASS;
+- underline toolbar: 9 PASS;
+- read-only preview: 4 PASS;
+- PHP renderer: 9 PASS; admin store: 8 PASS;
+- `php -l` on every changed PHP file: PASS;
 - `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
-  output hashes matching on the LF checkout; the recorded Windows/CRLF
-  `bank-pre-2026` mismatch remains a pre-existing target-worktree artifact;
-- `parsePaste(sample-passages.txt)`: key `Q11 B, Q12 C, Q13 D, Q14 B, Q15 A` and
-  `Q71-Q80`, with one 5-member comprehension context and one 10-member cloze
-  context;
-- desktop Chromium 155.0.8059.40 local harness: 33/33 checks passed (admin
-  login, comprehension/cloze load, underline/paragraph preview, native PRG save,
-  edit formatting tool, CBT complete-group delivery, answer-details XSS probes).
-- focused Chromium 155 no-write check at desktop and 390px mobile width: Edit
-  Shared Text appears between paste and the light-blue link group, and explicit
-  edit #11 keeps its server values despite stored paste context #6.
+  output hashes matching;
+- civic fixture: 50/50 questions, no flags;
+- option-label fixture: 6 forms, no flags;
+- multiline helper vector: single wraps fold, blank-line paragraph remains;
+- local SQLite phone-staging: login, save with multiline `<u>` Constant Text,
+  new-question prefill, edit row load, update with empty value to `NULL`, logout
+  clear, delete, and two-session isolation all PASS.
+- disposable Chromium at 390px: preview has no editable controls or overflow,
+  both blocks use `pre-wrap`, exact underlines render, and a passage/cloze OCR
+  paste leaves the prefilled Constant Text unchanged.
 
-No live site, staging database, or production cleanup was used.
+No live site, production database, or production cleanup was used. The schema
+migration has been exercised only through the disposable SQLite phone-staging
+store, not MySQL.
 
 ## 8. Known limitations and open gates
 
 - `questions.practice_title` is `NOT NULL` with no default in the supplied DDL,
   while the admin INSERT omits it. This is a known out-of-scope mismatch.
   Verify the target before deploying; do not change the column in this release.
-- The migration preflight requires `utf8mb4_unicode_ci`. PDO `charset=utf8mb4`
-  alone reports `utf8mb4_general_ci` on MySQL 8.0.41; the target connector/server
-  must set the session collation.
+- PDO `charset=utf8mb4` alone reports `utf8mb4_general_ci` on MySQL 8.0.41; the
+  target connector/server must set the session collation.
 - `header.php`, `footer.php`, and `cbt_exam_attempts` are live-site artifacts and
-  are not supplied. The local smoke used an inferred test-only
-  `cbt_exam_attempts` table and no header. Do not deploy either.
-- `cbt_practice.php` and `practice_title` behavior remain outside the remaining
-  cycle scope.
-- The Brave/Android staging check was performed on 2026-11-09 and passed.
-  Desktop Chromium passed. The owner accepted the final OT11 Brave/Android
-  re-check on 2026-11-13; the phase-11 release review returned PASS WITH
-  ACCEPTED FINDINGS on 2026-11-14.
-- The `extract-bank` Windows/CRLF `bank-pre-2026` mismatch is pre-existing.
+  are not supplied. Do not deploy inferred local shims.
+- `cbt_practice.php` does not render Constant Text in ST01 and remains
+  intentionally untouched.
+- `bank-2021` still raises a duplicate-C flag on its final question from OCR
+  answer-key text; this is pre-existing and not a missing-option regression.
+- The ST01 schema migration has not been run against MySQL in this phase.
+- There is no browser test suite. ST01 behavior is covered by Node/PHP checks,
+  static source assertions, and the required owner Brave/Android check.
 - This cycle does not deploy to production, clean live data, or archive itself
   without explicit owner instructions.
 
@@ -249,6 +184,6 @@ No live site, staging database, or production cleanup was used.
 
 - Deployment: [`DEPLOYMENT.md`](DEPLOYMENT.md)
 - Package plan: [`plan/README.md`](plan/README.md)
-- Consolidation measurements:
-  [`plan/owner-tool/ot-09a-production-consolidation.md`](plan/owner-tool/ot-09a-production-consolidation.md)
+- ST01 contract:
+  [`plan/owner-tool/st-01-constant-text-reset.md`](plan/owner-tool/st-01-constant-text-reset.md)
 - Migration runbook: [`../deployed/sql/README.md`](../deployed/sql/README.md)

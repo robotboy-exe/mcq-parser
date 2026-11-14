@@ -1,4 +1,4 @@
--- Working disposable-database schema for the owner-tool context migration.
+-- Working disposable-database schema for the Constant Text reset (ST01).
 --
 -- Source: the exact DDL supplied in main commit 002483b and archived unchanged
 -- under archive/sql/2026-11-03-supplied/.
@@ -66,6 +66,7 @@ CREATE TABLE `questions` (
   `exam_category_id` int UNSIGNED NOT NULL,
   `exam_year` smallint UNSIGNED NOT NULL DEFAULT '2026',
   `question_text` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `constant_text` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `question_image_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `option_a` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `option_b` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,

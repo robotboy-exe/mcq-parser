@@ -23,7 +23,7 @@ if ($questionId === false || $questionId === null || $questionId < 1) {
     $question = null;
     try {
         $stmt = $pdo->prepare(
-            'SELECT q.id, q.subject_id, q.exam_category_id, q.question_text, q.option_a, q.option_b, q.option_c, q.option_d,
+            'SELECT q.id, q.subject_id, q.exam_category_id, q.question_text, q.constant_text, q.option_a, q.option_b, q.option_c, q.option_d,
                     q.correct_option, q.answer_explanation, q.answer_video_path, q.exam_year,
                     s.subject_name, ec.category_name
              FROM questions q
@@ -146,6 +146,7 @@ if (is_file(__DIR__ . '/header.php')) {
 .answer-card h2{color:#0d3b66;margin-top:0}
 .answer-meta{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px}
 .answer-tag{background:#eaf4fc;color:#0d3b66;border-radius:7px;padding:7px 10px;font-size:13px;font-weight:700}
+.answer-constant{background:#f7f9fc;border:1px solid #dce3eb;border-left:4px solid #1769aa;border-radius:10px;padding:16px 18px;margin:0 0 18px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
 .answer-question{font-size:20px;line-height:1.6;font-weight:750;white-space:pre-wrap}
 .answer-options{list-style:none;padding:0;margin:18px 0;display:grid;gap:10px}
 .answer-options li{padding:12px 14px;border:1px solid #dce3eb;border-radius:9px;line-height:1.5}
@@ -181,12 +182,15 @@ if (is_file(__DIR__ . '/header.php')) {
                 <span class="answer-tag"><?php echo answer_h($question['category_name']); ?></span>
                 <span class="answer-tag">Exam Year: <?php echo (int) $question['exam_year']; ?></span>
             </div>
+            <?php if (trim((string) ($question['constant_text'] ?? '')) !== ''): ?>
+                <div class="answer-constant"><?php echo cbt_format_text((string) $question['constant_text']); ?></div>
+            <?php endif; ?>
             <div class="answer-question"><?php echo cbt_format_text((string) $question['question_text']); ?></div>
             <ul class="answer-options">
                 <?php foreach ($answerOptions as $index => $option): ?>
                     <li class="<?php echo $index === $correctIndex ? 'correct-option' : ''; ?>">
                         <strong><?php echo chr(65 + $index); ?>.</strong>
-                        <?php echo answer_h($option); ?>
+                        <?php echo cbt_format_text($option); ?>
                         <?php if ($index === $correctIndex): ?><span class="correct-badge">Correct Answer</span><?php endif; ?>
                     </li>
                 <?php endforeach; ?>

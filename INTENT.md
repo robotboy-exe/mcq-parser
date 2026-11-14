@@ -1,121 +1,64 @@
-# Owner Tool Build Intent
+# Constant Text Reset Intent
 
-Approved: 2026-10-31.
+Approved: 2026-11-14. Supersedes the `owner-tool-2026-11` product intent.
 
-Scope amended: 2026-11-05. Shared-context candidate delivery targets `cbt.php`
-only. `cbt_practice.php` and `practice_title` are outside the remaining
-owner-tool cycle scope and retain their existing behavior unchanged.
-
-This file is the behavior tie-breaker for the `owner-tool-2026-11` cycle. The
+This file is the behavior tie-breaker for the `math-editor-2026-11` cycle. The
 package files own implementation detail. If a package conflicts with this file,
 stop and ask instead of silently changing the product direction.
 
 ## Product intent
 
-- Replace the deployed `ocr_helper.js` with a readable owner tool loaded by
-  `admin_questions.php`; the shipping tool is not a bookmarklet.
-- Keep one paste box for questions, shared contexts, and an answer key.
-- Fill the native PHP form one question at a time so the administrator can edit
-  every parsed value before saving.
-- Use the existing native form submit and Post/Redirect/Get flow. Advance the
-  queue only after the exact success flash appears after reload.
-- Keep saving manual. Do not ship Auto-Save, dry run, duplicate scanning, batch
-  history, automatic image injection, or the experiments image-plan UI.
-- Use readable shared source files without a minified production artifact.
-- Use fresh, versioned browser state. Detect legacy OCR state, but do not trust,
-  migrate, or delete it automatically.
+- Root `ocr_helper.js`, loaded by `admin_questions.php`, is the shipping OCR
+  helper. The shared-text/context subsystem is retired and archived.
+- Keep one paste box. Fill the native PHP form one question at a time so the
+  administrator can edit every parsed value before saving.
+- Use the existing native form submit and Post/Redirect/Get flow. Keep saving
+  manual; do not ship auto-save, dry run, batch history, or automatic image
+  injection.
+- Add one optional Constant Text passage per question. It survives the native
+  save, prefills the next new question in the same browser session, and clears
+  on login/logout. It never crosses browser sessions.
+- Show Constant Text above the question in the `cbt.php` exam view and in
+  `answer_details.php`; do not show it in the result sheet or
+  `cbt_practice.php`.
+- Keep `cbt_practice.php`, `practice_title`, and the legacy bookmarklet out of
+  scope.
 
 ## Formatting intent
 
-- Underlining applies to question stems and shared contexts in the first
-  release. Options and answer explanations remain plain text.
+- Underlining applies to Constant Text, question stems, and options A–D.
 - Store exact `<u>` and `</u>` markers. Escape all content and restore only
   those exact tags when rendering; arbitrary HTML and attributes remain text.
 - Preserve manually entered line breaks exactly.
 - For OCR, fold single wrapped lines into spaces and retain blank-line paragraph
   breaks. The administrator can edit the resulting textarea before saving.
+- Keep a read-only preview beside Question that safely renders Constant Text and
+  Question with their blank-line paragraphs and exact lowercase underline tags.
 - Infer exam years from 1900 through 2099.
-- Defer the proposed large math-symbol palette.
-
-## Shared-context intent
-
-- Persist shared contexts as first-class records linked to ordinary four-option
-  question records.
-- Support comprehension passages and cloze/gap-fill passages.
-- Support one context, several contexts, standalone questions, or any mixture
-  in one paste for one exam year.
-- Keep context creation, question linking, and context activation explicit
-  human actions.
-- Keep an incomplete context unavailable to candidates.
-- Randomize standalone questions and complete context groups as units. Never
-  split or scatter a selected group; retain member order inside the group.
-- Show an open, collapsible context card above every linked candidate question
-  in `cbt.php`.
-- Do not add shared-context behavior to `cbt_practice.php` or change
-  `practice_title` in this cycle.
-- Highlight the active cloze slot using a safe token such as `[[gap:71]]`.
-- Text contexts are the initial scope; shared-context media is deferred.
+- Defer the math-symbol palette and editor byte counter to ME01.
 
 ## Parser intent
 
-- The clean experiments commit `d5a62f0` is the parser/test evidence base.
-- The uncommitted P20-P22 experiments cycle is reviewed as blocked and must not
-  be imported. Leave that worktree untouched.
-- Uppercase `A)` is already supported and must receive a regression fixture.
-- Add wrapped lowercase `(a)`-`(d)` only through a guarded complete-sequence
-  rule for evidenced context questions; do not broaden lowercase labels
-  globally.
-- Add comprehension and cloze parsing through a pure outer `parsePaste()`
-  orchestration layer. Preserve strict legacy parsing when no context family is
-  confidently recognized.
-- Ambiguous context or table layouts warn and fall back rather than guessing.
-- Expected fixture values come from the supplied source, never parser output.
+- Keep the root helper's queue, storage, and fill behavior unchanged.
+- Do not route OCR passage/cloze text into Constant Text. The root helper never
+  reads or writes `constant_text`; that field remains manual/session-prefilled.
+- Accept `a)`, `(a)`, `(A).`, `A)`, `(A)`, and `A.`, normalizing the letter to
+  uppercase; keep the existing uppercase forms working.
+- Keep `src/parser/core.js` as non-shipping history unless a future package
+  explicitly targets it.
 
 ## Process intent
 
-- Import the experiments work-package methodology: one package per session,
-  read-only Gate 1, explicit `go`, acceptance evidence, status update, handoff,
-  independent reviews at release boundaries, and cycle close.
+- One `docs/plan/` package per session unless the user explicitly asks to
+  continue. Stop after the package handoff.
 - This cycle is externalize-first. For each live-origin production file, the
   cumulative additions from its archived live snapshot must not exceed 100 by
-  `git diff --numstat`. This protects the original live files, not new
-  phase-cycle modules. New production modules have no fixed line cap; they must
-  stay cohesive, avoid unnecessary fragmentation, and have an explicit
+  `git diff --numstat`, or the owner must approve the excess. New production
+  modules have no fixed line cap but stay cohesive and have an explicit
   deployment path.
-- Put cohesive new behavior in focused modules/includes with one clear
-  responsibility and an explicit deployment path. Existing entry points retain
-  only imports/includes, dispatch, narrow wiring, and unavoidable local
-  transaction hooks.
 - Acceptance evidence must execute the real production modules and paths.
-  Copied SQL, copied control flow, or reimplemented behavior is not executable
-  production-path evidence.
-- The coordinator's externalize-first contract owns Gate 1, handoff, review,
-  anti-gaming, and excluded-artifact reporting for this intent.
-- Every review finding has a finite closure contract: the exact defect,
-  supported operating preconditions, closure criteria, required evidence, and
-  explicit non-goals or deferred checks. Once the owner authorizes a fix, that
-  contract is frozen unless the owner explicitly changes the requirement.
-- Original reviews may explore broadly. Re-reviews verify the named frozen
-  closure contracts and regressions; they do not broaden an existing finding
-  ID. A newly discovered defect receives a new ID and proportional severity.
-- Owner disposition is an escalation after two review rounds without resolution,
-  not a first step: fix, reject with rationale, accept the risk, defer it to a
-  named package, or change the requirement. A first-round finding, including one
-  newly recorded in a re-review, starts one fix session against its frozen
-  closure contract instead.
 - Do not commit unless the user explicitly asks.
 - Do not edit archived source snapshots.
-- New decisions begin at D-66; D-61 through D-65 remain reserved for the
-  shelved experiments work and must not be reused.
-- Product PHP verification begins on the user's local PHP machine before
-  staging. Production cleanup and destructive live tests are owner-only.
-
-## Integration intent
-
-- Preserve both existing worktrees exactly as found during OT00 Gate 1.
-- Create the integration line from clean `d5a62f0` and join it with `main`.
-- Prefer the clean experiments parser, tests, and planning method on overlap;
-  preserve main's approved underline/context plans and newly supplied live
-  sources.
-- The legacy bookmarklet may remain as historical evidence, but it is not a
-  production deliverable and must not drive new owner-tool architecture.
+- New decisions begin at D-83; D-73–D-82 describe the superseded context cycle.
+- Product PHP verification begins on the user's local PHP machine. Production
+  cleanup and destructive live tests are owner-only.

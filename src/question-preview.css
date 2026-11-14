@@ -1,0 +1,37 @@
+.owner-tool-preview-wrap {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #d5dfe9;
+  border-radius: 9px;
+  background: #f7f9fc;
+}
+
+.owner-tool-preview-heading,
+.owner-tool-preview-label {
+  display: block;
+  color: #536273;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.owner-tool-preview-block + .owner-tool-preview-block {
+  margin-top: 10px;
+}
+
+.owner-tool-preview {
+  min-height: 24px;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px dashed #c6d2df;
+  border-radius: 8px;
+  background: #fff;
+  color: #263445;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.owner-tool-preview-constant .owner-tool-preview {
+  border-left: 4px solid #1769aa;
+}

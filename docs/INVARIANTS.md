@@ -12,6 +12,16 @@ Status definitions:
   this workspace, or depends on external behavior.
 - **CONFLICTED** — sources disagree.
 
+## Scope after ST01
+
+ST01 resets the production path to root `ocr_helper.js` and the native admin
+form. Invariants INV-95, INV-98, INV-110, and INV-111–INV-129 describe the
+archived owner tool/context subsystem; they remain as historical evidence but
+are not production requirements (D-83). The production Constant Text,
+underline, and preview rules are INV-130–INV-138. The legacy bookmarklet rules INV-01–INV-94
+remain the historical parser contract and its regression suite; the production
+helper uses only the subset exercised by `tests/ocr-helper.js`.
+
 ## Activation, installation, and build
 
 | ID | Rule | Status | Source |
@@ -182,10 +192,24 @@ Status definitions:
 | INV-128 | A cloze row may move only its non-exact B-D boundaries one character left when at least two row-derived starts independently occur at modal-start-minus-one. The global majority alignment, word-safe right snap, and every whole-group refusal remain unchanged. | VERIFIED | D-80; `sample-cloze-left-drift`; `tests/unit.js`; `tests/runner.js` |
 | INV-129 | Initial preparation and an exact save in a multi-text paste select and open the first remaining unsaved shared text under the labelled selector; an adopted first context or question preparation cannot hide it. Each context and linked question still requires an explicit native save. | VERIFIED | D-81; full `sample-passages.txt` owner-tool save-flow regressions |
 
+## Production Constant Text reset
+
+| ID | Rule | Status | Source |
+|---|---|---|---|
+| INV-130 | `questions.constant_text` is nullable `TEXT` with no default and `utf8mb4_unicode_ci`. The forward migration is guarded and rerunnable; the rollback refuses to drop a column containing data. | VERIFIED | D-84; `deployed/sql/01-constant-text.sql`; `02-constant-text-rollback.sql`; disposable SQLite staging |
+| INV-131 | The admin form accepts optional `constant_text`, stores empty/whitespace-only input as `NULL`, enforces a 60,000 UTF-8 byte limit, and keeps the existing CSRF, PRG, field names, four-option rule, and success flash. | VERIFIED | D-84; `deployed/admin_questions.php`; `deployed/admin_question_store.php`; `php tests/admin-question-store.php` |
+| INV-132 | `$_SESSION['cbt_admin_constant_text']` is set only after a successful save/update, prefills only new-question GETs, shows the row value on `?edit=`, and clears on login/logout. No global or database last-value exists. | VERIFIED | D-84; `deployed/admin_questions.php`; phone-staging source checks |
+| INV-133 | Constant Text renders above the question in `cbt.php` and `answer_details.php` only; it is absent from the result sheet and `cbt_practice.php`. | VERIFIED | D-86; `deployed/cbt.php`; `deployed/answer_details.php`; `php tests/php-render.php` |
+| INV-134 | One Underline button targets the last-focused of Constant Text, question text, and options A–D, writes exact lowercase `<u>`/`</u>`, unwraps an exact wrapped selection, and refuses partial marker overlap or nested pairs. | VERIFIED | D-85; `src/underline-toolbar.js`; `node tests/underline-toolbar.js` (9 vectors) |
+| INV-135 | Root `ocr_helper.js` accepts `A.`, `A)`, `(A)`, `(A).`, `a)`, `(a)`, and `(A).`, normalizes the letter to uppercase, and leaves the question-split lookahead unchanged; a no-stem cloze row is not a numbered boundary. It has no `constant_text` integration. The civic fixture parses 50 questions with no missing-option flags. | VERIFIED | D-87, D-89; `ocr_helper.js`; `tests/ocr-helper.js` (7 checks); `tests/fixtures/ocr-helper-civic-2026.txt`; `ocr-helper-option-labels.txt` |
+| INV-136 | Retired context/owner-tool files are archived with Git history and a README; no live `DROP`/`ALTER` is executed by ST01, and the forward Constant Text migration runs only against a disposable database first. | VERIFIED | D-88; `archive/owner-tool-2026-11/README.md`; `docs/LIVE-SAFETY.md` |
+| INV-137 | Multiline rendering is preserved: single OCR wraps fold to one space, real blank-line paragraphs remain as `\n\n`, Constant Text and question text render with `white-space: pre-wrap`, and options stay single-line. | VERIFIED | D-66; `ocr_helper.js` `cleanBlock`; `tests/ocr-helper.js` paragraph vector; `deployed/cbt.php`; `deployed/answer_details.php` |
+| INV-138 | The admin preview is read-only, renders Constant Text and Question through `window.CBTText`, keeps `white-space: pre-wrap`, follows typing and OCR fills, and has no form-value, storage, network, or submit behavior. | VERIFIED | D-90; `src/question-preview.js`; `tests/question-preview.js` (4 checks); disposable Chromium 390px check |
+
 ## Counts
 
-- Total: 129
-- VERIFIED: 119
+- Total: 138
+- VERIFIED: 128
 - AT_RISK: 10
 - CONFLICTED: 0
 

@@ -8,7 +8,7 @@ Updated: 2026-11-14
 
 | Phase | Package |
 |---|---|
-| 1 | `OT12` — `owner-tool/ot-12-shared-text-page-isolation.md` |
+| 1 | `ST01` — `owner-tool/st-01-constant-text-reset.md` |
 | 2 | `ME01` — `math-editor/me-01-math-palette.md` |
 | 3 | `ME02` — `math-editor/me-02-release-and-handoff.md` |
 

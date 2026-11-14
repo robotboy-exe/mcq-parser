@@ -1,23 +1,11 @@
 (function () {
-  const form = document.querySelector('input[name=action][value=save_question]')?.form;
-  if (!form || location.search.includes('edit=')) return;
-
   // OCR misspellings to correct: [pattern, replacement]. Add one line per repeated mistake.
   const FIXES = [
     [/govemment/gi, 'government'],
     [/persidential/gi, 'presidential'],
     [/resposible/gi, 'responsible'],
   ];
-  const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
-  const OPTION = /(?<![A-Z])([A-D])\s*\.\s*/g;
-
-  const $ = (id) => document.getElementById(id);
-  const store = {
-    get: (k) => JSON.parse(localStorage.getItem(k) || 'null'),
-    set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
-    del: (k) => localStorage.removeItem(k),
-  };
-  const saveMeta = () => store.set('ocrMeta', Object.fromEntries(FIELDS.map((id) => [id, $(id).value])));
+  const OPTION = /(?<![A-Za-z])(?:\(([A-Da-d])\)|([A-Da-d])[.)])[.)]*\s*/g;
 
   function splitQuestions(text) {
     const marks = [];
@@ -36,16 +24,30 @@
     return chunks;
   }
 
+  function cleanBlock(text) {
+    return String(text)
+      .replace(/\r\n?/g, '\n')
+      .trim()
+      .split(/\n\s*\n/)
+      .map((paragraph) => paragraph.replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .join('\n\n');
+  }
+
+  function cleanLine(text) {
+    return String(text).replace(/\s+/g, ' ').trim();
+  }
+
   function parseQuestion({ num, text }) {
-    text = text.replace(/\s+/g, ' ');
     const pos = {}, count = {};
     for (const m of text.matchAll(OPTION)) {
-      pos[m[1]] = { start: m.index, end: m.index + m[0].length };
-      count[m[1]] = (count[m[1]] || 0) + 1;
+      const letter = (m[1] || m[2]).toUpperCase();
+      pos[letter] = { start: m.index, end: m.index + m[0].length };
+      count[letter] = (count[letter] || 0) + 1;
     }
     const marks = Object.entries(pos).sort((a, b) => a[1].start - b[1].start);
-    const q = { num, question: text.slice(0, marks[0]?.[1].start ?? text.length).trim(), a: '', b: '', c: '', d: '', flags: [] };
-    marks.forEach(([letter, p], i) => (q[letter.toLowerCase()] = text.slice(p.end, marks[i + 1]?.[1].start).trim()));
+    const q = { num, question: cleanBlock(text.slice(0, marks[0]?.[1].start ?? text.length)), a: '', b: '', c: '', d: '', flags: [] };
+    marks.forEach(([letter, p], i) => (q[letter.toLowerCase()] = cleanLine(text.slice(p.end, marks[i + 1]?.[1].start))));
 
     if (num === null) q.flags.push('question number missing');
     if (q.question.length < 10) q.flags.push('question text missing or very short');
@@ -56,6 +58,24 @@
     if (Object.values(count).some((c) => c > 1)) q.flags.push('a letter appears twice (merged questions?)');
     return q;
   }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { FIXES, OPTION, splitQuestions, parseQuestion };
+    return;
+  }
+
+  const form = document.querySelector('input[name=action][value=save_question]')?.form;
+  if (!form || location.search.includes('edit=')) return;
+
+  const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
+
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get: (k) => JSON.parse(localStorage.getItem(k) || 'null'),
+    set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+    del: (k) => localStorage.removeItem(k),
+  };
+  const saveMeta = () => store.set('ocrMeta', Object.fromEntries(FIELDS.map((id) => [id, $(id).value])));
 
   function fillForm(q) {
     Object.entries(store.get('ocrMeta') || {}).forEach(([id, v]) => ($(id).value = v));

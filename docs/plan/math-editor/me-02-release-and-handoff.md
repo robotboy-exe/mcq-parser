@@ -17,15 +17,13 @@ review.
 
 ## Work
 
-1. Bump the asset token for `src/owner-tool/math-tool.js` (first release token
-   `?v=1.0.0` or the next owner-tool token, whichever stays consistent across
-   every page that loads it) and update every page that references a changed
-   asset.
-2. Record new decisions from D-82 onward: the curated symbol set and insertion
-   approach, the editor-side byte counter as advisory, the dropped
-   case-insensitive `<U>` requirement, and the +1 externalize-first approval if
-   the owner granted it (name the file, the measured excess, and why no smaller
-   change exists).
+1. Set the asset token for `src/math-tool.js` and `src/math-tool.css`
+   (`?v=1.0.0` unless a later consistent token is chosen) and update every page
+   that references a changed asset.
+2. Record new decisions from D-91 onward: the curated symbol set and insertion
+   approach, the editor-side byte counter as advisory, and the dropped
+   case-insensitive `<U>` requirement. No externalize-first approval is
+   expected: `admin_questions.php` should stay at +89.
 3. Update `docs/INVARIANTS.md` and `docs/EDGE_CASES.md` for the palette, the
    byte counter, and the unchanged exact-tag boundary.
 4. Refresh `docs/DEPLOYMENT.md` and `docs/DEVELOPER-GUIDE.md`: new file row,
@@ -41,7 +39,7 @@ review.
 | Check | Expected |
 |---|---|
 | Node/PHP suites | All PASS; exact counts recorded, including the new `tests/math-tool.js` |
-| Externalize-first | Every production file measured; `admin_questions.php` has the exact owner approval for its +1 or the change is reworked under the cap |
+| Externalize-first | Every production file measured; `admin_questions.php` stays within the 100-addition cap (expected +89) |
 | Tokens | Every page loads the current token for each changed asset |
 | Manifest | File rows, lines/bytes, SHA-256, upload order, and smoke checks match the tree |
 | Guide | Architecture map, state rules, and testing commands match the code |
@@ -57,7 +55,7 @@ Date:
 Result:
 Node/fixture/PHP results:
 Externalize-first measurements:
-Approval record (if any):
+Approval record: none expected
 Browser evidence:
 Manifest/guide path/hash:
 Files changed:

@@ -4,35 +4,31 @@ Last updated: 2026-11-14.
 
 ## Active cycle
 
-- Cycle: `math-editor-2026-11` (created 2026-11-14, restructured the same day).
-  The owner decided it opens with the OT12 shared-text page isolation
-  remediation (phase 1), then the P24 mathematics-editor delta: a curated Tier 1
-  Unicode symbol palette plus an advisory UTF-8 byte counter.
-- Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — phase 1 OT12,
-  phase 2 ME01, phase 3 ME02. Statuses live in [`plan/README.md`](plan/README.md).
-- Packages: [`OT12`](plan/owner-tool/ot-12-shared-text-page-isolation.md)
-  (implemented at `73009ac`, light review `PASS WITH NOTES` 2026-11-14, merge
-  pending),
-  [`ME01`](plan/math-editor/me-01-math-palette.md),
+- Cycle: `math-editor-2026-11` (created 2026-11-14). Phase 1 is ST01, the
+  Constant Text reset: return production to root `ocr_helper.js`, archive the
+  shared-text/context subsystem, add optional `questions.constant_text`, and add
+  exact lowercase `<u>` underlining.
+- Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — ST01, ME01,
+  ME02. Statuses live in [`plan/README.md`](plan/README.md).
+- Packages: [`ST01`](plan/owner-tool/st-01-constant-text-reset.md) (implemented
+  and handed off in the `WIP pending st01 review` checkpoint; light review at
+  ME01 Gate 1),
+  [`ME01`](plan/math-editor/me-01-math-palette.md) (not started),
   [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (not started).
-- Ordering: the math-editor packages were planned before the first live
-  deployment showed that shipped shared-text code breaks every question save
-  until the context migration runs, so OT12 now leads the cycle.
-- Branch: `owner-tool-integration`, except OT12, which implements on the
-  short-lived `ot12-shared-text-isolation` topic branch (off `a3b93b7`) and must
-  merge back before the ME01 Gate 1 light review.
-- Owner decisions settled 2026-11-14: keep exact lowercase `<u>` only; palette
-  in a new owner-tool module; reuse `#owner_tool_preview`; editor-side byte
-  counter only; `cbt_practice.php` excluded; plan against the `deployed/`
-  working copies.
-- Planning constraint: `deployed/admin_questions.php` is now at **+229/−79**
-  against its live snapshot after OT12 inlined the context-free save path. The
-  owner approved that 129-addition excess on 2026-11-14 (D-82), and the cap tests
-  encode 229 as this file's limit, so any further growth fails the suite. ME01
-  must still re-measure before adding its script tag.
+- Ordering: ST01 replaced OT12 because running the context migration was judged
+  riskier and more complex than one optional passage per question. The owner
+  chose the reset on 2026-11-14.
+- Branch: `owner-tool-integration`; `main` is the published baseline.
+- Owner decisions settled 2026-11-14: keep exact lowercase `<u>` only; archive
+  the context/owner-tool files; keep `src/owner-tool/render.js` at its current
+  path; put helper fixtures under `tests/fixtures/`; no live schema drop.
+- Planning constraint: after ST01, the measured live-origin diffs are
+  `admin_questions.php` +87/−80, `cbt.php` +49/−8, `answer_details.php` +8/−3,
+  and `ocr_helper.js` +38/−18 — all within the 100-addition externalize-first
+  cap. No cap exception remains.
 - Last review-settled package: OT10 of the archived cycle (`PASS WITH ACCEPTED
-  FINDINGS`, 2026-11-14; `NOTE-1`–`NOTE-3` non-blocking). Archived cycle close
-  `45807ea`, archive commit `134305c`.
+  FINDINGS`, 2026-11-14). Archived cycle close `45807ea`, archive commit
+  `134305c`.
 - Archived cycle: [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md);
   summary in [`plan/history.md`](plan/history.md).
 
@@ -78,6 +74,7 @@ Last updated: 2026-11-14.
 | OT10 finish (2026-11-14, `f84518e`; docs-only refresh) | all Node suites, all PHP suites, `php -l` on 17 files, `node --check` on 25 JS files, `extract-bank --check`, `cloze-probe`, and the `sample-passages.txt` key probe | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; PHP 8.3.32 lint 17/17 PASS; JS syntax 25/25 PASS; bank extractor 7 hashes OK; key `Q11 B, Q12 C, Q13 D, Q14 B, Q15 A` with a 5-member comprehension and a 10-member cloze context; migration/rollback and browser checks not re-run in this docs session |
 | OT11 owner-accepted checkpoint (2026-11-13) | full Node/PHP suite, syntax/lint, bank extractor, exact `new-sample.txt` cloze probe, and focused owner-flow probes | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; cloze probe and 7 bank hashes PASS; PHP/JS syntax PASS; draft-only paste filling, saved-edit reachability/adoption, and distinct draft/edit mode regressions PASS; live-origin additions remain at +100/+53; final owner phone confirmation accepted; independent rigorous review pending at checkpoint (settled 2026-11-13: PASS, FIX-1..FIX-3 closed) |
 | Math-editor cycle start (2026-11-14, `134305c`) | full Node/PHP suite re-run at `f84518e` before the archive; no product byte changed since | 60 runner, 163 unit, 81 owner-tool, 14 context-migration, 5 cbt-context; PHP 8.3.32 suites and 17-file lint PASS; baseline for ME01 |
+| ST01 implementation (2026-11-14, `WIP pending st01 review` checkpoint) | `node tests/runner.js`, `tests/unit.js`, `tests/ocr-helper.js`, `tests/underline-toolbar.js`, `tests/question-preview.js`, `php tests/admin-question-store.php`, `php tests/php-render.php`, `node tools/extract-bank.js --check`, `php -l`, and disposable Chromium | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 7 helper checks; 9 underline vectors; 4 preview vectors; 8 admin-store checks; 9 PHP renderer vectors; bank extractor and PHP lint PASS; civic fixture 50/50 with no missing-option flags; SQLite staging lifecycle PASS; 390px preview and OCR/Constant-Text isolation PASS; live-origin diffs +87/−80, +49/−8, +8/−3, +38/−18; no live write |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -129,12 +126,12 @@ Supplied DDL SHA-256:
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| Owner approval for a >100 addition in `deployed/admin_questions.php` | ME01 (conditional) | Required only if ME01's post-OT12 re-measurement still exceeds the cap; approval must name the file and the measured excess |
+| Owner Brave/Android Constant Text/underline/preview check | ST01/ME01/ME02 | Focused disposable desktop Chromium preview/OCR isolation passed 2026-11-14; owner-accepted phone check remains required on the final tree; no live write |
 | Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Owner-accepted check required on the final tree; no live write |
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
-| Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); revised comprehension key Q11-Q15 (Q11 B, Q12 C, Q13 A→D) owner-confirmed 2026-11-13; coverage confirmed by OT10 on 2026-11-14 |
-| Brave/Android staging check | OT10 final acceptance | Initial check satisfied 2026-11-09; desktop Chromium passed 33/33; owner accepted the final OT11 re-check on 2026-11-13 |
-| Live `cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts` | OT10 deployment | Live-site artifacts, not supplied; owner deferred to deployment time 2026-11-14 (DEPLOYMENT stop conditions); the local smoke used test-only shims |
+| Representative context paste with answer key | Archived OT08/OT09 acceptance | Satisfied 2026-11-08 with `sample-passages.txt`; no longer a production requirement after D-83 |
+| Brave/Android staging check | Archived OT10 final acceptance | Satisfied 2026-11-09 and 2026-11-13; archived with the owner-tool cycle |
+| Live `cbt_db.php`, `header.php`, `footer.php`, `cbt_exam_attempts` | Deployment | Live-site artifacts, not supplied; owner deferred to deployment time |
 
 OT05 implementation, accepted fixes, third re-review, and `BLOCK-8` owner
 disposition are complete. The owner rejected `BLOCK-8` for the authoritative,
@@ -193,11 +190,11 @@ gates.
 
 ## Delivery stages
 
-- OT12: isolate shared-text and member-question management into
-  `admin_shared.php`, restore the legacy page to a context-free save path, and
-  record the deploy order.
-- ME01: curated Tier 1 palette, insertion helpers, byte counter, and the single
-  admin script-tag wiring (with the approved +1 if still required).
+- ST01: return production to root `ocr_helper.js`, archive shared-text/context,
+  add optional Constant Text plus admin session prefill, add the underline
+  toolbar, extend helper option-label parsing, and add schema/render tests.
+- ME01: curated Tier 1 palette, insertion helpers, byte counter, and admin
+  script-tag wiring on the ST01 tree.
 - ME02: token/version, decisions, docs, deployment manifest and developer guide,
   browser evidence, and the rigorous release review.
 

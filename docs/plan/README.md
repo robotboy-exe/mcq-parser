@@ -8,52 +8,44 @@ Last updated: 2026-11-14.
 
 ## Current state
 
-- Active cycle: `math-editor-2026-11` (created 2026-11-14). The owner decided on
-  2026-11-14 that it opens with the OT12 shared-text isolation remediation
-  (phase 1), then the P24 mathematics-editor delta: a curated Tier 1 Unicode
-  symbol palette and an editor-side UTF-8 byte counter in the shipped owner tool.
-- Packages: OT12 (shared-text page isolation), then ME01 (palette, byte counter,
-  integration), then ME02 (release evidence, manifest/guide, rigorous review).
-  None has started.
-- Resolved owner decisions (2026-11-14): keep the shipped underline and the
-  exact lowercase `<u>` boundary (D-66); palette in a new owner-tool module; use
-  the existing `#owner_tool_preview`; count bytes in the editor without changing
-  the server limit; keep `cbt_practice.php` out of scope; plan against the
-  current `deployed/` working copies.
-- Ordering decision (2026-11-14): the math-editor packages were planned before
-  the first live deployment showed that the integrated shared-text code fails
-  every question save until the context migration runs. OT12 was therefore made
-  phase 1, ahead of ME01/ME02, instead of being appended after them.
-- Planning constraint: `deployed/admin_questions.php` now stands at **+229/−79**
-  against its live snapshot. The owner approved that 129-addition excess on
-  2026-11-14 for inlining the context-free save path (D-82). ME01 must still
-  re-measure before adding its script tag, because no further headroom is
-  assumed.
+- Active cycle: `math-editor-2026-11` (created 2026-11-14). The owner reset the
+  cycle on 2026-11-14: ST01 returns the shipped workflow to the root
+  `ocr_helper.js`, removes the shared-text/context subsystem, and adds one
+  optional Constant Text passage per question. ME01 (curated Tier 1 Unicode
+  palette plus advisory UTF-8 byte counter) and ME02 (release evidence) follow.
+- Packages: ST01 (reset, Constant Text, helper option fix, underline), then
+  ME01, then ME02. ST01 is implemented and handed off; ME01/ME02 have not
+  started.
+- Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
+  archived/historical. Their records remain under `owner-tool/` and `reviews/`
+  for evidence; do not continue that architecture.
+- Resolved owner decisions (2026-11-14): use `constant_text`; keep
+  `src/owner-tool/render.js` at its current path so `cbt_practice.php` is
+  untouched; archive removed modules; put helper fixtures under `tests/fixtures/`.
 - Previous cycle: `owner-tool-2026-11` is archived (2026-11-14); its final
   summary is in [`history.md`](history.md) and its map in
   [`prompts/cycles/owner-tool-2026-11.md`](prompts/cycles/owner-tool-2026-11.md).
-- Working branch: `owner-tool-integration`, except phase 1 (OT12), which
-  implements on the required `ot12-shared-text-isolation` topic branch and
-  merges back before the ME01 Gate 1 review; `main` is the published baseline.
+- Working branch: `owner-tool-integration`; `main` is the published baseline.
   See [Branch strategy](#branch-strategy).
 - Current status summary: [`../STATUS.md`](../STATUS.md).
-- Continuation checklist: [`owner-tool/next-steps.md`](owner-tool/next-steps.md).
+- Continuation checklist: [`owner-tool/next-steps.md`](owner-tool/next-steps.md)
+  is archived-cycle history; use ST01's handoff for the current next action.
 
 ## Product direction
 
-- The archived `owner-tool-2026-11` cycle shipped the readable owner tool,
-  underline and multiline, shared-context persistence and complete-group
-  delivery, and comprehension/cloze OCR; its evidence and limits are in
-  [`history.md`](history.md) and [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
-- This cycle (`math-editor-2026-11`) adds a curated Tier 1 Unicode symbol
-  palette and an advisory UTF-8 byte counter to the owner tool.
-- Keep the native textarea and the native PRG save; no rich-text editor, no
-  Auto-Save, no bookmarklet.
+- ST01 restores the legacy manual OCR helper and the native PRG question form.
+  The owner pastes once, loads a queue, fills each question manually, and saves.
+- Add one optional **Constant Text** passage per question. It is stored in
+  `questions.constant_text`, prefilled in the same browser session after a
+  successful save, and shown above the question on `cbt.php` (exam view) and
+  `answer_details.php`. It is not shown in the result sheet or
+  `cbt_practice.php`.
 - Keep the exact lowercase `<u>`/`</u>` boundary (D-66) and the shared
-  renderers; do not widen marker matching.
+  renderers; underline now also applies to Constant Text and options A–D.
+- The root helper must parse `a)`, `(a)`, and `(A).` option labels.
 - Keep `cbt_practice.php` and `practice_title` outside scope.
-- Keep the server's 60,000-byte limit authoritative; the editor count is
-  advisory only.
+- ME01/ME02 add the palette and byte counter to the native form, not to the
+  removed owner tool. The 60,000-byte server limit remains authoritative.
 
 `INTENT.md` is authoritative when package prose is ambiguous; P24 as amended on
 2026-11-14 is the behavior source for this cycle.
@@ -156,8 +148,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | OT12 | [Shared-Text Page Isolation](owner-tool/ot-12-shared-text-page-isolation.md) | archived cycle close | implemented at `73009ac`, light review PASS WITH NOTES 2026-11-14; merge pending | none; disposable database only |
-| 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | OT12 review | not started | owner approval for +1 addition in `admin_questions.php`; Brave/Android and desktop checks |
+| 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done | none; disposable database only |
+| 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | not started | re-measure `admin_questions.php`; Brave/Android and desktop checks |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
 
 Status lives only in this table; the active map maps phase numbers to these
@@ -175,7 +167,7 @@ the shipped baseline; they are not new gates for this cycle.
 
 | Artifact | One-line justification |
 |---|---|
-| Current production `ocr_helper.js` | Defines the exact behavior and state being replaced |
+| Current production `ocr_helper.js` | Defines the live helper behavior restored by ST01 |
 | Exact DDL bytes for `questions`, `subjects`, `exam_category` | Supplied 2026-11-03 in `main` commit `002483b` and copied to `owner-tool-integration` |
 | `answer_details.php` | Supplied and archived 2026-11-02; integrated in OT04 and independently verified again in OT10 |
 | PHP and database versions | Satisfied: PHP 8.3 application target; MySQL 8.0.41 from schema exports |
@@ -202,8 +194,8 @@ verifies the detail path with the rest of Release A.
 ## Branch strategy
 
 - `owner-tool-integration` is the authoritative work branch. It contains `main`
-  and all owner-tool work through OT07. Continue later implementation here only
-  after the required review gates pass.
+  and all current work through the merged OT12 tip (`e64513f`). Continue later
+  implementation here only after the required review gates pass.
 - `main` is the published baseline and the remote default. It is not the current
   work branch. Advance it only at a reviewed release boundary or cycle close, by
   fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite
@@ -211,54 +203,46 @@ verifies the detail path with the rest of Release A.
 - Do not create a long-lived branch per phase. If a risky experiment needs
   isolation, use a short-lived topic branch off `owner-tool-integration` and merge
   or delete it in the same package.
-- `ot12-shared-text-isolation` is the short-lived OT12 topic branch off
-  `owner-tool-integration` at `a3b93b7`. OT12 must be implemented only on this
-  branch; it is the explicit isolation exception to the default work branch.
-  Merge it back into `owner-tool-integration` (fast-forward if possible) and
-  delete it locally and remotely before the OT12 handoff and the ME01 Gate 1
-  light review. Do not make it long-lived or base later packages on it.
+- `ot12-shared-text-isolation` was the short-lived OT12 topic branch. It is
+  merged into `owner-tool-integration` at `e64513f`; ST01 supersedes its
+  architecture. Do not base new work on the topic branch.
 - `ot04-fix` and `ot04-review` are merged into `owner-tool-integration` and
   retired. Their commits remain reachable through history; do not base new work
   on them.
 - Reviews are read-only sessions against `owner-tool-integration`. A review
   session may write only its record under [`reviews/`](reviews/README.md); it
   never commits or moves branches.
-- Implementation changes land on `owner-tool-integration`, except OT12, which
-  lands on `ot12-shared-text-isolation` and is merged back before review. The
-  rigorous review at a release boundary verifies the `owner-tool-integration`
-  tip; only then may `main` be advanced.
+- Implementation changes land on `owner-tool-integration`. The rigorous review at
+  a release boundary verifies that tip; only then may `main` be advanced.
 
 ## Review checkpoints
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | OT12 shared-text page isolation | light at ME01 Gate 1 | light review recorded 2026-11-14 (`PASS WITH NOTES`); merge pending |
+| phase 1 | ST01 reset, Constant Text, helper fix, underline | light at ME01 Gate 1 | pending |
 | phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | pending |
 | phase 3 close | ME02 release, evidence, and handoff | rigorous | pending |
 
 ## Remaining path to cycle close
 
-1. **OT12 Gate 1** — verify the shipped baseline and the isolation boundary,
-   resolve the open Gate 1 questions, and confirm the externalize-first plan.
-2. **OT12** — isolate shared-text/member-question management into
-   `admin_shared.php`, restore the legacy page to a context-free save path, and
-   hand off; light review at ME01 Gate 1.
-3. **ME01 Gate 1** — verify the post-OT12 baseline, restate the resolved spec
-   delta, and request the +1 externalize-first approval naming
-   `deployed/admin_questions.php` and its measured excess.
-4. **ME01** — implement, test, and hand off; light review at ME02 Gate 1.
-5. **ME02** — tokens, decisions, docs, manifest/guide, and browser evidence.
-6. **Rigorous release review** via
+1. **ST01** — done: reset, Constant Text, helper option fix, underline,
+   CBT/detail display, archive, docs, and handoff; light review at ME01 Gate 1.
+2. **ME01 Gate 1** — verify the post-ST01 baseline, retarget the palette and byte
+   counter to the native form, and re-measure `admin_questions.php`.
+3. **ME01** — implement, test, and hand off; light review at ME02 Gate 1.
+4. **ME02** — tokens, decisions, docs, manifest/guide, and browser evidence.
+5. **Rigorous release review** via
    [`prompts/review-session.md`](prompts/review-session.md), then any
    fix/re-review rounds.
-7. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md); the
+6. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md); the
    commit, an optional `main` fast-forward, and archiving each need explicit
    owner authorization.
 
-Current workflow stop:
+Current workflow stop: ST01 is handed off. ME01 Gate 1 includes the ST01 light
+review; do not implement ME01 before that gate returns `go`.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 1
+NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 2
 ```
 
 ## Session protocol
@@ -326,31 +310,27 @@ node tests/runner.js
 node tools/extract-bank.js --check
 ```
 
-Owner-tool integration line adds:
+Post-ST01 integration line adds:
 
 ```sh
 node tests/unit.js
-node tests/owner-tool.js
-node tests/context-migration.js
-php tests/context-lib.php
-php tests/context-admin.php
-php tests/context-preflight.php
+node tests/ocr-helper.js
+node tests/underline-toolbar.js
+node tests/question-preview.js
+php tests/admin-question-store.php
 php tests/php-render.php
 ```
 
-OT05 wrote the migration, preflight, and rollback artifacts, and the local
-static/helper checks pass. OT10 runs the MySQL migration and target-PHP commands
-on the user's environment; exact runtime commands are defined from the supplied
-DDL and target environment. Do not make OT05 completion depend on those runtime
-checks.
+OT05–OT12 context tests and tools are archived under `archive/owner-tool-2026-11/`.
+The production context migration was never executed; ST01 uses a disposable
+database and the root `ocr_helper.js`.
 
 ## Branch and worktree safety
 
-- Work in the current worktree and keep it on `owner-tool-integration`, except
-  while implementing OT12, which stays on `ot12-shared-text-isolation` until the
-  package merges it back. For a read-only baseline check of another line, use a
-  detached temporary worktree; do not switch the working tree to `main` to
-  implement or to refresh a status count.
+- Work in the current worktree and keep it on `owner-tool-integration`. For a
+  read-only baseline check of another line, use a detached temporary worktree;
+  do not switch the working tree to `main` to implement or to refresh a status
+  count.
 - The old dirty experiments worktree is not present in this clone. Do not
   recreate it or import its uncommitted P20-P22 files.
 - Never reset, clean, stash, switch, or rewrite a worktree with unexpected user

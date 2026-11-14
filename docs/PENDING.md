@@ -1,5 +1,13 @@
 # Pending — English Shared-Passage and Cloze Support
 
+> **ST01 update (2026-11-14):** The shared-text/context implementation is
+> retired and archived (D-83). A single optional passage per question is now
+> supported as `questions.constant_text`; the multi-question shared-passage and
+> cloze designs below remain deferred. Do not rebuild the archived context
+> subsystem from this note without a new owner decision. Root `ocr_helper.js`
+> never extracts or fills Constant Text; passage/cloze-shaped OCR may only hit
+> its ordinary-question fallback and review flags (D-89).
+
 - **Status:** deferred pending representative OCR samples
 - **Target:** owner tool on the active `owner-tool-integration` line
   (published baseline: `main`)

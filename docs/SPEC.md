@@ -1,25 +1,39 @@
 # Parser Specification
 
-Evidence base: `src/parser/parser.js`, `src/ui/ui.js`, and the archived
-migration docs (`archive/migration-docs/`). This describes the baseline as it
-exists in this workspace; it does not propose changes.
+Evidence base: root `ocr_helper.js`, `deployed/admin_questions.php`,
+`deployed/cbt.php`, `deployed/answer_details.php`, and the archived migration
+docs (`archive/migration-docs/`). This describes the current production path;
+the legacy bookmarklet and `src/parser/core.js` sections below are retained for
+historical parser tests.
 
 ## 1. Scope
 
-The bookmarklet is injected into the existing "Add a New Question" admin page
+Root `ocr_helper.js` is loaded by the existing "Add a New Question" admin page
 (`admin_questions.php`). It:
 
-1. Removes the legacy helper/UI (`script[src*="ocr_helper.js"]`, the old
-   `#ocr_input` panel, `#ans_panel`).
-2. Refuses to run unless the `save_question` form and a `correct_option` radio
-   exist and the URL does not contain `edit=`.
-3. Injects one paste box for questions + answer key, a button that reads the
-   clipboard into that box on click, queue controls, and a result area after
-   the submit button.
-4. Parses the paste, fills the form one question at a time, ticks the answer
-   from the key, and saves through the existing form POST (CSRF token intact).
+1. Refuses to run unless the `save_question` form exists and the URL does not
+   contain `edit=`.
+2. Injects one paste box, a Load button, a status line, Skip, and Clear
+   controls before the form.
+3. Parses the paste into a queue in `localStorage.ocrQueue`, fills the native
+   form one question at a time from `ocrMeta`, and leaves saving manual through
+   the existing form POST (CSRF token intact).
+4. Does not write an answer key, auto-save, or submit the form.
 
-It never edits the PHP, the database, or the live `ocr_helper.js`.
+The admin page also loads `src/underline-toolbar.js`, which adds one runtime
+Underline button for Constant Text, question text, and options A–D, and
+`src/question-preview.js`, which renders a read-only Constant Text/Question
+preview through `src/owner-tool/render.js`. The shared-text/context subsystem
+and the legacy bookmarklet are not loaded.
+
+Root `ocr_helper.js` has no reference to `constant_text` and cannot populate it.
+A passage/cloze-shaped paste may still be interpreted as ordinary question text
+and options by the legacy fallback and carry advisory flags; it is never
+extracted or routed into Constant Text.
+
+The legacy bookmarklet, Auto-Save, and comprehension/cloze orchestration below
+are historical evidence from `src/parser/core.js`, `src/parser/parser.js`, and
+`src/ui/ui.js`; they are not part of the current production path.
 
 ## 2. Input format
 
@@ -89,7 +103,9 @@ The key section is not spell-corrected.
 ```
 
 - `question` folds single OCR wraps but keeps blank-line paragraphs; each option
-  is whitespace-collapsed and trimmed.
+  is whitespace-collapsed and trimmed. The production root helper applies the
+  same rule: wrapped stem lines join with one space, real blank lines stay as
+  `\n\n`, and options stay single-line.
 - `num` comes from the question marker, not from queue position.
 - Options absent from the source remain `''`; E/F are not invented.
 - A leading chunk before the first marker is returned with `num: null` only if
@@ -115,10 +131,16 @@ returned by `parseHeader` is unchanged.
 
 ### 3.4 UI state
 
-- `localStorage.ocrQueue`: `{ items: [question...], i: number, batchId?: string }`.
-  There is no version marker, so a queue written by an older variant can outlive
-  a parser update; reset and re-paste after updating (EC-62/INV-56).
+The production root helper uses:
+
+- `localStorage.ocrQueue`: `{ items: [question...], i: number }`. There is no
+  version marker, so a queue written by an older helper can outlive a parser
+  update; reset and re-paste after updating (EC-62/INV-56).
 - `localStorage.ocrMeta`: `{ subject_id, exam_category_id, exam_year }`.
+
+It does not read or write `ansKey`, `ocrSubmitted`, `cbtOwnerTool:v1`, or any
+Auto-Save key. The remaining state below is the legacy bookmarklet contract.
+
 - `localStorage.ansKey`: the parsed key map.
 - `localStorage.ocrSubmitted`: a legacy shared key. The bookmarklet no longer
   reads, writes, or deletes it (decision D-22).
@@ -432,6 +454,10 @@ All flags are advisory. They are rendered as `Check this one: ...` in
 `#ocr_save_flag` under the submit button (after `#ans_res`). They never block
 loading, queueing, or saving.
 
+The production root helper implements the first four rows below plus the
+duplicate-letter warning; it does not parse answer keys and therefore never
+emits numbering-gap or E/F rows. Those rows describe the legacy bookmarklet.
+
 | Flag | Trigger |
 |---|---|
 | `question number missing` | `num === null` |
@@ -466,7 +492,28 @@ The PHP inserts into `questions`. The only schema evidence supplied is a
 that requirement is unverified (EC-63/INV-57). If it does, every save would
 fail even though the bookmarklet and PHP agree.
 
+## 6.1 Constant Text
+
+- Schema: `questions.constant_text TEXT NULL` (`utf8mb4_unicode_ci`), nullable
+  with no default. Existing rows stay `NULL`.
+- Admin form: optional full-width textarea named `constant_text`; 60,000 UTF-8
+  byte limit; empty trims to `NULL`; native form POST and CSRF unchanged.
+- Session prefill: `$_SESSION['cbt_admin_constant_text']` is set only after a
+  successful save/update, prefills only new-question GETs, loads the row value on
+  `?edit=`, and is cleared on login and logout. There is no global or database
+  last-value. Same-session tabs share the value; separate sessions are isolated.
+- Display: `cbt.php` renders the passage above the question in the exam view,
+  and `answer_details.php` renders it above the question. It is not shown on the
+  result sheet or `cbt_practice.php`.
+- Formatting: Constant Text, question text, and options all accept exact
+  lowercase `<u>...</u>`. The Underline button targets the last-focused of those
+  fields and refuses partial markers or nested pairs. Constant Text and question
+  text keep real blank-line paragraphs (`white-space: pre-wrap`); single OCR
+  wraps fold, and options remain single-line.
+
 ## 7. Auto-Save (opt-in)
+
+Legacy bookmarklet only; not shipped in the current production path.
 
 Auto-Save is a separate, click-started loop over the existing queue. It never
 starts on page load, never auto-resumes after a reload, and does not change the
@@ -649,8 +696,8 @@ All server-derived text is rendered with `textContent` or created nodes, never
 
 ## 8. Formatting and multiline text
 
-- Stored question and context text may contain exactly two formatting markers,
-  `<u>` and `</u>`; nothing else is formatting (D-66).
+- Stored Constant Text, question, and option text may contain exactly two
+  formatting markers, `<u>` and `</u>`; nothing else is formatting (D-66).
 - Stems keep blank-line paragraph breaks; single wrapped lines fold into one
   space. Option values are always folded to one line, and explanations stay
   plain text in this release.
@@ -662,12 +709,13 @@ All server-derived text is rendered with `textContent` or created nodes, never
   use permissive `strip_tags`.
 - `<u class=…>`, `<U>`, other tags, encoded `&lt;u&gt;`, and unmatched opening or
   closing markers stay literal text. A second `<u>` inside an open underline
-  also stays literal.
-- Question stems and the result table render with `white-space: pre-wrap`, so
-  manual newlines and OCR paragraph breaks survive; the admin list summary is
-  truncated after stripping the markers.
+  also stays literal. The Underline button refuses to create any of these.
+- Constant Text, question stems, and the result table render with
+  `white-space: pre-wrap`, so manual newlines and OCR paragraph breaks survive;
+  the admin list summary is truncated after stripping the markers.
 - Header year inference accepts 1900–2099.
-- `cbtOwnerTool:v1` state with another parser version is never rewritten as
-  current by a key paste or submit; full re-paste or explicit Reset is required.
+- `cbtOwnerTool:v1` state belongs to the archived owner tool and is not read by
+  the production helper; full re-paste or explicit Reset is required after a
+  helper change.
 
 See `docs/INVARIANTS.md` for the full rule list and which items are unverified.
