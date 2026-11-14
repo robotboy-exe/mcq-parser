@@ -4,7 +4,6 @@ declare(strict_types=1);
 session_start();
 
 require_once __DIR__ . '/render.php';
-require_once __DIR__ . '/admin_context.php';
 
 if (empty($_SESSION['cbt_admin_csrf'])) {
     $_SESSION['cbt_admin_csrf'] = bin2hex(random_bytes(32));
@@ -303,6 +302,164 @@ function is_answer_illustration_video(string $relativePath): bool
     return preg_match('/\.(?:mp4|webm|ogv|ogg)$/iD', $relativePath) === 1;
 }
 
+
+/**
+ * OT12 standalone question operations.
+ *
+ * The standalone page must work on a database that has never seen the context
+ * migration, so this code names a context column only behind a probe. The probe
+ * is cached per connection with a WeakMap.
+ */
+function cbt_standalone_has_context_column(PDO $pdo): bool
+{
+    static $cache = null;
+    if (!$cache instanceof WeakMap) {
+        $cache = new WeakMap();
+    }
+    if (isset($cache[$pdo])) {
+        return (bool) $cache[$pdo];
+    }
+    try {
+        $pdo->query('SELECT context_id FROM questions LIMIT 1');
+        $cache[$pdo] = true;
+    } catch (PDOException $error) {
+        $cache[$pdo] = false;
+    }
+    return (bool) $cache[$pdo];
+}
+
+/** Rows that belong to a shared text are owned by admin_shared.php. */
+function cbt_standalone_question_is_grouped(PDO $pdo, int $questionId): bool
+{
+    if (!cbt_standalone_has_context_column($pdo)) {
+        return false;
+    }
+    $stmt = $pdo->prepare('SELECT context_id FROM questions WHERE id = :id');
+    $stmt->execute([':id' => $questionId]);
+    $value = $stmt->fetchColumn();
+    return $value !== false && $value !== null;
+}
+
+/**
+ * Delete one standalone question and return the media paths to remove.
+ *
+ * @return array{deleted_rows: int, answer_video_path: ?string, question_image_path: ?string}
+ */
+function cbt_standalone_delete_question(PDO $pdo, int $questionId): array
+{
+    $pdo->beginTransaction();
+    try {
+        $columns = cbt_standalone_has_context_column($pdo)
+            ? 'answer_video_path, question_image_path, context_id'
+            : 'answer_video_path, question_image_path';
+        $lookup = $pdo->prepare('SELECT ' . $columns . ' FROM questions WHERE id = :id');
+        $lookup->execute([':id' => $questionId]);
+        $row = $lookup->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            $pdo->commit();
+            return ['deleted_rows' => 0, 'answer_video_path' => null, 'question_image_path' => null];
+        }
+        if (isset($row['context_id']) && $row['context_id'] !== null) {
+            $pdo->rollBack();
+            throw new RuntimeException(
+                'Question #' . $questionId . ' belongs to a shared text. Manage it on the Shared Texts page.'
+            );
+        }
+        $delete = $pdo->prepare('DELETE FROM questions WHERE id = :id');
+        $delete->execute([':id' => $questionId]);
+        $deletedRows = $delete->rowCount();
+        $pdo->commit();
+        return [
+            'deleted_rows' => $deletedRows,
+            'answer_video_path' => $row['answer_video_path'] !== null ? (string) $row['answer_video_path'] : null,
+            'question_image_path' => $row['question_image_path'] !== null ? (string) $row['question_image_path'] : null,
+        ];
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
+}
+
+/**
+ * Save one standalone question with an explicit, context-free column list.
+ *
+ * @param array<string, mixed> $values subject_id, exam_category_id, exam_year,
+ *        question_text, option_a..option_d, correct_option, answer_explanation,
+ *        answer_video_path, question_image_path, is_active
+ * @return array{question_id: int}
+ */
+function cbt_standalone_save_question(PDO $pdo, string $action, int $questionId, array $values): array
+{
+    if (!in_array($action, ['save_question', 'update_question'], true)) {
+        throw new InvalidArgumentException('Unsupported standalone question action.');
+    }
+
+    $pdo->beginTransaction();
+    try {
+        if ($action === 'update_question') {
+            if (cbt_standalone_question_is_grouped($pdo, $questionId)) {
+                $pdo->rollBack();
+                throw new RuntimeException(
+                    'Question #' . $questionId . ' belongs to a shared text. Manage it on the Shared Texts page.'
+                );
+            }
+            $update = $pdo->prepare(
+                'UPDATE questions SET subject_id = :subject_id,
+                    exam_category_id = :exam_category_id, exam_year = :exam_year,
+                    question_text = :question_text, option_a = :option_a,
+                    option_b = :option_b, option_c = :option_c, option_d = :option_d,
+                    correct_option = :correct_option, answer_explanation = :answer_explanation,
+                    answer_video_path = :answer_video_path, question_image_path = :question_image_path,
+                    is_active = :is_active
+                 WHERE id = :id'
+            );
+        } else {
+            $update = $pdo->prepare(
+                'INSERT INTO questions
+                    (subject_id, exam_category_id, exam_year, question_text, question_image_path,
+                     option_a, option_b, option_c, option_d, correct_option, answer_explanation,
+                     answer_video_path, is_active)
+                 VALUES
+                    (:subject_id, :exam_category_id, :exam_year, :question_text, :question_image_path,
+                     :option_a, :option_b, :option_c, :option_d, :correct_option, :answer_explanation,
+                     :answer_video_path, :is_active)'
+            );
+        }
+
+        $params = [
+            ':subject_id' => (int) $values['subject_id'],
+            ':exam_category_id' => (int) $values['exam_category_id'],
+            ':exam_year' => (int) $values['exam_year'],
+            ':question_text' => (string) $values['question_text'],
+            ':option_a' => (string) $values['option_a'],
+            ':option_b' => (string) $values['option_b'],
+            ':option_c' => (string) $values['option_c'],
+            ':option_d' => (string) $values['option_d'],
+            ':correct_option' => (int) $values['correct_option'],
+            ':answer_explanation' => $values['answer_explanation'],
+            ':answer_video_path' => $values['answer_video_path'],
+            ':question_image_path' => $values['question_image_path'],
+            ':is_active' => (int) $values['is_active'],
+        ];
+        if ($action === 'update_question') {
+            $params[':id'] = $questionId;
+        }
+        $update->execute($params);
+        if ($action === 'save_question') {
+            $questionId = (int) $pdo->lastInsertId();
+        }
+        $pdo->commit();
+        return ['question_id' => $questionId];
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
+}
+
 $config = [];
 $configFile = __DIR__ . '/cbt_admin_config.php';
 if (is_file($configFile)) {
@@ -320,7 +477,6 @@ $adminConfigured = $adminUsername !== ''
 
 $pageError = '';
 $editingQuestionId = 0;
-$editingContextId = 0;
 $questionsPerPage = 20;
 $pageValue = filter_var($_GET['page'] ?? ($_POST['return_page'] ?? 1), FILTER_VALIDATE_INT);
 $currentPage = ($pageValue !== false && $pageValue !== null && $pageValue > 0) ? (int) $pageValue : 1;
@@ -348,11 +504,7 @@ $formValues = [
     'option_d' => '',
     'correct_option' => '0',
     'is_active' => '1',
-    'context_id' => '',
-    'context_position' => '',
-    'context_slot' => '',
 ];
-$contextValues = cbt_admin_context_default_values();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
@@ -395,10 +547,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['cbt_admin_csrf'] = bin2hex(random_bytes(32));
         header('Location: ' . $_SERVER['SCRIPT_NAME']);
         exit;
-    } elseif (cbt_admin_is_context_action($action) && !empty($_SESSION['cbt_admin_logged_in'])) {
-        cbt_admin_handle_context_request(
-            $action, $_POST, $editingContextId, $contextValues, $pageError, $_SERVER['SCRIPT_NAME']
-        );
     } elseif ($action === 'delete_question' && !empty($_SESSION['cbt_admin_logged_in'])) {
         $questionId = filter_var($_POST['question_id'] ?? '', FILTER_VALIDATE_INT);
         if ($questionId === false || $questionId < 1) {
@@ -408,7 +556,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $returnPage = ($returnPageValue !== false && $returnPageValue !== null && $returnPageValue > 0) ? (int) $returnPageValue : 1;
             try {
                 require_once __DIR__ . '/cbt_db.php';
-                $deleteResult = cbt_admin_delete_question($pdo, (int) $questionId);
+                $deleteResult = cbt_standalone_delete_question($pdo, (int) $questionId);
                 $deletedRows = $deleteResult['deleted_rows'];
                 $videoPathToDelete = $deleteResult['answer_video_path'];
                 $imagePathToDelete = $deleteResult['question_image_path'];
@@ -453,7 +601,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $oldVideoPath = null;
         $newImagePath = null;
         $oldImagePath = null;
-        $oldContextId = null;
 
         if ($action === 'update_question' && $editingQuestionId < 1) {
             $pageError = 'Please select a valid question to update.';
@@ -486,7 +633,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pageError = 'The selected subject or exam category is inactive or does not exist. Refresh the page and try again.';
                 } else {
                     if ($action === 'update_question') {
-                        $existingStmt = $pdo->prepare('SELECT id, answer_video_path, question_image_path, context_id FROM questions WHERE id = :id');
+                        $existingStmt = $pdo->prepare('SELECT id, answer_video_path, question_image_path FROM questions WHERE id = :id');
                         $existingStmt->execute([':id' => $editingQuestionId]);
                         $existingQuestion = $existingStmt->fetch();
                         if (!$existingQuestion) {
@@ -497,9 +644,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 : null;
                             $oldImagePath = $existingQuestion['question_image_path'] !== null
                                 ? (string) $existingQuestion['question_image_path']
-                                : null;
-                            $oldContextId = $existingQuestion['context_id'] !== null
-                                ? (int) $existingQuestion['context_id']
                                 : null;
                         }
                     }
@@ -525,27 +669,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $questionImagePath = $newImagePath;
                         }
 
-                        $mutation = cbt_admin_mutate_question(
-                            $pdo,
-                            $action,
-                            $editingQuestionId,
-                            [
-                                'subject_id' => $subjectId,
-                                'exam_category_id' => $categoryId,
-                                'exam_year' => $examYear,
-                                'question_text' => $questionText,
-                                'option_a' => $options[0],
-                                'option_b' => $options[1],
-                                'option_c' => $options[2],
-                                'option_d' => $options[3],
-                                'correct_option' => $correctOption,
-                                'answer_explanation' => $answerExplanation !== '' ? $answerExplanation : null,
-                                'answer_video_path' => $answerVideoPath,
-                                'question_image_path' => $questionImagePath,
-                            ],
-                            $_POST,
-                            $oldContextId
-                        );
+                        $mutation = cbt_standalone_save_question($pdo, $action, $editingQuestionId, [
+                            'subject_id' => $subjectId,
+                            'exam_category_id' => $categoryId,
+                            'exam_year' => $examYear,
+                            'question_text' => $questionText,
+                            'option_a' => $options[0],
+                            'option_b' => $options[1],
+                            'option_c' => $options[2],
+                            'option_d' => $options[3],
+                            'correct_option' => $correctOption,
+                            'answer_explanation' => $answerExplanation !== '' ? $answerExplanation : null,
+                            'answer_video_path' => $answerVideoPath,
+                            'question_image_path' => $questionImagePath,
+                            'is_active' => $formValues['is_active'] === '1' ? 1 : 0,
+                        ]);
                         $editingQuestionId = $mutation['question_id'];
 
                         // Remove replaced/deleted files only after the database write succeeds.
@@ -627,6 +765,9 @@ if ($isLoggedIn) {
             $filterConditions[] = 'q.exam_category_id = :category_filter';
             $filterParams[':category_filter'] = $filterCategoryId;
         }
+        if (cbt_standalone_has_context_column($pdo)) {
+            $filterConditions[] = 'q.context_id IS NULL';
+        }
         $whereSql = $filterConditions ? ' WHERE ' . implode(' AND ', $filterConditions) : '';
         $countStmt = $pdo->prepare($countSql . $whereSql);
         foreach ($filterParams as $param => $value) {
@@ -662,13 +803,15 @@ if ($isLoggedIn) {
                 $pageError = 'Invalid question selected for editing.';
             } else {
                 $editStmt = $pdo->prepare(
-                    'SELECT id, subject_id, exam_category_id, exam_year, question_text, option_a, option_b, option_c, option_d, correct_option, answer_explanation, answer_video_path, is_active, context_id, context_position, context_slot
+                    'SELECT id, subject_id, exam_category_id, exam_year, question_text, option_a, option_b, option_c, option_d, correct_option, answer_explanation, answer_video_path, is_active
                      FROM questions WHERE id = :id'
                 );
                 $editStmt->execute([':id' => $editId]);
                 $questionToEdit = $editStmt->fetch();
                 if (!$questionToEdit) {
                     $pageError = 'The selected question was not found.';
+                } elseif (cbt_standalone_question_is_grouped($pdo, (int) $questionToEdit['id'])) {
+                    $pageError = 'Question #' . (int) $questionToEdit['id'] . ' belongs to a shared text. Manage it on the Shared Texts page.';
                 } else {
                     $editingQuestionId = (int) $questionToEdit['id'];
                     $formValues = [
@@ -684,7 +827,6 @@ if ($isLoggedIn) {
                         'correct_option' => (string) $questionToEdit['correct_option'],
                         'is_active' => (string) $questionToEdit['is_active'],
                     ];
-                    $formValues = cbt_admin_question_context_edit_values($formValues, $questionToEdit);
                 }
             }
         }
@@ -693,12 +835,6 @@ if ($isLoggedIn) {
         $pageError = 'The question form could not load its database lists. Please check the database configuration.';
     }
 
-    extract(cbt_admin_load_context_page(
-        $pdo, $categories, $_SERVER['REQUEST_METHOD'], $_GET, $editingContextId, $contextValues
-    ));
-    if ($contextError !== '') {
-        $pageError = $contextError;
-    }
 }
 
 $page_title = 'Question Administration | Skymenu CBT';
@@ -736,6 +872,7 @@ if (is_file(__DIR__ . '/header.php')) {
     <section class="admin-hero">
         <h1><font color="white">CBT Question Administration</font></h1>
         <p>Register multiple-choice questions and assign each question to a subject and exam category.</p>
+        <p><a href="admin_shared.php" style="color:#fff;font-weight:700">Manage shared texts &rarr;</a></p>
     </section>
 
     <?php if ($pageError !== ''): ?>
@@ -812,8 +949,6 @@ if (is_file(__DIR__ . '/header.php')) {
                         <input id="exam_year" name="exam_year" type="number" min="1900" max="2100" step="1" value="<?php echo h($formValues['exam_year']); ?>" required>
                         <p class="admin-note">Enter the year the exam question belongs to, for example 2024, 2025, or 2026.</p>
                     </div>
-
-                    <?php echo cbt_admin_render_question_context_fields(get_defined_vars()); ?>
 
                     <div class="admin-grid question-entry-grid">
                         <div class="admin-field">
@@ -911,7 +1046,6 @@ if (is_file(__DIR__ . '/header.php')) {
 
                     <div class="admin-field">
                         <label><input type="checkbox" name="is_active" value="1" <?php echo $formValues['is_active'] === '1' ? 'checked' : ''; ?> style="width:auto"> Make question active immediately</label>
-                        <p class="admin-note">Ignored while the question is linked to a context: linked questions stay inactive. Activate the context instead.</p>
                     </div>
 
                     <button class="admin-btn" type="submit"><?php echo $editingQuestionId > 0 ? 'Update Question' : 'Save Question'; ?></button>
@@ -921,8 +1055,6 @@ if (is_file(__DIR__ . '/header.php')) {
                 </form>
             <?php endif; ?>
         </section>
-
-        <?php echo cbt_admin_render_context_management(get_defined_vars()); ?>
 
         <section class="admin-card owner-workflow-section" id="owner-all-questions"<?php echo $editingQuestionId > 0 ? ' hidden' : ''; ?>>
             <div>
@@ -1057,7 +1189,6 @@ if (is_file(__DIR__ . '/header.php')) {
 </div>
 </main>
 
-<?php echo cbt_admin_owner_payload_scripts($pdo ?? null, $isLoggedIn && $editingQuestionId === 0); ?>
 <link rel="stylesheet" href="src/owner-tool/owner-tool.css?v=2.3.3a">
 <script src="src/parser/core.js?v=2.3.3"></script><script src="src/owner-tool/render.js?v=2.3.2g"></script><script src="src/owner-tool/owner-tool.js?v=2.3.3e"></script>
 

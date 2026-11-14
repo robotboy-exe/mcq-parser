@@ -24,11 +24,11 @@ Last updated: 2026-11-14.
   the first live deployment showed that the integrated shared-text code fails
   every question save until the context migration runs. OT12 was therefore made
   phase 1, ahead of ME01/ME02, instead of being appended after them.
-- Planning constraint: `deployed/admin_questions.php` sat exactly at the
-  externalize-first 100-addition cap before OT12. OT12 removes the context
-  integration from that file, so ME01's Gate 1 must re-measure the cumulative
-  additions after OT12; the previously planned +1 approval request applies only
-  if the post-OT12 measurement still exceeds 100.
+- Planning constraint: `deployed/admin_questions.php` now stands at **+229/−79**
+  against its live snapshot. The owner approved that 129-addition excess on
+  2026-11-14 for inlining the context-free save path (D-82). ME01 must still
+  re-measure before adding its script tag, because no further headroom is
+  assumed.
 - Previous cycle: `owner-tool-2026-11` is archived (2026-11-14); its final
   summary is in [`history.md`](history.md) and its map in
   [`prompts/cycles/owner-tool-2026-11.md`](prompts/cycles/owner-tool-2026-11.md).
@@ -156,7 +156,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | OT12 | [Shared-Text Page Isolation](owner-tool/ot-12-shared-text-page-isolation.md) | archived cycle close | not started | none; disposable database only |
+| 1 | OT12 | [Shared-Text Page Isolation](owner-tool/ot-12-shared-text-page-isolation.md) | archived cycle close | in progress: PHP isolation done, owner-tool split open | none; disposable database only |
 | 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | OT12 review | not started | owner approval for +1 addition in `admin_questions.php`; Brave/Android and desktop checks |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
 

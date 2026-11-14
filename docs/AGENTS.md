@@ -29,10 +29,14 @@ historical regression testing, not the production delivery path.
 
 ## Production path (owner tool)
 
-`src/owner-tool/owner-tool.js` (state, merged native context editor, and
-controller), `src/owner-tool/render.js` (shared renderer and candidate context cards), and
+`src/owner-tool/owner-tool.js` (state, paste/parse/fill, and controller),
+`src/owner-tool/render.js` (shared renderer and candidate context cards), and
 `src/owner-tool/owner-tool.css` are the shipping tool loaded by
-`admin_questions.php`. The pre-OT09A module names (`controller.js`, `state.js`,
+`admin_questions.php`. The four context APIs behind `window.CBTOwnerContexts`,
+`window.CBTOwnerContextForm`, `window.CBTOwnerContextCard`, and
+`window.CBTOwnerContextPanel` live in `src/owner-tool/shared-texts.js`
+(OT12); `owner-tool.js` reads them from `window` and must tolerate their
+absence, and `node tests/owner-tool.js` loads both files in that order. The pre-OT09A module names (`controller.js`, `state.js`,
 `contexts.js`, `context-form.js`, `context-card.js`, `context-panel.js`,
 `style.css`, `context-workflow.css`) were consolidated into these three files;
 do not recreate them. The context modules support manual native-form review;

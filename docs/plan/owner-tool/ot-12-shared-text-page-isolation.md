@@ -1,7 +1,7 @@
 # OT12 — Shared-Text Page Isolation
 
-- **Status:** not started; Gate 1 pending; phase 1 of `math-editor-2026-11`
-  (lead-in remediation before ME01)
+- **Status:** in progress; Gate 1 passed 2026-11-14; PHP isolation implemented,
+  owner-tool script not yet split; phase 1 of `math-editor-2026-11`
 - **Package base:** `a3b93b7` (`owner-tool-integration`, 2026-11-14, after the
   `owner-tool-2026-11` cycle close and archive)
 - **Branch:** `ot12-shared-text-isolation`, short-lived topic branch off
@@ -213,6 +213,90 @@ Excluded artifacts: `archive/` snapshots, supplied SQL, and the existing
 
 ## Handoff
 
-Not started. Populate after Gate 1 and implementation with per-file
-additions/deletions from the package base, final lines/bytes, SHA-256,
-responsibility, deployment inclusion, and direct production-path test evidence.
+### 2026-11-14 — implementation, partial
+
+**Result:** the live break is fixed. The standalone page no longer includes the
+context library or names a context column on an unmigrated database, and
+`admin_shared.php` owns shared texts, activation, and member questions.
+
+**Files (base `a3b93b7`, measured at `6ceaaff` + worktree):**
+
+| File | Change | Final | Responsibility | Deployed | Production-path test |
+|---|---|---:|---|---|---|
+| `deployed/admin_questions.php` | removals + inlined context-free save/delete, probe, guard, visibility filter | 1196 lines / 68,152 B; **+229/−79, approved by D-82** | standalone questions | yes | `php tests/standalone-admin.php` |
+| `deployed/admin_shared.php` | new | 874 lines / 49,259 B | shared texts, member questions with their own media uploads, combined recent-questions table (20 per page) | yes | context-admin/library suites |
+| `src/owner-tool/shared-texts.js` | new | 1002 lines / 37,427 B | four context APIs moved out of the standalone page's payload; loaded by the shared page | yes | `node tests/owner-tool.js` |
+| `src/owner-tool/shared-paste.js` | new | 230 lines / 7,523 B | paste-to-draft client for the shared page | yes | VM smoke run + static probes |
+| `src/owner-tool/owner-tool.js` | context APIs removed | 1579 lines / 69,336 B | paste/parse/fill/underline/preview on the standalone page | yes | `node tests/owner-tool.js` |
+| `deployed/admin_context.php` | unchanged 996 / 46,688 | — | context library | yes | context suites |
+| `tests/standalone-admin.php` | new, 9 PASS | — | — | no | self |
+| `tests/owner-tool.js`, `tests/context-migration.js` | retargeted OT11/OT05 assertions to the split | — | — | no | suites |
+
+Owner decision (2026-11-14): grouped rows stay out of the standalone list, and
+`admin_shared.php` gains its own combined "Recent shared questions" table —
+every `context_id IS NOT NULL` row, newest first, 20 per page (matching the
+standalone list), with Edit (opens
+that shared text) and Remove. That makes the shared page's coverage explicit
+rather than leaving grouped rows reachable only through their own text.
+
+Member media: the four upload helpers (`admin_shared_save_answer_upload`,
+`admin_shared_save_image_upload`, `admin_shared_delete_answer_file`,
+`admin_shared_delete_image_file`) plus the path guards are duplicated from the
+standalone page with `admin_shared_` prefixes, per the owner's decision to
+duplicate rather than share an include. Both member forms are
+`multipart/form-data` with answer-illustration and question-picture inputs,
+their removal checkboxes, and previews; replaced or removed files are unlinked
+only after the transaction commits, and `remove_member` deletes the media the
+deleted row owned.
+
+Client split: the four context APIs (`CBTOwnerContexts`, `CBTOwnerContextForm`,
+`CBTOwnerContextCard`, `CBTOwnerContextPanel`) moved to
+`src/owner-tool/shared-texts.js`; `owner-tool.js` keeps paste/parse/fill/underline
+and reads the context APIs from `window` guarded by presence checks.
+`admin_shared.php` now loads `src/parser/core.js`, `src/owner-tool/render.js`,
+`src/owner-tool/shared-texts.js`, and `src/owner-tool/shared-paste.js` in that
+order. It does not load `owner-tool.js`, which returns early without a
+`save_question`/`update_question` form.
+
+Paste panel port: `src/owner-tool/shared-paste.js` renders from the
+`#owner_shared_paste` markup above the shared-text editor (draft mode only). Use
+Paste parses with `OCRParser.parsePaste`, maps each parsed context to a draft
+with the same field mapping the question page used, queues the drafts under the
+new `cbtSharedPaste:v1` key, and fills the native editor through
+`CBTOwnerContextForm.create().fill()`; Fill Next Draft advances the queue. A
+saved text is never overwritten: when the editor is in `update_context` mode the
+client refuses and says so. `node tests/owner-tool.js` still loads
+`shared-texts.js` before `owner-tool.js`; the new client has a VM smoke run but
+no committed test.
+
+Externalize-first: `admin_questions.php` is at **+229/−79** against the live
+snapshot, which is 129 additions over the cap. The owner approved that exact
+file, excess and justification on 2026-11-14 (D-82), so the exception is
+recorded rather than silent. No other capped file changed.
+
+**Suites:** runner 60, unit 163, owner-tool 81, context-migration 14,
+cbt-context 5, context-lib 14, context-admin 23, context-preflight 6, php-render
+9, cbt-candidate 7, legacy-admin 9 — all PASS; `php -l` on 9 deployed files.
+
+**Behavior:** on a database without the context columns the legacy page saves,
+updates, and deletes normally; the probe caches per connection with a WeakMap.
+On a migrated database it hides `context_id IS NOT NULL` rows from the list and
+refuses to edit or delete them with a message pointing to the Shared Texts page.
+
+**Not done yet (blocking `done`):**
+
+1. The owner-tool context UI still lives in `src/owner-tool/owner-tool.js`. It is
+   dormant on the legacy page (no `#owner_context_panel`, no context JSON
+   payload), so it cannot execute there, but the Gate 1 plan was to move it to
+   `src/owner-tool/shared-texts.js`. The shared page is pure PHP forms and does
+   not load the owner tool, so the split has no runtime consumer yet; decide
+   whether to extract it or record the dormancy.
+2. Member questions have no media upload on the shared page (text, options,
+   answer, position, slot only). Uploads remain on the standalone page before a
+   question is linked.
+3. `docs/DEPLOYMENT.md`/`docs/DEVELOPER-GUIDE.md` rows, decisions/invariants, and
+   the rigorous/light review are outstanding.
+
+**Live actions:** none. Disposable SQLite only; no deploy, no live write.
+**Review:** light review at ME01 Gate 1 pending.
+**Commit:** deferred.
