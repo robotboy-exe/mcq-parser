@@ -13,9 +13,11 @@ const CONTROLLER_SOURCE = (() => {
   return OWNER_TOOL_SOURCE.slice(start, end + 4);
 })();
 const RENDER_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/render.js'), 'utf8');
+const SHARED_TEXTS_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/shared-texts.js'), 'utf8');
 const STYLE_SOURCE = fs.readFileSync(path.join(ROOT, 'src/owner-tool/owner-tool.css'), 'utf8');
 const ADMIN_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/admin_questions.php'), 'utf8');
 const ADMIN_CONTEXT_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/admin_context.php'), 'utf8');
+const ADMIN_SHARED_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/admin_shared.php'), 'utf8');
 const CBT_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt.php'), 'utf8');
 const PRACTICE_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/cbt_practice.php'), 'utf8');
 const DETAIL_SOURCE = fs.readFileSync(path.join(ROOT, 'deployed/answer_details.php'), 'utf8');
@@ -686,6 +688,7 @@ function createEnv(options) {
   sandbox.OCRParser = parser;
   vm.createContext(sandbox);
   vm.runInContext(RENDER_SOURCE, sandbox, { filename: 'src/owner-tool/render.js' });
+  vm.runInContext(SHARED_TEXTS_SOURCE, sandbox, { filename: 'src/owner-tool/shared-texts.js' });
   vm.runInContext(OWNER_TOOL_SOURCE, sandbox, { filename: 'src/owner-tool/owner-tool.js' });
 
   const env = {
@@ -2063,8 +2066,8 @@ test('owner copy uses short plain words while fixed flashes stay exact', () => {
   assert(ADMIN_CONTEXT_SOURCE.indexOf('Context Position') === -1, 'native link jargon is removed');
   assert(OWNER_TOOL_SOURCE.indexOf('Question saved successfully \\(Question ID: \\d+\\)') > -1,
     'exact question flash detector remains');
-  assert(OWNER_TOOL_SOURCE.indexOf('Context #(\\d+) created\\. Link its members, then activate it\\.') > -1,
-    'exact context flash detector remains');
+  assert(SHARED_TEXTS_SOURCE.indexOf('Context #(\\d+) created\\. Link its members, then activate it\\.') > -1,
+    'exact context flash detector remains in the shared-texts module');
 });
 
 test('plain server copy keeps every context validation reason', () => {
@@ -2095,27 +2098,21 @@ test('the owner tool uses one native shared-context editor', () => {
     'browser-only targets do not change the server contract');
 });
 
-test('the admin workflow is three full-width sections without tabs', () => {
+test('OT12 keeps the standalone page to Add and All Questions', () => {
   const addAt = ADMIN_SOURCE.indexOf('id="owner-add-question"');
-  const sharedAt = ADMIN_SOURCE.indexOf('cbt_admin_render_context_management');
   const allAt = ADMIN_SOURCE.indexOf('id="owner-all-questions"');
-  assert(addAt > -1 && sharedAt > addAt && allAt > sharedAt, 'Add, Shared Texts, and All Questions stay in order');
-  assert(ADMIN_CONTEXT_SOURCE.indexOf('id="owner-shared-texts"') > -1, 'shared-text module owns its full-width section');
-  assert(OWNER_TOOL_SOURCE.indexOf('owner_tool_tab') === -1, 'owner tool has no tab shell');
+  assert(addAt > -1 && allAt > addAt, 'Add and All Questions stay in order');
+  assert(ADMIN_SOURCE.indexOf('cbt_admin_render_context_management') === -1,
+    'the standalone page no longer renders the shared-text section');
+  assert(ADMIN_SOURCE.indexOf('cbt_admin_render_question_context_fields') === -1,
+    'the standalone page no longer renders context link fields');
   assert(ADMIN_SOURCE.indexOf('owner_tool_tab') === -1, 'admin page has no tab shell');
+  assert(ADMIN_SHARED_SOURCE.indexOf('cbt_admin_render_context_management') > -1,
+    'the shared-text page owns the shared-text section');
+  assert(ADMIN_SHARED_SOURCE.indexOf('admin_questions.php') > -1,
+    'the shared-text page links back to standalone questions');
   assert(STYLE_SOURCE.indexOf('.owner-workflow-section') > -1, 'full-width sections have shared boundary styles');
-  const env = createEnv();
-  const pastePanel = env.byId('owner_tool');
-  const editor = env.byId('shared_context_editor');
-  const questionForm = env.form;
-  const children = env.doc.body.children;
-  assert(children.indexOf(editor) === children.indexOf(pastePanel) + 1,
-    'Edit Shared Text sits directly below the paste panel');
-  assert(children.indexOf(questionForm) === children.indexOf(editor) + 1,
-    'Edit Shared Text sits above the question form and its light-blue link group');
-  assert(env.byId('owner_context_add').closest('#shared_context_editor'), 'Add Shared Text stays in its editor');
 });
-
 test('refinement copy uses Reset, Edit, and the short target instruction', () => {
   const env = createEnv();
   assertEqual(env.text('owner_tool_reset'), 'Reset', 'reset button copy');

@@ -4,20 +4,32 @@ Last updated: 2026-11-14.
 
 ## Active cycle
 
-- Cycle: `math-editor-2026-11` (created 2026-11-14). Scope: the P24
-  mathematics-editor delta — a curated Tier 1 Unicode symbol palette plus an
-  advisory UTF-8 byte counter in the shipped owner tool.
-- Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — phase 1 ME01,
-  phase 2 ME02. Statuses live in [`plan/README.md`](plan/README.md).
-- Packages: [`ME01`](plan/math-editor/me-01-math-palette.md),
-  [`ME02`](plan/math-editor/me-02-release-and-handoff.md). Neither has started.
+- Cycle: `math-editor-2026-11` (created 2026-11-14, restructured the same day).
+  The owner decided it opens with the OT12 shared-text page isolation
+  remediation (phase 1), then the P24 mathematics-editor delta: a curated Tier 1
+  Unicode symbol palette plus an advisory UTF-8 byte counter.
+- Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — phase 1 OT12,
+  phase 2 ME01, phase 3 ME02. Statuses live in [`plan/README.md`](plan/README.md).
+- Packages: [`OT12`](plan/owner-tool/ot-12-shared-text-page-isolation.md)
+  (implemented at `73009ac`, light review `PASS WITH NOTES` 2026-11-14, merge
+  pending),
+  [`ME01`](plan/math-editor/me-01-math-palette.md),
+  [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (not started).
+- Ordering: the math-editor packages were planned before the first live
+  deployment showed that shipped shared-text code breaks every question save
+  until the context migration runs, so OT12 now leads the cycle.
+- Branch: `owner-tool-integration`, except OT12, which implements on the
+  short-lived `ot12-shared-text-isolation` topic branch (off `a3b93b7`) and must
+  merge back before the ME01 Gate 1 light review.
 - Owner decisions settled 2026-11-14: keep exact lowercase `<u>` only; palette
   in a new owner-tool module; reuse `#owner_tool_preview`; editor-side byte
   counter only; `cbt_practice.php` excluded; plan against the `deployed/`
   working copies.
-- Planning constraint: `deployed/admin_questions.php` is exactly at the
-  externalize-first 100-addition cap, so ME01 needs explicit approval for a +1
-  script-tag line at its Gate 1.
+- Planning constraint: `deployed/admin_questions.php` is now at **+229/−79**
+  against its live snapshot after OT12 inlined the context-free save path. The
+  owner approved that 129-addition excess on 2026-11-14 (D-82), and the cap tests
+  encode 229 as this file's limit, so any further growth fails the suite. ME01
+  must still re-measure before adding its script tag.
 - Last review-settled package: OT10 of the archived cycle (`PASS WITH ACCEPTED
   FINDINGS`, 2026-11-14; `NOTE-1`–`NOTE-3` non-blocking). Archived cycle close
   `45807ea`, archive commit `134305c`.
@@ -117,7 +129,7 @@ Supplied DDL SHA-256:
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| Owner approval for +1 addition in `deployed/admin_questions.php` | ME01 | The file is at the externalize-first 100-addition cap; the one script-tag line must be approved by name and measured excess |
+| Owner approval for a >100 addition in `deployed/admin_questions.php` | ME01 (conditional) | Required only if ME01's post-OT12 re-measurement still exceeds the cap; approval must name the file and the measured excess |
 | Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Owner-accepted check required on the final tree; no live write |
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | OT08/OT09 final acceptance | Supplied 2026-11-08 in `sample-passages.txt` (comprehension Q13-Q15, cloze Q71-Q80); revised comprehension key Q11-Q15 (Q11 B, Q12 C, Q13 A→D) owner-confirmed 2026-11-13; coverage confirmed by OT10 on 2026-11-14 |
@@ -181,8 +193,11 @@ gates.
 
 ## Delivery stages
 
+- OT12: isolate shared-text and member-question management into
+  `admin_shared.php`, restore the legacy page to a context-free save path, and
+  record the deploy order.
 - ME01: curated Tier 1 palette, insertion helpers, byte counter, and the single
-  admin script-tag wiring (with the approved +1).
+  admin script-tag wiring (with the approved +1 if still required).
 - ME02: token/version, decisions, docs, deployment manifest and developer guide,
   browser evidence, and the rigorous release review.
 

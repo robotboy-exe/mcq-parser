@@ -1320,3 +1320,18 @@ Sources: `claude-migration.md` §8–§9, `qwen-2-reconciled.md` U02/U03/R11–R
 `archive/live-sources/subjects-select-2026-10-23.html`,
 `archive/live-sources/answer_details-2026-11-02.php`, and the recorded user
 decisions.
+
+## D-82 — The standalone page may exceed its addition cap once, to inline the save path
+
+The owner approved on 2026-11-14 an externalize-first exception naming
+`deployed/admin_questions.php`, the measured excess (**+229 − 100 = 129
+additions** over the cap against
+`archive/live-sources/admin_questions-2026-10-31.php`), and the justification
+that the restored pre-context save/delete path belongs in the page itself rather
+than in a separate module.
+
+The exception covers the standalone page's column probe, grouped-row guard,
+save and delete helpers in this cycle only. It does not weaken the cap for any
+other live-origin file, and the measurement must be re-taken at handoff if the
+page changes again. The separate `admin_question_save.php` module is removed as
+part of the same change.

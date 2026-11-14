@@ -210,10 +210,22 @@ test('shared context helper is side-effect-free and exposes validation/query fun
 });
 
 test('admin adds CSRF/PRG context actions without changing the question contract', () => {
-  assertContains(admin, "require_once __DIR__ . '/admin_context.php';", 'consolidated context include');
+  const shared = read('deployed/admin_shared.php');
+  assertContains(admin, 'function cbt_standalone_save_question(', 'standalone page inlines its save path');
+  assert(!admin.includes("admin_context.php"), 'standalone page does not include the context library');
+  assertContains(shared, "require_once __DIR__ . '/admin_context.php';", 'shared page includes the context library');
+  assertContains(shared, 'SELECT COUNT(*) FROM questions WHERE context_id IS NOT NULL',
+    'shared page counts every grouped question');
+  assertContains(shared, 'ORDER BY q.id DESC LIMIT %d OFFSET %d',
+    'recent shared questions are newest first');
+  assertContains(shared, 'shared_page=', 'recent shared questions paginate');
+  assertContains(shared, 'id="owner_shared_paste"', 'shared page renders the paste panel');
+  assert(shared.indexOf('src/owner-tool/shared-texts.js') > -1
+    && shared.indexOf('src/owner-tool/shared-texts.js') < shared.indexOf('src/owner-tool/shared-paste.js'),
+    'shared page loads the context module before its paste client');
   ['save_context', 'update_context', 'activate_context', 'deactivate_context', 'delete_context']
     .forEach((action) => assertContains(adminContext, '\'' + action + '\'', 'action ' + action));
-  assertContains(admin, 'cbt_admin_handle_context_request(', 'context dispatch hook');
+  assertContains(shared, 'cbt_admin_handle_context_request(', 'context dispatch hook');
   assertContains(adminContext, "header('Location: ' . $scriptName);", 'context PRG redirect');
   assertContains(admin, 'valid_csrf()', 'CSRF check');
   assertContains(adminContext, 'name="context_id"', 'question link field');
@@ -222,8 +234,8 @@ test('admin adds CSRF/PRG context actions without changing the question contract
   assertContains(adminContext, 'name="context_type"', 'context type field');
   assertContains(adminContext, 'name="expected_member_count"', 'expected count field');
   assertContains(adminContext, "'is_active' => !$parsed['errors'] && $context === null", 'linked questions are forced inactive');
-  assertContains(admin, 'cbt_admin_mutate_question(', 'question mutation hook');
-  assertContains(admin, 'cbt_admin_delete_question(', 'question delete hook');
+  assertContains(shared, 'cbt_admin_mutate_question(', 'question mutation hook');
+  assertContains(shared, 'cbt_admin_delete_question(', 'question delete hook');
   assertContains(adminContext, 'cbt_admin_deactivate_contexts(', 'member mutation deactivates contexts');
   assertContains(admin, "cbt_strip_formatting((string) $item['question_text'])", 'question list renderer preserved');
   assertContains(admin, 'required><?php echo "\\n" . h($formValues[\'question_text\']); ?></textarea>', 'question textarea preserved');
@@ -248,7 +260,12 @@ test('admin entry point keeps only narrow context hooks', () => {
 
   const additions = liveAdditions('archive/live-sources/admin_questions-2026-10-31.php', 'deployed/admin_questions.php');
   assert(Number.isFinite(additions), 'admin diff additions must be numeric');
-  assert(additions <= 100, 'admin entry point has ' + additions + ' additions; expected 100 or fewer');
+  // D-82: the owner approved 129 additions over the cap for inlining the
+  // context-free save path into this one live-origin file.
+  const approvedAdminAdditions = 229;
+  assertContains(read('docs/DECISIONS.md'), 'D-82', 'the approval is recorded');
+  assert(additions <= approvedAdminAdditions,
+    'admin entry point has ' + additions + ' additions; approved limit is ' + approvedAdminAdditions);
 });
 
 test('production handoff uses the consolidated file manifest', () => {
@@ -316,7 +333,9 @@ test('live-origin files stay within 100 cumulative additions', () => {
     ['archive/live-sources/answer_details-2026-11-02.php', 'deployed/answer_details.php'],
   ].forEach(([archive, live]) => {
     const additions = liveAdditions(archive, live);
-    assert(additions <= 100, live + ' has ' + additions + ' additions; expected 100 or fewer');
+    // D-82 approves one exception: deploying/admin_questions.php may reach 229.
+    const limit = live === 'deployed/admin_questions.php' ? 229 : 100;
+    assert(additions <= limit, live + ' has ' + additions + ' additions; limit is ' + limit);
   });
 });
 

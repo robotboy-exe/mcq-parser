@@ -8,23 +8,33 @@ Last updated: 2026-11-14.
 
 ## Current state
 
-- Active cycle: `math-editor-2026-11` (created 2026-11-14), scoped to the P24
-  mathematics-editor delta: a curated Tier 1 Unicode symbol palette and an
-  editor-side UTF-8 byte counter in the shipped owner tool.
-- Packages: ME01 (palette, byte counter, integration) then ME02 (release
-  evidence, manifest/guide, rigorous review). Neither has started.
+- Active cycle: `math-editor-2026-11` (created 2026-11-14). The owner decided on
+  2026-11-14 that it opens with the OT12 shared-text isolation remediation
+  (phase 1), then the P24 mathematics-editor delta: a curated Tier 1 Unicode
+  symbol palette and an editor-side UTF-8 byte counter in the shipped owner tool.
+- Packages: OT12 (shared-text page isolation), then ME01 (palette, byte counter,
+  integration), then ME02 (release evidence, manifest/guide, rigorous review).
+  None has started.
 - Resolved owner decisions (2026-11-14): keep the shipped underline and the
   exact lowercase `<u>` boundary (D-66); palette in a new owner-tool module; use
   the existing `#owner_tool_preview`; count bytes in the editor without changing
   the server limit; keep `cbt_practice.php` out of scope; plan against the
   current `deployed/` working copies.
-- Planning constraint: `deployed/admin_questions.php` sits exactly at the
-  externalize-first 100-addition cap, so ME01's single script-tag line needs an
-  explicit owner approval for +1 at its Gate 1.
+- Ordering decision (2026-11-14): the math-editor packages were planned before
+  the first live deployment showed that the integrated shared-text code fails
+  every question save until the context migration runs. OT12 was therefore made
+  phase 1, ahead of ME01/ME02, instead of being appended after them.
+- Planning constraint: `deployed/admin_questions.php` now stands at **+229/−79**
+  against its live snapshot. The owner approved that 129-addition excess on
+  2026-11-14 for inlining the context-free save path (D-82). ME01 must still
+  re-measure before adding its script tag, because no further headroom is
+  assumed.
 - Previous cycle: `owner-tool-2026-11` is archived (2026-11-14); its final
   summary is in [`history.md`](history.md) and its map in
   [`prompts/cycles/owner-tool-2026-11.md`](prompts/cycles/owner-tool-2026-11.md).
-- Working branch: `owner-tool-integration`; `main` is the published baseline.
+- Working branch: `owner-tool-integration`, except phase 1 (OT12), which
+  implements on the required `ot12-shared-text-isolation` topic branch and
+  merges back before the ME01 Gate 1 review; `main` is the published baseline.
   See [Branch strategy](#branch-strategy).
 - Current status summary: [`../STATUS.md`](../STATUS.md).
 - Continuation checklist: [`owner-tool/next-steps.md`](owner-tool/next-steps.md).
@@ -146,8 +156,9 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | archived cycle close | not started | owner approval for +1 addition in `admin_questions.php`; Brave/Android and desktop checks |
-| 2 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
+| 1 | OT12 | [Shared-Text Page Isolation](owner-tool/ot-12-shared-text-page-isolation.md) | archived cycle close | implemented at `73009ac`, light review PASS WITH NOTES 2026-11-14; merge pending | none; disposable database only |
+| 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | OT12 review | not started | owner approval for +1 addition in `admin_questions.php`; Brave/Android and desktop checks |
+| 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -200,33 +211,47 @@ verifies the detail path with the rest of Release A.
 - Do not create a long-lived branch per phase. If a risky experiment needs
   isolation, use a short-lived topic branch off `owner-tool-integration` and merge
   or delete it in the same package.
+- `ot12-shared-text-isolation` is the short-lived OT12 topic branch off
+  `owner-tool-integration` at `a3b93b7`. OT12 must be implemented only on this
+  branch; it is the explicit isolation exception to the default work branch.
+  Merge it back into `owner-tool-integration` (fast-forward if possible) and
+  delete it locally and remotely before the OT12 handoff and the ME01 Gate 1
+  light review. Do not make it long-lived or base later packages on it.
 - `ot04-fix` and `ot04-review` are merged into `owner-tool-integration` and
   retired. Their commits remain reachable through history; do not base new work
   on them.
 - Reviews are read-only sessions against `owner-tool-integration`. A review
   session may write only its record under [`reviews/`](reviews/README.md); it
   never commits or moves branches.
-- Implementation changes land on `owner-tool-integration`. The rigorous review at
-  a release boundary verifies that tip; only then may `main` be advanced.
+- Implementation changes land on `owner-tool-integration`, except OT12, which
+  lands on `ot12-shared-text-isolation` and is merged back before review. The
+  rigorous review at a release boundary verifies the `owner-tool-integration`
+  tip; only then may `main` be advanced.
 
 ## Review checkpoints
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | pending |
-| phase 2 close | ME02 release, evidence, and handoff | rigorous | pending |
+| phase 1 | OT12 shared-text page isolation | light at ME01 Gate 1 | light review recorded 2026-11-14 (`PASS WITH NOTES`); merge pending |
+| phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | pending |
+| phase 3 close | ME02 release, evidence, and handoff | rigorous | pending |
 
 ## Remaining path to cycle close
 
-1. **ME01 Gate 1** — verify the shipped baseline, restate the resolved spec
+1. **OT12 Gate 1** — verify the shipped baseline and the isolation boundary,
+   resolve the open Gate 1 questions, and confirm the externalize-first plan.
+2. **OT12** — isolate shared-text/member-question management into
+   `admin_shared.php`, restore the legacy page to a context-free save path, and
+   hand off; light review at ME01 Gate 1.
+3. **ME01 Gate 1** — verify the post-OT12 baseline, restate the resolved spec
    delta, and request the +1 externalize-first approval naming
    `deployed/admin_questions.php` and its measured excess.
-2. **ME01** — implement, test, and hand off; light review at ME02 Gate 1.
-3. **ME02** — tokens, decisions, docs, manifest/guide, and browser evidence.
-4. **Rigorous release review** via
+4. **ME01** — implement, test, and hand off; light review at ME02 Gate 1.
+5. **ME02** — tokens, decisions, docs, manifest/guide, and browser evidence.
+6. **Rigorous release review** via
    [`prompts/review-session.md`](prompts/review-session.md), then any
    fix/re-review rounds.
-5. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md); the
+7. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md); the
    commit, an optional `main` fast-forward, and archiving each need explicit
    owner authorization.
 
@@ -321,10 +346,11 @@ checks.
 
 ## Branch and worktree safety
 
-- Work in the current worktree and keep it on `owner-tool-integration`. For a
-  read-only baseline check of another line, use a detached temporary worktree;
-  do not switch the working tree to `main` to implement or to refresh a status
-  count.
+- Work in the current worktree and keep it on `owner-tool-integration`, except
+  while implementing OT12, which stays on `ot12-shared-text-isolation` until the
+  package merges it back. For a read-only baseline check of another line, use a
+  detached temporary worktree; do not switch the working tree to `main` to
+  implement or to refresh a status count.
 - The old dirty experiments worktree is not present in this clone. Do not
   recreate it or import its uncommitted P20-P22 files.
 - Never reset, clean, stash, switch, or rewrite a worktree with unexpected user

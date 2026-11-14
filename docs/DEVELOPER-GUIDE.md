@@ -11,7 +11,8 @@ renderer, testing commands, and known limitations. Deployment steps are in
 
 | File | Responsibility |
 |---|---|
-| `deployed/admin_questions.php` | Admin entry point: session/CSRF, login, native question form, PRG dispatch, renderer/asset wiring. Includes `admin_context.php` and `render.php`. |
+| `deployed/admin_questions.php` | Standalone-question entry point: session/CSRF, login, native question form, PRG dispatch, renderer/asset wiring, and an inlined context-free save/delete behind a column probe. Includes `render.php` only; it must not include `admin_context.php`. |
+| `deployed/admin_shared.php` | Shared-text entry point: login/CSRF/PRG, shared-text CRUD via `admin_context.php`, member questions with duplicated media uploads, combined recent-questions table, and the paste-to-draft panel. |
 | `deployed/admin_context.php` | Admin context request handling, context CRUD/question-link mutations, paginated management rendering, and read-only owner payloads. |
 | `deployed/context_lib.php` | Side-effect-free context validation and queries (slot tokens, member checks, link errors, status labels, paginated lists, and unpaginated selector options). |
 | `deployed/cbt_candidate.php` | Complete-group candidate selection and repository queries for `cbt.php`. |
@@ -20,11 +21,19 @@ renderer, testing commands, and known limitations. Deployment steps are in
 | `deployed/render.php` | Server-side safe renderer: escape first, restore only exact `<u>`/`</u>`. |
 | `src/parser/core.js` | Pure parser 2.3.3. Owns the comprehension and cloze engines as internal IIFEs; exposes the parser API and `comprehensionEngine()`/`clozeEngine()`. |
 | `src/owner-tool/render.js` | Shared client renderer and context-card renderer (`window.CBTText`, `window.CBTContext`). |
-| `src/owner-tool/owner-tool.js` | Owner-tool state, merged native context editor, and controller. |
+| `src/owner-tool/owner-tool.js` | Owner-tool state, paste/parse/fill, preview, underline, and controller. Reads the context APIs from `window` and runs without them. |
+| `src/owner-tool/shared-texts.js` | The four context APIs (`window.CBTOwnerContexts`, `…Form`, `…Card`, `…Panel`) split out of `owner-tool.js`; loaded by `admin_shared.php`. |
+| `src/owner-tool/shared-paste.js` | Shared-page paste client: parses a paste, queues drafts under `cbtSharedPaste:v1`, fills the native shared-text editor, refuses to touch a saved text. |
 | `src/owner-tool/owner-tool.css` | Owner-tool, context-workflow, and CBT context styles. |
 | `deployed/sql/01-context-migration.sql` | Rerunnable forward migration. |
 | `deployed/sql/02-context-rollback.sql` | Guarded, non-destructive rollback. |
 | `deployed/sql/README.md` | Migration/rollback runbook. |
+
+**Ownership split (OT12).** `questions.context_id IS NULL` belongs to
+`admin_questions.php`; everything else belongs to `admin_shared.php`. Each page
+hides and refuses the other page's rows. The standalone page may read the
+`context_id` column existence for its probe but must never write a context
+column; the only shared schema it depends on is `questions` itself.
 
 The owner tool is the production delivery path. `src/parser/parser.js`,
 `src/ui/ui.js`, `src/bookmarklet.js`, and `src/bookmarklet.min.js` are legacy
@@ -183,20 +192,22 @@ php tests/context-admin.php
 php tests/context-preflight.php
 php tests/php-render.php
 php tests/cbt-candidate.php
+php tests/standalone-admin.php
 ```
 
-Current local evidence, re-run 2026-11-14 at `f84518e` on PHP 8.3.32 (the 8.3
-target line; the owner's 8.3.16 runs gave the same results) plus the recorded
-MySQL 8.0.41 migration run of 2026-11-08:
+Current local evidence, re-run 2026-11-14 on PHP 8.3.32 (the 8.3 target line;
+the owner's 8.3.16 runs gave the same results) plus the recorded MySQL 8.0.41
+migration run of 2026-11-08; the OT12 split was measured after commit `73009ac`:
 
 - runner: 60 fixtures, 60 PASS, 0 FAIL, 0 PENDING;
 - unit: 163 PASS; owner-tool: 81 PASS; context-migration: 14 PASS;
   cbt-context: 5 PASS;
 - context-lib: 14 PASS; context-admin: 23 PASS; context-preflight: 6 PASS;
-  php-render: 9 PASS; cbt-candidate: 7 PASS;
-- `php -l` on 17 PHP files (8 under `deployed/`, `db_conn.php`, 3
-  `tools/context-migration-*.php`, 5 `tests/*.php`) and `node --check` on all 25
-  tracked JS files (15 under `src/`, `tools/`, `tests/`): PASS;
+  php-render: 9 PASS; cbt-candidate: 7 PASS; standalone-admin: 9 PASS;
+- `php -l` on every PHP file in this release (9 under `deployed/`,
+  `db_conn.php`, the 3 `tools/context-migration-*.php`, and the 6
+  `tests/*.php`) and `node --check` on the four changed owner-tool sources:
+  PASS;
 - `node tools/cloze-probe.js`: exit 0;
 - `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
   output hashes matching on the LF checkout; the recorded Windows/CRLF
