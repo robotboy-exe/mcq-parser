@@ -1,3 +1,116 @@
-# Main
+# OCR Parser Bookmarklet
 
-Dummy README for the `main` branch.
+A single-file `javascript:` bookmarklet that helps enter OCR'd exam questions
+into the existing CBT admin "Add a New Question" page. It parses a paste
+containing questions and an optional answer key, fills the form one question at
+a time, ticks answers from the key, and saves through the page's own form POST.
+
+The parser is kept separate from the UI so it can be tested without a browser.
+
+## Quick start
+
+```sh
+# Rebuild the bookmarklet from the modules
+node src/build/build.js
+
+# Run the fixture suite
+node tests/runner.js
+
+# Verify the bank source, slice anchors, counts, and output hashes
+node tools/extract-bank.js --check
+
+# Run the parser directly
+node -e "const p=require('./src/parser/parser.js'); console.log(p.parseQuestion({num:1,text:'Who was the father of faith? A. Abraham B. Moses C. David D. Joseph'}))"
+```
+
+To use it: open the admin Add-a-New-Question page, create a bookmark whose URL
+is the full contents of `src/bookmarklet.js`, then click it. Paste the questions
+and (optionally) the key into the injected box and press **Load questions + key**.
+
+Recommended key divider on its own line:
+
+```text
+=== ANSWER KEY ===
+1.B 2.C 3.A
+```
+
+## Project layout
+
+```text
+src/
+  parser/parser.js     pure parsing: sections, questions, options, key, header
+  ui/ui.js             DOM injection, form fill, queue, storage, save
+  build/build.js       concatenates modules into one javascript: URL
+  bookmarklet.js       generated output (do not edit by hand)
+docs/
+  SPEC.md              parser/UI behavior specification
+  DECISIONS.md         why the unusual heuristics exist
+  AGENTS.md            constraints for future agents
+  BUILD.md             build and verification instructions
+  EDGE_CASES.md        65 documented edge cases
+  INVARIANTS.md        62 documented invariants
+  BASELINE_COMPARISON.md  version comparison from Phase 2
+  plan/                work tracker and package handoffs
+fixtures/
+  inputs/              bank slices, anomaly blocks, doc samples, synthetic cases
+  expected/            documented expected outputs (CONFIRMED/PENDING)
+tools/
+  extract-bank.js      deterministic per-year bank extractor
+  bank-slices.json     source/slice manifest with anchors, counts, and hashes
+archive/
+  migration-docs/      original migration documents and claude-gaps.md
+  trusted-variants/    original bookmarklet variants A/B/C
+  legacy-bookmarklets/ supplied B1/B2/B3 (matched from first/second/third.js)
+  live-sources/        admin PHP/HTML, ocr_helper.js, OCR text bank
+tests/runner.js        pure-Node fixture harness (no browser)
+```
+
+## Behavior summary
+
+- Accepts `N.` question markers (1–3 digits) and options A–F, dotted or
+  dotless-after-newline; inline options are supported.
+- Accepts one exam year per paste; use `tools/extract-bank.js` for the
+  multi-year bank.
+- Handles unnumbered `*` bullet questions as a separate mode (`num: null`).
+- Runs a guarded OCR salvage pre-pass only when multiple fused boundaries are
+  detected and the repair increases the chunk count; banks are left untouched.
+- Splits off an answer key by divider, header, structure, or key-only paste;
+  inline multi-pair key lines are recognized.
+- Collapses E/F answers into Option D, because the page has only four options
+  and radios 0–3 (a hard server constraint).
+- Shows advisory flags such as `option C missing`; it never blocks saving.
+- Persists the queue, header metadata, and key in `localStorage` under
+  `ocrQueue`, `ocrMeta`, and `ansKey`; the key survives reloads.
+- Forces `is_active` on, so imported questions are saved active.
+- Does not read, write, or delete the legacy `ocrSubmitted` key.
+- Never changes the PHP, the CSRF token, or the server field names.
+
+Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
+
+## Status
+
+Workspace setup phases 1–9 are complete, and the follow-up work plan
+(`docs/plan/README.md`) P01–P09 is done: 25 fixtures, 25 PASS, 0 FAIL,
+0 PENDING. `tests/runner.js` runs every fixture and reports PASS, FAIL, or
+PENDING; `WORKSPACE_SETUP.md` holds the setup report. The baseline is
+`trusted-variant-C.js` (the merged one-box artifact); see
+`docs/BASELINE_COMPARISON.md` for why.
+
+The real-bank suite (`bank-2021`–`bank-2025`) and both anomaly blocks are now
+covered. On 2026-10-30, the current bookmarklet saved production question 5040
+for year 2030, confirming the live browser save path and `questions` schema.
+The deployed helper's old queue shape also loaded successfully, but stale
+content is not reparsed; after updating, press Reset Queue and re-paste
+(EC-62/INV-56). The user also confirmed that the installed bookmark opens the
+panel normally in Brave on Android.
+
+Resolved decisions: Reset Queue keeps the key, the key survives reloads, saves
+are forced active, the PRG success text is confirmed from the archived PHP, the
+legacy `ocrSubmitted` flag is ignored, and CRK maps to the live `CRS` option
+(id 14). The current subject list is archived in `archive/live-sources/`;
+English (Oral) is separate from English Language.
+
+B1, B2, and B3 were matched to the supplied root files and archived under
+`archive/legacy-bookmarklets/`; the baseline remains `trusted-variant-C.js`.
+`claude-gaps.md` was supplied in Phase 9 and archived under
+`archive/migration-docs/`; its triage is in `WORKSPACE_SETUP.md` Phase 9.
