@@ -51,7 +51,7 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 | `deployed/cbt.php` | 1085 / 47287 | `b969b52549067929982620cc5f994b432010492cc5d00a43754dc635cd3bb483` | site root | standalone delivery; Constant Text block; exact-`<u>` options; loads `src/owner-tool/render.js?v=2.3.2g` |
 | `deployed/answer_details.php` | 255 / 12617 | `570bf960d21ab69c8a6c575e2c9410dfbef322d54c81f00b288b4e59e788deb3` | site root | Constant Text block; `cbt_format_text` options |
 | `deployed/render.php` | 78 / 2447 | `205af86993d8bf2adcbcd262476e64fcc90fe9a2b3fd379cba9488c1d1450d2f` | site root | server exact-marker renderer; unchanged |
-| `ocr_helper.js` | 143 / 5612 | `0649b01eff825456db6c52b44d396dd9190775dbf4ad0144002c998ecd72eba8` | site root | production helper; new `a)`/`(a)` label parsing; no Constant Text integration; keeps blank-line paragraphs and folds single wraps |
+| `ocr_helper.js` | 143 / 5615 | `9d44b56139f485bf3c2b8242d1d614aa9712663837107a560020f9d9b254da60` | site root | production helper; `a)`/`(a)` label parsing with the live tolerance for spaces before the period; no Constant Text integration; keeps blank-line paragraphs and folds single wraps |
 | `src/underline-toolbar.js` | 128 / 3898 | `3953bc960fbcc58d285c863c2cb049fbfc8ff82a1c4ff884b7c135b83fe0f017` | site root `src/` | runtime Underline button for Constant Text, question, and options |
 | `src/question-preview.js` | 104 / 3759 | `472c69fedda6353f5ee1f527b8f5b0591774cd7fd8c837bad1c910268020bec9` | site root `src/` | read-only Constant Text/Question preview; uses `window.CBTText` |
 | `src/question-preview.css` | 37 / 711 | `cbcfc88582c8095bd9a75c7a96b21cb5a0d696069ef8d4c931354f6d6cc5f8e3` | site root `src/` | preview layout and `white-space: pre-wrap` |

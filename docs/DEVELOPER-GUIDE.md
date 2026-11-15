@@ -57,8 +57,10 @@ ocrMeta  = { subject_id, exam_category_id, exam_year }
   re-paste rather than trusting an old queue (EC-62/INV-56).
 - Do not rename either key or change their shapes. They are shared with the live
   helper origin.
-- The helper does not read or write `ansKey`, `ocrSubmitted`, `cbtOwnerTool:v1`,
-  or any Auto-Save key.
+- The helper does not read or write `ansKey`, `cbtOwnerTool:v1`, or any
+  Auto-Save key. It keeps the legacy `ocrSubmitted` marker: written on form
+  submit, then deleted on the next load while the queue advances (live-helper
+  parity).
 - Loading, parsing, and filling write no server row. Only the native form submit
   saves.
 - Constant Text is server-side session state, not `localStorage`.

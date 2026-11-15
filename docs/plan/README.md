@@ -14,7 +14,8 @@ Last updated: 2026-11-14.
   optional Constant Text passage per question. ME01 (curated Tier 1 Unicode
   palette plus advisory UTF-8 byte counter) and ME02 (release evidence) follow.
 - Packages: ST01 (reset, Constant Text, helper option fix, underline), then
-  ME01, then ME02. ST01 is implemented and handed off; ME01/ME02 have not
+  ME01, then ME02. ST01 is implemented, reviewed (PASS WITH ACCEPTED FINDINGS),
+  and its `FIX-1`/`FIX-2` are fixed pending re-review; ME01/ME02 have not
   started.
 - Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
   archived/historical. Their records remain under `owner-tool/` and `reviews/`
@@ -148,7 +149,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done | none; disposable database only |
+| 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done; phase-1 review PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` fixed, re-review pending | none; disposable database only |
 | 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | not started | re-measure `admin_questions.php`; Brave/Android and desktop checks |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
 
@@ -226,7 +227,10 @@ verifies the detail path with the rest of Release A.
 ## Remaining path to cycle close
 
 1. **ST01** — done: reset, Constant Text, helper option fix, underline,
-   CBT/detail display, archive, docs, and handoff; light review at ME01 Gate 1.
+   CBT/detail display, archive, docs, and handoff. Phase-1 review (`reviews/math-editor-2026-11-phase-1.md`)
+   returned PASS WITH ACCEPTED FINDINGS; `FIX-1` (spaced option-label tolerance)
+   and `FIX-2` (helper storage docs) are fixed and need the closure-focused
+   re-review before ME01 Gate 1.
 2. **ME01 Gate 1** — verify the post-ST01 baseline, retarget the palette and byte
    counter to the native form, and re-measure `admin_questions.php`.
 3. **ME01** — implement, test, and hand off; light review at ME02 Gate 1.
@@ -238,11 +242,12 @@ verifies the detail path with the rest of Release A.
    commit, an optional `main` fast-forward, and archiving each need explicit
    owner authorization.
 
-Current workflow stop: ST01 is handed off. ME01 Gate 1 includes the ST01 light
-review; do not implement ME01 before that gate returns `go`.
+Current workflow stop: ST01's `FIX-1`/`FIX-2` are fixed. Run the closure-focused
+phase-1 re-review; do not implement ME01 before the ST01 review settles and ME01
+Gate 1 returns `go`.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 2
+NEXT COMMAND: @docs/plan/prompts/review-session.md phase 1 re-review
 ```
 
 ## Session protocol

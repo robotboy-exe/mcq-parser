@@ -11,8 +11,9 @@ Last updated: 2026-11-14.
 - Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — ST01, ME01,
   ME02. Statuses live in [`plan/README.md`](plan/README.md).
 - Packages: [`ST01`](plan/owner-tool/st-01-constant-text-reset.md) (implemented
-  and handed off in the `WIP pending st01 review` checkpoint; light review at
-  ME01 Gate 1),
+  and handed off in the `WIP pending st01 review` checkpoint; phase-1 review
+  returned PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` are fixed and need the
+  closure-focused re-review),
   [`ME01`](plan/math-editor/me-01-math-palette.md) (not started),
   [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (not started).
 - Ordering: ST01 replaced OT12 because running the context migration was judged

@@ -138,12 +138,15 @@ The production root helper uses:
   update; reset and re-paste after updating (EC-62/INV-56).
 - `localStorage.ocrMeta`: `{ subject_id, exam_category_id, exam_year }`.
 
-It does not read or write `ansKey`, `ocrSubmitted`, `cbtOwnerTool:v1`, or any
-Auto-Save key. The remaining state below is the legacy bookmarklet contract.
+`ocrSubmitted` is a legacy shared key that the production helper still uses: it
+is written on form submit and, on the next page load, deleted while the queue
+advances (live-helper parity). The helper reads or writes no other key: not
+`ansKey`, not `cbtOwnerTool:v1`, and no Auto-Save key. The remaining state below
+is the legacy bookmarklet contract.
 
 - `localStorage.ansKey`: the parsed key map.
-- `localStorage.ocrSubmitted`: a legacy shared key. The bookmarklet no longer
-  reads, writes, or deletes it (decision D-22).
+- `localStorage.ocrSubmitted`: the legacy marker described above. The bookmarklet
+  itself no longer reads, writes, or deletes it (decision D-22).
 - Auto-Save additions (see §7): `ansKeyBatch`, `ansKeyConflicts`, `ocrSaving`,
   `ocrSavedLog`, and `autoLock`. The existing key names and the `ansKey` shape
   stay compatible (INV-36).

@@ -1,6 +1,7 @@
 # ST01 — Constant Text Reset
 
-- **Status:** done (implementation; light review pending at ME01 Gate 1)
+- **Status:** done (implementation; phase-1 review PASS WITH ACCEPTED FINDINGS;
+  `FIX-1`/`FIX-2` fixed, closure-focused re-review pending)
 - **Package base:** `e64513f` (`owner-tool-integration`, 2026-11-14)
 - **Branch:** `owner-tool-integration` (no topic branch)
 - **Depends on:** archived `owner-tool-2026-11` cycle close; owner reset direction
@@ -195,7 +196,8 @@ bookmarklet output, and the untracked `src/bookmarklet.min.js`.
 
 ## Handoff — 2026-11-14
 
-**Status:** implementation complete; light review pending at ME01 Gate 1.
+**Status:** implementation complete; reviewed 2026-11-14; `FIX-1`/`FIX-2` fixed
+and awaiting re-review.
 **Commit:** owner-requested WIP checkpoint, `WIP pending st01 review`.
 
 ### Files changed
@@ -297,4 +299,96 @@ No live site or production database was touched.
 - The `bank-2021` final-item duplicate-C flag from OCR key text is accepted as
   pre-existing.
 
-**NEXT COMMAND:** `@docs/plan/prompts/phase-session.md phase 2`
+## Fix Note — 2026-11-14 (`FIX-1`, `FIX-2`)
+
+**Authority:** `docs/plan/reviews/math-editor-2026-11-phase-1.md` (original
+review, 2026-11-14) recommended `fix-session.md phase 1 FIX-1 FIX-2`. Both
+findings were in their first review round; no owner disposition was needed or
+inferred, and the review record was not edited.
+
+**Package base:** unchanged `e64513f`; reviewed checkpoint `6e301bb`. Line
+counters were not reset.
+
+### Frozen closure matrix
+
+**`FIX-1` — option-label regex dropped the shipped `A .` tolerance**
+
+| Criterion | Implementation | Evidence |
+|---|---|---|
+| (a) accept optional whitespace between an A–D letter and its `.` terminator, upper and lower case | `ocr_helper.js:8` `([A-Da-d])[.)])` → `([A-Da-d])\s*[.)])`; one line, no new lines | `node tests/ocr-helper.js` vector "accepts whitespace between an option letter and its period": `A . One B . Two C . Three D . Four` and `a . One` / `b\n. Two` parse to One/Two/Three/Four with no `option X missing` flag |
+| (b) six added forms, left boundary and uppercase normalization unchanged | `(?<![A-Za-z])`, the `(a)` alternative, `[.)]*\s*` and `toUpperCase()` untouched | Existing vectors "accepts all six lowercase and uppercase label forms" and "normalizes parsed letters to uppercase" still pass; probe `(A). One (b) Two (C) Three d) Four` parses correctly |
+| (c) `splitQuestions`, `FIXES`, `cleanBlock`/`cleanLine`, queue/storage/fill untouched | `git diff 6e301bb -- ocr_helper.js` shows exactly one changed line | `node tests/runner.js` 60/60 and `node tests/unit.js` 163/0 pass unchanged |
+
+Non-goals were respected: no E/F labels, no E/F→D change, no `A -`/`(A -`
+handling, no Constant Text integration, no numbering-guard change.
+
+**`FIX-2` — current-facing docs misstated the root helper's storage behavior**
+
+Branch (a) "docs describe actual behavior" was chosen, because ST01 requires
+queue/storage/fill to stay at live parity and this fix changes no behavior.
+
+| Criterion | Implementation | Evidence |
+|---|---|---|
+| (a) `docs/SPEC.md` §3.4 and `docs/DEVELOPER-GUIDE.md` §3 describe the real keys | Both now state that the helper uses `ocrQueue`/`ocrMeta` and still writes `ocrSubmitted` on submit, then deletes it on the next load while the queue advances; `ansKey`, `cbtOwnerTool:v1` and Auto-Save keys remain untouched | doc diff in §"Commands and results" |
+| (b) `AGENTS.md`/`docs/AGENTS.md` separate the bookmarklet rule from the restored helper | `AGENTS.md` storage rule and `docs/AGENTS.md` items 4 and the "not allowed" bullet scope the `ocrSubmitted` prohibition to the archived bookmarklet and name the root helper as the one exception | doc diff |
+| (c) any `docs/INVARIANTS.md` statement about helper storage | No invariant covers root-helper storage: `INV-36`/`INV-40` are bookmarklet claims evidenced by `src/ui/ui.js` and remain true, so none was rewritten. `INV-135` was synced to the `FIX-1` accepted forms and its check count | `docs/INVARIANTS.md:80,84,204` |
+
+### Production files changed by this fix
+
+| File | Change | Live snapshot | Final | Additions / deletions | Cap |
+|---|---|---|---:|---:|---|
+| `ocr_helper.js` | one regex line | 123 / 5085 | 143 / 5615 | **+38 / −18** | ≤100 ✓ |
+
+Responsibility (OCR fill helper), deployment path (site root) and direct
+test (`node tests/ocr-helper.js`) are unchanged; the deployment manifest row in
+`docs/DEPLOYMENT.md` was refreshed to `143 / 5615` and SHA-256
+`9d44b56139f485bf3c2b8242d1d614aa9712663837107a560020f9d9b254da60`. No new
+module was added, so no new deployment row is required.
+
+`tests/ocr-helper.js` grew from 93 to 113 lines (one new vector); test files are
+not capped. No other production file or counter changed.
+
+### Documentation files changed
+
+`docs/SPEC.md` (§3.4), `docs/DEVELOPER-GUIDE.md` (§3), `AGENTS.md` (storage rule
+and known-gaps line), `docs/AGENTS.md` (storage rule and prohibited-actions
+bullet), `docs/INVARIANTS.md` (`INV-135` forms and check count),
+`docs/DEPLOYMENT.md` (helper row), and the coordinator/status files listed below.
+
+### Commands and results
+
+```sh
+node tests/ocr-helper.js   # PASS: 8 ocr-helper vectors
+node tests/runner.js       # 60 fixtures: 60 PASS, 0 FAIL, 0 PENDING
+node tests/unit.js         # 163 PASS, 0 FAIL
+git diff --numstat --no-index archive/live-sources/ocr_helper-2026-11-01.js ocr_helper.js
+                           # 38	18
+```
+
+Adversarial re-probes: `A . One B . Two C . Three D . Four` and the lowercase
+spaced/newline form now parse all four options with no flags; `(A).` mixed
+forms still parse; a stem containing `A.` prose is preserved and carries the
+advisory duplicate-letter flag.
+
+### Coordinator and status updates
+
+`docs/plan/README.md` (current state, package table, remaining path, workflow
+stop), `docs/STATUS.md` (packages line) and `AGENTS.md` (known gaps) now record
+the review result and the pending re-review. `docs/plan/prompts/phase-map.md`
+carries no status, so it is unchanged.
+
+### Excluded artifacts
+
+Unchanged from the handoff: `archive/`, root `new-edge.txt`, supplied SQL,
+generated `src/bookmarklet.js`, and `tests/fixtures/` inputs. `src/bookmarklet.min.js`
+does not exist in this clone.
+
+### Deferred (not part of these findings)
+
+`NOTE-2` from the review still stands: no browser runtime render of the CBT and
+answer-detail Constant Text, and no MySQL execution of the migration SQL. Those
+remain ME01/ME02 evidence.
+
+**Commit:** deferred. No commit was made.
+
+**NEXT COMMAND:** `@docs/plan/prompts/review-session.md phase 1 re-review`

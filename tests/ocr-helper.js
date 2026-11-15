@@ -57,6 +57,26 @@ test('bank-2021 still yields 40 questions with no missing options', () => {
   }
 });
 
+test('accepts whitespace between an option letter and its period', () => {
+  const spaced = helper.parseQuestion({ num: 1, text: 'Which option is correct? A . One B . Two C . Three D . Four' });
+  assert.deepStrictEqual(missingOptionFlags(spaced), []);
+  assert.strictEqual(spaced.a, 'One');
+  assert.strictEqual(spaced.b, 'Two');
+  assert.strictEqual(spaced.c, 'Three');
+  assert.strictEqual(spaced.d, 'Four');
+
+  const lowercase = helper.parseQuestion({ num: 2, text: 'Which option is correct? a . One\nb\n. Two c . Three d . Four' });
+  assert.deepStrictEqual(missingOptionFlags(lowercase), []);
+  assert.strictEqual(lowercase.a, 'One');
+  assert.strictEqual(lowercase.b, 'Two');
+  assert.strictEqual(lowercase.c, 'Three');
+  assert.strictEqual(lowercase.d, 'Four');
+
+  const questions = parseAll('1. Which option is correct? A . One B . Two C . Three D . Four');
+  assert.strictEqual(questions.length, 1);
+  assert.deepStrictEqual(questions[0].flags, []);
+});
+
 test('normalizes parsed letters to uppercase', () => {
   const question = helper.parseQuestion({ num: 1, text: 'Which option is correct? (a) One (b) Two (c) Three (d) Four' });
   assert.strictEqual(question.a, 'One');

@@ -5,7 +5,7 @@
     [/persidential/gi, 'presidential'],
     [/resposible/gi, 'responsible'],
   ];
-  const OPTION = /(?<![A-Za-z])(?:\(([A-Da-d])\)|([A-Da-d])[.)])[.)]*\s*/g;
+  const OPTION = /(?<![A-Za-z])(?:\(([A-Da-d])\)|([A-Da-d])\s*[.)])[.)]*\s*/g;
 
   function splitQuestions(text) {
     const marks = [];

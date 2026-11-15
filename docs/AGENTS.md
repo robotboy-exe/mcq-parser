@@ -76,8 +76,10 @@ deliverable.
    `ocr_helper.js` is production code; change it only for a package with a
    regression test and preserve the queue/fill behavior.
 4. **Do not change `localStorage` key names or shapes.** The production helper
-   uses `ocrQueue` and `ocrMeta` only. `ansKey` and `ocrSubmitted` are legacy
-   key names shared with old helpers; do not rename or reshape them. Auto-Save
+   uses `ocrQueue` and `ocrMeta`, plus the legacy `ocrSubmitted` marker that it
+   writes on submit and deletes on the next load (live-helper parity). `ansKey`
+   and `ocrSubmitted` are legacy key names shared with old helpers; do not
+   rename or reshape them. Auto-Save
    adds `batchId`, `ansKeyBatch`, `ansKeyConflicts`, `ocrSaving`, `ocrSavedLog`,
    `ocrBatchHistory`, and `autoLock` for the archived bookmarklet; `ocrQueue`
    items may add `stimuli`/`needsImage` (D-59/D-60). Additions are allowed,
@@ -186,8 +188,9 @@ deliverable.
   the unit/mock evidence for the lock reason.
 - Treating this bookmarklet as part of the PHP Bulk Import plan; no link
   between them was decided (claude §8 issue 10).
-- Reading, writing, deleting, or relying on `ocrSubmitted`; the bookmarklet is
-  deliberately self-contained (INV-40; D-27).
+- Reading, writing, deleting, or relying on `ocrSubmitted` in the bookmarklet;
+  it is deliberately self-contained (INV-40; D-27). Root `ocr_helper.js` is the
+  one exception: it keeps the legacy submit-write/boot-delete for live parity.
 - Submitting a live delete form directly, selecting the first
   `delete_question` form, or treating "clean up the test rows" as part of a
   browser check. Cleanup is owner-only; see `docs/LIVE-SAFETY.md`.
