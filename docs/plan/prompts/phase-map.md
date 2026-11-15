@@ -12,9 +12,9 @@ Updated: 2026-11-15
 | 2 | `ME01` — `math-editor/me-01-math-palette.md` |
 | 3 | `ME02` — `math-editor/me-02-release-and-handoff.md` |
 
-Current gate: phase 2, ME01 Gate 1. ST01 is done and review-settled; the third
-phase-1 re-review closed D-91 `FIX-1`, `FIX-2` remains closed, and the dependency
-is satisfied. Status lives in the coordinator.
+Current gate: phase 3, ME02 Gate 1. Phase 2 (ME01) is review-settled (PASS;
+`FIX-1` and both notes closed) at +89 live-origin additions. Status lives in the
+coordinator.
 
 ## Starting a new cycle
 

@@ -26,7 +26,7 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 60 fixtures: 60 PASS, 0 PENDING; `node tests/unit.js` is 163 PASS; `node tests/ocr-helper.js` is 11 checks; `node tests/underline-toolbar.js` is 9 checks; `node tests/question-preview.js` is 4 checks; `php tests/php-render.php` is 9 renderer vectors; `php tests/admin-question-store.php` is 8 store checks.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 60 fixtures: 60 PASS, 0 PENDING; `node tests/unit.js` is 163 PASS; `node tests/ocr-helper.js` is 11 checks; `node tests/underline-toolbar.js` is 9 checks; `node tests/question-preview.js` is 4 checks; `node tests/math-tool.js` is 17 checks; `php tests/php-render.php` is 9 renderer vectors; `php tests/admin-question-store.php` is 8 store checks.
 - PHP renderer check: `php tests/php-render.php`; also run `php -l` on every changed file under `deployed/` on the target PHP runtime.
 - Constant Text migration: `deployed/sql/01-constant-text.sql` and `02-constant-text-rollback.sql` run only against a disposable database. Do not run them against production.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
@@ -46,6 +46,7 @@
 - Preserve deliberate quirks: E/F→D collapse, `splitQuestions` numbering guard, advisory-only flags, blank options, `FIXES` order. Do not refactor for style.
 - Preserve multiline rendering: root helper folds single wraps but keeps blank-line paragraphs (`\n\n`), options stay single-line, and Constant Text/question stems use `white-space: pre-wrap` in the CBT pages.
 - `src/question-preview.js` is read-only: it renders Constant Text and Question through `window.CBTText`, writes no form values, and has no storage/network behavior. Root `ocr_helper.js` must not reference or fill `constant_text`.
+- `src/math-tool.js` is the admin symbol palette and advisory byte counter for `#question_text`. It writes no storage, network, form submit, underline marker, or `constant_text` behavior; the server's 60,000-byte check and the native `maxlength` stay authoritative.
 - D-91 is the root-helper option-label contract: A-D is case-insensitive; whitespace is optional after `(`, before `)`, and before `.`, while unspaced forms remain valid. A later label-like repeat of an already selected letter stays in that option's text. The review-settled phase-1 implementation includes the exact `A) ... A ) ... B)` regression.
 - Treat divider-only runs of three or more equals signs (`========`) as section separators (D-46). A partial section, even one question, is its own paste; do not attach an unheaded section to the previous or next year.
 - Highest-risk code: `OPTION`, the blank-option whitespace class, `LOOSE` E/F, `splitSections`, `splitQuestions`, and the paired `fillForm`/`tick` logic. See `docs/AGENTS.md` before changing these.

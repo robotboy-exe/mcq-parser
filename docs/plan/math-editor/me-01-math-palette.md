@@ -1,12 +1,14 @@
 # ME01 — Math Symbol Palette and Byte Counter
 
-- **Status:** not started; ST01 dependency satisfied; Gate 1 is next
+- **Status:** done; review-settled 2026-11-15 (phase-2 re-review PASS, `FIX-1`
+  and both notes closed); ME02 Gate 1 is next
 - **Depends on:** ST01 D-91 implementation and light review (satisfied by the
   third phase-1 re-review)
 - **Blocks:** ME02
-- **External gate:** none expected. `deployed/admin_questions.php` is at **+87**
-  additions after ST01; the two new asset tags are expected to bring it to
-  **+89**, still within the 100-addition cap. Gate 1 must re-measure.
+- **External gate:** measured. `deployed/admin_questions.php` is at **+89**
+  additions against the designated live snapshot (ST01 +87 plus the two asset
+  tags), within the 100-addition cap. Brave/Android and desktop checks remain
+  owner-accepted ME02 evidence.
 - **Baseline note:** plan against the review-settled post-D-91 ST01 `deployed/`
   working copies and phase boundary. The owner-tool controller is archived, but
   ST01 restores a focused read-only
@@ -157,3 +159,169 @@ markers and Unicode bytes as UTF-8.
   script tag. No archived owner-tool code returns.
 - **D-93:** the byte counter is editor-side and advisory only; the server's
   60,000-byte check remains authoritative, and `maxlength` is unchanged.
+
+## Handoff — 2026-11-15
+
+**Result:** ME01 implemented on the review-settled ST01 tree. Package base
+`cdbff2b`; no commit was made.
+
+### Files and measurements
+
+| File | Package diff | Final lines / bytes | SHA-256 (LF) | Responsibility | Deployment and production-path evidence |
+|---|---:|---:|---|---|---|
+| `src/math-tool.js` (new) | +413 / -0 | 413 / 13335 | `8a8f48073da4c33dfbfb843121dcd00ea2099e14f6d0692ce7fb726bf99654bb` | palette insertion and advisory byte counter for `#question_text` | site root `src/`; `node tests/math-tool.js` requires the real module and mounts it in a DOM shim |
+| `src/math-tool.css` (new) | +133 / -0 | 133 / 2028 | `09f30a164de075dbb3aaff1aed470dd3143f2ed12d5d15bf582132ea69f6a2ce` | palette, drawer, counter, focus, and mobile target styles | site root `src/`; loaded once by the admin page; structural asserts in `tests/math-tool.js` |
+| `deployed/admin_questions.php` | +2 / -0 | 1055 / 62630 | `0a6276c3f5c0f9418062f6f356e8213af2a2e37fb84e2e2fc3dc19363cf8da9f` | one stylesheet link and one script tag beside the ST01 assets | site root; asset-order check in `tests/math-tool.js`; `php -l` |
+| `tests/math-tool.js` (new) | +354 / -0 | 354 / 13729 | — | pure-helper and mount-contract harness | not deployed |
+
+Live-origin cap against the designated snapshot
+`archive/live-sources/admin_questions-2026-10-31.php` (1046 / 62273):
+`deployed/admin_questions.php` is **+89 / -80**, within the 100-addition cap and
+matching the Gate 1 estimate exactly. No exception exists or is needed.
+
+Excluded artifacts, separately: the P24 inline HTML/CSS/script blocks
+(`docs/24-question-underline-and-math.md` unchanged), `cbt_practice.php`,
+`src/ui/ui.js`, `ocr_helper.js`, generated `src/bookmarklet.js`, `archive/`
+snapshots, `deployed/sql/base-schema.working.sql`, `session-ses_e35a.md`, and
+the static PHP CLI fetched into `$HOME` for local checks.
+
+### Commands and results
+
+```sh
+node tests/runner.js                # 60 PASS, 0 FAIL, 0 PENDING
+node tests/unit.js                  # 163 PASS
+node tests/ocr-helper.js            # 11 PASS
+node tests/underline-toolbar.js     # 9 PASS
+node tests/question-preview.js      # 4 PASS
+node tests/math-tool.js             # 16 PASS
+node tools/extract-bank.js --check  # source, anchors, counts, 7 hashes OK
+php tests/php-render.php            # 9 PASS (PHP 8.3.32)
+php tests/admin-question-store.php  # 8 PASS (PHP 8.3.32)
+php -l                              # 5 deployed PHP files and staging cbt_db.php PASS
+node --check src/math-tool.js tests/math-tool.js  # PASS
+git diff --check                    # clean
+```
+
+PHP was absent from this cloud VM; the declared PHP 8.3 target was exercised
+with a static-php-cli PHP 8.3.32 binary kept outside the workspace. MySQL,
+browser, staging, and live checks were not run.
+
+### Acceptance mapping
+
+| Check | Result |
+|---|---|
+| Node/PHP baselines unchanged | **PASS** (60/163/11/9/4, renderer 9, store 8) |
+| Quick symbols insert at the remembered caret | **PASS** at module level: real `init` mount, button click, `setRangeText` fallback and `execCommand` path |
+| Drawer toggles and `aria-expanded` | **PASS** at module level for both states |
+| Keyboard activation | **PASS by construction**: every generated control is a native `type="button"` with `aria-label`; real browser focus order not exercised |
+| Undo | **PASS on the `execCommand` path by design**; the `setRangeText`/`.value` fallbacks are browser-dependent and not exercised in a browser |
+| Multiline preservation | **PASS**: insertion helper and mount test keep `\n\n` unchanged |
+| Preview refresh after insertion | **PASS at event level**: the `setRangeText`/`.value` fallback dispatches a synthetic `input`, and the `execCommand` success path relies on the browser's native `input` event (corrected by review `NOTE-1`); not watched in a browser |
+| Underline unchanged, no second button | **PASS**: source and mount asserts find no `owner_tool_underline` / `<u>` writes |
+| Byte counter thresholds and multi-byte counting | **PASS**: 56,999 neutral, 57,000 amber, 59,999 amber, 60,000 red; `±`×30,000 = 60,000 bytes |
+| No truncation, `maxlength` untouched, Save not disabled | **PASS** in the mount test |
+| Admin table summary and renderers | **PASS by unchanged path** (renderer 9 vectors); no renderer/PHP logic changed |
+| Native save | Not re-run: no PHP server, browser, or database is available in this VM; no server-side byte changed |
+| Mobile tap, ≥38px targets, Brave/Android | **Not run**; owner Brave/Android and desktop checks remain ME02 evidence |
+
+### Open questions and review status
+
+- Real-browser undo and mobile selection retention on Brave/Android remain
+owner-accepted checks; only the `execCommand` path is undo-preserving by design.
+- `maxlength="60000"` (UTF-16) versus the 60,000-byte server check stays a
+documented limitation; neither was changed.
+- ME02 still owns the asset version tokens, `docs/DEPLOYMENT.md` and
+`docs/DEVELOPER-GUIDE.md` rows for the two new files, and browser evidence.
+- Review status: review-settled by the phase-2 closure re-review; `FIX-1` and
+both notes are closed. The notes were handled as documentation corrections
+without product change.
+
+**Commit:** deferred. No file was staged or committed.
+
+## Fix Note — 2026-11-15 (`FIX-1`)
+
+**Authority:** phase-2 review record
+[`math-editor-2026-11-phase-2.md`](../reviews/math-editor-2026-11-phase-2.md),
+`FIX-1` in its first review round. The frozen closure contract is unchanged.
+
+**Defect:** the counter kept an older reading after the page's own OCR Load or
+Skip filled `#question_text` directly, and after a native form reset. It showed
+`neutral | 1 / 60 000 bytes` while the field held 60 000 bytes.
+
+**Failing-first evidence:** a new vector,
+`counter refreshes after OCR load, OCR skip, and native form reset`, was added
+to `tests/math-tool.js` before the module change. It failed at the load
+assertion with `'neutral' !== 'red'`; the other 16 vectors passed.
+
+**Change:** `src/math-tool.js` only, after the existing textarea listeners. It
+now defers one existing `updateCounter` call on the owner form's `reset` event
+(via `textarea.form`) and on `#ocr_load` / `#ocr_skip` clicks when those controls
+exist, using `root.setTimeout(updateCounter, 0)` with an immediate fallback and
+mirroring `src/question-preview.js:86-98`. No symbol, insertion, mounting,
+counter-threshold, storage, network, submit, form-value, Underline, `maxlength`,
+CSS, admin-page, PHP, or server behavior changed.
+
+### Frozen closure matrix
+
+| `FIX-1` criterion | Implementation | Evidence |
+|---|---|---|
+| 1. Fresh reading after load/skip and reset, red at ≥60 000 | deferred `updateCounter` on `#ocr_load`, `#ocr_skip`, and form `reset` | new vector asserts 60 000 bytes → `red`/`60 000 / 60 000 bytes` after load and reset, and a small skip fill → `neutral`; independent probe reproduced both |
+| 2. Same update path, no adjacent behavior | reuses `updateCounter`; no new key, request, submit, value write, or control | source-boundary vector (no storage/fetch/submit/`innerHTML`/`constant_text`/`owner_tool_underline`) and mount vector still pass; `git diff` limited to the module and harness |
+| 3. Existing vectors green; real-module refresh vector | 16 prior vectors untouched, one added | `node tests/math-tool.js`: 17 PASS; vectors require and mount the real module |
+
+### Measurements
+
+| File | Package diff | Previous → final lines / bytes | SHA-256 (LF) | Deployment |
+|---|---:|---|---|---|
+| `src/math-tool.js` | +432 / -0 | 413 / 13335 → 432 / 13974 | `fee1d8b393e64e39457186a345e6e5d4227d21f79f885d44983554bdb69c6d14` | site root `src/` |
+| `tests/math-tool.js` | +387 / -0 | 354 / 13729 → 387 / 14947 | `239cda8712c875460fbddb4eb2cb255326d29802dfa87bf09e8c58c999fec13a` | not deployed |
+| `deployed/admin_questions.php` | +2 / -0 | 1055 / 62630 (unchanged) | `0a6276c3f5c0f9418062f6f356e8213af2a2e37fb84e2e2fc3dc19363cf8da9f` | site root |
+
+Live-origin cap remains **+89 / −80** against
+`archive/live-sources/admin_questions-2026-10-31.php`; no exception is needed.
+Excluded artifacts are unchanged from the handoff.
+
+### Commands and results
+
+```sh
+node tests/runner.js                # 60 PASS, 0 FAIL, 0 PENDING
+node tests/unit.js                  # 163 PASS
+node tests/ocr-helper.js            # 11 PASS
+node tests/underline-toolbar.js     # 9 PASS
+node tests/question-preview.js      # 4 PASS
+node tests/math-tool.js             # 17 PASS
+node tools/extract-bank.js --check  # 7 hashes OK
+php tests/php-render.php            # 9 PASS (PHP 8.3.32)
+php tests/admin-question-store.php  # 8 PASS (PHP 8.3.32)
+php -l                              # 5 deployed PHP files PASS
+node --check src/math-tool.js tests/math-tool.js  # PASS
+git diff --check                    # clean
+```
+
+**Review notes handled without product change:** `NOTE-1` corrected the
+acceptance wording for the `execCommand` path above. `NOTE-2`: `QUICK_ROW`
+remains its own 15-entry constant because eight quick characters
+(`± √ × ÷ ≠ ≈ °`) are not in the drawer categories; the curated set matches the
+package and the wording divergence is recorded here.
+
+**Not run:** browser, mobile, undo, native save, MySQL, staging, or live checks;
+re-review is required after this behavior change.
+
+**Commit:** deferred. No file was staged or committed.
+
+## Review Settlement — 2026-11-15
+
+**Review:**
+[`math-editor-2026-11-phase-2-re-review.md`](../reviews/math-editor-2026-11-phase-2-re-review.md)
+returned `PASS`. It closed `FIX-1` on every frozen criterion, closed `NOTE-1`
+(the `execCommand` preview wording) and `NOTE-2` (the quick-row constant), and
+introduced no new finding. Independent probes covered a mount without the new
+controls, a load → skip → load → reset sequence, deferred `setTimeout` ordering,
+`execCommand`-false fallback, marker/newline preservation, and idempotent
+mounting.
+
+**Status:** ME01 is done and review-settled. ME02 may proceed to its read-only
+Gate 1. Brave/Android, desktop, native-save, MySQL, and deployment evidence
+remain ME02/release gates.
+
+**Commit:** the owner explicitly requested the phase-boundary commit and push.

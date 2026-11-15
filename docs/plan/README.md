@@ -15,8 +15,9 @@ Last updated: 2026-11-15.
   palette plus advisory UTF-8 byte counter) and ME02 (release evidence) follow.
 - Packages: ST01 (reset, Constant Text, helper option fix, underline), then
   ME01, then ME02. ST01 is done and review-settled: its third re-review closed
-  D-91 `FIX-1`, `FIX-2` remains closed, and all 11 helper checks pass. ME01 and
-  ME02 have not started.
+  D-91 `FIX-1`, `FIX-2` remains closed, and all 11 helper checks pass. ME01 is
+  done and review-settled: the phase-2 re-review passed, closing `FIX-1` and
+  both notes, with 17 module vectors. ME02 has not started.
 - Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
   archived/historical. Their records remain under `owner-tool/` and `reviews/`
   for evidence; do not continue that architecture.
@@ -34,10 +35,13 @@ Last updated: 2026-11-15.
 - Working branch: `owner-tool-integration`; `main` is the published baseline.
   See [Branch strategy](#branch-strategy).
 - Current status summary: [`../STATUS.md`](../STATUS.md).
-- Completed handoff: ST01's
-  [package record](owner-tool/st-01-constant-text-reset.md). The next gate is
-  ME01 Gate 1. [`owner-tool/next-steps.md`](owner-tool/next-steps.md) is
-  archived-cycle history and must not be repurposed.
+- Completed handoffs: ST01's
+  [package record](owner-tool/st-01-constant-text-reset.md) and ME01's
+  [package record](math-editor/me-01-math-palette.md) with the phase-2 review,
+  `FIX-1` fix note, and closure re-review. Phase 2 is review-settled; the next
+  gate is ME02 Gate 1.
+  [`owner-tool/next-steps.md`](owner-tool/next-steps.md) is archived-cycle
+  history and must not be repurposed.
 
 ## Product direction
 
@@ -161,7 +165,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
 | 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done; third re-review PASS; `FIX-1`/`FIX-2` closed | none; disposable database only |
-| 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | not started; dependency satisfied | re-measure `admin_questions.php`; Brave/Android and desktop checks |
+| 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | done; phase-2 re-review PASS, `FIX-1` and both notes closed (17 vectors) | `admin_questions.php` re-measured PASS (+89); Brave/Android and desktop checks deferred to ME02 |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
 
 Status lives only in this table; the active map maps phase numbers to these
@@ -233,7 +237,7 @@ verifies the detail path with the rest of Release A.
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
 | phase 1 | ST01 reset, Constant Text, helper fix, underline | light at ME01 Gate 1 | settled by third re-review; PASS, both fixes closed |
-| phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | pending |
+| phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | review-settled 2026-11-15: PASS, `FIX-1` and both notes closed |
 | phase 3 close | ME02 release, evidence, and handoff | rigorous | pending |
 
 ## Remaining path to cycle close
@@ -241,9 +245,11 @@ verifies the detail path with the rest of Release A.
 1. **ST01** — done and review-settled: reset, Constant Text, underline,
    CBT/detail display, archive, D-91 replacement, docs, and handoff. The third
    closure-focused re-review passed and closed `FIX-1`; `FIX-2` remains closed.
-2. **ME01 Gate 1** — verify the post-ST01 baseline, retarget the palette and byte
-   counter to the native form, and re-measure `admin_questions.php`.
-3. **ME01** — implement, test, and hand off; light review at ME02 Gate 1.
+2. **ME01 Gate 1** — done: post-ST01 baseline verified and
+   `admin_questions.php` re-measured at +87, expected +89.
+3. **ME01** — implemented and review-settled at +89 live-origin additions;
+   `FIX-1` (stale counter after OCR fill/reset) and both notes were closed by
+   the 2026-11-15 re-review.
 4. **ME02** — tokens, decisions, docs, manifest/guide, and browser evidence.
 5. **Rigorous release review** via
    [`prompts/review-session.md`](prompts/review-session.md), then any
@@ -252,11 +258,11 @@ verifies the detail path with the rest of Release A.
    commit, an optional `main` fast-forward, and archiving each need explicit
    owner authorization.
 
-Current workflow stop: phase 1 is complete. Start ME01 only through its read-only
-Gate 1; do not implement it until that gate returns `go`.
+Current workflow stop: phase 2 is review-settled. Start ME02 only through its
+read-only Gate 1.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 2
+NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 3
 ```
 
 ## Session protocol

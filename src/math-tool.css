@@ -1,0 +1,133 @@
+.math-tool-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 6px;
+  background: #f4f7fb;
+  border: 1px solid #d5dfe9;
+  border-radius: 8px;
+}
+
+.math-tool-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.math-tool-symbol,
+.math-tool-toggle {
+  min-width: 34px;
+  height: 32px;
+  padding: 0 7px;
+  background: #ffffff;
+  border: 1px solid #d5dfe9;
+  border-radius: 6px;
+  color: #263445;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.math-tool-toggle {
+  margin-left: auto;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1769aa;
+}
+
+.math-tool-symbol:hover,
+.math-tool-toggle:hover {
+  background: #e8eef6;
+  border-color: #94a3b8;
+}
+
+.math-tool-symbol:active {
+  background: #dbe5f1;
+}
+
+.math-tool-symbol:focus-visible,
+.math-tool-toggle:focus-visible {
+  outline: 2px solid #1769aa;
+  outline-offset: 1px;
+}
+
+.math-tool-drawer {
+  margin: 0 0 6px;
+  padding: 8px;
+  background: #ffffff;
+  border: 1px solid #d5dfe9;
+  border-radius: 8px;
+}
+
+.math-tool-drawer[hidden] {
+  display: none;
+}
+
+.math-tool-category {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.math-tool-category:last-child {
+  margin-bottom: 0;
+}
+
+.math-tool-category-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.math-tool-chars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.math-tool-counter {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.math-tool-counter-text {
+  font-variant-numeric: tabular-nums;
+}
+
+.math-tool-counter-amber {
+  color: #b45309;
+}
+
+.math-tool-counter-red {
+  color: #b00020;
+  font-weight: 700;
+}
+
+.math-tool-counter-warning {
+  display: block;
+  color: #b00020;
+}
+
+.math-tool-counter-warning[hidden] {
+  display: none;
+}
+
+@media (max-width: 650px) {
+  .math-tool-symbol,
+  .math-tool-toggle {
+    min-width: 38px;
+    height: 38px;
+  }
+
+  .math-tool-toolbar {
+    padding: 6px;
+  }
+}

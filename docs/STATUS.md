@@ -13,7 +13,9 @@ Last updated: 2026-11-15.
 - Packages: [`ST01`](plan/owner-tool/st-01-constant-text-reset.md) (done and
   review-settled; the third phase-1 re-review closed D-91 `FIX-1`, `FIX-2`
   remains closed, and all 11 helper checks pass),
-  [`ME01`](plan/math-editor/me-01-math-palette.md) (not started),
+  [`ME01`](plan/math-editor/me-01-math-palette.md) (done and review-settled;
+  the phase-2 re-review passed and closed `FIX-1` and both notes; 17 module
+  vectors),
   [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (not started).
 - Ordering: ST01 replaced OT12 because running the context migration was judged
   riskier and more complex than one optional passage per question. The owner
@@ -28,12 +30,13 @@ Last updated: 2026-11-15.
   repeat of an already selected letter remains option text. The replacement fix
   passed the independent third re-review; ST01 is settled and the ME01 review
   dependency is satisfied.
-- Planning constraint: after ST01, the measured live-origin diffs are
-  `admin_questions.php` +87/−80, `cbt.php` +49/−8, `answer_details.php` +8/−3,
-  and `ocr_helper.js` +57/−20 — all within the 100-addition externalize-first
-  cap. No cap exception remains.
-- Last review-settled package: ST01 (`PASS`, third closure-focused re-review,
-  2026-11-15). Archived cycle close `45807ea`, archive commit `134305c`.
+- Planning constraint: the measured live-origin diffs are
+  `admin_questions.php` +89/−80 (ST01 +87 plus ME01's two asset tags),
+  `cbt.php` +49/−8, `answer_details.php` +8/−3, and `ocr_helper.js` +57/−20 —
+  all within the 100-addition externalize-first cap. No cap exception remains.
+- Last review-settled packages: ST01 (`PASS`, third closure-focused re-review)
+  and ME01 (`PASS`, phase-2 closure re-review; `FIX-1` and both notes closed),
+  2026-11-15. Archived cycle close `45807ea`, archive commit `134305c`.
 - Archived cycle: [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md);
   summary in [`plan/history.md`](plan/history.md).
 
@@ -82,6 +85,9 @@ Last updated: 2026-11-15.
 | ST01 implementation (2026-11-14, `WIP pending st01 review` checkpoint) | `node tests/runner.js`, `tests/unit.js`, `tests/ocr-helper.js`, `tests/underline-toolbar.js`, `tests/question-preview.js`, `php tests/admin-question-store.php`, `php tests/php-render.php`, `node tools/extract-bank.js --check`, `php -l`, and disposable Chromium | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 7 helper checks; 9 underline vectors; 4 preview vectors; 8 admin-store checks; 9 PHP renderer vectors; bank extractor and PHP lint PASS; civic fixture 50/50 with no missing-option flags; SQLite staging lifecycle PASS; 390px preview and OCR/Constant-Text isolation PASS; live-origin diffs +87/−80, +49/−8, +8/−3, +38/−18; no live write |
 | ST01 first fix and second re-review (2026-11-15, `84be892`) | immutable `math-editor-2026-11-phase-1-re-review-2.md` evidence: full Node/PHP baseline, PHP lint, extractor, disposable production-page browser path, and D-91 precursor adversarial probe | Existing suites pass: 60 runner, 163 unit, 8 helper, 9 underline, 4 preview, 9 renderer, 8 store. The helper checks cover positive spaced-period forms but omit the failing control: `A) ... A ) ... B)` is resplit because the last A match replaces the selected boundary. Owner changed the requirement after this review; no product test ran in the documentation-only disposition. `FIX-1` remains open; `FIX-2` is closed. |
 | ST01 D-91 replacement fix and third re-review (2026-11-15) | failing-first complete spacing matrix and selected-boundary controls in the real root-helper suite; full Node/PHP baseline, PHP lint, extractor, syntax, live-origin cap rerun, and independent disposable production-page review | 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 9 renderer, 8 store; all pass. Exact `A) ... A ) ... B)` output and duplicate-set controls pass; helper is 160 lines / 6284 bytes and +57/−20 from live. `FIX-1` closed, `FIX-2` remains closed, ST01 review-settled; no live write. |
+| ME01 `FIX-1` fix (2026-11-15, same base `cdbff2b`, uncommitted) | failing-first new vector, `node tests/math-tool.js`, full Node/PHP baseline, PHP lint, syntax, extractor, and measurements | 17 math-tool vectors PASS (the new one failed `neutral !== red` before the change); 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 9 renderer, 8 store; PHP 8.3.32 lint PASS; `src/math-tool.js` 432 / 13974 and `tests/math-tool.js` 387 / 14947; `admin_questions.php` unchanged at **+89/−80**; no browser, MySQL, staging, or live check |
+| ME01 closure re-review (2026-11-15, base `cdbff2b`, uncommitted) | closure-focused re-review: full Node/PHP baseline, six closure-derived probes, measurements, and doc reconciliation | 17 math-tool, 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 9 renderer, 8 store; PHP 8.3.32 lint PASS; `FIX-1` and both notes closed, PASS; module 432 / 13974, tests 387 / 14947, admin **+89/−80** unchanged; browser/MySQL/live not run |
+| ME01 implementation (2026-11-15, base `cdbff2b`, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/ocr-helper.js`, `tests/underline-toolbar.js`, `tests/question-preview.js`, `tests/math-tool.js`, `php tests/php-render.php`, `tests/admin-question-store.php`, `php -l`, `node --check`, `extract-bank --check`, and `git diff --numstat` against the designated live snapshot | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 11 helper; 9 underline; 4 preview; 16 math-tool; 9 PHP renderer; 8 admin store; PHP 8.3.32 lint and JS syntax PASS; bank extractor 7 hashes OK; `admin_questions.php` 1055 / 62630 at **+89/−80** live-origin additions; no browser, MySQL, staging, or live check in this session |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -202,7 +208,9 @@ gates.
   toolbar, and complete D-91 option-label parsing with its regression evidence.
   Done and review-settled; the ME01 dependency is satisfied.
 - ME01: curated Tier 1 palette, insertion helpers, byte counter, and admin
-  script-tag wiring on the ST01 tree.
+  script-tag wiring on the ST01 tree. Implemented and handed off:
+  `src/math-tool.js` + `src/math-tool.css`, +2 admin asset lines, 17 module
+  vectors; review-settled 2026-11-15 by the phase-2 closure re-review.
 - ME02: token/version, decisions, docs, deployment manifest and developer guide,
   browser evidence, and the rigorous release review.
 

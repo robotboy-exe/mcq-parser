@@ -1497,3 +1497,46 @@ the control above moving text between Question and Option A and adding a false
 warning. The replacement keeps the first selected boundary, and the third
 phase-1 re-review closed `FIX-1` on 2026-11-15. Queue, storage, fill, Constant
 Text, E/F, and numbering behavior remain non-goals.
+
+## D-92 — Palette and byte counter are one focused admin asset pair
+
+**Choice.** ME01 adds `src/math-tool.js` and `src/math-tool.css` and wires them
+into `deployed/admin_questions.php` with exactly one stylesheet link and one
+script tag. The module exports pure helpers (`insertAtCaret`,
+`utf8ByteLength`, `byteStatus`, the symbol tables) and self-mounts once on
+`#question_text` with `data-math-tool-mounted`. It builds the toolbar, drawer,
+and counter with `createElement`/`textContent`, remembers the selection across
+toolbar focus loss, inserts through `execCommand('insertText')` then
+`setRangeText` then `.value`, and adds no second Underline control.
+
+**Why.** The P24 inline HTML/CSS/script blocks would have grown the live-origin
+admin page and mixed three concerns into it. A separate non-live-origin module
+keeps the entry point to narrow asset wiring and is testable in Node against the
+real module. The admin page's live-origin additions move from +87 to +89,
+within the 100-addition cap.
+
+**Risk.** The toolbar depends on `#question_text` existing in the native form;
+if the field is absent the module does nothing. `execCommand` is deprecated, so
+the `setRangeText` fallback keeps insertion working, but undo support there is
+browser-dependent and must be recorded rather than assumed.
+
+## D-93 — The byte counter is editor-side and advisory
+
+**Choice.** `src/math-tool.js` counts UTF-8 bytes with `TextEncoder` and shows
+`N / 60 000 bytes` below the textarea: neutral below 57,000, amber at
+57,000–59,999, and red at 60,000 or more with plain warning copy. It never
+truncates, disables the native Save button, changes `maxlength`, or blocks a
+submit. The server's `strlen() > 60000` check remains authoritative. Because
+the page's OCR Load/Skip handlers and a native form reset write the field
+without an `input` event, the counter also refreshes after those events (phase-2
+review `FIX-1`); that is display-only wiring, not a second validator.
+
+**Why.** Unicode symbols and underline markers consume the byte budget faster
+than ASCII, while the native `maxlength` counts UTF-16 code units. The
+administrator needs to see the real byte count before saving, without the
+toolbar becoming a second validator.
+
+**Risk.** `maxlength="60000"` can still block typing before the byte limit is
+reached, and it can allow text the server rejects; that mismatch is documented
+rather than changed. Counters for Constant Text, options, and explanations are
+out of scope.

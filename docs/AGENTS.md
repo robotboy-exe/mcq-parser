@@ -44,7 +44,11 @@ question text with permissive `strip_tags` or unrestricted `innerHTML`.
 
 `src/question-preview.js` creates the read-only admin preview for Constant Text
 and Question and uses `window.CBTText`; it must never write form values, storage,
-or the network. Root `ocr_helper.js` has no `constant_text` integration. A
+or the network. `src/math-tool.js` mounts the symbol palette and advisory byte
+counter around `#question_text` in the same Add and Edit forms; it has no
+storage, network, submit, underline-marker, or `constant_text` behavior, and the
+server's 60,000-byte check plus the native `maxlength` remain authoritative.
+Root `ocr_helper.js` has no `constant_text` integration. A
 passage/cloze-shaped paste may follow the ordinary-question fallback and carry
 review flags, but it must never populate Constant Text.
 
@@ -221,6 +225,7 @@ node tests/unit.js
 node tests/ocr-helper.js
 node tests/underline-toolbar.js
 node tests/question-preview.js
+node tests/math-tool.js
 node tools/extract-bank.js --check
 php tests/php-render.php
 php tests/admin-question-store.php
@@ -230,9 +235,10 @@ The fixture harness is parser-only; it does not execute DOM, storage,
 `fillForm`, `tick`, or save behavior. `tests/unit.js` covers the legacy pure
 auto-save helpers. `tests/ocr-helper.js` covers the root production helper;
 `tests/underline-toolbar.js` covers the pure wrap/unwrap logic;
-`tests/question-preview.js` covers read-only preview mounting and refresh; and
-`php tests/admin-question-store.php` covers the extracted save/delete
-transaction. None of these harnesses exercise the live admin page, its delete
+`tests/question-preview.js` covers read-only preview mounting and refresh;
+`tests/math-tool.js` covers the palette helpers, mount contracts, and byte
+counter; and `php tests/admin-question-store.php` covers the extracted
+save/delete transaction. None of these harnesses exercise the live admin page, its delete
 forms, or the confirm dialog; live checks follow `docs/LIVE-SAFETY.md`.
 
 The mandatory regression set is the three documented cases (qwen-2 H04):
