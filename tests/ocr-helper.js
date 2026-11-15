@@ -77,6 +77,80 @@ test('accepts whitespace between an option letter and its period', () => {
   assert.deepStrictEqual(questions[0].flags, []);
 });
 
+test('accepts the complete D-91 spacing grammar case-insensitively', () => {
+  const formats = [
+    'L.', 'L .', 'L)', 'L )',
+    '(L)', '( L)', '(L )', '( L )',
+    '(L).', '( L).', '(L ).', '( L ).',
+    '(L) .', '( L) .', '(L ) .', '( L ) .',
+    '(\nL\n)\n.'
+  ];
+  const values = ['One', 'Two', 'Three', 'Four'];
+
+  for (const format of formats) {
+    for (const lowercase of [false, true]) {
+      const labels = [...'ABCD'].map((letter, index) => {
+        const rendered = lowercase ? letter.toLowerCase() : letter;
+        return format.replace('L', rendered) + ' ' + values[index];
+      }).join(' ');
+      const question = helper.parseQuestion({ num: 1, text: 'Which option is correct? ' + labels });
+      assert.strictEqual(question.question, 'Which option is correct?', format);
+      assert.deepStrictEqual(missingOptionFlags(question), [], format);
+      assert.deepStrictEqual([question.a, question.b, question.c, question.d], values, format);
+      assert.deepStrictEqual(question.flags, [], format);
+    }
+  }
+});
+
+test('keeps later selected-letter labels inside their option text', () => {
+  const exact = helper.parseQuestion({
+    num: 1,
+    text: 'Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four'
+  });
+  assert.strictEqual(exact.question, 'Which is correct?');
+  assert.strictEqual(exact.a, 'The notation A ) stays in option A');
+  assert.strictEqual(exact.b, 'Two');
+  assert.strictEqual(exact.c, 'Three');
+  assert.strictEqual(exact.d, 'Four');
+  assert.deepStrictEqual(exact.flags, []);
+
+  const repeated = helper.parseQuestion({
+    num: 2,
+    text: 'Which option is correct? A) Alpha A ) stays B) Bravo B . stays C) Charlie ( C ) stays D) Delta ( D ) . stays'
+  });
+  assert.strictEqual(repeated.a, 'Alpha A ) stays');
+  assert.strictEqual(repeated.b, 'Bravo B . stays');
+  assert.strictEqual(repeated.c, 'Charlie ( C ) stays');
+  assert.strictEqual(repeated.d, 'Delta ( D ) . stays');
+  assert.deepStrictEqual(repeated.flags, []);
+});
+
+test('still flags a second complete A-D option set', () => {
+  const question = helper.parseQuestion({
+    num: 1,
+    text: 'Which option is correct? A) One B) Two C) Three D) Four A) Five B) Six C) Seven D) Eight'
+  });
+  assert(question.flags.includes('a letter appears twice (merged questions?)'));
+
+  const numbered = helper.parseQuestion({
+    num: 1,
+    text: 'Which option is correct? A) One B) Two C) Three D) Four 2. Second question A) Five B) Six C) Seven D) Eight'
+  });
+  assert(!numbered.flags.includes('a letter appears twice (merged questions?)'));
+
+  const interleaved = helper.parseQuestion({
+    num: 1,
+    text: 'Which option is correct? A) One B) Two C) Three D) Four A) Five B) Six A) notation C) Seven D) Eight'
+  });
+  assert(interleaved.flags.includes('a letter appears twice (merged questions?)'));
+
+  const outOfOrder = helper.parseQuestion({
+    num: 1,
+    text: 'Which option is correct? D) Four A) One B) Two C) Three D) notation'
+  });
+  assert(!outOfOrder.flags.includes('a letter appears twice (merged questions?)'));
+});
+
 test('normalizes parsed letters to uppercase', () => {
   const question = helper.parseQuestion({ num: 1, text: 'Which option is correct? (a) One (b) Two (c) Three (d) Four' });
   assert.strictEqual(question.a, 'One');

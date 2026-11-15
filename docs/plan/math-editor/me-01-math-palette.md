@@ -1,13 +1,15 @@
 # ME01 — Math Symbol Palette and Byte Counter
 
-- **Status:** not started
-- **Depends on:** ST01 handed off and its light review settled at this Gate 1
+- **Status:** not started; ST01 dependency satisfied; Gate 1 is next
+- **Depends on:** ST01 D-91 implementation and light review (satisfied by the
+  third phase-1 re-review)
 - **Blocks:** ME02
 - **External gate:** none expected. `deployed/admin_questions.php` is at **+87**
   additions after ST01; the two new asset tags are expected to bring it to
   **+89**, still within the 100-addition cap. Gate 1 must re-measure.
-- **Baseline note:** plan against the post-ST01 `deployed/` working copies. The
-  owner-tool controller is archived, but ST01 restores a focused read-only
+- **Baseline note:** plan against the review-settled post-D-91 ST01 `deployed/`
+  working copies and phase boundary. The owner-tool controller is archived, but
+  ST01 restores a focused read-only
   `#owner_tool_preview` through `src/question-preview.js`; there is no loaded
   `owner-tool.js` or owner-tool CSS.
 - **Intent:** [`docs/24-question-underline-and-math.md`](../../24-question-underline-and-math.md)
@@ -132,7 +134,7 @@ markers and Unicode bytes as UTF-8.
 
 | Check | Expected |
 |---|---|
-| Node suites | runner 60 PASS / 0 PENDING, unit 163, ocr-helper 7, underline 9, preview 4 unchanged; `tests/math-tool.js` all PASS |
+| Node suites | runner 60 PASS / 0 PENDING, unit 163, and the reviewed post-D-91 ocr-helper count, underline 9, preview 4 unchanged; `tests/math-tool.js` all PASS |
 | PHP suites | php-render 9 and admin-store 8 unchanged and PASS; `php -l` on changed deployed PHP |
 | Quick symbols | Each inserts at the remembered caret without re-selecting the textarea |
 | Drawer | Toggles with correct `aria-expanded`; every category inserts |
@@ -150,8 +152,8 @@ markers and Unicode bytes as UTF-8.
 
 ## Decisions to record
 
-- **D-91:** the palette is a new non-live-origin `src/math-tool.js` with
+- **D-92:** the palette is a new non-live-origin `src/math-tool.js` with
   `src/math-tool.css`; the admin page adds only one stylesheet link and one
   script tag. No archived owner-tool code returns.
-- **D-92:** the byte counter is editor-side and advisory only; the server's
+- **D-93:** the byte counter is editor-side and advisory only; the server's
   60,000-byte check remains authoritative, and `maxlength` is unchanged.

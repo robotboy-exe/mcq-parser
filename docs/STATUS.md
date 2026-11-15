@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-14.
+Last updated: 2026-11-15.
 
 ## Active cycle
 
@@ -10,10 +10,9 @@ Last updated: 2026-11-14.
   exact lowercase `<u>` underlining.
 - Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — ST01, ME01,
   ME02. Statuses live in [`plan/README.md`](plan/README.md).
-- Packages: [`ST01`](plan/owner-tool/st-01-constant-text-reset.md) (implemented
-  and handed off in the `WIP pending st01 review` checkpoint; phase-1 review
-  returned PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` are fixed and need the
-  closure-focused re-review),
+- Packages: [`ST01`](plan/owner-tool/st-01-constant-text-reset.md) (done and
+  review-settled; the third phase-1 re-review closed D-91 `FIX-1`, `FIX-2`
+  remains closed, and all 11 helper checks pass),
   [`ME01`](plan/math-editor/me-01-math-palette.md) (not started),
   [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (not started).
 - Ordering: ST01 replaced OT12 because running the context migration was judged
@@ -23,13 +22,18 @@ Last updated: 2026-11-14.
 - Owner decisions settled 2026-11-14: keep exact lowercase `<u>` only; archive
   the context/owner-tool files; keep `src/owner-tool/render.js` at its current
   path; put helper fixtures under `tests/fixtures/`; no live schema drop.
+- Owner disposition 2026-11-15: `change requirement` for phase-1 `FIX-1`.
+  Rationale: A-D OCR labels must work case-insensitively both with and without
+  whitespace after `(`, before `)`, and before `.`, while a later label-like
+  repeat of an already selected letter remains option text. The replacement fix
+  passed the independent third re-review; ST01 is settled and the ME01 review
+  dependency is satisfied.
 - Planning constraint: after ST01, the measured live-origin diffs are
   `admin_questions.php` +87/−80, `cbt.php` +49/−8, `answer_details.php` +8/−3,
-  and `ocr_helper.js` +38/−18 — all within the 100-addition externalize-first
+  and `ocr_helper.js` +57/−20 — all within the 100-addition externalize-first
   cap. No cap exception remains.
-- Last review-settled package: OT10 of the archived cycle (`PASS WITH ACCEPTED
-  FINDINGS`, 2026-11-14). Archived cycle close `45807ea`, archive commit
-  `134305c`.
+- Last review-settled package: ST01 (`PASS`, third closure-focused re-review,
+  2026-11-15). Archived cycle close `45807ea`, archive commit `134305c`.
 - Archived cycle: [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md);
   summary in [`plan/history.md`](plan/history.md).
 
@@ -76,6 +80,8 @@ Last updated: 2026-11-14.
 | OT11 owner-accepted checkpoint (2026-11-13) | full Node/PHP suite, syntax/lint, bank extractor, exact `new-sample.txt` cloze probe, and focused owner-flow probes | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 81 owner-tool; 14 context-migration; 5 cbt-context; 14 context-lib; 23 context-admin; 6 context-preflight; 9 PHP renderer; 7 cbt-candidate; cloze probe and 7 bank hashes PASS; PHP/JS syntax PASS; draft-only paste filling, saved-edit reachability/adoption, and distinct draft/edit mode regressions PASS; live-origin additions remain at +100/+53; final owner phone confirmation accepted; independent rigorous review pending at checkpoint (settled 2026-11-13: PASS, FIX-1..FIX-3 closed) |
 | Math-editor cycle start (2026-11-14, `134305c`) | full Node/PHP suite re-run at `f84518e` before the archive; no product byte changed since | 60 runner, 163 unit, 81 owner-tool, 14 context-migration, 5 cbt-context; PHP 8.3.32 suites and 17-file lint PASS; baseline for ME01 |
 | ST01 implementation (2026-11-14, `WIP pending st01 review` checkpoint) | `node tests/runner.js`, `tests/unit.js`, `tests/ocr-helper.js`, `tests/underline-toolbar.js`, `tests/question-preview.js`, `php tests/admin-question-store.php`, `php tests/php-render.php`, `node tools/extract-bank.js --check`, `php -l`, and disposable Chromium | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 7 helper checks; 9 underline vectors; 4 preview vectors; 8 admin-store checks; 9 PHP renderer vectors; bank extractor and PHP lint PASS; civic fixture 50/50 with no missing-option flags; SQLite staging lifecycle PASS; 390px preview and OCR/Constant-Text isolation PASS; live-origin diffs +87/−80, +49/−8, +8/−3, +38/−18; no live write |
+| ST01 first fix and second re-review (2026-11-15, `84be892`) | immutable `math-editor-2026-11-phase-1-re-review-2.md` evidence: full Node/PHP baseline, PHP lint, extractor, disposable production-page browser path, and D-91 precursor adversarial probe | Existing suites pass: 60 runner, 163 unit, 8 helper, 9 underline, 4 preview, 9 renderer, 8 store. The helper checks cover positive spaced-period forms but omit the failing control: `A) ... A ) ... B)` is resplit because the last A match replaces the selected boundary. Owner changed the requirement after this review; no product test ran in the documentation-only disposition. `FIX-1` remains open; `FIX-2` is closed. |
+| ST01 D-91 replacement fix and third re-review (2026-11-15) | failing-first complete spacing matrix and selected-boundary controls in the real root-helper suite; full Node/PHP baseline, PHP lint, extractor, syntax, live-origin cap rerun, and independent disposable production-page review | 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 9 renderer, 8 store; all pass. Exact `A) ... A ) ... B)` output and duplicate-set controls pass; helper is 160 lines / 6284 bytes and +57/−20 from live. `FIX-1` closed, `FIX-2` remains closed, ST01 review-settled; no live write. |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -193,7 +199,8 @@ gates.
 
 - ST01: return production to root `ocr_helper.js`, archive shared-text/context,
   add optional Constant Text plus admin session prefill, add the underline
-  toolbar, extend helper option-label parsing, and add schema/render tests.
+  toolbar, and complete D-91 option-label parsing with its regression evidence.
+  Done and review-settled; the ME01 dependency is satisfied.
 - ME01: curated Tier 1 palette, insertion helpers, byte counter, and admin
   script-tag wiring on the ST01 tree.
 - ME02: token/version, decisions, docs, deployment manifest and developer guide,

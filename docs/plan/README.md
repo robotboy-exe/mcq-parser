@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-14.
+Last updated: 2026-11-15.
 
 ## Current state
 
@@ -14,23 +14,30 @@ Last updated: 2026-11-14.
   optional Constant Text passage per question. ME01 (curated Tier 1 Unicode
   palette plus advisory UTF-8 byte counter) and ME02 (release evidence) follow.
 - Packages: ST01 (reset, Constant Text, helper option fix, underline), then
-  ME01, then ME02. ST01 is implemented, reviewed (PASS WITH ACCEPTED FINDINGS),
-  and its `FIX-1`/`FIX-2` are fixed pending re-review; ME01/ME02 have not
-  started.
+  ME01, then ME02. ST01 is done and review-settled: its third re-review closed
+  D-91 `FIX-1`, `FIX-2` remains closed, and all 11 helper checks pass. ME01 and
+  ME02 have not started.
 - Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
   archived/historical. Their records remain under `owner-tool/` and `reviews/`
   for evidence; do not continue that architecture.
 - Resolved owner decisions (2026-11-14): use `constant_text`; keep
   `src/owner-tool/render.js` at its current path so `cbt_practice.php` is
   untouched; archive removed modules; put helper fixtures under `tests/fixtures/`.
+- Owner disposition (2026-11-15): `change requirement` for phase-1 `FIX-1`.
+  Rationale: OCR delimiters occur both with and without spacing, including after
+  `(`, but a repeated selected-letter marker inside option text must not resplit
+  that option. The replacement passed independent re-review and closed
+  `FIX-1`; `FIX-2` remains closed.
 - Previous cycle: `owner-tool-2026-11` is archived (2026-11-14); its final
   summary is in [`history.md`](history.md) and its map in
   [`prompts/cycles/owner-tool-2026-11.md`](prompts/cycles/owner-tool-2026-11.md).
 - Working branch: `owner-tool-integration`; `main` is the published baseline.
   See [Branch strategy](#branch-strategy).
 - Current status summary: [`../STATUS.md`](../STATUS.md).
-- Continuation checklist: [`owner-tool/next-steps.md`](owner-tool/next-steps.md)
-  is archived-cycle history; use ST01's handoff for the current next action.
+- Completed handoff: ST01's
+  [package record](owner-tool/st-01-constant-text-reset.md). The next gate is
+  ME01 Gate 1. [`owner-tool/next-steps.md`](owner-tool/next-steps.md) is
+  archived-cycle history and must not be repurposed.
 
 ## Product direction
 
@@ -43,13 +50,17 @@ Last updated: 2026-11-14.
   `cbt_practice.php`.
 - Keep the exact lowercase `<u>`/`</u>` boundary (D-66) and the shared
   renderers; underline now also applies to Constant Text and options A–D.
-- The root helper must parse `a)`, `(a)`, and `(A).` option labels.
+- The root helper must parse A-D labels case-insensitively with optional
+  whitespace after `(`, before `)`, and before `.`, while preserving unspaced
+  forms and keeping a later label-like repeat of an already selected letter in
+  that option's text (D-91).
 - Keep `cbt_practice.php` and `practice_title` outside scope.
 - ME01/ME02 add the palette and byte counter to the native form, not to the
   removed owner tool. The 60,000-byte server limit remains authoritative.
 
 `INTENT.md` is authoritative when package prose is ambiguous; P24 as amended on
-2026-11-14 is the behavior source for this cycle.
+2026-11-14 and the owner's D-91 amendment on 2026-11-15 are the behavior sources
+for this cycle.
 
 ## Externalize-first contract
 
@@ -149,8 +160,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done; phase-1 review PASS WITH ACCEPTED FINDINGS; `FIX-1`/`FIX-2` fixed, re-review pending | none; disposable database only |
-| 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | not started | re-measure `admin_questions.php`; Brave/Android and desktop checks |
+| 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done; third re-review PASS; `FIX-1`/`FIX-2` closed | none; disposable database only |
+| 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | not started; dependency satisfied | re-measure `admin_questions.php`; Brave/Android and desktop checks |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
 
 Status lives only in this table; the active map maps phase numbers to these
@@ -194,9 +205,10 @@ verifies the detail path with the rest of Release A.
 
 ## Branch strategy
 
-- `owner-tool-integration` is the authoritative work branch. It contains `main`
-  and all current work through the merged OT12 tip (`e64513f`). Continue later
-  implementation here only after the required review gates pass.
+- `owner-tool-integration` is the authoritative work branch. It contains `main`,
+  the merged OT12 tip (`e64513f`), the ST01 checkpoint (`6e301bb`), and the
+  first fix commit (`84be892`). The replacement phase-1 `FIX-1` is
+  review-settled, and the owner requested this phase-boundary commit and push.
 - `main` is the published baseline and the remote default. It is not the current
   work branch. Advance it only at a reviewed release boundary or cycle close, by
   fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite
@@ -220,17 +232,15 @@ verifies the detail path with the rest of Release A.
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | ST01 reset, Constant Text, helper fix, underline | light at ME01 Gate 1 | pending |
+| phase 1 | ST01 reset, Constant Text, helper fix, underline | light at ME01 Gate 1 | settled by third re-review; PASS, both fixes closed |
 | phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | pending |
 | phase 3 close | ME02 release, evidence, and handoff | rigorous | pending |
 
 ## Remaining path to cycle close
 
-1. **ST01** — done: reset, Constant Text, helper option fix, underline,
-   CBT/detail display, archive, docs, and handoff. Phase-1 review (`reviews/math-editor-2026-11-phase-1.md`)
-   returned PASS WITH ACCEPTED FINDINGS; `FIX-1` (spaced option-label tolerance)
-   and `FIX-2` (helper storage docs) are fixed and need the closure-focused
-   re-review before ME01 Gate 1.
+1. **ST01** — done and review-settled: reset, Constant Text, underline,
+   CBT/detail display, archive, D-91 replacement, docs, and handoff. The third
+   closure-focused re-review passed and closed `FIX-1`; `FIX-2` remains closed.
 2. **ME01 Gate 1** — verify the post-ST01 baseline, retarget the palette and byte
    counter to the native form, and re-measure `admin_questions.php`.
 3. **ME01** — implement, test, and hand off; light review at ME02 Gate 1.
@@ -242,12 +252,11 @@ verifies the detail path with the rest of Release A.
    commit, an optional `main` fast-forward, and archiving each need explicit
    owner authorization.
 
-Current workflow stop: ST01's `FIX-1`/`FIX-2` are fixed. Run the closure-focused
-phase-1 re-review; do not implement ME01 before the ST01 review settles and ME01
-Gate 1 returns `go`.
+Current workflow stop: phase 1 is complete. Start ME01 only through its read-only
+Gate 1; do not implement it until that gate returns `go`.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/review-session.md phase 1 re-review
+NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 2
 ```
 
 ## Session protocol

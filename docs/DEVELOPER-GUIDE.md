@@ -1,10 +1,10 @@
 # Developer Guide — Constant Text Reset (ST01)
 
-Recorded: 2026-11-14. This is the human-developer handoff for ST01 in the
-`math-editor-2026-11` cycle. It covers the production architecture, source of
-truth, stored state, parser extension rules, Constant Text lifecycle, the
-security renderer, testing commands, and known limitations. Deployment steps are
-in [`DEPLOYMENT.md`](DEPLOYMENT.md).
+Recorded: 2026-11-14; amended 2026-11-15 for D-91. This is the human-developer
+handoff for ST01 in the `math-editor-2026-11` cycle. It covers the production
+architecture, source of truth, stored state, parser extension rules, Constant
+Text lifecycle, the security renderer, testing commands, and known limitations.
+Deployment steps are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## 1. Architecture map
 
@@ -75,11 +75,18 @@ ocrMeta  = { subject_id, exam_category_id, exam_year }
 - Multiline rule: fold single wrapped stem lines to one space, preserve real
   blank-line paragraphs as `\n\n`, and keep options single-line. Never replace
   this with a blanket whitespace collapse; `tests/ocr-helper.js` guards it.
-- Option labels accept `A.`, `A)`, `(A)`, `(A).`, `a)`, `(a)`, and `(A).`; the
-  captured letter is normalized to uppercase. The question splitter's lookahead
-  is unchanged: a number followed immediately by a label is not a numbered
-  boundary. The legacy unnumbered fallback can still queue such text with review
-  flags, but it never writes Constant Text (D-89).
+- D-91 requires A-D labels case-insensitively in bare dotted, bare
+  closing-parenthesis, parenthesized, and parenthesized-plus-dot forms.
+  Whitespace is optional after `(`, before `)`, and before `.`, while every
+  unspaced form remains valid. A later label-like repeat of an already selected
+  letter stays in that option's text and does not alone raise the duplicate
+  warning. Keep uppercase normalization and the question splitter's lookahead;
+  the legacy unnumbered fallback can still queue text with review flags but
+  never writes Constant Text (D-89).
+- The second phase-1 re-review showed that pre-fix `84be892` replaced the real A
+  boundary in `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four`.
+  The review-settled replacement keeps the first selected boundary and has
+  direct regression coverage; the third re-review closed `FIX-1`.
 - Keep `src/parser/core.js` pure: no DOM, storage, network, or UI references.
   Bump `PARSER_VERSION` and relevant asset tokens for a behavior change to the
   historical parser; the current version is `2.3.3`.
@@ -137,12 +144,13 @@ php tests/php-render.php
 php tests/admin-question-store.php
 ```
 
-Current local evidence (2026-11-14, PHP 8.3.32 and the owner's 8.3.16 gave the
-same results):
+Current local evidence through 2026-11-15. The D-91 fix run used PHP 8.5.12 for
+the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 
 - runner: 60 fixtures, 60 PASS, 0 FAIL, 0 PENDING;
 - unit: 163 PASS;
-- root helper: 7 PASS;
+- root helper: 11 PASS, including the complete D-91 spacing grammar, selected
+  boundaries, and duplicate-set warning controls;
 - underline toolbar: 9 PASS;
 - read-only preview: 4 PASS;
 - PHP renderer: 9 PASS; admin store: 8 PASS;
@@ -150,7 +158,7 @@ same results):
 - `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
   output hashes matching;
 - civic fixture: 50/50 questions, no flags;
-- option-label fixture: 6 forms, no flags;
+- option-label fixture: 6 forms, no flags; the added spaced-period vector passes;
 - multiline helper vector: single wraps fold, blank-line paragraph remains;
 - local SQLite phone-staging: login, save with multiline `<u>` Constant Text,
   new-question prefill, edit row load, update with empty value to `NULL`, logout
@@ -165,6 +173,8 @@ store, not MySQL.
 
 ## 8. Known limitations and open gates
 
+- Phase 1 is review-settled. The third re-review closed D-91 `FIX-1`, and
+  `FIX-2` remains closed.
 - `questions.practice_title` is `NOT NULL` with no default in the supplied DDL,
   while the admin INSERT omits it. This is a known out-of-scope mismatch.
   Verify the target before deploying; do not change the column in this release.

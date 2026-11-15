@@ -35,6 +35,35 @@ The legacy bookmarklet, Auto-Save, and comprehension/cloze orchestration below
 are historical evidence from `src/parser/core.js`, `src/parser/parser.js`, and
 `src/ui/ui.js`; they are not part of the current production path.
 
+### 1.1 Production root-helper option labels
+
+D-91 is the owner-required root `ocr_helper.js` contract. For A-D,
+case-insensitively, supported structures are a bare letter plus `.`, a bare
+letter plus `)`, a parenthesized letter, and a parenthesized letter plus `.`.
+Whitespace is optional after `(`, before `)`, and before `.`; every unspaced
+form stays valid. The compositional rule includes `A.`, `A .`, `A)`, `A )`,
+`(A)`, `(A )`, `( A)`, `( A )`, their dotted combinations, and lowercase
+equivalents. The captured letter is normalized to uppercase.
+
+Once a boundary has been selected for a letter, a later label-like occurrence
+of that same letter remains in its option text. It does not replace or resplit
+the selected option and does not alone trigger `a letter appears twice (merged
+questions?)`. Therefore this input:
+
+```text
+Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four
+```
+
+must produce Question `Which is correct?`, Option A `The notation A ) stays in
+option A`, and Options B-D `Two`, `Three`, and `Four`, with no duplicate-letter
+warning solely for the internal `A )`.
+
+The pre-fix `84be892` state resplit the sample above through both Node and the
+production browser path. The review-settled phase-1 implementation passes 11
+helper checks, including the complete spacing grammar and selected-boundary
+sample. The third re-review closed `FIX-1`. The historical A-F parser-core rules
+below are unchanged.
+
 ## 2. Input format
 
 One exam year per paste. A section can be partial or even a single question; it
@@ -470,6 +499,11 @@ emits numbering-gap or E/F rows. Those rows describe the legacy bookmarklet.
 | `a letter appears twice (merged questions?)` | a second complete A–D set exists with no visible `N.` question-number boundary before it (D-55); inner initials alone do not warn, and a visible number suppresses it |
 | `question N missing (numbering gap)` | a kept marker jumps by more than 1 after a known question number; attached to the later question. A run of missing numbers uses `questions N-M missing (numbering gap)` |
 | `E/F options present` | `q.e` or `q.f` is non-empty (D-37); the auto-save gate also blocks this question |
+
+For the production root helper, D-91 additionally requires a later label-like
+repeat of an already selected letter to stay in that option's text and not alone
+raise the duplicate warning. The review-settled helper implements that rule; the
+table otherwise retains the historical parser-core warning contract.
 
 Not implemented: repeat/backwards/large-jump flags, empty/missing
 correct-answer flag. (Source: `claude-migration.md` §2; numbering-gap and E/F

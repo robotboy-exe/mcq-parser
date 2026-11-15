@@ -5,7 +5,7 @@
     [/persidential/gi, 'presidential'],
     [/resposible/gi, 'responsible'],
   ];
-  const OPTION = /(?<![A-Za-z])(?:\(([A-Da-d])\)|([A-Da-d])\s*[.)])[.)]*\s*/g;
+  const OPTION = /(?<![A-Za-z])(?:\(\s*([A-Da-d])\s*\)|([A-Da-d])\s*[.)])(?:\s*[.)])*\s*/g;
 
   function splitQuestions(text) {
     const marks = [];
@@ -39,15 +39,32 @@
   }
 
   function parseQuestion({ num, text }) {
-    const pos = {}, count = {};
+    const pos = {}, matches = [];
     for (const m of text.matchAll(OPTION)) {
       const letter = (m[1] || m[2]).toUpperCase();
-      pos[letter] = { start: m.index, end: m.index + m[0].length };
-      count[letter] = (count[letter] || 0) + 1;
+      const p = { letter, start: m.index, end: m.index + m[0].length };
+      matches.push(p);
+      if (!pos[letter]) pos[letter] = p;
     }
     const marks = Object.entries(pos).sort((a, b) => a[1].start - b[1].start);
     const q = { num, question: cleanBlock(text.slice(0, marks[0]?.[1].start ?? text.length)), a: '', b: '', c: '', d: '', flags: [] };
     marks.forEach(([letter, p], i) => (q[letter.toLowerCase()] = cleanLine(text.slice(p.end, marks[i + 1]?.[1].start))));
+
+    let duplicateSet = false;
+    if ([...'ABCD'].every((letter) => pos[letter])) {
+      const selectedEnd = Math.max(...[...'ABCD'].map((letter) => pos[letter].end));
+      for (let i = 0; i < matches.length; i++) {
+        const secondA = matches[i];
+        if (secondA.letter !== 'A' || secondA.start <= selectedEnd) continue;
+        let next = 1;
+        for (let j = i + 1; j < matches.length && next < 4; j++) {
+          if (matches[j].letter === 'ABCD'[next]) next++;
+        }
+        if (next < 4) continue;
+        duplicateSet = !/(?:^|\s)\d{1,3}\.\s/.test(text.slice(selectedEnd, secondA.start));
+        if (duplicateSet) break;
+      }
+    }
 
     if (num === null) q.flags.push('question number missing');
     if (q.question.length < 10) q.flags.push('question text missing or very short');
@@ -55,7 +72,7 @@
       if (!q[l]) q.flags.push(`option ${l.toUpperCase()} missing`);
       if (q[l].length > 500) q.flags.push(`option ${l.toUpperCase()} over 500 characters`);
     }
-    if (Object.values(count).some((c) => c > 1)) q.flags.push('a letter appears twice (merged questions?)');
+    if (duplicateSet) q.flags.push('a letter appears twice (merged questions?)');
     return q;
   }
 

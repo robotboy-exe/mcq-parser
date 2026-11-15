@@ -48,6 +48,12 @@ or the network. Root `ocr_helper.js` has no `constant_text` integration. A
 passage/cloze-shaped paste may follow the ordinary-question fallback and carry
 review flags, but it must never populate Constant Text.
 
+D-91 is the root-helper label contract. A-D is case-insensitive;
+whitespace is optional after `(`, before `)`, and before `.`, and every unspaced
+form remains valid. Once a letter's boundary is selected, a later label-like
+repeat of that letter stays in the option text. The review-settled phase-1
+implementation has direct regression evidence for that boundary rule.
+
 The shared-text/context subsystem is archived under
 `archive/owner-tool-2026-11/` and is not loaded. The bookmarklet sections below
 describe the legacy artifact, retained as evidence and not a production
@@ -108,6 +114,7 @@ deliverable.
 | Area | Why it is dangerous |
 |---|---|
 | `OPTION` regex | Tightly coupled to inline options, dotless-newline options, and leading prose articles. Three separate regressions already occurred here. Never add `^` to the dotless branch; never remove the whitespace-prefixed dotted branch; never pre-collapse newlines (qwen-2 H05; R01–R04). Keep the `B.C.` abbreviation skip (D-48), the spaced-slash normalization (D-49), and the bounded missing-label repair (D-47) separate from the main regex. |
+| Root-helper `OPTION` (D-91) | This is separate from canonical core `OPTION`. It must compose optional whitespace after `(`, before `)`, and before `.` across A-D uppercase/lowercase labels without letting a later repeat of an already selected letter replace that boundary. Do not treat a broad `\s*` before `[.)]` plus last-match selection as complete. The exact `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four` regression must keep the internal `A )` in Option A without a duplicate warning. |
 | Blank `C.` / `[^\S\n]*` | The horizontal-whitespace class is what keeps a blank option from consuming the next label. Changing it can resurrect the "option D missing" bug (INV-23). |
 | Loose E/F (`LOOSE`) | Can mistake a continuation line such as `F = ma` for Option F. Do not broaden it (claude §5.3). |
 | Cloze recognition and columns in `core.js` | Every refusal is deliberate. Column starts must stay row-derived (the header indent is shifted by the row labels), boundaries must stay word-safe, and no column work may follow a global whitespace collapse. A one-character local left shift requires at least two row-derived modal-minus-one anchors; do not broaden it into nearest-column guessing (INV-128, D-80). A gap token is exactly `[[gap:N]]` with the source number; never renumber rows or keep dotted runs. Refuse the whole group on an empty cell, an option over 500 characters, unmatched row/gap numbers, fewer than two gaps, or unstable alignment (INV-104–INV-107, D-68). A later cloze group that repeats an earlier group's gap numbers is dropped whole with a naming warning; keep the first group and never emit a zero-member context (INV-109, D-70). |
@@ -143,8 +150,10 @@ deliverable.
 - The underline tool acts on the last-focused of Constant Text, question text,
   and options A–D. It writes exact lowercase `<u>`/`</u>` and refuses partial
   marker overlap or nested pairs.
-- The root helper accepts `a)`, `(a)`, `(A).`, `A)`, `(A)`, and `A.`, normalizes
-  the letter to uppercase, and leaves queue/storage/fill behavior unchanged.
+- The root helper must satisfy D-91: A-D labels are case-insensitive; whitespace
+  is optional after `(`, before `)`, and before `.`, unspaced forms remain valid,
+  and a later repeat of an already selected letter remains option text. Keep
+  uppercase normalization and queue/storage/fill behavior unchanged.
 - Blank options stay blank; a later option is not pulled into their place
   (INV-16).
 - A second complete A–D set with no visible question-number boundary is

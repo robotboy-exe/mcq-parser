@@ -265,10 +265,11 @@ EC-95 through EC-126 above belong to the archived context/owner-tool subsystem
 | EC-134 | Multiline stem | Single wrapped line plus a blank-line paragraph | Single wrap folds to one space; blank line survives as `\n\n`; option stays one line | CONFIRMED | D-66; `ocr_helper.js` `cleanBlock`; `tests/ocr-helper.js` |
 | EC-135 | Passage/cloze paste with Constant Text present | Load passage/cloze-shaped OCR while Constant Text already has a value | The helper may queue ordinary Question/options with review flags, but Constant Text remains byte-for-byte unchanged | CONFIRMED | D-89; `tests/ocr-helper.js`; disposable Chromium OCR-fill check |
 | EC-136 | Preview formatting and editability | Constant Text/Question contain blank lines, exact `<u>` markers, and unsafe-looking text | Preview preserves paragraphs, creates underlines only through `CBTText`, and exposes no editable control or form write | CONFIRMED | D-90; `tests/question-preview.js`; disposable Chromium 390px check |
+| EC-137 | Spaced repeated label inside an option | `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four` | Under D-91, spaced and unspaced A-D labels parse case-insensitively with optional whitespace after `(`, before `)`, and before `.`, while the later `A )` remains in already selected Option A and alone raises no duplicate warning | CONFIRMED | D-91; `tests/ocr-helper.js`; phase-1 third re-review |
 
 ## Counts
 
-- Total: 136
-- CONFIRMED: 132
+- Total: 137
+- CONFIRMED: 133
 - UNVERIFIED: 4
 - CONFLICTED: 0

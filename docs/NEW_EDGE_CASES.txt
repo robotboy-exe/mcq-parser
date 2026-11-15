@@ -67,3 +67,16 @@ markup remains renderer-owned text.
 
 Promoted to `tests/question-preview.js`, INV-138, and EC-136. Status: fixed,
 regression-covered.
+
+Spaced repeat inside an existing option — promoted 2026-11-15
+
+Input: `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four`.
+Commit `84be892` treats the internal `A )` as the last A marker, moves text
+between Question and Option A, and adds a false duplicate-letter warning.
+
+Owner requirement D-91: A-D labels are case-insensitive; whitespace is optional
+after `(`, before `)`, and before `.`, while unspaced forms remain valid. A
+later label-like repeat of an already selected letter stays option text.
+
+Promoted to `tests/ocr-helper.js`, EC-137, and INV-135. Status: fixed,
+regression-covered, and closed by the third phase-1 re-review.

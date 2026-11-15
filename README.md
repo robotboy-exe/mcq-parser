@@ -73,8 +73,11 @@ tests/
 
 ## Behavior summary
 
-- Root `ocr_helper.js` accepts `N.` question markers (1–3 digits) and options
-  A–D, including `a)`, `(a)`, `(A).`, `A)`, `(A)`, and `A.`.
+- D-91 requires root `ocr_helper.js` to accept A-D option labels
+  case-insensitively with optional whitespace after `(`, before `)`, and before
+  `.`, while preserving every unspaced form. A repeated label-like occurrence
+  of an already selected letter must remain option text. The review-settled
+  phase-1 implementation enforces that selected-boundary rule.
 - The canonical parser core still supports options A–F, dotted or
   dotless-after-newline, inline options, header inference, answer-key splitting,
   and the documented E/F collapse.
@@ -106,11 +109,11 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 Current test counts and live-test state are in [`docs/STATUS.md`](docs/STATUS.md).
 Current work state, package gates, and branch strategy are in
-[`docs/plan/README.md`](docs/plan/README.md). ST01 is implemented in the
-`WIP pending st01 review` checkpoint. The active cycle is
-`math-editor-2026-11`: ST01
-(Constant Text reset), then ME01 (math palette and editor byte counter), then
-ME02 (release and handoff).
+[`docs/plan/README.md`](docs/plan/README.md). ST01 has an implementation
+checkpoint and fix commit. The third phase-1 re-review closed D-91 `FIX-1` on
+2026-11-15; `FIX-2` remains closed and ST01 is review-settled. The active cycle
+is `math-editor-2026-11`: ST01 (Constant Text reset) is done, ME01 (math palette
+and editor byte counter) is next, and ME02 handles the final release and handoff.
 
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The

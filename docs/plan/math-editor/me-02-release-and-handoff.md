@@ -20,10 +20,11 @@ review.
 1. Set the asset token for `src/math-tool.js` and `src/math-tool.css`
    (`?v=1.0.0` unless a later consistent token is chosen) and update every page
    that references a changed asset.
-2. Record new decisions from D-91 onward: the curated symbol set and insertion
-   approach, the editor-side byte counter as advisory, and the dropped
-   case-insensitive `<U>` requirement. No externalize-first approval is
-   expected: `admin_questions.php` should stay at +89.
+2. Record the planned ME01 decisions as D-92/D-93 and any additional release
+   decision from D-94 onward: the curated symbol set and insertion approach,
+   the editor-side byte counter as advisory, and the dropped case-insensitive
+   `<U>` requirement. D-91 belongs to ST01 `FIX-1`. No externalize-first
+   approval is expected: `admin_questions.php` should stay at +89.
 3. Update `docs/INVARIANTS.md` and `docs/EDGE_CASES.md` for the palette, the
    byte counter, and the unchanged exact-tag boundary.
 4. Refresh `docs/DEPLOYMENT.md` and `docs/DEVELOPER-GUIDE.md`: new file row,

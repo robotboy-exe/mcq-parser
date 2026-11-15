@@ -1419,6 +1419,10 @@ code. The bank corpus still parses 40 questions with no missing options; a
 duplicate-C flag on the last bank question comes from its OCR answer-key text
 and is pre-existing.
 
+**Amended.** D-91 supersedes this decision's exact spacing and repeated-label
+boundary. The civic-label goal, uppercase normalization, unchanged question
+split, and no-Constant-Text scope remain.
+
 ## D-88 — Archive retired modules; do not drop unverified live schema
 
 **Choice.** Move retired context/owner-tool PHP, JS, CSS, tests, tools, and SQL
@@ -1464,3 +1468,32 @@ preview without restoring the archived owner tool or its context workflow.
 
 **Risk.** If the renderer asset is missing, the preview does not mount; the
 native form remains usable and no entered value is changed.
+
+## D-91 - OCR label whitespace and selected-option boundary
+
+**Choice.** On 2026-11-15 the owner chose `change requirement` for phase-1
+`FIX-1`. For A-D, case-insensitively, retain the structural forms bare letter
+plus `.`, bare letter plus `)`, parenthesized letter, and parenthesized letter
+plus `.`. Whitespace is optional after `(`, before `)`, and before `.`; all
+unspaced forms remain valid. This composition includes `A.`, `A .`, `A)`,
+`A )`, `(A)`, `(A )`, `( A)`, `( A )`, their dotted combinations, and
+lowercase equivalents. Once a letter's option boundary is selected, a later
+label-like occurrence of that letter stays in its option text and does not
+replace or resplit the selected option or alone raise the duplicate-letter
+warning.
+
+The required control is `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four`:
+Option A is `The notation A ) stays in option A`, B-D are `Two`, `Three`,
+`Four`, and the internal `A )` does not create a warning by itself.
+
+**Why.** The owner requires OCR labels to parse correctly both with and without
+whitespace around their punctuation, including parenthesized OCR spacing. That
+tolerance must not corrupt ordinary option text merely because it resembles a
+repeat of a boundary already selected.
+
+**Risk.** Commit `84be892` allowed whitespace before both punctuation characters
+but kept the last match for each letter. The second phase-1 re-review reproduced
+the control above moving text between Question and Option A and adding a false
+warning. The replacement keeps the first selected boundary, and the third
+phase-1 re-review closed `FIX-1` on 2026-11-15. Queue, storage, fill, Constant
+Text, E/F, and numbering behavior remain non-goals.

@@ -1,6 +1,7 @@
 # Constant Text Reset Intent
 
-Approved: 2026-11-14. Supersedes the `owner-tool-2026-11` product intent.
+Approved: 2026-11-14; owner-amended 2026-11-15 (D-91). Supersedes the
+`owner-tool-2026-11` product intent.
 
 This file is the behavior tie-breaker for the `math-editor-2026-11` cycle. The
 package files own implementation detail. If a package conflicts with this file,
@@ -42,8 +43,16 @@ stop and ask instead of silently changing the product direction.
 - Keep the root helper's queue, storage, and fill behavior unchanged.
 - Do not route OCR passage/cloze text into Constant Text. The root helper never
   reads or writes `constant_text`; that field remains manual/session-prefilled.
-- Accept `a)`, `(a)`, `(A).`, `A)`, `(A)`, and `A.`, normalizing the letter to
-  uppercase; keep the existing uppercase forms working.
+- For A-D option labels, match letters case-insensitively and keep the existing
+  unspaced forms. In the bare-letter-plus-period, bare-letter-plus-closing-paren,
+  parenthesized-letter, and parenthesized-letter-plus-period forms, whitespace is
+  optional after `(`, before `)`, and before `.`. This includes `A.`, `A .`,
+  `A)`, `A )`, `(A)`, `( A)`, `(A )`, `( A )`, and their dotted/lowercase
+  combinations.
+- A later label-like occurrence of an already selected option letter remains
+  option text. For example, `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four`
+  keeps `The notation A ) stays in option A` as Option A and raises no
+  duplicate-letter warning solely for the internal `A )`.
 - Keep `src/parser/core.js` as non-shipping history unless a future package
   explicitly targets it.
 
