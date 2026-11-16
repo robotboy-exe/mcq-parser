@@ -137,7 +137,7 @@
   color: #475569;
 }
 
-.math-tool-custom-fraction-input {
+.math-tool-custom-fraction .math-tool-custom-fraction-input {
   width: 56px;
   height: 32px;
   padding: 0 6px;
@@ -189,7 +189,7 @@
     padding: 6px;
   }
 
-  .math-tool-custom-fraction-input {
+  .math-tool-custom-fraction .math-tool-custom-fraction-input {
     width: 62px;
   }
 

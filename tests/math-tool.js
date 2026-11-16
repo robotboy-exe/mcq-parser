@@ -229,11 +229,15 @@ test('ships the curated quick row and six drawer categories', () => {
   assert.strictEqual(tool.CATEGORIES[2].characters.filter((character) => character === '½').length, 1);
 });
 
-test('builds a custom fraction from trimmed numerator and denominator', () => {
-  assert.strictEqual(tool.customFraction('3', '7'), '3/7');
-  assert.strictEqual(tool.customFraction('  1 ', ' 2 '), '1/2');
+test('builds a rendered custom fraction from trimmed digits', () => {
+  assert.strictEqual(tool.customFraction('1', '2'), '½');
+  assert.strictEqual(tool.customFraction('  2 ', ' 3 '), '⅔');
+  assert.strictEqual(tool.customFraction('3', '7'), '³⁄₇');
+  assert.strictEqual(tool.customFraction('12', '25'), '¹²⁄₂₅');
   assert.strictEqual(tool.customFraction('', '7'), '');
   assert.strictEqual(tool.customFraction('3', '   '), '');
+  assert.strictEqual(tool.customFraction('3', '0'), '');
+  assert.strictEqual(tool.customFraction('x', '7'), '');
   assert.strictEqual(tool.customFraction(null, undefined), '');
 });
 
@@ -307,7 +311,7 @@ test('inserts a custom fraction from the drawer inputs at the remembered caret',
   inputs[1].value = '7';
   findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-insert')[0].dispatch('click');
 
-  assert.strictEqual(environment.textarea.value, 'a3/7\n\nb');
+  assert.strictEqual(environment.textarea.value, 'a³⁄₇\n\nb');
   assert.strictEqual(environment.textarea.selectionStart, 4);
 });
 
@@ -415,6 +419,10 @@ test('admin page loads the palette after the preview and the stylesheet beside i
   assert.ok(stylesheet.includes('focus-visible'));
   assert.ok(stylesheet.includes('min-width: 38px'));
   assert.ok(stylesheet.includes('@media (max-width: 650px)'));
+  assert.ok(
+    stylesheet.includes('.math-tool-custom-fraction .math-tool-custom-fraction-input'),
+    'compact fraction inputs must outrank .admin-field input'
+  );
 });
 
 console.log('PASS: ' + passed + ' math-tool vectors');

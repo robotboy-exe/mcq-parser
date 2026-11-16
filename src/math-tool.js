@@ -145,13 +145,74 @@
     return String(bytes).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   }
 
+  var VULGAR_FRACTIONS = {
+    '1/2': '½',
+    '1/3': '⅓',
+    '2/3': '⅔',
+    '1/4': '¼',
+    '3/4': '¾',
+    '1/5': '⅕',
+    '2/5': '⅖',
+    '3/5': '⅗',
+    '4/5': '⅘',
+    '1/6': '⅙',
+    '5/6': '⅚',
+    '1/8': '⅛',
+    '3/8': '⅜',
+    '5/8': '⅝',
+    '7/8': '⅞'
+  };
+
+  var SUPERSCRIPT_DIGITS = {
+    '0': '⁰',
+    '1': '¹',
+    '2': '²',
+    '3': '³',
+    '4': '⁴',
+    '5': '⁵',
+    '6': '⁶',
+    '7': '⁷',
+    '8': '⁸',
+    '9': '⁹'
+  };
+
+  var SUBSCRIPT_DIGITS = {
+    '0': '₀',
+    '1': '₁',
+    '2': '₂',
+    '3': '₃',
+    '4': '₄',
+    '5': '₅',
+    '6': '₆',
+    '7': '₇',
+    '8': '₈',
+    '9': '₉'
+  };
+
+  function digitRun(digits, map) {
+    var result = '';
+    for (var index = 0; index < digits.length; index += 1) {
+      result += map[digits.charAt(index)];
+    }
+    return result;
+  }
+
   function customFraction(numerator, denominator) {
     var top = String(numerator == null ? '' : numerator).trim();
     var bottom = String(denominator == null ? '' : denominator).trim();
-    if (!top || !bottom) {
+    if (!/^\d+$/.test(top) || !/^\d+$/.test(bottom)) {
       return '';
     }
-    return top + '/' + bottom;
+    top = top.replace(/^0+(?=\d)/, '');
+    bottom = bottom.replace(/^0+(?=\d)/, '');
+    if (bottom === '0') {
+      return '';
+    }
+    var key = top + '/' + bottom;
+    if (VULGAR_FRACTIONS[key]) {
+      return VULGAR_FRACTIONS[key];
+    }
+    return digitRun(top, SUPERSCRIPT_DIGITS) + '⁄' + digitRun(bottom, SUBSCRIPT_DIGITS);
   }
 
   function insertAtCaret(value, start, end, insertion) {
@@ -369,6 +430,8 @@
         input.type = 'text';
         input.setAttribute('aria-label', label);
         input.setAttribute('placeholder', placeholder);
+        input.setAttribute('inputmode', 'numeric');
+        input.setAttribute('pattern', '[0-9]*');
         input.addEventListener('keydown', function (event) {
           if (event.key === 'Enter') {
             event.preventDefault();
@@ -389,8 +452,8 @@
         insertCharacter(fraction);
       }
 
-      var numerator = fractionInput('Custom fraction numerator', 'a');
-      var denominator = fractionInput('Custom fraction denominator', 'b');
+      var numerator = fractionInput('Custom fraction numerator', 'num');
+      var denominator = fractionInput('Custom fraction denominator', 'den');
       var slash = element('span', 'math-tool-custom-fraction-slash', '/');
       slash.setAttribute('aria-hidden', 'true');
       var insertButton = element('button', 'math-tool-custom-fraction-insert', 'Insert');

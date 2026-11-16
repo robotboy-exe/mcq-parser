@@ -41,9 +41,12 @@ selection across toolbar focus loss, and inserts through
 `execCommand('insertText')` then `setRangeText` then `.value`; it never rewrites
 line breaks or underline markers. The quick row is 15 symbols and the drawer
 has six categories; `½` intentionally appears in both. The Fractions category
-also has a Custom `a/b` row: enter a numerator and denominator, then press
-Insert (or Enter) to insert the fraction at the remembered caret. The Underline
-button sits at the far right of the Question label row on desktop and mobile.
+also has a Custom row: enter a numerator and denominator, then press Insert
+(or Enter) to insert the fraction at the remembered caret. Supported values use
+the matching vulgar glyph (`1/2` → `½`); other values become a superscript
+numerator, fraction slash, and subscript denominator (`3/7` → `³⁄₇`). The
+Underline button sits at the far right of the Question label row on desktop and
+mobile.
 The counter is advisory
 (neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+) and
 refreshes after typing, the page's OCR Load/Skip, and a native form reset. The
