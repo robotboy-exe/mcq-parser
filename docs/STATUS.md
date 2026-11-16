@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-15.
+Last updated: 2026-11-16.
 
 ## Active cycle
 
@@ -16,7 +16,9 @@ Last updated: 2026-11-15.
   [`ME01`](plan/math-editor/me-01-math-palette.md) (done and review-settled;
   the phase-2 re-review passed and closed `FIX-1` and both notes; 17 module
   vectors),
-  [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (not started).
+  [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (handoff recorded
+  2026-11-16; tokens, decisions, docs, manifest, guide, suites, and browser
+  evidence done; the rigorous release review is pending).
 - Ordering: ST01 replaced OT12 because running the context migration was judged
   riskier and more complex than one optional passage per question. The owner
   chose the reset on 2026-11-14.
@@ -31,7 +33,8 @@ Last updated: 2026-11-15.
   passed the independent third re-review; ST01 is settled and the ME01 review
   dependency is satisfied.
 - Planning constraint: the measured live-origin diffs are
-  `admin_questions.php` +89/−80 (ST01 +87 plus ME01's two asset tags),
+  `admin_questions.php` +89/−80 (ST01 +87 plus ME01's two asset tags, unchanged
+  by ME02's token edit),
   `cbt.php` +49/−8, `answer_details.php` +8/−3, and `ocr_helper.js` +57/−20 —
   all within the 100-addition externalize-first cap. No cap exception remains.
 - Last review-settled packages: ST01 (`PASS`, third closure-focused re-review)
@@ -86,6 +89,7 @@ Last updated: 2026-11-15.
 | ST01 first fix and second re-review (2026-11-15, `84be892`) | immutable `math-editor-2026-11-phase-1-re-review-2.md` evidence: full Node/PHP baseline, PHP lint, extractor, disposable production-page browser path, and D-91 precursor adversarial probe | Existing suites pass: 60 runner, 163 unit, 8 helper, 9 underline, 4 preview, 9 renderer, 8 store. The helper checks cover positive spaced-period forms but omit the failing control: `A) ... A ) ... B)` is resplit because the last A match replaces the selected boundary. Owner changed the requirement after this review; no product test ran in the documentation-only disposition. `FIX-1` remains open; `FIX-2` is closed. |
 | ST01 D-91 replacement fix and third re-review (2026-11-15) | failing-first complete spacing matrix and selected-boundary controls in the real root-helper suite; full Node/PHP baseline, PHP lint, extractor, syntax, live-origin cap rerun, and independent disposable production-page review | 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 9 renderer, 8 store; all pass. Exact `A) ... A ) ... B)` output and duplicate-set controls pass; helper is 160 lines / 6284 bytes and +57/−20 from live. `FIX-1` closed, `FIX-2` remains closed, ST01 review-settled; no live write. |
 | ME01 `FIX-1` fix (2026-11-15, same base `cdbff2b`, uncommitted) | failing-first new vector, `node tests/math-tool.js`, full Node/PHP baseline, PHP lint, syntax, extractor, and measurements | 17 math-tool vectors PASS (the new one failed `neutral !== red` before the change); 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 9 renderer, 8 store; PHP 8.3.32 lint PASS; `src/math-tool.js` 432 / 13974 and `tests/math-tool.js` 387 / 14947; `admin_questions.php` unchanged at **+89/−80**; no browser, MySQL, staging, or live check |
+| ME02 implementation handoff (2026-11-16, base `7f5b4aa`, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/ocr-helper.js`, `tests/underline-toolbar.js`, `tests/question-preview.js`, `tests/math-tool.js`, `php tests/php-render.php`, `tests/admin-question-store.php`, `php -l` (PHP 8.3.32, outside the workspace), `extract-bank --check`, `node --check`, `git diff --check`, `--no-index` live-origin numstat, and a disposable SQLite staging run in Chrome 156.0.0.0 | 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 17 math-tool, 9 renderer, 8 store; PHP lint 7/7 PASS; extractor 7 hashes OK; `admin_questions.php` 1055 / 62646 at **+89/−80** (tokens added in place); `src/math-tool.js` 432 / 13974 and `.css` 133 / 2028 unchanged; palette, drawer, keyboard, undo, thresholds, reset refresh, and native PRG save PASS in the browser; no MySQL, live, or deploy check; rigorous release review pending |
 | ME01 closure re-review (2026-11-15, base `cdbff2b`, uncommitted) | closure-focused re-review: full Node/PHP baseline, six closure-derived probes, measurements, and doc reconciliation | 17 math-tool, 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 9 renderer, 8 store; PHP 8.3.32 lint PASS; `FIX-1` and both notes closed, PASS; module 432 / 13974, tests 387 / 14947, admin **+89/−80** unchanged; browser/MySQL/live not run |
 | ME01 implementation (2026-11-15, base `cdbff2b`, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/ocr-helper.js`, `tests/underline-toolbar.js`, `tests/question-preview.js`, `tests/math-tool.js`, `php tests/php-render.php`, `tests/admin-question-store.php`, `php -l`, `node --check`, `extract-bank --check`, and `git diff --numstat` against the designated live snapshot | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 11 helper; 9 underline; 4 preview; 16 math-tool; 9 PHP renderer; 8 admin store; PHP 8.3.32 lint and JS syntax PASS; bank extractor 7 hashes OK; `admin_questions.php` 1055 / 62630 at **+89/−80** live-origin additions; no browser, MySQL, staging, or live check in this session |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
@@ -140,7 +144,7 @@ Supplied DDL SHA-256:
 | Artifact | Required by | Reason |
 |---|---|---|
 | Owner Brave/Android Constant Text/underline/preview check | ST01/ME01/ME02 | Focused disposable desktop Chromium preview/OCR isolation passed 2026-11-14; owner-accepted phone check remains required on the final tree; no live write |
-| Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Owner-accepted check required on the final tree; no live write |
+| Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Desktop Chromium check completed 2026-11-16 on disposable SQLite staging (Chrome 156.0.0.0); owner-accepted Brave/Android check on the final tree still required; no live write |
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | Archived OT08/OT09 acceptance | Satisfied 2026-11-08 with `sample-passages.txt`; no longer a production requirement after D-83 |
 | Brave/Android staging check | Archived OT10 final acceptance | Satisfied 2026-11-09 and 2026-11-13; archived with the owner-tool cycle |
@@ -211,8 +215,10 @@ gates.
   script-tag wiring on the ST01 tree. Implemented and handed off:
   `src/math-tool.js` + `src/math-tool.css`, +2 admin asset lines, 17 module
   vectors; review-settled 2026-11-15 by the phase-2 closure re-review.
-- ME02: token/version, decisions, docs, deployment manifest and developer guide,
-  browser evidence, and the rigorous release review.
+- ME02: token/version (`?v=1.0.0`, D-94), decisions, invariants/edge cases,
+  deployment manifest and developer guide refresh, desktop browser evidence, and
+  the handoff. Done except the rigorous release review, which is a separate
+  read-only session before cycle close.
 
 ## Source of truth
 

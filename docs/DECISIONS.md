@@ -1540,3 +1540,21 @@ toolbar becoming a second validator.
 reached, and it can allow text the server rejects; that mismatch is documented
 rather than changed. Counters for Constant Text, options, and explanations are
 out of scope.
+
+## D-94 — Release tokens for the math-editor asset pair
+
+**Choice.** ME02 loads `src/math-tool.css?v=1.0.0` and
+`src/math-tool.js?v=1.0.0` from `deployed/admin_questions.php`. That page is the
+only reference to either file. `src/owner-tool/render.js` keeps its existing
+parser-style tokens in `cbt.php` (`?v=2.3.2g`) and `cbt_practice.php`
+(`?v=2.3.2c`); ME02 does not renumber them, and ST01's `src/underline-toolbar.js`
+and `src/question-preview.js`/`.css` stay untokened.
+
+**Why.** A stale cached `math-tool.js` would pair an old insertion path with the
+new counter refresh, and the pair is the only new release surface. One explicit
+token gives the deploy a deterministic cache-bust there without touching the
+parser version or any out-of-scope page.
+
+**Risk.** The token busts caches for these two files only; the untokened assets
+still depend on the deployment's cache purge. The token is a release edit, not a
+side effect of a parser change, so rotating it has to be deliberate.

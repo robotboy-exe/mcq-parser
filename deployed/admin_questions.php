@@ -692,7 +692,7 @@ if (is_file(__DIR__ . '/header.php')) {
 }
 ?>
 <link rel="stylesheet" href="src/question-preview.css">
-<link rel="stylesheet" href="src/math-tool.css">
+<link rel="stylesheet" href="src/math-tool.css?v=1.0.0">
 <style>
 .admin-page{background:#f4f7fb;min-height:70vh;padding:32px 16px 50px;color:#263445}
 .admin-wrap{max-width:1100px;margin:0 auto}
@@ -1049,7 +1049,7 @@ if (is_file(__DIR__ . '/header.php')) {
 <script src="ocr_helper.js"></script>
 <script src="src/underline-toolbar.js"></script>
 <script src="src/question-preview.js"></script>
-<script src="src/math-tool.js"></script>
+<script src="src/math-tool.js?v=1.0.0"></script>
 
 
 <?php if (is_file(__DIR__ . '/footer.php')) { include __DIR__ . '/footer.php'; } ?>

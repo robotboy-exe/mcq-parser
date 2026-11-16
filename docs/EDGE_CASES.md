@@ -266,10 +266,13 @@ EC-95 through EC-126 above belong to the archived context/owner-tool subsystem
 | EC-135 | Passage/cloze paste with Constant Text present | Load passage/cloze-shaped OCR while Constant Text already has a value | The helper may queue ordinary Question/options with review flags, but Constant Text remains byte-for-byte unchanged | CONFIRMED | D-89; `tests/ocr-helper.js`; disposable Chromium OCR-fill check |
 | EC-136 | Preview formatting and editability | Constant Text/Question contain blank lines, exact `<u>` markers, and unsafe-looking text | Preview preserves paragraphs, creates underlines only through `CBTText`, and exposes no editable control or form write | CONFIRMED | D-90; `tests/question-preview.js`; disposable Chromium 390px check |
 | EC-137 | Spaced repeated label inside an option | `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four` | Under D-91, spaced and unspaced A-D labels parse case-insensitively with optional whitespace after `(`, before `)`, and before `.`, while the later `A )` remains in already selected Option A and alone raises no duplicate warning | CONFIRMED | D-91; `tests/ocr-helper.js`; phase-1 third re-review |
+| EC-138 | Counter after a non-input fill | OCR Load/Skip writes `#question_text`, or the administrator triggers a native form reset | The counter shows the field's current UTF-8 byte count on the next turn, red at 60,000 or more, without a second save/validation path | CONFIRMED | D-93; `tests/math-tool.js` OCR/reset vector |
+| EC-139 | Byte limit versus `maxlength` | Text with multi-byte symbols approaches the 60,000-byte limit | The counter can show red before `maxlength` stops typing, or `maxlength` can stop first; the mismatch is documented, nothing is truncated, and no submit is blocked | CONFIRMED | D-93; `src/math-tool.js` vector; native `maxlength="60000"` unchanged |
+| EC-140 | Stale math-editor cache after deploy | A browser holds an older `math-tool.js`/`.css` | The `?v=1.0.0` token on both tags forces the current pair; no other page serves these files | CONFIRMED | D-94; `tests/math-tool.js` asset vector; `docs/DEPLOYMENT.md` |
 
 ## Counts
 
-- Total: 137
-- CONFIRMED: 133
+- Total: 140
+- CONFIRMED: 136
 - UNVERIFIED: 4
 - CONFLICTED: 0

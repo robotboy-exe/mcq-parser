@@ -1,9 +1,11 @@
-# Deployment Manifest — Constant Text Reset (ST01)
+# Deployment Manifest — Constant Text Reset (ST01) and Math Editor (ME01/ME02)
 
-Recorded: 2026-11-14; amended 2026-11-15 for D-91. Target: PHP 8.3,
-MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`. This manifest covers ST01: root
-`ocr_helper.js`, optional `questions.constant_text`, the underline toolbar, and
-the read-only multiline preview. It does **not** authorize a production deploy.
+Recorded: 2026-11-14; amended 2026-11-15 for D-91 and 2026-11-16 for ME02
+(D-92–D-94). Target: PHP 8.3, MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`. This
+manifest covers ST01 (root `ocr_helper.js`, optional `questions.constant_text`,
+the underline toolbar, and the read-only multiline preview) plus ME01/ME02 (the
+math symbol palette and advisory UTF-8 byte counter on the admin form). It does
+**not** authorize a production deploy.
 A deploy needs a separate explicit owner instruction. See
 [`DEVELOPER-GUIDE.md`](DEVELOPER-GUIDE.md) for the architecture and
 [`plan/owner-tool/st-01-constant-text-reset.md`](plan/owner-tool/st-01-constant-text-reset.md)
@@ -38,7 +40,7 @@ for the package contract.
 6. Put the site in maintenance mode and stop every web worker, importer, cron
    job, and CLI process that can write `questions`.
 
-## 2. File manifest (10 production files + 3 ops)
+## 2. File manifest (12 production files + 3 ops)
 
 Line counts are `wc -l`; bytes are LF-normalized UTF-8; SHA-256 is over the
 LF-normalized content. Deploy PHP/JS assets to the site root preserving relative
@@ -46,7 +48,7 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 
 | File | Lines / LF bytes | SHA-256 (LF) | Deploy to | Notes |
 |---|---:|---|---|---|
-| `deployed/admin_questions.php` | 1053 / 62540 | `7677a0bcb920dd932be4462be0f838adf8935a1681effeba118c5272ad1ce4ff` | site root | native form, Constant Text, session prefill; loads helper, underline, safe renderer, and read-only preview; context code removed |
+| `deployed/admin_questions.php` | 1055 / 62646 | `883b56ee2bdbdb1309cdf02ca2237ec2ff1ca587cb0af9b483640f9f89786611` | site root | native form, Constant Text, session prefill; loads helper, underline, safe renderer, read-only preview, and the palette pair with `?v=1.0.0`; context code removed |
 | `deployed/admin_question_store.php` | 113 / 4918 | `ff93f0c924159662f843ec83ed9e78c3815dc1549805a8c79a631f702577dc1b` | site root | extracted save/delete transaction; explicit columns; `constant_text` |
 | `deployed/cbt.php` | 1085 / 47287 | `b969b52549067929982620cc5f994b432010492cc5d00a43754dc635cd3bb483` | site root | standalone delivery; Constant Text block; exact-`<u>` options; loads `src/owner-tool/render.js?v=2.3.2g` |
 | `deployed/answer_details.php` | 255 / 12617 | `570bf960d21ab69c8a6c575e2c9410dfbef322d54c81f00b288b4e59e788deb3` | site root | Constant Text block; `cbt_format_text` options |
@@ -55,6 +57,8 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 | `src/underline-toolbar.js` | 128 / 3898 | `3953bc960fbcc58d285c863c2cb049fbfc8ff82a1c4ff884b7c135b83fe0f017` | site root `src/` | runtime Underline button for Constant Text, question, and options |
 | `src/question-preview.js` | 104 / 3759 | `472c69fedda6353f5ee1f527b8f5b0591774cd7fd8c837bad1c910268020bec9` | site root `src/` | read-only Constant Text/Question preview; uses `window.CBTText` |
 | `src/question-preview.css` | 37 / 711 | `cbcfc88582c8095bd9a75c7a96b21cb5a0d696069ef8d4c931354f6d6cc5f8e3` | site root `src/` | preview layout and `white-space: pre-wrap` |
+| `src/math-tool.js` | 432 / 13974 | `fee1d8b393e64e39457186a345e6e5d4227d21f79f885d44983554bdb69c6d14` | site root `src/` | math symbol palette and advisory byte counter for `#question_text`; no storage, network, submit, underline-marker, or `constant_text` behavior |
+| `src/math-tool.css` | 133 / 2028 | `09f30a164de075dbb3aaff1aed470dd3143f2ed12d5d15bf582132ea69f6a2ce` | site root `src/` | palette, drawer, counter, focus, and mobile-target styles |
 | `src/owner-tool/render.js` | 209 / 6339 | `008325f404e435747fe33d57aa84380b0977c8bed38e6c1bcff01515ff7129c3` | site root `src/owner-tool/` | browser exact-`<u>` renderer; unchanged path |
 | `deployed/sql/01-constant-text.sql` (ops) | 49 / 1719 | `7c3666af857f976f444013055e94b2599b85fabf1e050ae08ebda153c5d0cba4` | ops directory | guarded, rerunnable `constant_text` migration |
 | `deployed/sql/02-constant-text-rollback.sql` (ops) | 38 / 1169 | `09b4293d88f8a4436839ccef740d70e00bbc085c8f49ec60fcc184bfca861d45` | ops directory | rollback; refuses non-empty data |
@@ -66,19 +70,22 @@ support. Do not deploy any file under `archive/`.
 ## 3. Upload order
 
 1. Back up files and the database.
-2. Upload the four `src/` assets: `src/underline-toolbar.js`,
-   `src/question-preview.js`, `src/question-preview.css`, and
-   `src/owner-tool/render.js` (unchanged bytes, same path).
+2. Upload the six `src/` assets: `src/underline-toolbar.js`,
+   `src/question-preview.js`, `src/question-preview.css`,
+   `src/math-tool.js`, `src/math-tool.css`, and `src/owner-tool/render.js`
+   (unchanged bytes, same path).
 3. Upload root `ocr_helper.js` and the PHP files: `render.php`,
    `admin_question_store.php`, `admin_questions.php`, `cbt.php`,
    `answer_details.php`.
 4. Leave `cbt_practice.php` unchanged; it is outside ST01 scope and keeps its
    current `render.js?v=2.3.2c` token.
 5. Cache handling: `admin_questions.php` loads root `ocr_helper.js`, the preview
-   assets, and `src/underline-toolbar.js` without query tokens. A standalone
-   ST01 deployment must purge server/CDN caches, clear the site's browser cache,
-   and verify the live helper hash. `cbt.php` keeps the unchanged
-   `src/owner-tool/render.js?v=2.3.2g`; ME02 will version later math-editor assets.
+   assets, and `src/underline-toolbar.js` without query tokens, and loads
+   `src/math-tool.css?v=1.0.0` and `src/math-tool.js?v=1.0.0` (D-94). A standalone
+   deployment must purge server/CDN caches, clear the site's browser cache, and
+   verify the live helper and palette hashes. `cbt.php` keeps the unchanged
+   `src/owner-tool/render.js?v=2.3.2g`; `cbt_practice.php` keeps `?v=2.3.2c` and
+   is out of scope.
 6. Run the Constant Text migration:
    - `php -l` every changed PHP file;
    - `mysql --default-character-set=utf8mb4 <database> < deployed/sql/01-constant-text.sql`;
@@ -124,6 +131,12 @@ faults if an existing column disagrees. `02-constant-text-rollback.sql` creates
 | Helper labels | paste A-D uppercase/lowercase labels with and without whitespace after `(`, before `)`, and before `.` | every D-91 structural form loads with the same four option values and no missing-option flags |
 | Helper boundary | paste `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four` | Question is `Which is correct?`; Option A keeps `The notation A ) stays in option A`; B-D are `Two`/`Three`/`Four`; no duplicate warning solely for the internal `A )` |
 | Helper isolation | prefill Constant Text, then load passage/cloze-shaped OCR | Constant Text remains byte-for-byte unchanged; any ordinary-question interpretation stays in Question/options with review flags |
+| Palette | open Add a New Question and pick a quick-row symbol after placing the caret mid-text | the symbol lands at the remembered caret and no second Underline button appears |
+| Palette drawer | click `More symbols` | `aria-expanded` becomes `true`, six categories render, and each category inserts a symbol |
+| Palette keyboard | Tab to a palette button and press Enter or Space | the focused symbol inserts; every control has an accessible name |
+| Byte counter | paste or type multi-byte symbols and watch the counter | neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+ with visible warning copy; nothing truncates and Save stays enabled |
+| Byte counter refresh | click `Load questions`/`Skip` or reset the form | the counter matches the field's new UTF-8 byte count after the page's own fill, including red at 60,000+ |
+| Tokens | view source of the admin page | exactly one `src/math-tool.css?v=1.0.0` link and one `src/math-tool.js?v=1.0.0` script, script after the preview script |
 | CBT | open delivered questions with preserved constant text | passage renders above the question; `<u>` is real underline |
 | Answer details | open an active question with constant text | passage renders above the question; stored `<script>`/`<img onerror>` stay text |
 | Security | stored-XSS probe | no injected script runs; only exact underline markup renders |
@@ -164,6 +177,12 @@ Stop and do not continue on the first mismatch:
   an already selected letter replaces/resplits that option or alone raises the
   duplicate warning;
 - any stored-XSS probe executes script or creates an attribute;
+- the palette does not mount once on `#question_text`, inserts outside the
+  caret, writes storage/network/submit state, or adds a second Underline
+  button;
+- the byte counter disagrees with the field's UTF-8 byte count after typing,
+  OCR Load/Skip, or a reset, or it truncates text or disables Save;
+- either math-editor asset is served without `?v=1.0.0` or returns 404;
 - constant-text data exists when a rollback is attempted;
 - the target lacks a verified backup, the live `cbt_db.php`, `header.php`,
   `footer.php`, or `cbt_exam_attempts`;
@@ -188,7 +207,16 @@ Stop and do not continue on the first mismatch:
   against a disposable production-shaped MySQL database before production.
 - There is no automated browser suite. ST01 behavior is covered by Node/PHP
   checks, static assertions, one disposable Chromium check, and the required
-  owner Brave/Android check.
+  owner Brave/Android check. ME01/ME02 add 17 module vectors, a local disposable
+  SQLite staging run, and a desktop Chromium check; the owner Brave/Android check
+  on the final tree is still required before any live deploy.
+- `maxlength="60000"` counts UTF-16 code units while the server checks UTF-8
+  bytes. The editor counter is advisory (D-93): it can show red before typing is
+  blocked, or typing can stop before 60,000 bytes. Nothing was changed to
+  reconcile the two limits.
+- Palette insertion prefers `execCommand('insertText')` for undo support and
+  falls back to `setRangeText` then `.value`; undo is browser-dependent on the
+  fallback paths (D-92).
 - The `bank-2021` final question still raises a duplicate-C flag from its OCR
   answer-key text; this is pre-existing and not a missing-option regression.
 - This package does not deploy to production, clean live data, or archive the

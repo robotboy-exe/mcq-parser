@@ -369,8 +369,8 @@ test('module source keeps its stated boundaries', () => {
 
 test('admin page loads the palette after the preview and the stylesheet beside it', () => {
   const admin = fs.readFileSync(path.join(__dirname, '..', 'deployed', 'admin_questions.php'), 'utf8');
-  const css = admin.indexOf('<link rel="stylesheet" href="src/math-tool.css">');
-  const script = admin.indexOf('<script src="src/math-tool.js"></script>');
+  const css = admin.indexOf('<link rel="stylesheet" href="src/math-tool.css?v=1.0.0">');
+  const script = admin.indexOf('<script src="src/math-tool.js?v=1.0.0"></script>');
   const previewScript = admin.indexOf('<script src="src/question-preview.js"></script>');
   assert.ok(css > 0, 'missing math-tool stylesheet link');
   assert.ok(script > previewScript, 'math-tool script must load after the preview script');

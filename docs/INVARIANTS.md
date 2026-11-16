@@ -205,11 +205,14 @@ helper uses only the subset exercised by `tests/ocr-helper.js`.
 | INV-136 | Retired context/owner-tool files are archived with Git history and a README; no live `DROP`/`ALTER` is executed by ST01, and the forward Constant Text migration runs only against a disposable database first. | VERIFIED | D-88; `archive/owner-tool-2026-11/README.md`; `docs/LIVE-SAFETY.md` |
 | INV-137 | Multiline rendering is preserved: single OCR wraps fold to one space, real blank-line paragraphs remain as `\n\n`, Constant Text and question text render with `white-space: pre-wrap`, and options stay single-line. | VERIFIED | D-66; `ocr_helper.js` `cleanBlock`; `tests/ocr-helper.js` paragraph vector; `deployed/cbt.php`; `deployed/answer_details.php` |
 | INV-138 | The admin preview is read-only, renders Constant Text and Question through `window.CBTText`, keeps `white-space: pre-wrap`, follows typing and OCR fills, and has no form-value, storage, network, or submit behavior. | VERIFIED | D-90; `src/question-preview.js`; `tests/question-preview.js` (4 checks); disposable Chromium 390px check |
+| INV-139 | The math palette builds its toolbar, drawer, and counter with `createElement`/`textContent` from the curated symbol tables, mounts once on `#question_text` in Add and Edit forms (`data-math-tool-mounted`), inserts at the remembered caret through `execCommand` then `setRangeText` then `.value`, and never writes storage, network, a form submit, an underline marker, `constant_text`, or a second Underline button. | VERIFIED | D-92; `src/math-tool.js`; `tests/math-tool.js` (17 vectors) |
+| INV-140 | The math editor's byte counter is advisory: it counts UTF-8 bytes, shows neutral below 57,000, amber at 57,000–59,999, and red at 60,000 or more, refreshes after typing, OCR Load/Skip, and a native form reset, and never truncates, disables Save, or changes `maxlength`; the server's 60,000-byte check stays authoritative. | VERIFIED | D-93; `src/math-tool.js`; `tests/math-tool.js` (17 vectors); phase-2 `FIX-1` closure |
+| INV-141 | `deployed/admin_questions.php` is the only page that loads the math-editor pair, and it loads both `src/math-tool.css?v=1.0.0` and `src/math-tool.js?v=1.0.0` exactly once, with the script after the preview script. `cbt.php` and `cbt_practice.php` keep their `render.js` tokens, and the ST01 preview/underline assets stay untokened. | VERIFIED | D-94; `deployed/admin_questions.php`; `tests/math-tool.js` asset vector |
 
 ## Counts
 
-- Total: 138
-- VERIFIED: 128
+- Total: 141
+- VERIFIED: 131
 - AT_RISK: 10
 - CONFLICTED: 0
 

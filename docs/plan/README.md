@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-15.
+Last updated: 2026-11-16.
 
 ## Current state
 
@@ -17,7 +17,10 @@ Last updated: 2026-11-15.
   ME01, then ME02. ST01 is done and review-settled: its third re-review closed
   D-91 `FIX-1`, `FIX-2` remains closed, and all 11 helper checks pass. ME01 is
   done and review-settled: the phase-2 re-review passed, closing `FIX-1` and
-  both notes, with 17 module vectors. ME02 has not started.
+  both notes, with 17 module vectors. ME02 has a recorded handoff (2026-11-16):
+  `?v=1.0.0` tokens (D-94), invariants/edge cases, refreshed manifest and guide,
+  full suite counts, and a desktop Chromium check on disposable SQLite staging.
+  Its rigorous release review is the next separate session.
 - Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
   archived/historical. Their records remain under `owner-tool/` and `reviews/`
   for evidence; do not continue that architecture.
@@ -166,7 +169,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 |---|---|---|---|---|---|
 | 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done; third re-review PASS; `FIX-1`/`FIX-2` closed | none; disposable database only |
 | 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | done; phase-2 re-review PASS, `FIX-1` and both notes closed (17 vectors) | `admin_questions.php` re-measured PASS (+89); Brave/Android and desktop checks deferred to ME02 |
-| 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | not started | owner-accepted Brave/Android check; deployment-time live artifacts |
+| 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | in progress; handoff recorded 2026-11-16, rigorous release review pending | owner-accepted Brave/Android check; deployment-time live artifacts |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -238,7 +241,7 @@ verifies the detail path with the rest of Release A.
 |---|---|---|---|
 | phase 1 | ST01 reset, Constant Text, helper fix, underline | light at ME01 Gate 1 | settled by third re-review; PASS, both fixes closed |
 | phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | review-settled 2026-11-15: PASS, `FIX-1` and both notes closed |
-| phase 3 close | ME02 release, evidence, and handoff | rigorous | pending |
+| phase 3 close | ME02 release, evidence, and handoff | rigorous | handoff ready 2026-11-16; rigorous review pending |
 
 ## Remaining path to cycle close
 
@@ -250,7 +253,9 @@ verifies the detail path with the rest of Release A.
 3. **ME01** — implemented and review-settled at +89 live-origin additions;
    `FIX-1` (stale counter after OCR fill/reset) and both notes were closed by
    the 2026-11-15 re-review.
-4. **ME02** — tokens, decisions, docs, manifest/guide, and browser evidence.
+4. **ME02** — done except the review: tokens (D-94), decisions D-92–D-94,
+   invariants/edge cases, manifest/guide refresh, full suite counts, and a
+   desktop Chromium check are recorded in the package handoff.
 5. **Rigorous release review** via
    [`prompts/review-session.md`](prompts/review-session.md), then any
    fix/re-review rounds.
@@ -258,11 +263,12 @@ verifies the detail path with the rest of Release A.
    commit, an optional `main` fast-forward, and archiving each need explicit
    owner authorization.
 
-Current workflow stop: phase 2 is review-settled. Start ME02 only through its
-read-only Gate 1.
+Current workflow stop: the ME02 handoff is recorded and nothing is committed.
+The next gate is the rigorous release review in a separate read-only session,
+which writes only its record under `docs/plan/reviews/`.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/phase-session.md phase 3
+NEXT COMMAND: @docs/plan/prompts/review-session.md phase 3
 ```
 
 ## Session protocol

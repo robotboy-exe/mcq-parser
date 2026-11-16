@@ -1,10 +1,11 @@
-# Developer Guide — Constant Text Reset (ST01)
+# Developer Guide — Constant Text Reset (ST01) and Math Editor (ME01/ME02)
 
-Recorded: 2026-11-14; amended 2026-11-15 for D-91. This is the human-developer
-handoff for ST01 in the `math-editor-2026-11` cycle. It covers the production
-architecture, source of truth, stored state, parser extension rules, Constant
-Text lifecycle, the security renderer, testing commands, and known limitations.
-Deployment steps are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
+Recorded: 2026-11-14; amended 2026-11-15 for D-91 and 2026-11-16 for ME02
+(D-92–D-94). This is the human-developer handoff for ST01 and the math editor in
+the `math-editor-2026-11` cycle. It covers the production architecture, source of
+truth, stored state, parser extension rules, Constant Text lifecycle, the math
+palette and byte counter, the security renderer, testing commands, and known
+limitations. Deployment steps are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## 1. Architecture map
 
@@ -18,6 +19,8 @@ Deployment steps are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 | `ocr_helper.js` | Shipping OCR helper. Parses pasted OCR into the native form, preserves blank-line paragraphs, fills `ocrQueue`/`ocrMeta`, and never submits. |
 | `src/underline-toolbar.js` | Runtime Underline button for Constant Text, question text, and options A–D. |
 | `src/question-preview.js` / `.css` | Read-only Constant Text/Question preview, rendered with `window.CBTText` and `white-space: pre-wrap`; no form, storage, or network writes. |
+| `src/math-tool.js` | Math symbol palette and advisory UTF-8 byte counter around `#question_text`, mounted once in Add and Edit forms with `data-math-tool-mounted`; inserts only at the remembered caret and writes no storage, network, submit, underline marker, or `constant_text`. |
+| `src/math-tool.css` | Palette, drawer, counter, focus, and mobile-target styles; all selectors are `.math-tool-*` (D-92). |
 | `src/owner-tool/render.js` | Browser safe renderer (`window.CBTText`) used by `cbt.php`. The legacy context-card helpers remain in the file but no page calls them. |
 | `src/parser/core.js` | Pure parser 2.3.3, retained for the historical parser fixture suite. Not loaded by the production admin page. |
 | `deployed/sql/base-schema.working.sql` | Working schema copy, now including `constant_text`. |
@@ -30,6 +33,18 @@ admin form. The shared-text/context subsystem and the legacy bookmarklet are
 archived under `archive/owner-tool-2026-11/`; do not load or extend them. The
 `src/owner-tool/context*` helper functions inside `render.js` are inert and
 kept only because that file is shared with `cbt_practice.php`.
+
+**Math editor (ME01/ME02, D-92–D-94).** One pair of assets serves the native
+form. The module builds its toolbar, drawer, and counter from the curated
+symbol tables with `createElement`/`textContent`, remembers the textarea
+selection across toolbar focus loss, and inserts through
+`execCommand('insertText')` then `setRangeText` then `.value`; it never rewrites
+line breaks or underline markers. The quick row is 15 symbols and the drawer
+has six categories; `½` intentionally appears in both. The counter is advisory
+(neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+) and
+refreshes after typing, the page's OCR Load/Skip, and a native form reset. The
+admin page loads both files with `?v=1.0.0`; no other page references them,
+and `cbt.php`/`cbt_practice.php` keep their own `render.js` tokens.
 
 ## 2. Source of truth
 
@@ -65,7 +80,8 @@ ocrMeta  = { subject_id, exam_category_id, exam_year }
   saves.
 - Constant Text is server-side session state, not `localStorage`.
 - The OCR helper never reads or writes `constant_text`; the preview reads that
-  field but never changes it.
+  field but never changes it. The palette and counter also write no storage,
+  network request, form value, or submit, and add no grep-visible state key.
 
 ## 4. Parser extension rules
 
@@ -139,6 +155,7 @@ node tests/unit.js
 node tests/ocr-helper.js
 node tests/underline-toolbar.js
 node tests/question-preview.js
+node tests/math-tool.js
 node tools/extract-bank.js --check
 php tests/php-render.php
 php tests/admin-question-store.php
@@ -153,6 +170,7 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
   boundaries, and duplicate-set warning controls;
 - underline toolbar: 9 PASS;
 - read-only preview: 4 PASS;
+- math palette/byte counter: 17 PASS (real module and mount);
 - PHP renderer: 9 PASS; admin store: 8 PASS;
 - `php -l` on every changed PHP file: PASS;
 - `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
@@ -166,6 +184,13 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 - disposable Chromium at 390px: preview has no editable controls or overflow,
   both blocks use `pre-wrap`, exact underlines render, and a passage/cloze OCR
   paste leaves the prefilled Constant Text unchanged.
+- ME02 disposable SQLite staging in Chrome 156.0.0.0: the palette mounts once on
+  `#question_text`, quick-row, drawer, and keyboard insertion land at the
+  remembered caret, `Ctrl+Z` reverts on the `execCommand` path, the preview
+  refreshes, thresholds read neutral 32 / amber 57 000 / red 60 000 with the
+  warning visible, a native reset refreshes the counter to `0 / 60 000 bytes`,
+  and a native save flashed `Question saved successfully (Question ID: 102).`
+  with the stored `<u>` markers and `x²` round-tripping through the edit page.
 
 No live site, production database, or production cleanup was used. The schema
 migration has been exercised only through the disposable SQLite phone-staging
@@ -187,8 +212,14 @@ store, not MySQL.
 - `bank-2021` still raises a duplicate-C flag on its final question from OCR
   answer-key text; this is pre-existing and not a missing-option regression.
 - The ST01 schema migration has not been run against MySQL in this phase.
+- `maxlength="60000"` counts UTF-16 code units while the server checks UTF-8
+  bytes; the editor counter is advisory and neither limit was changed (D-93).
+- Palette undo is reliable only on the `execCommand` path; the
+  `setRangeText`/`.value` fallbacks are browser-dependent (D-92).
 - There is no browser test suite. ST01 behavior is covered by Node/PHP checks,
-  static source assertions, and the required owner Brave/Android check.
+  static source assertions, and the required owner Brave/Android check. ME01/
+  ME02 add 17 module vectors and one disposable staging browser run; the owner
+  Brave/Android check on the final tree is still required.
 - This cycle does not deploy to production, clean live data, or archive itself
   without explicit owner instructions.
 
