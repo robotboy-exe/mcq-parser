@@ -84,7 +84,7 @@
   function init() {
     var question = document.getElementById('question_text');
     var label = document.querySelector('label[for="question_text"]');
-    if (!question || !label) {
+    if (!question || !label || !label.parentNode || document.getElementById('owner_tool_underline')) {
       return;
     }
 
@@ -107,19 +107,27 @@
     button.id = 'owner_tool_underline';
     button.textContent = 'Underline';
     button.title = 'Wrap the selected text in <u>...</u>';
-    button.style.cssText = 'margin-left:8px;border:1px solid #d5dfe9;border-radius:7px;'
-      + 'background:#fff;color:#1769aa;font:inherit;font-weight:700;padding:5px 10px;cursor:pointer';
+    button.style.cssText = 'border:1px solid #d5dfe9;border-radius:7px;'
+      + 'background:#fff;color:#1769aa;font:inherit;font-weight:700;padding:5px 10px;cursor:pointer;'
+      + 'flex-shrink:0';
     button.addEventListener('mousedown', function (event) {
       event.preventDefault();
     });
     button.addEventListener('click', function () {
       toggle(lastFocused);
     });
-    label.insertAdjacentElement('afterend', button);
+    var row = document.createElement('div');
+    row.className = 'owner-tool-label-row';
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;margin:0 0 7px';
+    label.style.marginBottom = '0';
+    label.parentNode.insertBefore(row, label);
+    row.appendChild(label);
+    row.appendChild(button);
+    button.style.marginLeft = 'auto';
   }
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { wrapSelection: wrapSelection };
+    module.exports = { wrapSelection: wrapSelection, init: init };
   } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

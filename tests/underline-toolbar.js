@@ -2,7 +2,7 @@
 'use strict';
 
 const assert = require('assert');
-const { wrapSelection } = require('../src/underline-toolbar.js');
+const { wrapSelection, init } = require('../src/underline-toolbar.js');
 
 let passed = 0;
 
@@ -10,6 +10,91 @@ function test(name, fn) {
   fn();
   passed += 1;
   console.log('[PASS] ' + name);
+}
+
+function makeElement(tagName, document) {
+  const listeners = {};
+  const element = {
+    tagName: String(tagName).toUpperCase(),
+    ownerDocument: document,
+    parentNode: null,
+    children: [],
+    id: '',
+    className: '',
+    textContent: '',
+    title: '',
+    type: '',
+    value: '',
+    style: {},
+    attributes: {},
+    selectionStart: 0,
+    selectionEnd: 0,
+    appendChild(child) {
+      child.parentNode = this;
+      this.children.push(child);
+      return child;
+    },
+    insertBefore(child, reference) {
+      child.parentNode = this;
+      const index = this.children.indexOf(reference);
+      if (index === -1) this.children.push(child);
+      else this.children.splice(index, 0, child);
+      return child;
+    },
+    setAttribute(name, value) {
+      this.attributes[name] = String(value);
+    },
+    getAttribute(name) {
+      return Object.prototype.hasOwnProperty.call(this.attributes, name) ? this.attributes[name] : null;
+    },
+    addEventListener(type, listener) {
+      (listeners[type] || (listeners[type] = [])).push(listener);
+    },
+    dispatchEvent() {
+      return true;
+    },
+    focus() {
+      this.ownerDocument.activeElement = this;
+    },
+    setSelectionRange(start, end) {
+      this.selectionStart = start;
+      this.selectionEnd = end;
+    }
+  };
+  document.elements.push(element);
+  return element;
+}
+
+function makeEnvironment() {
+  const document = {
+    readyState: 'complete',
+    elements: [],
+    activeElement: null,
+    createElement(tagName) {
+      return makeElement(tagName, this);
+    },
+    getElementById(id) {
+      return this.elements.find((element) => element.id === id) || null;
+    },
+    querySelector(selector) {
+      if (selector === 'label[for="question_text"]') {
+        return this.elements.find((element) => (
+          element.tagName === 'LABEL' && element.attributes.for === 'question_text'
+        )) || null;
+      }
+      return null;
+    }
+  };
+
+  const field = makeElement('div', document);
+  const label = makeElement('label', document);
+  label.setAttribute('for', 'question_text');
+  field.appendChild(label);
+  const textarea = makeElement('textarea', document);
+  textarea.id = 'question_text';
+  field.appendChild(textarea);
+
+  return { document, field, label, textarea };
 }
 
 test('wraps the selected text', () => {
@@ -71,6 +156,30 @@ test('treats uppercase tags as literal text', () => {
 test('preserves text outside the selection', () => {
   const result = wrapSelection('one two three', 4, 7);
   assert.strictEqual(result.value, 'one <u>two</u> three');
+});
+
+test('places the underline button in a flex question-label row at the far right', () => {
+  const environment = makeEnvironment();
+  global.document = environment.document;
+  try {
+    init();
+
+    const button = environment.document.getElementById('owner_tool_underline');
+    assert.ok(button, 'underline button was not created');
+    const row = environment.label.parentNode;
+    assert.strictEqual(row.className, 'owner-tool-label-row');
+    assert.strictEqual(row.children[0], environment.label);
+    assert.strictEqual(row.children[1], button);
+    assert.strictEqual(row.style.cssText, 'display:flex;align-items:center;gap:12px;margin:0 0 7px');
+    assert.strictEqual(environment.label.style.marginBottom, '0');
+    assert.strictEqual(button.style.marginLeft, 'auto');
+
+    init();
+    const buttons = environment.document.elements.filter((element) => element.id === 'owner_tool_underline');
+    assert.strictEqual(buttons.length, 1);
+  } finally {
+    delete global.document;
+  }
 });
 
 console.log('PASS: ' + passed + ' underline-toolbar vectors');

@@ -145,6 +145,15 @@
     return String(bytes).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   }
 
+  function customFraction(numerator, denominator) {
+    var top = String(numerator == null ? '' : numerator).trim();
+    var bottom = String(denominator == null ? '' : denominator).trim();
+    if (!top || !bottom) {
+      return '';
+    }
+    return top + '/' + bottom;
+  }
+
   function insertAtCaret(value, start, end, insertion) {
     var source = String(value == null ? '' : value);
     var text = String(insertion == null ? '' : insertion);
@@ -351,6 +360,52 @@
     drawer.id = 'math_tool_drawer';
     drawer.hidden = true;
 
+    function customFractionRow() {
+      var row = element('div', 'math-tool-custom-fraction');
+      row.appendChild(element('span', 'math-tool-custom-fraction-title', 'Custom'));
+
+      function fractionInput(label, placeholder) {
+        var input = element('input', 'math-tool-custom-fraction-input');
+        input.type = 'text';
+        input.setAttribute('aria-label', label);
+        input.setAttribute('placeholder', placeholder);
+        input.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            insertCustomFraction();
+          }
+        });
+        return input;
+      }
+
+      function insertCustomFraction() {
+        var fraction = customFraction(numerator.value, denominator.value);
+        if (!fraction) {
+          if (typeof numerator.focus === 'function') {
+            numerator.focus();
+          }
+          return;
+        }
+        insertCharacter(fraction);
+      }
+
+      var numerator = fractionInput('Custom fraction numerator', 'a');
+      var denominator = fractionInput('Custom fraction denominator', 'b');
+      var slash = element('span', 'math-tool-custom-fraction-slash', '/');
+      slash.setAttribute('aria-hidden', 'true');
+      var insertButton = element('button', 'math-tool-custom-fraction-insert', 'Insert');
+      insertButton.type = 'button';
+      insertButton.setAttribute('aria-label', 'Insert custom fraction');
+      insertButton.addEventListener('mousedown', preventBlur);
+      insertButton.addEventListener('click', insertCustomFraction);
+
+      row.appendChild(numerator);
+      row.appendChild(slash);
+      row.appendChild(denominator);
+      row.appendChild(insertButton);
+      return row;
+    }
+
     for (var categoryIndex = 0; categoryIndex < CATEGORIES.length; categoryIndex += 1) {
       var category = CATEGORIES[categoryIndex];
       var section = element('div', 'math-tool-category');
@@ -361,6 +416,9 @@
         characters.appendChild(symbolButton(categoryCharacter, categoryCharacter));
       }
       section.appendChild(characters);
+      if (category.title === 'Fractions') {
+        section.appendChild(customFractionRow());
+      }
       drawer.appendChild(section);
     }
 
@@ -424,6 +482,7 @@
     CATEGORIES: CATEGORIES,
     symbolName: symbolName,
     formatByteCount: formatByteCount,
+    customFraction: customFraction,
     insertAtCaret: insertAtCaret,
     utf8ByteLength: utf8ByteLength,
     byteStatus: byteStatus,

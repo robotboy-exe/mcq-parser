@@ -40,7 +40,11 @@ symbol tables with `createElement`/`textContent`, remembers the textarea
 selection across toolbar focus loss, and inserts through
 `execCommand('insertText')` then `setRangeText` then `.value`; it never rewrites
 line breaks or underline markers. The quick row is 15 symbols and the drawer
-has six categories; `½` intentionally appears in both. The counter is advisory
+has six categories; `½` intentionally appears in both. The Fractions category
+also has a Custom `a/b` row: enter a numerator and denominator, then press
+Insert (or Enter) to insert the fraction at the remembered caret. The Underline
+button sits at the far right of the Question label row on desktop and mobile.
+The counter is advisory
 (neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+) and
 refreshes after typing, the page's OCR Load/Skip, and a native form reset. The
 admin page loads both files with `?v=1.0.0`; no other page references them,
@@ -168,9 +172,9 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 - unit: 163 PASS;
 - root helper: 11 PASS, including the complete D-91 spacing grammar, selected
   boundaries, and duplicate-set warning controls;
-- underline toolbar: 9 PASS;
+- underline toolbar: 10 PASS;
 - read-only preview: 4 PASS;
-- math palette/byte counter: 17 PASS (real module and mount);
+- math palette/byte counter: 20 PASS (real module and mount);
 - PHP renderer: 9 PASS; admin store: 8 PASS;
 - `php -l` on every changed PHP file: PASS;
 - `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
@@ -218,7 +222,7 @@ store, not MySQL.
   `setRangeText`/`.value` fallbacks are browser-dependent (D-92).
 - There is no browser test suite. ST01 behavior is covered by Node/PHP checks,
   static source assertions, and the required owner Brave/Android check. ME01/
-  ME02 add 17 module vectors and one disposable staging browser run; the owner
+  ME02 add 20 module vectors and one disposable staging browser run; the owner
   Brave/Android check on the final tree is still required.
 - This cycle does not deploy to production, clean live data, or archive itself
   without explicit owner instructions.

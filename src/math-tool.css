@@ -120,6 +120,64 @@
   display: none;
 }
 
+.math-tool-custom-fraction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #d5dfe9;
+}
+
+.math-tool-custom-fraction-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.math-tool-custom-fraction-input {
+  width: 56px;
+  height: 32px;
+  padding: 0 6px;
+  background: #ffffff;
+  border: 1px solid #d5dfe9;
+  border-radius: 6px;
+  color: #263445;
+  font: inherit;
+  font-size: 14px;
+}
+
+.math-tool-custom-fraction-slash {
+  color: #475569;
+  font-weight: 700;
+}
+
+.math-tool-custom-fraction-insert {
+  height: 32px;
+  padding: 0 10px;
+  background: #1769aa;
+  border: 1px solid #1769aa;
+  border-radius: 6px;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.math-tool-custom-fraction-insert:hover {
+  background: #0d3b66;
+  border-color: #0d3b66;
+}
+
+.math-tool-custom-fraction-input:focus-visible,
+.math-tool-custom-fraction-insert:focus-visible {
+  outline: 2px solid #1769aa;
+  outline-offset: 1px;
+}
+
 @media (max-width: 650px) {
   .math-tool-symbol,
   .math-tool-toggle {
@@ -129,5 +187,14 @@
 
   .math-tool-toolbar {
     padding: 6px;
+  }
+
+  .math-tool-custom-fraction-input {
+    width: 62px;
+  }
+
+  .math-tool-custom-fraction-input,
+  .math-tool-custom-fraction-insert {
+    height: 38px;
   }
 }

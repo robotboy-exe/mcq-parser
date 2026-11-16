@@ -229,6 +229,14 @@ test('ships the curated quick row and six drawer categories', () => {
   assert.strictEqual(tool.CATEGORIES[2].characters.filter((character) => character === '½').length, 1);
 });
 
+test('builds a custom fraction from trimmed numerator and denominator', () => {
+  assert.strictEqual(tool.customFraction('3', '7'), '3/7');
+  assert.strictEqual(tool.customFraction('  1 ', ' 2 '), '1/2');
+  assert.strictEqual(tool.customFraction('', '7'), '');
+  assert.strictEqual(tool.customFraction('3', '   '), '');
+  assert.strictEqual(tool.customFraction(null, undefined), '');
+});
+
 test('mounts the toolbar, drawer, and counter around the native textarea', () => {
   const environment = makeEnvironment({ value: 'hello', preview: true });
   const mounted = tool.init(environment.root);
@@ -287,6 +295,31 @@ test('uses execCommand when it is available without duplicating the symbol', () 
   assert.strictEqual(commands, 1);
   assert.strictEqual(environment.textarea.value, 'ab±c');
   assert.strictEqual(environment.textarea.selectionStart, 3);
+});
+
+test('inserts a custom fraction from the drawer inputs at the remembered caret', () => {
+  const environment = makeEnvironment({ value: 'a\n\nb', start: 1 });
+  const mounted = tool.init(environment.root);
+  const inputs = findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-input');
+  assert.strictEqual(inputs.length, 2);
+
+  inputs[0].value = '3';
+  inputs[1].value = '7';
+  findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-insert')[0].dispatch('click');
+
+  assert.strictEqual(environment.textarea.value, 'a3/7\n\nb');
+  assert.strictEqual(environment.textarea.selectionStart, 4);
+});
+
+test('leaves the field unchanged when the custom fraction is incomplete', () => {
+  const environment = makeEnvironment({ value: 'abc', start: 1 });
+  const mounted = tool.init(environment.root);
+  const inputs = findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-input');
+  inputs[0].value = '3';
+
+  findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-insert')[0].dispatch('click');
+
+  assert.strictEqual(environment.textarea.value, 'abc');
 });
 
 test('toggles the drawer and its aria-expanded state', () => {
@@ -350,7 +383,7 @@ test('every generated control is a labelled button and never a submit control', 
   const buttons = findAll(mounted.toolbar, (child) => child.tagName === 'BUTTON')
     .concat(findAll(mounted.drawer, (child) => child.tagName === 'BUTTON'));
   const drawerCharacters = tool.CATEGORIES.reduce((total, category) => total + category.characters.length, 0);
-  assert.strictEqual(buttons.length, tool.QUICK_ROW.length + 1 + drawerCharacters);
+  assert.strictEqual(buttons.length, tool.QUICK_ROW.length + 2 + drawerCharacters);
   for (const button of buttons) {
     assert.strictEqual(button.type, 'button');
     assert.ok(button.getAttribute('aria-label'), 'missing aria-label');

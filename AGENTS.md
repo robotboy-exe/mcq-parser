@@ -26,7 +26,7 @@
 
 ## Commands
 
-- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 60 fixtures: 60 PASS, 0 PENDING; `node tests/unit.js` is 163 PASS; `node tests/ocr-helper.js` is 11 checks; `node tests/underline-toolbar.js` is 9 checks; `node tests/question-preview.js` is 4 checks; `node tests/math-tool.js` is 17 checks; `php tests/php-render.php` is 9 renderer vectors; `php tests/admin-question-store.php` is 8 store checks.
+- Test: `node tests/runner.js`. There is no watch, filter, or single-fixture mode; it runs every fixture and exits 1 on failure or an orphan input. Currently 60 fixtures: 60 PASS, 0 PENDING; `node tests/unit.js` is 163 PASS; `node tests/ocr-helper.js` is 11 checks; `node tests/underline-toolbar.js` is 10 checks; `node tests/question-preview.js` is 4 checks; `node tests/math-tool.js` is 20 checks; `php tests/php-render.php` is 9 renderer vectors; `php tests/admin-question-store.php` is 8 store checks.
 - PHP renderer check: `php tests/php-render.php`; also run `php -l` on every changed file under `deployed/` on the target PHP runtime.
 - Constant Text migration: `deployed/sql/01-constant-text.sql` and `02-constant-text-rollback.sql` run only against a disposable database. Do not run them against production.
 - Docs-only edits (`*.md`) do not require tests. Run tests only when `src/`, `tests/`, `fixtures/`, or `tools/` change.
