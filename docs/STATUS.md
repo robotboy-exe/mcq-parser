@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-16.
+Last updated: 2026-11-17.
 
 ## Active cycle
 
@@ -9,16 +9,19 @@ Last updated: 2026-11-16.
   shared-text/context subsystem, add optional `questions.constant_text`, and add
   exact lowercase `<u>` underlining.
 - Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — ST01, ME01,
-  ME02. Statuses live in [`plan/README.md`](plan/README.md).
+  ME02, EL01. Statuses live in [`plan/README.md`](plan/README.md).
 - Packages: [`ST01`](plan/owner-tool/st-01-constant-text-reset.md) (done and
   review-settled; the third phase-1 re-review closed D-91 `FIX-1`, `FIX-2`
   remains closed, and all 11 helper checks pass),
   [`ME01`](plan/math-editor/me-01-math-palette.md) (done and review-settled;
   the phase-2 re-review passed and closed `FIX-1` and both notes; 17 module
   vectors),
-  [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (handoff recorded
-  2026-11-16; tokens, decisions, docs, manifest, guide, suites, and browser
-  evidence done; the rigorous release review is pending).
+  [`ME02`](plan/math-editor/me-02-release-and-handoff.md) (done; handoff,
+  rigorous review, and owner-accepted Brave/Android recheck recorded), and
+  [`EL01`](plan/el-01-english-lexis-grouping.md) (done and phase-4
+  review-settled; implementation, local evidence, and the real 8-check
+  operation harness on isolated Oracle MySQL Community Server 8.0.41 ARM64
+  pass; review `PASS WITH ACCEPTED FINDINGS`, `NOTE-1`–`NOTE-4` corrected).
 - Ordering: ST01 replaced OT12 because running the context migration was judged
   riskier and more complex than one optional passage per question. The owner
   chose the reset on 2026-11-14.
@@ -35,11 +38,13 @@ Last updated: 2026-11-16.
 - Planning constraint: the measured live-origin diffs are
   `admin_questions.php` +89/−80 (ST01 +87 plus ME01's two asset tags, unchanged
   by ME02's token edit),
-  `cbt.php` +49/−8, `answer_details.php` +8/−3, and `ocr_helper.js` +57/−20 —
+  `cbt.php` +59/−35, `answer_details.php` +8/−3, and `ocr_helper.js` +57/−20 —
   all within the 100-addition externalize-first cap. No cap exception remains.
-- Last review-settled packages: ST01 (`PASS`, third closure-focused re-review)
-  and ME01 (`PASS`, phase-2 closure re-review; `FIX-1` and both notes closed),
-  2026-11-15. Archived cycle close `45807ea`, archive commit `134305c`.
+- Last review-settled packages: ST01 (`PASS`, third closure-focused re-review),
+  ME01 (`PASS`, phase-2 closure re-review), ME02 (`PASS WITH ACCEPTED
+  FINDINGS`; owner phone gate accepted 2026-11-17), and EL01 (`PASS WITH
+  ACCEPTED FINDINGS`; `NOTE-1`–`NOTE-4` corrected 2026-11-17). Archived cycle
+  close `45807ea`, archive commit `134305c`.
 - Archived cycle: [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md);
   summary in [`plan/history.md`](plan/history.md).
 
@@ -92,6 +97,9 @@ Last updated: 2026-11-16.
 | ME02 implementation handoff (2026-11-16, base `7f5b4aa`, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/ocr-helper.js`, `tests/underline-toolbar.js`, `tests/question-preview.js`, `tests/math-tool.js`, `php tests/php-render.php`, `tests/admin-question-store.php`, `php -l` (PHP 8.3.32, outside the workspace), `extract-bank --check`, `node --check`, `git diff --check`, `--no-index` live-origin numstat, and a disposable SQLite staging run in Chrome 156.0.0.0 | 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 17 math-tool, 9 renderer, 8 store; PHP lint 7/7 PASS; extractor 7 hashes OK; `admin_questions.php` 1055 / 62646 at **+89/−80** (tokens added in place); `src/math-tool.js` 432 / 13974 and `.css` 133 / 2028 unchanged; palette, drawer, keyboard, undo, thresholds, reset refresh, and native PRG save PASS in the browser; no MySQL, live, or deploy check; rigorous release review pending |
 | ME01 closure re-review (2026-11-15, base `cdbff2b`, uncommitted) | closure-focused re-review: full Node/PHP baseline, six closure-derived probes, measurements, and doc reconciliation | 17 math-tool, 60 runner, 163 unit, 11 helper, 9 underline, 4 preview, 9 renderer, 8 store; PHP 8.3.32 lint PASS; `FIX-1` and both notes closed, PASS; module 432 / 13974, tests 387 / 14947, admin **+89/−80** unchanged; browser/MySQL/live not run |
 | ME01 implementation (2026-11-15, base `cdbff2b`, uncommitted) | `node tests/runner.js`, `tests/unit.js`, `tests/ocr-helper.js`, `tests/underline-toolbar.js`, `tests/question-preview.js`, `tests/math-tool.js`, `php tests/php-render.php`, `tests/admin-question-store.php`, `php -l`, `node --check`, `extract-bank --check`, and `git diff --numstat` against the designated live snapshot | 60 PASS, 0 FAIL, 0 PENDING runner; 163 unit; 11 helper; 9 underline; 4 preview; 16 math-tool; 9 PHP renderer; 8 admin store; PHP 8.3.32 lint and JS syntax PASS; bank extractor 7 hashes OK; `admin_questions.php` 1055 / 62630 at **+89/−80** live-origin additions; no browser, MySQL, staging, or live check in this session |
+| EL01 implementation handoff (2026-11-17, dirty base at `3f5d2ea`) | failing-first real-module test; `php tests/cbt-question-order.php`; disposable HTTP `cbt.php` POST; real `03`/`04` operation harness on disposable MariaDB; full Node/PHP baseline, PHP lint, bank extractor, syntax, and live-origin measurement | 10 ordering/wiring and 6 HTTP staging checks PASS; 8 SQL operation checks PASS preliminarily on MariaDB 13.0.2; 60 runner, 163 unit, 11 helper, 10 underline, 4 preview, 20 math-tool, 9 renderer, 8 store PASS; `cbt.php` package `+5/−0`, final 1068 / 45755 and **+59/−35** from live; exact MySQL 8.0.41 run pending at that checkpoint (closed by the next row); no live write |
+| EL01 MySQL 8.0.41 acceptance (2026-11-17, dirty base at `3f5d2ea`) | real `tests/english-lexis-sql.sh` against an isolated Oracle MySQL Community Server 8.0.41 ARM64 instance (`127.0.0.1:3307`), no non-target override; server stopped and disposable databases dropped by the harness | 8 SQL operation checks PASS on `8.0.41`: absent, rerun, rollback/no-delete, reactivation, active rerun, forward collision refusal, rollback collision refusal, and schema-contract refusal; external EL01 gate closed; no live write |
+| EL01 phase-4 rigorous review (2026-11-17, reviewed `HEAD` `3f5d2ea` plus the EL01 worktree) | independent original review: acceptance reproduction, per-file externalize-first measurements, real module/wiring, HTTP staging, and MySQL 8.0.41 harnesses, manifest, PHP lint, syntax, `git diff --check`, and five adversarial probes | `PASS WITH ACCEPTED FINDINGS`; no `BLOCK` or `FIX`; `NOTE-1`–`NOTE-4` were docs/scope-only and are corrected; 11 ordering/wiring, 6 HTTP staging, 8 MySQL 8.0.41, 18/18 manifest, live-origin `cbt.php` +59 within the +60 cap; no live write |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -143,8 +151,9 @@ Supplied DDL SHA-256:
 
 | Artifact | Required by | Reason |
 |---|---|---|
-| Owner Brave/Android Constant Text/underline/preview check | ST01/ME01/ME02 | Focused disposable desktop Chromium preview/OCR isolation passed 2026-11-14; owner-accepted phone check remains required on the final tree; no live write |
-| Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Desktop Chromium check completed 2026-11-16 on disposable SQLite staging (Chrome 156.0.0.0); owner-accepted Brave/Android check on the final tree still required; no live write |
+| Owner Brave/Android Constant Text/underline/preview check | ST01/ME01/ME02 | Satisfied by explicit owner acceptance 2026-11-17; no live write |
+| Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Satisfied: desktop Chrome 156 staging recorded and owner accepted the final Brave/Android recheck 2026-11-17; no live write |
+| Disposable MySQL 8.0.41 English Lexis operation/rollback | EL01 | Satisfied 2026-11-17: 8-check harness PASS on isolated Oracle MySQL Community Server 8.0.41 ARM64; MariaDB 13.0.2 stayed preliminary only |
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | Archived OT08/OT09 acceptance | Satisfied 2026-11-08 with `sample-passages.txt`; no longer a production requirement after D-83 |
 | Brave/Android staging check | Archived OT10 final acceptance | Satisfied 2026-11-09 and 2026-11-13; archived with the owner-tool cycle |
@@ -217,8 +226,12 @@ gates.
   vectors; review-settled 2026-11-15 by the phase-2 closure re-review.
 - ME02: token/version (`?v=1.0.0`, D-94), decisions, invariants/edge cases,
   deployment manifest and developer guide refresh, desktop browser evidence, and
-  the handoff. Done except the rigorous release review, which is a separate
-  read-only session before cycle close.
+  the handoff. Done; owner accepted the Brave/Android recheck 2026-11-17.
+- EL01: exact-name subject operation plus target-only, post-selection Constant
+  Text group ordering in `cbt.php`. Done; the real 8-check harness passed on
+  isolated Oracle MySQL Community Server 8.0.41 ARM64, and the phase-4 review
+  settled on 2026-11-17 with `PASS WITH ACCEPTED FINDINGS` and `NOTE-1`–`NOTE-4`
+  corrected.
 
 ## Source of truth
 

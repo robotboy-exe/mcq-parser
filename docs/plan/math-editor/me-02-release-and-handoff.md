@@ -1,10 +1,10 @@
 # ME02 — Release, Evidence, and Handoff
 
-- **Status:** in progress; implementation and handoff recorded 2026-11-16; the rigorous release review is pending
+- **Status:** done; implementation, handoff, rigorous review, and owner-accepted Brave/Android recheck recorded
 - **Depends on:** ME01 review settled (light review at this Gate 1)
 - **Blocks:** cycle close
-- **External gate:** owner-accepted Brave/Android check on the final tree; the
-  2026-11-14 deployment-time artifact deferral still governs live deployment
+- **External gate:** satisfied by owner acceptance on 2026-11-17; the 2026-11-14
+  deployment-time artifact deferral still governs live deployment
 - **Intent:** [`docs/24-question-underline-and-math.md`](../../24-question-underline-and-math.md)
   as amended for this cycle
 
@@ -132,9 +132,9 @@ deployment check ran.
 | Manifest | **PASS.** 12 production rows with current lines/bytes and SHA-256, upload order, cache note, smoke checks, stop conditions |
 | Guide | **PASS.** Architecture rows, math-editor rules, stored-state boundary, testing commands, and counts match the code |
 | Docs | **PASS.** Status, map, coordinator row, invariants, edge cases, and decisions agree at D-94 / INV-141 / EC-140 |
-| Browser | **PASS for desktop** (Chrome 156.0.0.0, disposable SQLite staging); owner Brave/Android check still required |
+| Browser | **PASS.** Desktop Chrome 156.0.0.0 staging evidence recorded; owner accepted the Brave/Android recheck on 2026-11-17 |
 | Live safety | **PASS.** No live read/write, no deploy, no cleanup; staging rows are local and disposable |
-| Review | **Pending** the separate rigorous release review |
+| Review | **PASS WITH ACCEPTED FINDINGS.** Rigorous phase-3 record complete; no `BLOCK` or `FIX` |
 
 ### Browser evidence (desktop Chromium, disposable staging)
 
@@ -161,10 +161,43 @@ the cloud Chromium (`Chrome/156.0.0.0`) at 1280×800 and 400×649.
 The staging server was stopped (PID recorded, killed by PID) and its SQLite row
 is local and disposable. No live site was contacted.
 
+### Staging mobile-viewport correction (2026-11-16)
+
+The owner phone check exposed a staging-only gap: `admin_questions.php` gets its
+document shell and viewport metadata from the site's `header.php`, but
+`tools/start-phone-staging.sh` had not supplied that include. Android therefore
+used its desktop-width layout viewport and never activated the existing 650 px
+mobile breakpoint. The live snapshot already contains the viewport metadata;
+no production file or server contract changed.
+
+The harness now copies minimal staging-only `header.php` and `footer.php` files.
+The refreshed response contains the complete HTML shell and
+`width=device-width, initial-scale=1.0`. A logged-in Chromium Android context at
+390 x 844 reported `innerWidth=390`, `scrollWidth=390`, a matching mobile media
+query, mobile padding, and one computed column for all three admin/question
+grids. At 900 px the grids returned to their two-column layouts.
+
+Verification passed: shell and PHP syntax checks, `git diff --check`, the 60
+fixture suite, 163 unit checks, 11 helper checks, 10 underline checks, 4 preview
+checks, 20 math-tool checks, 7 bank hashes, 9 renderer vectors, and 8 store
+checks. Changed files are `tools/start-phone-staging.sh`,
+`tools/phone-staging/header.php`, and `tools/phone-staging/footer.php`, plus this
+handoff/status update. The disposable server remains available at the default
+phone-staging URL for owner retesting. No live site was contacted. At that
+point, the correction enabled the check but did not satisfy the external gate;
+a fresh owner-accepted Brave/Android result was still required.
+
+### Owner phone acceptance (2026-11-17)
+
+The owner explicitly accepted the final ME02 Brave/Android recheck in the EL01
+Gate 2 authorization. The acceptance covers the corrected mobile viewport and
+the package's palette, drawer, remembered-caret insertion, Underline, preview,
+counter, and native-save smoke boundary. No live write or cleanup was authorized
+or performed. The owner did not supply a browser/device version string, and the
+explicit acceptance closes the package gate without inventing one.
+
 ### Open questions and known limits
 
-- Owner-accepted Brave/Android check on this final tree is still required before
-  any live deploy; it was not performed here.
 - MySQL and the schema migration were not exercised in this phase.
 - Undo is browser-dependent on the `setRangeText`/`.value` fallbacks; only the
   `execCommand` path was observed.
@@ -173,9 +206,9 @@ is local and disposable. No live site was contacted.
 - The desktop check used local staging, so it proves module/asset wiring and the
   native PRG round-trip, not production data behaviour.
 
-**Review:** pending rigorous release review
-([`../prompts/review-session.md`](../prompts/review-session.md)); the review
-session writes only its record. **Commit:** deferred; no file was staged or
-committed, and the package stays `in progress` until the review settles.
-**Next:** cycle close only after a settled review and explicit owner
-authorization.
+**Review:** PASS WITH ACCEPTED FINDINGS in
+[`../reviews/math-editor-2026-11-phase-3.md`](../reviews/math-editor-2026-11-phase-3.md);
+the owner accepted the remaining phone gate on 2026-11-17. **Commit:** the
+reviewed ME02 delta is recorded at `691626f`; later unrelated work is outside
+that review. The package is done. **Next:** EL01 and its rigorous holistic
+review; cycle close still requires explicit owner authorization.

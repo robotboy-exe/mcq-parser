@@ -1558,3 +1558,46 @@ parser version or any out-of-scope page.
 **Risk.** The token busts caches for these two files only; the untokened assets
 still depend on the deployment's cache purge. The token is a release edit, not a
 side effect of a parser change, so rotating it has to be deliberate.
+
+## D-95 — Add English Lexis through an exact-name data operation
+
+**Choice.** EL01 adds `English (Lexis & Structure)` with a rerunnable SQL
+operation that omits `subjects.id`. An existing byte-exact row is preserved and
+reactivated by changing only `is_active`; rollback changes only that field back
+to `0`. The forward operation requires the auto-increment ID and single-column
+unique `subject_name` contracts. The rollback never inserts and therefore
+requires only the unique-name contract. Both refuse a collation-equivalent but
+byte-different row. Neither operation deletes a subject, question, or attempt.
+
+**Why.** The target database owns subject IDs, while its
+`utf8mb4_unicode_ci` uniqueness can treat distinct case or spacing forms as the
+same value. Explicit byte checks avoid silently adopting or overwriting the
+wrong subject and keep rollback non-destructive.
+
+**Risk.** The real operation and rollback passed all eight harness checks on an
+isolated Oracle MySQL Community Server 8.0.41 ARM64 instance on 2026-11-17.
+Production execution still requires the deployment backup, target-contract
+preflight, and explicit owner authorization; package acceptance is not deploy
+authorization.
+
+## D-96 — Group only the already-selected English Lexis display rows
+
+**Choice.** `cbt.php` keeps its existing active/category/year filters,
+`ORDER BY RAND()`, subject-based limit, and selected ID set. After that fetch,
+`cbt_question_order.php` activates only for the trusted database subject name
+exactly equal to `English (Lexis & Structure)`. Equal non-empty exact
+`constant_text` strings form groups whose members are sorted by ascending
+original `id` (the authored order), independent of the random row order; `NULL`
+and `''` remain independent singleton groups. The groups are shuffled and
+flattened without mutating rows. Every row still carries and renders its own
+Constant Text.
+
+**Why.** Passage questions need to stay adjacent during delivery, but making a
+passage atomic in the earlier database selection would change the selected set,
+limit semantics, and existing query. A focused post-selection helper preserves
+those contracts and is directly testable.
+
+**Risk.** A passage group can be only partly selected because grouping begins
+after the limited random query. Exact matching intentionally treats case,
+whitespace, line breaks, and underline markers as significant; near-equal text
+does not group.

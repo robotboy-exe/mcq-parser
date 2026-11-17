@@ -269,10 +269,14 @@ EC-95 through EC-126 above belong to the archived context/owner-tool subsystem
 | EC-138 | Counter after a non-input fill | OCR Load/Skip writes `#question_text`, or the administrator triggers a native form reset | The counter shows the field's current UTF-8 byte count on the next turn, red at 60,000 or more, without a second save/validation path | CONFIRMED | D-93; `tests/math-tool.js` OCR/reset vector |
 | EC-139 | Byte limit versus `maxlength` | Text with multi-byte symbols approaches the 60,000-byte limit | The counter can show red before `maxlength` stops typing, or `maxlength` can stop first; the mismatch is documented, nothing is truncated, and no submit is blocked | CONFIRMED | D-93; `src/math-tool.js` vector; native `maxlength="60000"` unchanged |
 | EC-140 | Stale math-editor cache after deploy | A browser holds an older `math-tool.js`/`.css` | The `?v=1.0.0` token on both tags forces the current pair; no other page serves these files | CONFIRMED | D-94; `tests/math-tool.js` asset vector; `docs/DEPLOYMENT.md` |
+| EC-141 | Near English Lexis subject name | The selected subject differs by case, spacing, wording, or a trailing byte | Grouping stays off; only the exact trusted database name activates it | CONFIRMED | D-96; `tests/cbt-question-order.php` exact/near-name vector |
+| EC-142 | Blank English Lexis passages | Two selected rows have `NULL` or empty Constant Text | Each row remains its own singleton display group; blanks are never merged | CONFIRMED | D-96; `tests/cbt-question-order.php` blank-group vector |
+| EC-143 | Large selected passage group | A 50-, 60-, or 100-row selected array contains a group larger than 50 | The complete selected array is preserved, the large group is contiguous, and no row or field is changed | CONFIRMED | D-96; `tests/cbt-question-order.php` scale vectors; disposable HTTP staging |
+| EC-144 | Collation-only subject collision | A byte-different name compares equal to the target under `utf8mb4_unicode_ci` | Forward and rollback refuse before writing; an operator must resolve the row explicitly | CONFIRMED | D-95; real SQL refusal probes on isolated MySQL 8.0.41 ARM64 |
 
 ## Counts
 
-- Total: 140
-- CONFIRMED: 136
+- Total: 144
+- CONFIRMED: 140
 - UNVERIFIED: 4
 - CONFLICTED: 0

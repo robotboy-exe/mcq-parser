@@ -1,11 +1,12 @@
-# Deployment Manifest — Constant Text Reset (ST01) and Math Editor (ME01/ME02)
+# Deployment Manifest — Constant Text, Math Editor, and English Lexis
 
-Recorded: 2026-11-14; amended 2026-11-15 for D-91 and 2026-11-16 for ME02
-(D-92–D-94). Target: PHP 8.3, MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`. This
+Recorded: 2026-11-14; amended through 2026-11-17 for D-91–D-96. Target: PHP
+8.3, MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`. This
 manifest covers ST01 (root `ocr_helper.js`, optional `questions.constant_text`,
 the underline toolbar, and the read-only multiline preview) plus ME01/ME02 (the
-math symbol palette and advisory UTF-8 byte counter on the admin form). It does
-**not** authorize a production deploy.
+math symbol palette and advisory UTF-8 byte counter on the admin form) and EL01
+(the exact English Lexis subject operation and post-selection Constant Text
+grouping). It does **not** authorize a production deploy.
 A deploy needs a separate explicit owner instruction. See
 [`DEVELOPER-GUIDE.md`](DEVELOPER-GUIDE.md) for the architecture and
 [`plan/owner-tool/st-01-constant-text-reset.md`](plan/owner-tool/st-01-constant-text-reset.md)
@@ -40,7 +41,7 @@ for the package contract.
 6. Put the site in maintenance mode and stop every web worker, importer, cron
    job, and CLI process that can write `questions`.
 
-## 2. File manifest (12 production files + 3 ops)
+## 2. File manifest (13 production files + 5 ops)
 
 Line counts are `wc -l`; bytes are LF-normalized UTF-8; SHA-256 is over the
 LF-normalized content. Deploy PHP/JS assets to the site root preserving relative
@@ -50,7 +51,8 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 |---|---:|---|---|---|
 | `deployed/admin_questions.php` | 1055 / 62646 | `883b56ee2bdbdb1309cdf02ca2237ec2ff1ca587cb0af9b483640f9f89786611` | site root | native form, Constant Text, session prefill; loads helper, underline, safe renderer, read-only preview, and the palette pair with `?v=1.0.0`; context code removed |
 | `deployed/admin_question_store.php` | 113 / 4918 | `ff93f0c924159662f843ec83ed9e78c3815dc1549805a8c79a631f702577dc1b` | site root | extracted save/delete transaction; explicit columns; `constant_text` |
-| `deployed/cbt.php` | 1085 / 47287 | `b969b52549067929982620cc5f994b432010492cc5d00a43754dc635cd3bb483` | site root | standalone delivery; Constant Text block; exact-`<u>` options; loads `src/owner-tool/render.js?v=2.3.2g` |
+| `deployed/cbt.php` | 1068 / 45755 | `5bdc353273b391a64634d46732dd3ea859ad215c5d7d62ac3878346876704e2a` | site root | standalone delivery; existing limited selection plus EL01 post-fetch ordering; Constant Text block; exact-`<u>` options; loads `src/owner-tool/render.js?v=2.3.2g` |
+| `deployed/cbt_question_order.php` | 56 / 1444 | `5c0a9b8c125b4a1d72737b3e9a532d6e386c50b7455ba8e1f1df39c122547fb7` | site root beside `cbt.php` | exact trusted-subject grouped display ordering only; members restored to ascending original `id`, shuffled groups, blank singletons |
 | `deployed/answer_details.php` | 255 / 12617 | `570bf960d21ab69c8a6c575e2c9410dfbef322d54c81f00b288b4e59e788deb3` | site root | Constant Text block; `cbt_format_text` options |
 | `deployed/render.php` | 78 / 2447 | `205af86993d8bf2adcbcd262476e64fcc90fe9a2b3fd379cba9488c1d1450d2f` | site root | server exact-marker renderer; unchanged |
 | `ocr_helper.js` | 160 / 6284 | `c3e8e96eb2a295eb3ef0a8c0e87089b233cd026afe7fec664c7db16b17732193` | site root | review-settled D-91 spacing grammar and selected boundaries; no Constant Text integration; keeps blank-line paragraphs and folds single wraps |
@@ -62,7 +64,9 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 | `src/owner-tool/render.js` | 209 / 6339 | `008325f404e435747fe33d57aa84380b0977c8bed38e6c1bcff01515ff7129c3` | site root `src/owner-tool/` | browser exact-`<u>` renderer; unchanged path |
 | `deployed/sql/01-constant-text.sql` (ops) | 49 / 1719 | `7c3666af857f976f444013055e94b2599b85fabf1e050ae08ebda153c5d0cba4` | ops directory | guarded, rerunnable `constant_text` migration |
 | `deployed/sql/02-constant-text-rollback.sql` (ops) | 38 / 1169 | `09b4293d88f8a4436839ccef740d70e00bbc085c8f49ec60fcc184bfca861d45` | ops directory | rollback; refuses non-empty data |
-| `deployed/sql/README.md` (ops) | 81 / 3105 | `968f7178ad0db1024c7731fa8a85b728bdd8a33aaecf9b7bb50dc376c57cd1a6` | ops directory | runbook |
+| `deployed/sql/03-english-lexis-structure.sql` (ops) | 82 / 2728 | `b7653537170f6e631c8d5715cf9db18052483ea2515d4386bf86c5dd56ce981f` | ops directory | guarded exact-name insert/reactivation; generated ID |
+| `deployed/sql/04-english-lexis-structure-rollback.sql` (ops) | 69 / 2204 | `519021bc96c886c39e39a54e6a2db214c2949fc5bb1e0891ead931f1a2740a07` | ops directory | exact-name deactivation; no deletes |
+| `deployed/sql/README.md` (ops) | 125 / 5103 | `1f731a668bbd1f17435949d8e5888c15f06b4bc51bd35f8c73383be356871b5c` | ops directory | schema and subject-operation runbook |
 
 Do **not** deploy `deployed/sql/base-schema.working.sql`; it is repo-only test
 support. Do not deploy any file under `archive/`.
@@ -75,8 +79,9 @@ support. Do not deploy any file under `archive/`.
    `src/math-tool.js`, `src/math-tool.css`, and `src/owner-tool/render.js`
    (same paths; upload the current bytes).
 3. Upload root `ocr_helper.js` and the PHP files: `render.php`,
-   `admin_question_store.php`, `admin_questions.php`, `cbt.php`,
-   `answer_details.php`.
+   `admin_question_store.php`, `admin_questions.php`,
+   `cbt_question_order.php`, `cbt.php`, `answer_details.php`. The helper must be
+   present before the new `cbt.php` is served.
 4. Leave `cbt_practice.php` unchanged; it is outside ST01 scope and keeps its
    current `render.js?v=2.3.2c` token.
 5. Cache handling: `admin_questions.php` loads root `ocr_helper.js`, the preview
@@ -92,7 +97,13 @@ support. Do not deploy any file under `archive/`.
    - confirm `SHOW COLUMNS FROM questions LIKE 'constant_text';` shows `text`,
      `YES` null, no default, `utf8mb4_unicode_ci`;
    - rerun `01-constant-text.sql`; it must be a no-op.
-7. Run the smoke checks. Exit maintenance mode only after they pass.
+7. Run the English Lexis subject operation. Its disposable MySQL 8.0.41 harness
+   passed on 2026-11-17; production still needs the verified backup,
+   target-contract preflight, and explicit owner authorization:
+   - `mysql --default-character-set=utf8mb4 <database> < deployed/sql/03-english-lexis-structure.sql`;
+   - verify one byte-exact active row with a generated ID;
+   - rerun `03`; the same row and non-activation fields must remain unchanged.
+8. Run the smoke checks. Exit maintenance mode only after they pass.
 
 ## 4. Migration and rollback commands
 
@@ -115,6 +126,21 @@ column type, nullability, default, extra, charset/collation, and comment, and
 faults if an existing column disagrees. `02-constant-text-rollback.sql` creates
 `cbt_drop_empty_constant_text` and faults if any row has content. Never use
 `mysql --force`.
+
+The English Lexis operations are separately rerunnable:
+
+```sh
+mysql --default-character-set=utf8mb4 <database> < deployed/sql/03-english-lexis-structure.sql
+mysql --default-character-set=utf8mb4 <database> -e \
+  "SELECT id, subject_name, is_active FROM subjects WHERE HEX(subject_name) = HEX(_utf8mb4'English (Lexis & Structure)');"
+
+# Non-destructive subject rollback: deactivate, never delete.
+mysql --default-character-set=utf8mb4 <database> < deployed/sql/04-english-lexis-structure-rollback.sql
+```
+
+Both operations refuse a collation-equivalent byte-different subject or a
+missing unique-name contract. Full disposable commands are in
+`deployed/sql/README.md`; never use `--force`.
 
 ## 5. Smoke checks
 
@@ -139,6 +165,9 @@ faults if an existing column disagrees. `02-constant-text-rollback.sql` creates
 | Byte counter refresh | click `Load questions`/`Skip` or reset the form | the counter matches the field's new UTF-8 byte count after the page's own fill, including red at 60,000+ |
 | Tokens | view source of the admin page | exactly one `src/math-tool.css?v=1.0.0` link and one `src/math-tool.js?v=1.0.0` script, script after the preview script |
 | CBT | open delivered questions with preserved constant text | passage renders above the question; `<u>` is real underline |
+| English Lexis subject | inspect the active subject list after `03` and after a rerun | exactly one byte-exact active row; generated ID and existing description/timestamp remain unchanged |
+| English Lexis ordering | start a 50-question exam containing repeated exact non-empty passages plus blank passages | selected IDs and filters are unchanged; repeated passages are contiguous; blank rows stay independent; every member renders its passage |
+| Other CBT subjects | start the same existing subject/category/year checks | selected rows retain their existing order; no English Lexis grouping applies |
 | Answer details | open an active question with constant text | passage renders above the question; stored `<script>`/`<img onerror>` stay text |
 | Security | stored-XSS probe | no injected script runs; only exact underline markup renders |
 
@@ -154,13 +183,15 @@ D-91 helper checks and settled ST01.
 
 1. Re-enter maintenance mode and stop every writer.
 2. Take a fresh verified backup.
-3. If any `constant_text` is non-empty, do **not** run the automatic rollback.
+3. Run `04-english-lexis-structure-rollback.sql`; verify the exact subject row
+   remains present and inactive and question/attempt counts are unchanged.
+4. If any `constant_text` is non-empty, do **not** run the automatic rollback.
    Restore the verified backup and the previous code, then investigate.
-4. If no content exists, run `02-constant-text-rollback.sql`; confirm the column
+5. If no content exists, run `02-constant-text-rollback.sql`; confirm the column
    is gone.
-5. Restore the previous `src/`, root `ocr_helper.js`, and `deployed/` files in
+6. Restore the previous `src/`, root `ocr_helper.js`, and `deployed/` files in
    reverse upload order.
-6. Exit maintenance mode only after the post-rollback smoke checks pass.
+7. Exit maintenance mode only after the post-rollback smoke checks pass.
 
 ## 7. Stop conditions
 
@@ -185,9 +216,16 @@ Stop and do not continue on the first mismatch:
   OCR Load/Skip, or a reset, or it truncates text or disables Save;
 - either math-editor asset is served without `?v=1.0.0` or returns 404;
 - constant-text data exists when a rollback is attempted;
+- the exact English Lexis operation sees a collation-equivalent byte-different
+  row, lacks the auto-increment/unique-name contract, changes an existing field
+  other than `is_active`, or does not leave exactly one active exact row;
+- English Lexis grouping changes the selected ID multiset, filters, nominal
+  limit, row values, original member order (ascending `id`), per-row Constant
+  Text rendering, or another subject;
 - the target lacks a verified backup, the live `cbt_db.php`, `header.php`,
   `footer.php`, or `cbt_exam_attempts`;
-- the required Brave/Android check has not been performed on the final tree.
+- the English Lexis operations have not passed the disposable MySQL 8.0.41
+  harness (passed 2026-11-17) or lack explicit owner authorization.
 
 ## 8. Known limitations and open gates
 
@@ -207,10 +245,14 @@ Stop and do not continue on the first mismatch:
   schema, not the MySQL migration script. Run forward, rerun, and rollback
   against a disposable production-shaped MySQL database before production.
 - There is no automated browser suite. ST01 behavior is covered by Node/PHP
-  checks, static assertions, one disposable Chromium check, and the required
-  owner Brave/Android check. ME01/ME02 add 20 module vectors, a local disposable
-  SQLite staging run, and a desktop Chromium check; the owner Brave/Android check
-  on the final tree is still required before any live deploy.
+  checks, static assertions, and disposable Chromium evidence. ME01/ME02 add 20
+  module vectors and local staging browser evidence; the owner accepted the
+  Brave/Android check on 2026-11-17.
+- EL01 adds 11 real-module/wiring checks and a 6-check disposable HTTP staging
+  run. Its 8-check real-script harness passed on isolated Oracle MySQL Community
+  Server 8.0.41 ARM64; production execution still needs the deployment backup,
+  target-contract preflight, and explicit owner authorization. A preliminary
+  MariaDB 13.0.2 run is not the acceptance evidence.
 - `maxlength="60000"` counts UTF-16 code units while the server checks UTF-8
   bytes. The editor counter is advisory (D-93): it can show red before typing is
   blocked, or typing can stop before 60,000 bytes. Nothing was changed to

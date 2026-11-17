@@ -4,23 +4,27 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-16.
+Last updated: 2026-11-17.
 
 ## Current state
 
 - Active cycle: `math-editor-2026-11` (created 2026-11-14). The owner reset the
   cycle on 2026-11-14: ST01 returns the shipped workflow to the root
   `ocr_helper.js`, removes the shared-text/context subsystem, and adds one
-  optional Constant Text passage per question. ME01 (curated Tier 1 Unicode
-  palette plus advisory UTF-8 byte counter) and ME02 (release evidence) follow.
-- Packages: ST01 (reset, Constant Text, helper option fix, underline), then
-  ME01, then ME02. ST01 is done and review-settled: its third re-review closed
+  optional Constant Text passage per question. ME01 adds the math editor, ME02
+  records release evidence, and EL01 adds English Lexis grouped delivery.
+- Packages: ST01, ME01, ME02, then EL01. ST01 is done and review-settled: its third re-review closed
   D-91 `FIX-1`, `FIX-2` remains closed, and all 11 helper checks pass. ME01 is
   done and review-settled: the phase-2 re-review passed, closing `FIX-1` and
   both notes, with 17 module vectors. ME02 has a recorded handoff (2026-11-16):
   `?v=1.0.0` tokens (D-94), invariants/edge cases, refreshed manifest and guide,
   full suite counts, and a desktop Chromium check on disposable SQLite staging.
-  Its rigorous release review is the next separate session.
+  Its staging-only mobile viewport omission was corrected, and the owner
+  accepted the final Brave/Android recheck on 2026-11-17. EL01 implementation,
+  real-module tests, disposable HTTP staging, and the real 8-check operation
+  harness on isolated Oracle MySQL Community Server 8.0.41 ARM64 pass; the
+  phase-4 review settled on 2026-11-17 with `PASS WITH ACCEPTED FINDINGS` and
+  `NOTE-1`–`NOTE-4` corrected.
 - Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
   archived/historical. Their records remain under `owner-tool/` and `reviews/`
   for evidence; do not continue that architecture.
@@ -41,8 +45,8 @@ Last updated: 2026-11-16.
 - Completed handoffs: ST01's
   [package record](owner-tool/st-01-constant-text-reset.md) and ME01's
   [package record](math-editor/me-01-math-palette.md) with the phase-2 review,
-  `FIX-1` fix note, and closure re-review. Phase 2 is review-settled; the next
-  gate is ME02 Gate 1.
+  `FIX-1` fix note, closure re-review, and ME02's release handoff. EL01 has a
+  review-settled handoff; its external MySQL gate closed 2026-11-17.
   [`owner-tool/next-steps.md`](owner-tool/next-steps.md) is archived-cycle
   history and must not be repurposed.
 
@@ -169,7 +173,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 |---|---|---|---|---|---|
 | 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done; third re-review PASS; `FIX-1`/`FIX-2` closed | none; disposable database only |
 | 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | done; phase-2 re-review PASS, `FIX-1` and both notes closed (17 vectors) | `admin_questions.php` re-measured PASS (+89); Brave/Android and desktop checks deferred to ME02 |
-| 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | in progress; handoff recorded 2026-11-16, rigorous release review pending | owner-accepted Brave/Android check; deployment-time live artifacts |
+| 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | done; rigorous review recorded and owner phone recheck accepted 2026-11-17 | satisfied; deployment-time live artifacts remain deferred |
+| 4 | EL01 | [English Lexis Subject and Constant-Text Grouping](el-01-english-lexis-grouping.md) | current branch/worktree baseline; preserve unrelated changes | done; phase-4 review PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected | satisfied; disposable MySQL 8.0.41 operation/rollback PASS 2026-11-17 |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -241,7 +246,8 @@ verifies the detail path with the rest of Release A.
 |---|---|---|---|
 | phase 1 | ST01 reset, Constant Text, helper fix, underline | light at ME01 Gate 1 | settled by third re-review; PASS, both fixes closed |
 | phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | review-settled 2026-11-15: PASS, `FIX-1` and both notes closed |
-| phase 3 close | ME02 release, evidence, and handoff | rigorous | handoff ready 2026-11-16; rigorous review pending |
+| phase 3 close | ME02 release, evidence, and handoff | rigorous | done; PASS WITH ACCEPTED FINDINGS and owner phone acceptance recorded |
+| phase 4 | EL01 subject operation and grouped exam ordering | rigorous | settled 2026-11-17: PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected |
 
 ## Remaining path to cycle close
 
@@ -253,22 +259,28 @@ verifies the detail path with the rest of Release A.
 3. **ME01** — implemented and review-settled at +89 live-origin additions;
    `FIX-1` (stale counter after OCR fill/reset) and both notes were closed by
    the 2026-11-15 re-review.
-4. **ME02** — done except the review: tokens (D-94), decisions D-92–D-94,
-   invariants/edge cases, manifest/guide refresh, full suite counts, and a
-   desktop Chromium check are recorded in the package handoff.
-5. **Rigorous release review** via
-   [`prompts/review-session.md`](prompts/review-session.md), then any
-   fix/re-review rounds.
-6. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md); the
-   commit, an optional `main` fast-forward, and archiving each need explicit
-   owner authorization.
+4. **ME02** — done: release artifacts, rigorous review, corrected staging
+   viewport, and owner-accepted Brave/Android recheck are recorded.
+5. **EL01 implementation** — complete: exact-name operations, focused
+   post-selection grouping, 11 module/wiring checks, 6 HTTP staging checks, and
+   full baseline pass.
+6. **EL01 MySQL gate** — satisfied 2026-11-17: the real `03`/`04` operation
+   harness passed all 8 checks on isolated Oracle MySQL Community Server 8.0.41
+   ARM64. The earlier MariaDB 13.0.2 run was preliminary only.
+7. **EL01 holistic rigorous review** — done 2026-11-17 via
+   [`prompts/review-session.md`](prompts/review-session.md):
+   `PASS WITH ACCEPTED FINDINGS`; `NOTE-1`–`NOTE-4` corrected. No fix or
+   re-review round is required.
+8. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md); the
+   phase-4 boundary commit is authorized, while the optional `main`
+   fast-forward and archiving each need separate explicit owner authorization.
 
-Current workflow stop: the ME02 handoff is recorded and nothing is committed.
-The next gate is the rigorous release review in a separate read-only session,
-which writes only its record under `docs/plan/reviews/`.
+Current workflow stop: EL01 is review-settled and the phase-4 boundary commit is
+authorized. Cycle close Gate 1 is the next step; it executes no package and
+waits for explicit `go` before any final-field update or commit.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/review-session.md phase 3
+NEXT COMMAND: read docs/plan/prompts/cycle-close.md and run cycle close
 ```
 
 ## Session protocol
@@ -343,8 +355,10 @@ node tests/unit.js
 node tests/ocr-helper.js
 node tests/underline-toolbar.js
 node tests/question-preview.js
+node tests/math-tool.js
 php tests/admin-question-store.php
 php tests/php-render.php
+php tests/cbt-question-order.php
 ```
 
 OT05–OT12 context tests and tools are archived under `archive/owner-tool-2026-11/`.

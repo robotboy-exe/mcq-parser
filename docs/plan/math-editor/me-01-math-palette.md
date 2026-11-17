@@ -1,14 +1,14 @@
 # ME01 — Math Symbol Palette and Byte Counter
 
 - **Status:** done; review-settled 2026-11-15 (phase-2 re-review PASS, `FIX-1`
-  and both notes closed); ME02 Gate 1 is next
+  and both notes closed); ME02 later completed
 - **Depends on:** ST01 D-91 implementation and light review (satisfied by the
   third phase-1 re-review)
 - **Blocks:** ME02
 - **External gate:** measured. `deployed/admin_questions.php` is at **+89**
   additions against the designated live snapshot (ST01 +87 plus the two asset
-  tags), within the 100-addition cap. Brave/Android and desktop checks remain
-  owner-accepted ME02 evidence.
+  tags), within the 100-addition cap. Desktop evidence and the owner-accepted
+  Brave/Android check are recorded in ME02.
 - **Baseline note:** plan against the review-settled post-D-91 ST01 `deployed/`
   working copies and phase boundary. The owner-tool controller is archived, but
   ST01 restores a focused read-only

@@ -1,11 +1,12 @@
-# Developer Guide — Constant Text Reset (ST01) and Math Editor (ME01/ME02)
+# Developer Guide — Constant Text, Math Editor, and English Lexis
 
-Recorded: 2026-11-14; amended 2026-11-15 for D-91 and 2026-11-16 for ME02
-(D-92–D-94). This is the human-developer handoff for ST01 and the math editor in
-the `math-editor-2026-11` cycle. It covers the production architecture, source of
+Recorded: 2026-11-14; amended through 2026-11-17 for D-91–D-96. This is the
+human-developer handoff for ST01, the math editor, and EL01 in the
+`math-editor-2026-11` cycle. It covers the production architecture, source of
 truth, stored state, parser extension rules, Constant Text lifecycle, the math
-palette and byte counter, the security renderer, testing commands, and known
-limitations. Deployment steps are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
+palette and byte counter, English Lexis ordering, the security renderer,
+testing commands, and known limitations. Deployment steps are in
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## 1. Architecture map
 
@@ -13,7 +14,8 @@ limitations. Deployment steps are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 |---|---|
 | `deployed/admin_questions.php` | Question entry point: session/CSRF, login, native question form, Constant Text, PRG dispatch, and asset wiring. Requires `admin_question_store.php`; loads root `ocr_helper.js`, the underline tool, and the read-only preview. |
 | `deployed/admin_question_store.php` | Extracted standalone save/delete transaction with explicit column lists and `constant_text` null-when-empty. |
-| `deployed/cbt.php` | Standalone CBT delivery: subject/category/year queries, exam UI, Constant Text block, exact-`<u>` questions/options, result panel. Loads `src/owner-tool/render.js`. |
+| `deployed/cbt.php` | Standalone CBT delivery: subject/category/year queries, limited random selection, EL01 post-selection ordering call, exam UI, Constant Text block, exact-`<u>` questions/options, result panel. Loads `src/owner-tool/render.js`. |
+| `deployed/cbt_question_order.php` | Focused exact-subject grouping of already-selected English Lexis rows; original-order members (ascending `id`), shuffled groups, blank singletons. |
 | `deployed/answer_details.php` | Answer explanation page. Uses `render.php` for Constant Text, questions, options, and explanations. |
 | `deployed/render.php` | Server-side safe renderer: escape first, restore only exact `<u>`/`</u>`. |
 | `ocr_helper.js` | Shipping OCR helper. Parses pasted OCR into the native form, preserves blank-line paragraphs, fills `ocrQueue`/`ocrMeta`, and never submits. |
@@ -26,6 +28,8 @@ limitations. Deployment steps are in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 | `deployed/sql/base-schema.working.sql` | Working schema copy, now including `constant_text`. |
 | `deployed/sql/01-constant-text.sql` | Guarded, rerunnable forward migration. |
 | `deployed/sql/02-constant-text-rollback.sql` | Guarded rollback that refuses non-empty data. |
+| `deployed/sql/03-english-lexis-structure.sql` | Guarded, rerunnable exact-name subject insert/reactivation with a generated ID. |
+| `deployed/sql/04-english-lexis-structure-rollback.sql` | Non-destructive exact-name subject deactivation. |
 | `deployed/sql/README.md` | Migration/rollback runbook. |
 
 **Ownership.** The production path is root `ocr_helper.js` plus the native
@@ -52,6 +56,17 @@ The counter is advisory
 refreshes after typing, the page's OCR Load/Skip, and a native form reset. The
 admin page loads both files with `?v=1.0.0`; no other page references them,
 and `cbt.php`/`cbt_practice.php` keep their own `render.js` tokens.
+
+**English Lexis (EL01, D-95–D-96).** The subject operation inserts
+`English (Lexis & Structure)` without an ID or reactivates a byte-exact existing
+row without changing its other fields. A collation-only collision is refused;
+rollback only deactivates. In candidate delivery, the existing SQL still picks
+the active filtered rows with `ORDER BY RAND()` and the default limit of 50.
+Only then does `cbt_question_order.php` group equal non-empty exact
+`constant_text`, shuffle groups, and restore each group's original question
+order (ascending `id`). `NULL` and empty
+values remain independent. Every selected row still carries and renders its own
+passage; other subjects and `cbt_practice.php` are unchanged.
 
 ## 2. Source of truth
 
@@ -166,9 +181,10 @@ node tests/math-tool.js
 node tools/extract-bank.js --check
 php tests/php-render.php
 php tests/admin-question-store.php
+php tests/cbt-question-order.php
 ```
 
-Current local evidence through 2026-11-15. The D-91 fix run used PHP 8.5.12 for
+Current local evidence through 2026-11-17. The D-91 fix run used PHP 8.5.12 for
 the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 
 - runner: 60 fixtures, 60 PASS, 0 FAIL, 0 PENDING;
@@ -179,6 +195,8 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 - read-only preview: 4 PASS;
 - math palette/byte counter: 20 PASS (real module and mount);
 - PHP renderer: 9 PASS; admin store: 8 PASS;
+- English Lexis ordering/wiring: 11 PASS against the real module and real
+  `cbt.php`;
 - `php -l` on every changed PHP file: PASS;
 - `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
   output hashes matching;
@@ -198,10 +216,17 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
   warning visible, a native reset refreshes the counter to `0 / 60 000 bytes`,
   and a native save flashed `Question saved successfully (Question ID: 102).`
   with the stored `<u>` markers and `x²` round-tripping through the edit page.
+- EL01 disposable HTTP staging through the real `cbt.php`: 6 PASS for the
+  default 50 limit, active/category/year filters, unchanged row payloads,
+  contiguous repeated passages, one attempt insert, and per-row safe rendering.
+- The real EL01 `03`/`04` operations pass 8 absent/inactive/active/rerun,
+  collision, rollback, no-delete, and schema-contract probes on isolated Oracle
+  MySQL Community Server 8.0.41 ARM64. An earlier MariaDB 13.0.2 run was
+  preliminary only and is not the acceptance evidence.
 
-No live site, production database, or production cleanup was used. The schema
-migration has been exercised only through the disposable SQLite phone-staging
-store, not MySQL.
+No live site, production database, or production cleanup was used. The owner
+accepted the ME02 Brave/Android check on 2026-11-17. The EL01 subject operation
+passed its required disposable MySQL 8.0.41 run.
 
 ## 8. Known limitations and open gates
 
@@ -224,9 +249,12 @@ store, not MySQL.
 - Palette undo is reliable only on the `execCommand` path; the
   `setRangeText`/`.value` fallbacks are browser-dependent (D-92).
 - There is no browser test suite. ST01 behavior is covered by Node/PHP checks,
-  static source assertions, and the required owner Brave/Android check. ME01/
-  ME02 add 20 module vectors and one disposable staging browser run; the owner
-  Brave/Android check on the final tree is still required.
+  static source assertions, and owner browser evidence. ME01/ME02 add 20 module
+  vectors and disposable staging browser evidence; the owner accepted the
+  Brave/Android check on 2026-11-17.
+- EL01's `tests/english-lexis-sql.sh` passed 8 checks against an isolated
+  disposable MySQL 8.0.41 server; production execution still needs the
+  deployment backup, target preflight, and explicit owner authorization.
 - This cycle does not deploy to production, clean live data, or archive itself
   without explicit owner instructions.
 
@@ -236,4 +264,6 @@ store, not MySQL.
 - Package plan: [`plan/README.md`](plan/README.md)
 - ST01 contract:
   [`plan/owner-tool/st-01-constant-text-reset.md`](plan/owner-tool/st-01-constant-text-reset.md)
+- EL01 contract:
+  [`plan/el-01-english-lexis-grouping.md`](plan/el-01-english-lexis-grouping.md)
 - Migration runbook: [`../deployed/sql/README.md`](../deployed/sql/README.md)

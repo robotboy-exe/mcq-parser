@@ -52,6 +52,15 @@ Root `ocr_helper.js` has no `constant_text` integration. A
 passage/cloze-shaped paste may follow the ordinary-question fallback and carry
 review flags, but it must never populate Constant Text.
 
+`deployed/cbt_question_order.php` is the focused EL01 candidate-ordering helper.
+It runs only after `cbt.php` completes its existing filtered, random, limited
+selection and only for the trusted exact database subject name
+`English (Lexis & Structure)`. Equal non-empty exact Constant Text values form
+groups whose members are restored to their original question order (ascending
+`id`), not the random row order; blank values are singleton groups. It must never change
+the selected ID multiset, row values, query, limit, another subject, or
+`cbt_practice.php`.
+
 D-91 is the root-helper label contract. A-D is case-insensitive;
 whitespace is optional after `(`, before `)`, and before `.`, and every unspaced
 form remains valid. Once a letter's boundary is selected, a later label-like
@@ -128,6 +137,8 @@ deliverable.
 | `splitBulletQuestions` / `splitQuestionItems` | Bullet mode is only for text with no line-start `N.` marker. Never invent numbers: bullet chunks keep `num: null` and the `question number missing` flag. Do not mix bullet and numbered chunks in one paste (INV-74). |
 | `extractStimuli` / `applyStimulusFlags` | The block must stay inside one question chunk and must not remove a question or option line. Standard intro needs table evidence; `[missing text]` is not a marker; a marker with no valid block removes only itself. Preserve blank lines outside a removed block and remove those inside it, or paragraph cleanup will delete/invent structure. `applyStimulusFlags` must clear old `needsImage`, assign order by queue order, and keep out-of-paste targets in `missing` (D-59, D-66, INV-92, INV-93). |
 | Exact-text renderers | `src/owner-tool/render.js` and `deployed/render.php` must remain behaviorally paired: escape first, format only balanced lowercase exact `<u>` pairs, and keep every unsupported/malformed marker literal. Candidate paths use DOM nodes; options/explanations stay plain (D-66, INV-97–INV-99). |
+| English Lexis ordering | Group only the rows already selected by `cbt.php`, activate only from the trusted exact subject name, keep `NULL`/empty rows independent, restore each group's members to ascending original `id` (authored order), preserve every row field, and never move grouping into the SQL selection or `cbt_practice.php` (D-96, INV-143–INV-144). |
+| English Lexis subject operation | `03` omits the ID and changes only `is_active` on an exact existing row; `04` deactivates and never deletes. Both refuse a collation-only collision or incompatible key contract. The real 8-check harness passes on isolated Oracle MySQL Community Server 8.0.41 ARM64 (D-95, INV-142). |
 | Owner parser-version refusal | A stale `cbtOwnerTool:v1` value is read-only. Key-only paste and native submit must not call a path that stamps it with the current parser version. Only full re-paste or explicit Reset replaces it (D-66, INV-95). |
 | `fillForm` / `tick` | They must agree on the E/F→D mapping and on ticking nothing when E/F text is absent. `tick()` computes radio index 3 for E/F; radio values 4/5 do not exist (INV-27, INV-28, INV-30). |
 | Save detector | Hard-coded to the exact success text. The archived PHP confirms the PRG flash flow, so the detector matches the server contract. Do not change one side without the other (INV-49; qwen-2 H07/H09). |
@@ -229,6 +240,7 @@ node tests/math-tool.js
 node tools/extract-bank.js --check
 php tests/php-render.php
 php tests/admin-question-store.php
+php tests/cbt-question-order.php
 ```
 
 The fixture harness is parser-only; it does not execute DOM, storage,
@@ -238,7 +250,10 @@ auto-save helpers. `tests/ocr-helper.js` covers the root production helper;
 `tests/question-preview.js` covers read-only preview mounting and refresh;
 `tests/math-tool.js` covers the palette helpers, mount contracts, and byte
 counter; and `php tests/admin-question-store.php` covers the extracted
-save/delete transaction. None of these harnesses exercise the live admin page, its delete
+save/delete transaction. `php tests/cbt-question-order.php` requires the real
+EL01 module and checks the real `cbt.php` wiring; `php tests/cbt-staging.php`
+executes the disposable local HTTP path when its database and URL are supplied.
+None of these harnesses exercise the live admin page, its delete
 forms, or the confirm dialog; live checks follow `docs/LIVE-SAFETY.md`.
 
 The mandatory regression set is the three documented cases (qwen-2 H04):

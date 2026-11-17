@@ -208,11 +208,14 @@ helper uses only the subset exercised by `tests/ocr-helper.js`.
 | INV-139 | The math palette builds its toolbar, drawer, and counter with `createElement`/`textContent` from the curated symbol tables, mounts once on `#question_text` in Add and Edit forms (`data-math-tool-mounted`), inserts at the remembered caret through `execCommand` then `setRangeText` then `.value`, and never writes storage, network, a form submit, an underline marker, `constant_text`, or a second Underline button. | VERIFIED | D-92; `src/math-tool.js`; `tests/math-tool.js` (20 vectors) |
 | INV-140 | The math editor's byte counter is advisory: it counts UTF-8 bytes, shows neutral below 57,000, amber at 57,000–59,999, and red at 60,000 or more, refreshes after typing, OCR Load/Skip, and a native form reset, and never truncates, disables Save, or changes `maxlength`; the server's 60,000-byte check stays authoritative. | VERIFIED | D-93; `src/math-tool.js`; `tests/math-tool.js` (20 vectors); phase-2 `FIX-1` closure |
 | INV-141 | `deployed/admin_questions.php` is the only page that loads the math-editor pair, and it loads both `src/math-tool.css?v=1.0.0` and `src/math-tool.js?v=1.0.0` exactly once, with the script after the preview script. `cbt.php` and `cbt_practice.php` keep their `render.js` tokens, and the ST01 preview/underline assets stay untokened. | VERIFIED | D-94; `deployed/admin_questions.php`; `tests/math-tool.js` asset vector |
+| INV-142 | The English Lexis subject operations omit a fixed ID, preserve a byte-exact existing row except for `is_active`, refuse a collation-only collision, and rollback by deactivation without deleting subjects, questions, or attempts. The forward operation also refuses an incompatible auto-increment ID or unique-name contract; the rollback never inserts and requires only the unique-name contract. | VERIFIED | D-95; real `03`/`04` files; 8-check isolated MySQL 8.0.41 ARM64 run; phase-4 review `NOTE-1` |
+| INV-143 | Only the trusted database subject name exactly equal to `English (Lexis & Structure)` enables grouping. Equal non-empty exact Constant Text forms groups whose members are ordered by ascending original `id` (authored order), independent of the random row order; `NULL` and `''` are singleton groups; case, whitespace, line breaks, and underline markers remain significant. | VERIFIED | D-96; `deployed/cbt_question_order.php`; `php tests/cbt-question-order.php` (11 checks) |
+| INV-144 | English Lexis ordering occurs after the unchanged filtered, random, limited selection and before attempt insertion. It preserves row values and the selected ID multiset, follows the default limit of 50, keeps every member's safe Constant Text rendering, and does not affect another subject or `cbt_practice.php`. | VERIFIED | D-96; real `cbt.php` wiring assertions; disposable HTTP staging (6 checks) |
 
 ## Counts
 
-- Total: 141
-- VERIFIED: 131
+- Total: 144
+- VERIFIED: 134
 - AT_RISK: 10
 - CONFLICTED: 0
 

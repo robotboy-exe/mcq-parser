@@ -36,13 +36,15 @@ copy_current() {
     mv -f "$temporary_file" "$target_file"
 }
 
-for filename in admin_questions.php admin_question_store.php render.php; do
+for filename in admin_questions.php admin_question_store.php render.php cbt.php cbt_question_order.php answer_details.php; do
     [[ -f "$ROOT/deployed/$filename" ]] || fail "Missing deployed/$filename."
     copy_current "$ROOT/deployed/$filename" "$STAGING_ROOT/$filename"
 done
 [[ -f "$ROOT/ocr_helper.js" ]] || fail "Missing ocr_helper.js."
 copy_current "$ROOT/ocr_helper.js" "$STAGING_ROOT/ocr_helper.js"
 copy_current "$SCRIPT_DIR/phone-staging/cbt_db.php" "$STAGING_ROOT/cbt_db.php"
+copy_current "$SCRIPT_DIR/phone-staging/header.php" "$STAGING_ROOT/header.php"
+copy_current "$SCRIPT_DIR/phone-staging/footer.php" "$STAGING_ROOT/footer.php"
 
 if [[ -e "$STAGING_ROOT/src" && ! -L "$STAGING_ROOT/src" ]]; then
     fail "$STAGING_ROOT/src exists and is not the staging symlink."

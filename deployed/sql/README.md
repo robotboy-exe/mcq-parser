@@ -1,12 +1,13 @@
-# Constant Text Schema Runbook
+# Database Operations Runbook
 
-Recorded: 2026-11-14. Target runtime: PHP 8.3, MySQL 8.0.41, InnoDB,
-`utf8mb4_unicode_ci`.
+Recorded: 2026-11-14; amended 2026-11-17 for EL01. Target runtime: PHP 8.3,
+MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`.
 
-This directory holds the ST01 migration artifacts for the optional
-`questions.constant_text` passage. **Do not import the supplied exports directly
-into production.** Build a disposable, production-shaped database, then run the
-forward migration and rollback there.
+This directory holds the ST01 migration artifacts for optional
+`questions.constant_text` and the EL01 operation for the exact
+`English (Lexis & Structure)` subject. **Do not import the supplied exports
+directly into production.** Build a disposable, production-shaped database,
+then run each forward operation and rollback there.
 
 ## Files
 
@@ -15,6 +16,8 @@ forward migration and rollback there.
 | `base-schema.working.sql` | Working disposable-database build derived from the supplied DDL. The only supplied-name correction is `exam_category2` → `exam_category`. It now includes nullable `questions.constant_text`. |
 | `01-constant-text.sql` | Forward migration: add nullable `constant_text` after `question_text`. Rerunnable; refuses an incompatible existing column. |
 | `02-constant-text-rollback.sql` | Non-destructive rollback under a maintenance/write freeze. Refuses to drop a column that contains data. |
+| `03-english-lexis-structure.sql` | Rerunnable exact-name subject insert/reactivation. Omits `id`, preserves an existing row's other fields, and refuses a collation-only collision or incompatible key contract. |
+| `04-english-lexis-structure-rollback.sql` | Rerunnable rollback that deactivates only the byte-exact subject. It never deletes a subject, question, or attempt. |
 
 The unchanged supplied originals and their hashes are archived at
 `archive/sql/2026-11-03-supplied/` (`manifest.json`). The working copy contains
@@ -79,3 +82,44 @@ non-empty value; export and remove that data explicitly first. It never drops
 ```sh
 mysql --default-character-set=utf8mb4 <database> < deployed/sql/02-constant-text-rollback.sql
 ```
+
+## English Lexis subject operation
+
+First execute the real operations against a disposable MySQL 8.0.41 server:
+
+```sh
+EL01_DISPOSABLE_MYSQL=1 \
+MYSQL_BIN=mysql MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=root \
+bash tests/english-lexis-sql.sh
+```
+
+The harness refuses a non-8.0.41 server by default. It creates uniquely named
+disposable databases, runs the real `03` and `04` files through absent,
+inactive, active, rerun, collision, rollback, and incompatible-index cases,
+then drops only those disposable databases.
+
+After a verified backup, run the forward operation against the intended
+database:
+
+```sh
+mysql --default-character-set=utf8mb4 <database> \
+  < deployed/sql/03-english-lexis-structure.sql
+mysql --default-character-set=utf8mb4 <database> -e \
+  "SELECT id, subject_name, is_active FROM subjects WHERE HEX(subject_name) = HEX(_utf8mb4'English (Lexis & Structure)');"
+```
+
+The result must contain exactly one active byte-exact row with a database-
+generated ID. A case-, spacing-, or byte-different row that compares equal under
+`utf8mb4_unicode_ci` is a stop condition; do not rename or overwrite it
+automatically.
+
+Rollback deactivates the exact row and is safe to rerun:
+
+```sh
+mysql --default-character-set=utf8mb4 <database> \
+  < deployed/sql/04-english-lexis-structure-rollback.sql
+```
+
+Verify the row remains present with `is_active = 0`, and verify question and
+attempt counts are unchanged. Never use either operation against production
+without a separate owner instruction and a verified backup.

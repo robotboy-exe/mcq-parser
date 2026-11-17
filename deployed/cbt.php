@@ -1,6 +1,7 @@
 <?php
 $page_title = "Online CBT Examination | Skymenu";
 require_once __DIR__ . '/cbt_db.php';
+require_once __DIR__ . '/cbt_question_order.php';
 $subjects = [];
 $examCategories = [];
 $examYears = [];
@@ -14,8 +15,6 @@ $selectedExamYear = 0;
 $selectedSubjectName = '';
 $selectedCategoryName = '';
 $candidateName = '';
-$candidatePhone = '';
-$candidateEmail = '';
 $attemptId = 0;
 
 // AJAX endpoint: return only categories and years with active questions for a subject.
@@ -124,8 +123,6 @@ try {
     // Collect candidate details and validate the setup form before loading questions.
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['start_exam'])) {
         $candidateName = trim((string) ($_POST['candidate_name'] ?? ''));
-        $candidatePhone = trim((string) ($_POST['candidate_phone'] ?? ''));
-        $candidateEmail = trim((string) ($_POST['candidate_email'] ?? ''));
 
         $subjectValue = filter_var($_POST['subject_id'] ?? '', FILTER_VALIDATE_INT);
         $categoryValue = filter_var($_POST['exam_category_id'] ?? '', FILTER_VALIDATE_INT);
@@ -136,8 +133,8 @@ try {
 
         if ($candidateName === '') {
             $setupError = 'Please enter the candidate name.';
-        } elseif (strlen($candidateName) > 150 || strlen($candidatePhone) > 40) {
-            $setupError = 'The candidate name or phone number is too long.';
+        } elseif (strlen($candidateName) > 150) {
+            $setupError = 'The candidate name is too long.';
         } elseif (!isset($subjectsById[$selectedSubjectId]) || !isset($categoriesById[$selectedCategoryId])) {
             $setupError = 'Please select a valid subject and exam category.';
         } else {
@@ -184,6 +181,10 @@ try {
             if (!$dbQuestions) {
                 $setupError = 'There are no active questions for this subject and exam category yet. Please choose another combination.';
             } else {
+                $dbQuestions = cbt_order_selected_questions(
+                    $dbQuestions,
+                    (string) $subjectsById[$selectedSubjectId]['subject_name']
+                );
                 // Save the candidate and selected exam in MySQL before showing the test.
                 // Each start creates a separate attempt record, even for repeat candidates.
                 $saveAttempt = $pdo->prepare(
@@ -195,8 +196,8 @@ try {
                 );
                 $saveAttempt->execute([
                     ':candidate_name' => $candidateName,
-                    ':candidate_phone' => $candidatePhone,
-                    ':candidate_email' => $candidateEmail,
+                    ':candidate_phone' => '',
+                    ':candidate_email' => '',
                     ':subject_id' => $selectedSubjectId,
                     ':exam_category_id' => $selectedCategoryId,
                 ]);
@@ -547,18 +548,6 @@ include __DIR__ . '/header.php';
                                maxlength="150" autocomplete="name" required>
                     </div>
                     <div class="cbt-field">
-                        <label for="candidate_phone">Phone Number</label>
-                        <input type="tel" id="candidate_phone" name="candidate_phone"
-                               value="<?php echo htmlspecialchars($candidatePhone, ENT_QUOTES, 'UTF-8'); ?>"
-                               maxlength="40" autocomplete="tel">
-                    </div>
-                    <div class="cbt-field">
-                        <label for="candidate_email">Email Address</label>
-                        <input type="email" id="candidate_email" name="candidate_email"
-                               value="<?php echo htmlspecialchars($candidateEmail, ENT_QUOTES, 'UTF-8'); ?>"
-                               maxlength="254" autocomplete="email">
-                    </div>
-                    <div class="cbt-field">
                         <label for="subject_id">Subject</label>
                         <select id="subject_id" name="subject_id" required>
                             <option value="">-- Select Subject --</option>
@@ -701,11 +690,7 @@ include __DIR__ . '/header.php';
     <?php else: ?>
         <div class="cbt-exam-meta">
             Attempt Reference: #<?php echo (int) $attemptId; ?><br>
-            Candidate: <?php echo htmlspecialchars($candidateName, ENT_QUOTES, 'UTF-8'); ?>
-            <span aria-hidden="true"> | </span>
-            Phone: <?php echo htmlspecialchars($candidatePhone, ENT_QUOTES, 'UTF-8'); ?>
-            <span aria-hidden="true"> | </span>
-            Email: <?php echo htmlspecialchars($candidateEmail, ENT_QUOTES, 'UTF-8'); ?><br>
+            Candidate: <?php echo htmlspecialchars($candidateName, ENT_QUOTES, 'UTF-8'); ?><br>
             Subject: <?php echo htmlspecialchars($selectedSubjectName, ENT_QUOTES, 'UTF-8'); ?>
             <span aria-hidden="true"> | </span>
             Exam Category: <?php echo htmlspecialchars($selectedCategoryName, ENT_QUOTES, 'UTF-8'); ?>
@@ -758,8 +743,6 @@ include __DIR__ . '/header.php';
             <div class="result-meta-grid">
                 <div class="result-meta-item"><strong>Candidate Name</strong><span><?php echo htmlspecialchars($candidateName, ENT_QUOTES, 'UTF-8'); ?></span></div>
                 <div class="result-meta-item"><strong>Attempt Reference</strong><span>#<?php echo (int) $attemptId; ?></span></div>
-                <div class="result-meta-item"><strong>Phone Number</strong><span><?php echo htmlspecialchars($candidatePhone !== '' ? $candidatePhone : 'Not provided', ENT_QUOTES, 'UTF-8'); ?></span></div>
-                <div class="result-meta-item"><strong>Email Address</strong><span><?php echo htmlspecialchars($candidateEmail !== '' ? $candidateEmail : 'Not provided', ENT_QUOTES, 'UTF-8'); ?></span></div>
                 <div class="result-meta-item"><strong>Subject</strong><span><?php echo htmlspecialchars($selectedSubjectName, ENT_QUOTES, 'UTF-8'); ?></span></div>
                 <div class="result-meta-item"><strong>Exam Category</strong><span><?php echo htmlspecialchars($selectedCategoryName, ENT_QUOTES, 'UTF-8'); ?></span></div>
                 <div class="result-meta-item"><strong>Exam Year</strong><span><?php echo (int) $selectedExamYear; ?></span></div>

@@ -64,6 +64,24 @@ helper checks, including the complete spacing grammar and selected-boundary
 sample. The third re-review closed `FIX-1`. The historical A-F parser-core rules
 below are unchanged.
 
+### 1.2 English Lexis candidate ordering
+
+The active subject name is exactly `English (Lexis & Structure)` and its ID is
+database-generated. `cbt.php` trusts the name loaded from the active `subjects`
+row, not a posted label or a fixed numeric ID. It keeps the existing
+active/category/year filters, `ORDER BY RAND()`, and subject-based limit; this
+subject follows the default limit of 50.
+
+After the limited fetch, and only for that exact trusted name, selected rows
+with equal non-empty exact `constant_text` values form display groups. Group
+order is shuffled while each group's members are restored to their original
+question order (ascending `id`), independent of the random row selection.
+`NULL` and `''` each remain one-question groups. Case, whitespace, line breaks,
+and exact underline markers are significant. Flattening preserves the selected
+ID multiset and every row value, and each grouped member continues to render its
+own Constant Text block. Other subjects and `cbt_practice.php` keep their
+existing order and behavior (D-95, D-96).
+
 ## 2. Input format
 
 One exam year per paste. A section can be partial or even a single question; it

@@ -6,6 +6,7 @@ final class PhoneStagingPdo extends PDO
     public function prepare(string $query, array $options = []): PDOStatement|false
     {
         $query = preg_replace('/\s+FOR UPDATE\b/i', '', $query) ?? $query;
+        $query = preg_replace('/\bRAND\s*\(\s*\)/i', 'RANDOM()', $query) ?? $query;
         return parent::prepare($query, $options);
     }
 }
@@ -120,3 +121,15 @@ if (!$schemaExists) {
              1, 1)"
     );
 }
+
+$pdo->exec(
+    "CREATE TABLE IF NOT EXISTS cbt_exam_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        candidate_name TEXT NOT NULL,
+        candidate_phone TEXT NOT NULL DEFAULT '',
+        candidate_email TEXT NOT NULL DEFAULT '',
+        subject_id INTEGER NOT NULL,
+        exam_category_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )"
+);

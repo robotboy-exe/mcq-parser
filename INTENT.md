@@ -1,7 +1,7 @@
 # Constant Text Reset Intent
 
-Approved: 2026-11-14; owner-amended 2026-11-15 (D-91). Supersedes the
-`owner-tool-2026-11` product intent.
+Approved: 2026-11-14; owner-amended 2026-11-15 (D-91) and 2026-11-17
+(EL01). Supersedes the `owner-tool-2026-11` product intent.
 
 This file is the behavior tie-breaker for the `math-editor-2026-11` cycle. The
 package files own implementation detail. If a package conflicts with this file,
@@ -55,6 +55,19 @@ stop and ask instead of silently changing the product direction.
   duplicate-letter warning solely for the internal `A )`.
 - Keep `src/parser/core.js` as non-shipping history unless a future package
   explicitly targets it.
+
+## English Lexis exam intent
+
+- Add one active subject named exactly `English (Lexis & Structure)` without a
+  fixed database ID. It follows the existing default limit of 50 questions.
+- Keep the existing active/category/year filters and random limited row
+  selection. For this subject only, reorder the selected rows so equal,
+  non-empty exact Constant Text values stay contiguous and shuffle at that
+  group level. Empty or `NULL` Constant Text questions remain independent.
+- Preserve the selected question set and each group's internal order. Every
+  grouped question still renders its own Constant Text block.
+- Do not change other subjects, `cbt_practice.php`, attempt storage, parser
+  inference, or the Constant Text rendering boundary.
 
 ## Process intent
 
