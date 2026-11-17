@@ -164,6 +164,19 @@ if (is_file(__DIR__ . '/header.php')) {
 .answer-nav .answer-btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
 @media(max-width:600px){.answer-page{padding:20px 10px 35px}.answer-card{padding:18px}.answer-question{font-size:18px}}
 @media print{header,footer,.answer-actions{display:none!important}.answer-page{padding:0;background:#fff}.answer-card,.answer-hero{box-shadow:none;break-inside:avoid}}
+/* Exact-marker math shapes. Keep in parity with src/question-preview.css and deployed/cbt.php. */
+.cbt-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1.05;margin:0 .12em}
+.cbt-frac-num,.cbt-frac-den{display:block;padding:0 .22em;text-align:center}
+.cbt-frac-den{border-top:1px solid currentColor}
+.cbt-frac-single{display:inline}
+.cbt-sqrt{display:inline-flex;align-items:flex-start;vertical-align:middle;margin:0 .08em}
+.cbt-sqrt-sign{font-size:1.15em;line-height:1.05}
+.cbt-sqrt-body{padding:0 .12em 0 .06em;border-top:1px solid currentColor;line-height:1.2}
+.cbt-matrix{display:inline-flex;align-items:stretch;vertical-align:middle;gap:.08em;margin:0 .12em}
+.cbt-matrix-bracket{display:inline-flex;align-items:center;font-size:2.1em;line-height:.9}
+.cbt-matrix-grid{display:inline-grid;grid-template-columns:repeat(2,auto);column-gap:.65em;row-gap:.15em;align-content:center}
+.cbt-matrix-cell{text-align:center}
+.cbt-matrix-single{display:inline}
 </style>
 <main class="answer-page">
 <div class="answer-wrap">

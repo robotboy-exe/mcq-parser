@@ -25,6 +25,13 @@ Last updated: 2026-11-17.
   harness on isolated Oracle MySQL Community Server 8.0.41 ARM64 pass; the
   phase-4 review settled on 2026-11-17 with `PASS WITH ACCEPTED FINDINGS` and
   `NOTE-1`–`NOTE-4` corrected.
+- Reopened 2026-11-17 (phase 5, `MS01`): the owner kept this cycle active — it
+  was never archived — and added visual math shapes. The palette keeps the basic
+  operators and replaces the symbol grids with five freeform visual editors
+  (fraction, exponent, subscript, root, 2×2 matrix); fractions get a full
+  horizontal bar and roots a vinculum through five exact shape markers. Gate 1
+  passed and the implementation handoff is recorded (2026-11-17); the phase-5
+  review is the next action.
 - Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
   archived/historical. Their records remain under `owner-tool/` and `reviews/`
   for evidence; do not continue that architecture.
@@ -175,6 +182,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | done; phase-2 re-review PASS, `FIX-1` and both notes closed (17 vectors) | `admin_questions.php` re-measured PASS (+89); Brave/Android and desktop checks deferred to ME02 |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | done; rigorous review recorded and owner phone recheck accepted 2026-11-17 | satisfied; deployment-time live artifacts remain deferred |
 | 4 | EL01 | [English Lexis Subject and Constant-Text Grouping](el-01-english-lexis-grouping.md) | current branch/worktree baseline; preserve unrelated changes | done; phase-4 review PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected | satisfied; disposable MySQL 8.0.41 operation/rollback PASS 2026-11-17 |
+| 5 | MS01 | [Visual Math Shapes and Palette Cleanup](math-editor/ms-01-visual-math-shapes.md) | EL01 review-settled; cycle reopened 2026-11-17 | in progress; phase-5 review recorded `PASS WITH ACCEPTED FINDINGS` 2026-11-17; `FIX-1` cache keys fixed, closure re-review pending | live-origin caps satisfied: admin +89, cbt +74, answer_details +21, cbt_practice +20; owner desktop/Brave check remains |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -248,6 +256,7 @@ verifies the detail path with the rest of Release A.
 | phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | review-settled 2026-11-15: PASS, `FIX-1` and both notes closed |
 | phase 3 close | ME02 release, evidence, and handoff | rigorous | done; PASS WITH ACCEPTED FINDINGS and owner phone acceptance recorded |
 | phase 4 | EL01 subject operation and grouped exam ordering | rigorous | settled 2026-11-17: PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected |
+| phase 5 | MS01 visual math shapes, palette cleanup, and horizontal bars | rigorous | review recorded 2026-11-17: `PASS WITH ACCEPTED FINDINGS`; `FIX-1` fixed, closure re-review pending |
 
 ## Remaining path to cycle close
 
@@ -273,16 +282,21 @@ verifies the detail path with the rest of Release A.
    re-review round is required.
 8. **Cycle close** — complete 2026-11-17 via
    [`prompts/cycle-close.md`](prompts/cycle-close.md). The phase-4 boundary is
-   committed at `e08b922`; the optional `main` fast-forward and archiving still
-   need separate explicit owner authorization.
+   committed at `e08b922` and the cycle-close docs at `0410ecb`; the optional
+   `main` fast-forward and archiving remain separate explicit owner decisions.
+9. **Phase 5 (MS01)** — reopened by the owner on 2026-11-17: visual math shapes
+   and palette cleanup. Implemented at base `0410ecb` with all package
+   acceptance green (Node 60/163/11/10/5/25/67, PHP 32/8/11, lint PASS, caps
+   +89/+74/+21/+20); the rigorous phase-5 review then recorded `PASS WITH
+   ACCEPTED FINDINGS` and its `FIX-1` (cache keys for the changed shared assets)
+   is fixed. The closure-focused re-review remains.
 
-Current workflow stop: cycle close is complete and the `math-editor-2026-11`
-cycle remains active. The cycle-close status/history updates are uncommitted;
-the owner must decide whether to authorize that docs commit. Archiving and an
-optional `main` fast-forward remain separate explicit owner decisions.
+Current workflow stop: the `MS01` implementation and its `FIX-1` cache-key fix
+are applied and no file is committed. The next session is the phase-5
+closure-focused re-review of `FIX-1`; only the review record may be written.
 
 ```text
-NEXT COMMAND: Commit the cycle-close status and history updates
+NEXT COMMAND: review phase 5
 ```
 
 ## Session protocol

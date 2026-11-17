@@ -17,13 +17,13 @@ testing commands, and known limitations. Deployment steps are in
 | `deployed/cbt.php` | Standalone CBT delivery: subject/category/year queries, limited random selection, EL01 post-selection ordering call, exam UI, Constant Text block, exact-`<u>` questions/options, result panel. Loads `src/owner-tool/render.js`. |
 | `deployed/cbt_question_order.php` | Focused exact-subject grouping of already-selected English Lexis rows; original-order members (ascending `id`), shuffled groups, blank singletons. |
 | `deployed/answer_details.php` | Answer explanation page. Uses `render.php` for Constant Text, questions, options, and explanations. |
-| `deployed/render.php` | Server-side safe renderer: escape first, restore only exact `<u>`/`</u>`. |
+| `deployed/render.php` | Server-side safe renderer: escape first, restore only the exact `<u>`, `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>` pairs, and run the shared parity vectors. |
 | `ocr_helper.js` | Shipping OCR helper. Parses pasted OCR into the native form, preserves blank-line paragraphs, fills `ocrQueue`/`ocrMeta`, and never submits. |
 | `src/underline-toolbar.js` | Runtime Underline button for Constant Text, question text, and options A–D. |
-| `src/question-preview.js` / `.css` | Read-only Constant Text/Question preview, rendered with `window.CBTText` and `white-space: pre-wrap`; no form, storage, or network writes. |
-| `src/math-tool.js` | Math symbol palette and advisory UTF-8 byte counter around `#question_text`, mounted once in Add and Edit forms with `data-math-tool-mounted`; inserts only at the remembered caret and writes no storage, network, submit, underline marker, or `constant_text`. |
-| `src/math-tool.css` | Palette, drawer, counter, focus, and mobile-target styles; all selectors are `.math-tool-*` (D-92). |
-| `src/owner-tool/render.js` | Browser safe renderer (`window.CBTText`) used by `cbt.php`. The legacy context-card helpers remain in the file but no page calls them. |
+| `src/question-preview.js` / `.css` | Read-only Constant Text/Question preview, rendered with `window.CBTText` and `white-space: pre-wrap`, including the horizontal fraction bar, radical vinculum, and 2×2 matrix grid styles; no form, storage, or network writes. |
+| `src/math-tool.js` | Operator row, five freeform shape editors (fraction, exponent, subscript, root, 2×2 matrix), and advisory UTF-8 byte counter around `#question_text`, mounted once in Add and Edit forms with `data-math-tool-mounted`; inserts only exact shape markers at the remembered caret and writes no storage, network, submit, underline marker, or `constant_text`. |
+| `src/math-tool.css` | Operator row, shape panels, 2×2 matrix input grid, live preview, hint, counter, focus, and mobile-target styles; all selectors are `.math-tool-*` (D-92, D-100). |
+| `src/owner-tool/render.js` | Browser safe renderer (`window.CBTText`) used by `cbt.php` and the admin preview; restores the six exact marker pairs and builds fraction/root/matrix nodes. The legacy context-card helpers remain in the file but no page calls them. |
 | `src/parser/core.js` | Pure parser 2.3.3, retained for the historical parser fixture suite. Not loaded by the production admin page. |
 | `deployed/sql/base-schema.working.sql` | Working schema copy, now including `constant_text`. |
 | `deployed/sql/01-constant-text.sql` | Guarded, rerunnable forward migration. |
@@ -38,24 +38,33 @@ archived under `archive/owner-tool-2026-11/`; do not load or extend them. The
 `src/owner-tool/context*` helper functions inside `render.js` are inert and
 kept only because that file is shared with `cbt_practice.php`.
 
-**Math editor (ME01/ME02, D-92–D-94).** One pair of assets serves the native
-form. The module builds its toolbar, drawer, and counter from the curated
-symbol tables with `createElement`/`textContent`, remembers the textarea
-selection across toolbar focus loss, and inserts through
-`execCommand('insertText')` then `setRangeText` then `.value`; it never rewrites
-line breaks or underline markers. The quick row is 15 symbols and the drawer
-has six categories; `½` intentionally appears in both. The Fractions category
-also has a Custom row: enter a numerator and denominator, then press Insert
-(or Enter) to insert the fraction at the remembered caret. Supported values use
-the matching vulgar glyph (`1/2` → `½`); other values become a superscript
-numerator, fraction slash, and subscript denominator (`3/7` → `³⁄₇`). The
-Underline button sits at the far right of the Question label row on desktop and
-mobile.
+**Math editor (MS01, D-92–D-100).** One pair of assets serves the native form.
+The module builds its operator row, shape panels, and counter with
+`createElement`/`textContent`, remembers the textarea selection across toolbar
+focus loss, and inserts through `execCommand('insertText')` then `setRangeText`
+then `.value`; it never rewrites line breaks or underline markers. The
+operator row is `± × ÷ ≠ ≈ ° π √`; the symbol grids, drawer, vulgar-fraction
+table, and digit maps are gone. Five shape buttons open one freeform panel at a
+time:
+
+- Fraction: numerator and denominator → `<frac>3/7</frac>` (stacked, horizontal
+  rule).
+- Exponent: base and exponent → `x<sup>2n+1</sup>`.
+- Subscript: base and subscript → `x<sub>1</sub>`.
+- Root: radicand → `<sqrt>2x+1</sqrt>` (`√` plus a horizontal vinculum).
+- 2×2 matrix: four cells → `<matrix>a|b|c|d</matrix>` (bracketed grid).
+
+Each panel previews the shape through `window.CBTText`, inserts on Enter or
+Insert without submitting, and refuses `<`, `>`, and the separator that would
+split the active shape with an inline hint. The Underline button sits at the far
+right of the Question label row on desktop and mobile.
 The counter is advisory
 (neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+) and
 refreshes after typing, the page's OCR Load/Skip, and a native form reset. The
-admin page loads both files with `?v=1.0.0`; no other page references them,
-and `cbt.php`/`cbt_practice.php` keep their own `render.js` tokens.
+admin page loads both files with `?v=1.1.0`, plus the read-only preview
+stylesheet as `question-preview.css?v=1.1.0` and the renderer as
+`render.js?v=2.3.3`; `cbt.php` and `cbt_practice.php` both load the current
+`render.js?v=2.3.3` (D-102).
 
 **English Lexis (EL01, D-95–D-96).** The subject operation inserts
 `English (Lexis & Structure)` without an ID or reactivates a byte-exact existing
@@ -178,6 +187,7 @@ node tests/ocr-helper.js
 node tests/underline-toolbar.js
 node tests/question-preview.js
 node tests/math-tool.js
+node tests/render-markup.js
 node tools/extract-bank.js --check
 php tests/php-render.php
 php tests/admin-question-store.php
@@ -192,9 +202,11 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 - root helper: 11 PASS, including the complete D-91 spacing grammar, selected
   boundaries, and duplicate-set warning controls;
 - underline toolbar: 10 PASS;
-- read-only preview: 4 PASS;
-- math palette/byte counter: 20 PASS (real module and mount);
-- PHP renderer: 9 PASS; admin store: 8 PASS;
+- read-only preview: 5 PASS, including a real-renderer fraction vector;
+- math palette/shape editors: 25 PASS (real module and mount);
+- marker renderers: 67 PASS against `tests/fixtures/render-markup.json`, run in
+  JS and again through `php tests/php-render.php` (32 vectors there);
+- admin store: 8 PASS;
 - English Lexis ordering/wiring: 11 PASS against the real module and real
   `cbt.php`;
 - `php -l` on every changed PHP file: PASS;
@@ -209,7 +221,7 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 - disposable Chromium at 390px: preview has no editable controls or overflow,
   both blocks use `pre-wrap`, exact underlines render, and a passage/cloze OCR
   paste leaves the prefilled Constant Text unchanged.
-- ME02 disposable SQLite staging in Chrome 156.0.0.0: the palette mounts once on
+- ME02 disposable SQLite staging in Chrome 156.0.0.0 (pre-MS01 palette): the palette mounts once on
   `#question_text`, quick-row, drawer, and keyboard insertion land at the
   remembered caret, `Ctrl+Z` reverts on the `execCommand` path, the preview
   refreshes, thresholds read neutral 32 / amber 57 000 / red 60 000 with the

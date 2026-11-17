@@ -1601,3 +1601,101 @@ those contracts and is directly testable.
 after the limited random query. Exact matching intentionally treats case,
 whitespace, line breaks, and underline markers as significant; near-equal text
 does not group.
+
+## D-97 — Five exact math-shape markers
+
+**Choice.** Fractions, exponents, subscripts, roots, and 2×2 matrices store as
+five exact lowercase pairs: `<frac>`/`</frac>`, `<sup>`/`</sup>`,
+`<sub>`/`</sub>`, `<sqrt>`/`</sqrt>`, and `<matrix>`/`</matrix>`. Rendering stays
+escape-first and restores only those plus `<u>`/`</u>`. A fraction splits at its
+first top-level `/`; a matrix uses its four row-major top-level `|` cells. A
+marker cannot reopen while its tag is open, so real nesting is capped by the six
+distinct markers; a depth-eight guard stays in both scanners. The JS and PHP
+renderers are kept in parity by `tests/fixtures/render-markup.json`.
+
+**Why.** Plain Unicode cannot stack a numerator over a horizontal rule, so a
+marker is the smallest representation that keeps `question_text` as text, keeps
+the escape-first boundary, and renders the same in the admin preview, exam page,
+and details page without a new dependency.
+
+**Risk.** Six marker pairs now form the format contract. A page that escapes
+stored text itself instead of calling `CBTText`/`cbt_format_text` is outside the
+parity vectors.
+
+## D-98 — Bars are CSS rules, not images
+
+**Choice.** The fraction divider and the radical vinculum are `border-top` rules
+on `.cbt-frac-den` and `.cbt-sqrt-body`; brackets are text spans around a
+`.cbt-matrix-grid`. The rules live in the admin preview stylesheet and in the
+inline style blocks of `cbt.php` and `answer_details.php`. `<sup>` and `<sub>`
+render as real elements and need no CSS.
+
+**Why.** A rule stays crisp at any zoom, needs no image, LaTeX engine, or MathML,
+and works inside the existing `white-space: pre-wrap` containers.
+
+**Risk.** The three surfaces must stay in parity; a page that renders markers
+without these rules shows an unbarred fraction. `tests/math-tool.js` asserts the
+rules in all three.
+
+## D-99 — The palette keeps operators and drops precomposed shapes
+
+**Choice.** The toolbar keeps `± × ÷ ≠ ≈ ° π √` and five shape buttons, and
+removes the Exponents, Subscripts, Fractions, Greek, Set theory and logic, and
+Geometry and vectors grids, the drawer, the vulgar-fraction table, and every
+digit map. A fraction always inserts `<frac>`, so `1/2` renders with a horizontal
+bar instead of `½`. Already-stored precomposed text is not converted.
+
+**Why.** The owner asked to keep the basic operators and replace the symbol grids
+with freeform shape editors; two fraction representations would make the
+horizontal-bar requirement inconsistent.
+
+**Risk.** Stored `½`, `³⁄₇`, and `x²` text keeps rendering as plain Unicode, so an
+older question can look different from a re-entered one. That is intentional and
+needs no migration.
+
+## D-100 — Shape editors are freeform but cannot forge markers
+
+**Choice.** Each shape editor takes freeform values, trims them, refuses `<` and
+`>`, refuses `/` in fraction terms and `|` in matrix cells, and requires its
+documented terms. Invalid input shows an inline hint, focuses the first empty
+field, and inserts nothing; Enter inserts and never submits. Insertion reuses
+ME01's `execCommand` → `setRangeText` → `.value` path, the remembered caret, and
+the advisory counter.
+
+**Why.** Values must accept ordinary mathematics (`2n+1`, `√`, `π`, spaces) while
+never letting the editor produce a malformed or nested marker the renderer would
+treat as text.
+
+**Risk.** A value containing a forbidden character must be typed into the
+textarea directly; the editor is a helper, not a validator of stored text.
+
+## D-101 — The matrix shape is exactly 2×2
+
+**Choice.** `<matrix>` carries exactly four row-major cells separated by `|` and
+renders with bracketed delimiters. Any other top-level cell count renders the
+content as plain text inside the shape span rather than failing.
+
+**Why.** A fixed 2×2 grid matches the requested editor, needs no dimension
+markers, and lets hand-edited or legacy text degrade safely.
+
+**Risk.** Larger matrices remain out of scope; they can still be written as
+stacked rows in the textarea, but they get no grid styling.
+
+## D-102 — Cache keys for every consumer of the MS01 shared assets
+
+**Choice.** `deployed/admin_questions.php` loads `src/question-preview.css?v=1.1.0`
+and `src/owner-tool/render.js?v=2.3.3`; `deployed/cbt_practice.php` moves from
+`render.js?v=2.3.2c` to `?v=2.3.3`; `deployed/cbt.php` keeps `?v=2.3.3`. This
+supersedes D-94's statement that the admin preview stylesheet and `render.js`,
+and `cbt_practice.php`'s `2.3.2c`, stay untokened. D-94's `?v=1.1.0` math-editor
+pair is unchanged.
+
+**Why.** MS01 changed `render.js` (+264/−65) and `question-preview.css` (+76/−0)
+on three pages, but two admin tags carried no token and `cbt_practice.php` kept
+the pre-change key. A returning browser would keep the old bytes and print raw
+`<frac>`/`<sqrt>`/`<matrix>` markers or lose the horizontal bars. One key per
+changed file per page makes a deploy deterministic without changing behavior
+(phase-5 `FIX-1`).
+
+**Scope.** Tokens only; no markup, filter, selection, or style change, and
+`cbt_practice.php` remains outside the package's feature scope.

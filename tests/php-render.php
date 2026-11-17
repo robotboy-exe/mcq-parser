@@ -3,25 +3,33 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../deployed/render.php';
 
-$cases = [
-    ['<u>a</u>', '<u>a</u>', 'a'],
-    ['<script>alert(1)</script>', '&lt;script&gt;alert(1)&lt;/script&gt;', '<script>alert(1)</script>'],
-    ['<u onclick="x">click</u>', '&lt;u onclick=&quot;x&quot;&gt;click&lt;/u&gt;', '<u onclick="x">click</u>'],
-    ['&lt;u&gt;x&lt;/u&gt;', '&amp;lt;u&amp;gt;x&amp;lt;/u&amp;gt;', '&lt;u&gt;x&lt;/u&gt;'],
-    ['<U>x</U>', '&lt;U&gt;x&lt;/U&gt;', '<U>x</U>'],
-    ['x</u>', 'x&lt;/u&gt;', 'x</u>'],
-    ['<u>x', '&lt;u&gt;x', '<u>x'],
-    ['<u>one <u>two</u>', '<u>one &lt;u&gt;two</u>', 'one <u>two'],
-    ['<u>😀 & " \' < ></u>', '<u>😀 &amp; &quot; &#039; &lt; &gt;</u>', '😀 & " \' < >'],
-];
-
-foreach ($cases as $index => [$input, $formatted, $plain]) {
-    if (cbt_format_text($input) !== $formatted) {
-        throw new RuntimeException('format case ' . ($index + 1) . ' failed');
-    }
-    if (cbt_strip_formatting($input) !== $plain) {
-        throw new RuntimeException('strip case ' . ($index + 1) . ' failed');
-    }
+// The shared vector table is the single source of truth for JS/PHP parity.
+$fixture = json_decode((string) file_get_contents(__DIR__ . '/fixtures/render-markup.json'), true);
+if (!is_array($fixture) || ($fixture['schema_version'] ?? 0) !== 1 || !is_array($fixture['cases'] ?? null)) {
+    throw new RuntimeException('render-markup fixture must be schema_version 1 with cases');
 }
 
-echo 'PASS: ' . count($cases) . " PHP renderer vectors\n";
+$checked = 0;
+foreach ($fixture['cases'] as $case) {
+    $name = (string) ($case['name'] ?? 'unnamed');
+    $input = (string) ($case['input'] ?? '');
+    if (cbt_format_text($input) !== (string) $case['format']) {
+        throw new RuntimeException('format case failed: ' . $name);
+    }
+    if (cbt_strip_formatting($input) !== (string) $case['strip']) {
+        throw new RuntimeException('strip case failed: ' . $name);
+    }
+    $checked++;
+}
+
+// The underline segmentation helper is kept for existing callers.
+$segments = cbt_text_segments('<u>one <u>two</u>');
+if (count($segments) !== 1 || $segments[0]['text'] !== 'one <u>two' || $segments[0]['underline'] !== true) {
+    throw new RuntimeException('cbt_text_segments underline view failed');
+}
+$segments = cbt_text_segments('<frac>3/7</frac>');
+if (count($segments) !== 1 || $segments[0]['text'] !== '3/7' || $segments[0]['underline'] !== false) {
+    throw new RuntimeException('cbt_text_segments shape view failed');
+}
+
+echo 'PASS: ' . $checked . " PHP renderer vectors\n";

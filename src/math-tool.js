@@ -22,216 +22,28 @@
   var AMBER_THRESHOLD = 57000;
   var MOUNT_ATTRIBUTE = 'data-math-tool-mounted';
 
-  var SYMBOL_NAMES = {
-    '⁰': 'superscript zero',
-    '¹': 'superscript one',
-    '²': 'superscript two',
-    '³': 'superscript three',
-    '⁴': 'superscript four',
-    '⁵': 'superscript five',
-    '⁶': 'superscript six',
-    '⁷': 'superscript seven',
-    '⁸': 'superscript eight',
-    '⁹': 'superscript nine',
-    '⁺': 'superscript plus',
-    '⁻': 'superscript minus',
-    'ⁿ': 'superscript n',
-    'ˣ': 'superscript x',
-    'ʸ': 'superscript y',
-    '₀': 'subscript zero',
-    '₁': 'subscript one',
-    '₂': 'subscript two',
-    '₃': 'subscript three',
-    '₄': 'subscript four',
-    '₅': 'subscript five',
-    '₆': 'subscript six',
-    '₇': 'subscript seven',
-    '₈': 'subscript eight',
-    '₉': 'subscript nine',
-    '₊': 'subscript plus',
-    '₋': 'subscript minus',
-    'ₐ': 'subscript a',
-    'ₑ': 'subscript e',
-    'ᵢ': 'subscript i',
-    'ₒ': 'subscript o',
-    'ᵤ': 'subscript u',
-    'ₓ': 'subscript x',
-    '½': 'one half',
-    '⅓': 'one third',
-    '⅔': 'two thirds',
-    '¼': 'one quarter',
-    '¾': 'three quarters',
-    '⅕': 'one fifth',
-    '⅖': 'two fifths',
-    '⅗': 'three fifths',
-    '⅘': 'four fifths',
-    '⅙': 'one sixth',
-    '⅚': 'five sixths',
-    '⅛': 'one eighth',
-    '⅜': 'three eighths',
-    '⅝': 'five eighths',
-    '⅞': 'seven eighths',
-    'α': 'alpha',
-    'β': 'beta',
-    'γ': 'gamma',
-    'δ': 'delta',
-    'ε': 'epsilon',
-    'θ': 'theta',
-    'λ': 'lambda',
-    'μ': 'mu',
-    'π': 'pi',
-    'ρ': 'rho',
-    'σ': 'sigma',
-    'τ': 'tau',
-    'φ': 'phi',
-    'ω': 'omega',
-    'Δ': 'capital delta',
-    'Ω': 'capital omega',
-    'Σ': 'capital sigma',
-    '∈': 'element of',
-    '∉': 'not an element of',
-    '⊂': 'subset of',
-    '⊆': 'subset of or equal to',
-    '∪': 'union',
-    '∩': 'intersection',
-    '∅': 'empty set',
-    '∧': 'and',
-    '∨': 'or',
-    '¬': 'not',
-    '⇒': 'implies',
-    '⇔': 'if and only if',
-    '∠': 'angle',
-    '⊥': 'perpendicular',
-    '∥': 'parallel',
-    '△': 'triangle',
-    '→': 'right arrow',
-    '←': 'left arrow',
-    '↔': 'left right arrow',
-    '↑': 'up arrow',
-    '↓': 'down arrow',
-    '±': 'plus minus',
-    '√': 'square root',
-    '×': 'multiplication',
-    '÷': 'division',
-    '≠': 'not equal',
-    '≈': 'approximately equal',
-    '°': 'degree'
-  };
-
-  var QUICK_ROW = ['²', '³', 'ⁿ', '₁', '₂', '±', '√', '×', '÷', '≠', '≈', '°', '½', 'π', 'θ'];
-
-  var QUICK_LABELS = {
-    '²': 'x²',
-    '³': 'x³',
-    'ⁿ': 'xⁿ',
-    '₁': 'x₁',
-    '₂': 'x₂'
-  };
-
-  var CATEGORIES = [
-    { title: 'Exponents', characters: ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹', '⁺', '⁻', 'ⁿ', 'ˣ', 'ʸ'] },
-    { title: 'Subscripts', characters: ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉', '₊', '₋', 'ₐ', 'ₑ', 'ᵢ', 'ₒ', 'ᵤ', 'ₓ'] },
-    { title: 'Fractions', characters: ['½', '⅓', '⅔', '¼', '¾', '⅕', '⅖', '⅗', '⅘', '⅙', '⅚', '⅛', '⅜', '⅝', '⅞'] },
-    { title: 'Greek', characters: ['α', 'β', 'γ', 'δ', 'ε', 'θ', 'λ', 'μ', 'π', 'ρ', 'σ', 'τ', 'φ', 'ω', 'Δ', 'Ω', 'Σ'] },
-    { title: 'Set theory and logic', characters: ['∈', '∉', '⊂', '⊆', '∪', '∩', '∅', '∧', '∨', '¬', '⇒', '⇔'] },
-    { title: 'Geometry and vectors', characters: ['∠', '⊥', '∥', '△', '→', '←', '↔', '↑', '↓'] }
+  var OPERATORS = [
+    { character: '±', name: 'plus minus' },
+    { character: '×', name: 'multiplication' },
+    { character: '÷', name: 'division' },
+    { character: '≠', name: 'not equal' },
+    { character: '≈', name: 'approximately equal' },
+    { character: '°', name: 'degree' },
+    { character: 'π', name: 'pi' },
+    { character: '√', name: 'square root' }
   ];
 
   function symbolName(character) {
-    return SYMBOL_NAMES[character] || ('symbol ' + character);
+    for (var index = 0; index < OPERATORS.length; index += 1) {
+      if (OPERATORS[index].character === character) {
+        return OPERATORS[index].name;
+      }
+    }
+    return 'symbol ' + character;
   }
 
   function formatByteCount(bytes) {
     return String(bytes).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  }
-
-  var VULGAR_FRACTIONS = {
-    '1/2': '½',
-    '1/3': '⅓',
-    '2/3': '⅔',
-    '1/4': '¼',
-    '3/4': '¾',
-    '1/5': '⅕',
-    '2/5': '⅖',
-    '3/5': '⅗',
-    '4/5': '⅘',
-    '1/6': '⅙',
-    '5/6': '⅚',
-    '1/8': '⅛',
-    '3/8': '⅜',
-    '5/8': '⅝',
-    '7/8': '⅞'
-  };
-
-  var SUPERSCRIPT_DIGITS = {
-    '0': '⁰',
-    '1': '¹',
-    '2': '²',
-    '3': '³',
-    '4': '⁴',
-    '5': '⁵',
-    '6': '⁶',
-    '7': '⁷',
-    '8': '⁸',
-    '9': '⁹'
-  };
-
-  var SUBSCRIPT_DIGITS = {
-    '0': '₀',
-    '1': '₁',
-    '2': '₂',
-    '3': '₃',
-    '4': '₄',
-    '5': '₅',
-    '6': '₆',
-    '7': '₇',
-    '8': '₈',
-    '9': '₉'
-  };
-
-  function digitRun(digits, map) {
-    var result = '';
-    for (var index = 0; index < digits.length; index += 1) {
-      result += map[digits.charAt(index)];
-    }
-    return result;
-  }
-
-  function customFraction(numerator, denominator) {
-    var top = String(numerator == null ? '' : numerator).trim();
-    var bottom = String(denominator == null ? '' : denominator).trim();
-    if (!/^\d+$/.test(top) || !/^\d+$/.test(bottom)) {
-      return '';
-    }
-    top = top.replace(/^0+(?=\d)/, '');
-    bottom = bottom.replace(/^0+(?=\d)/, '');
-    if (bottom === '0') {
-      return '';
-    }
-    var key = top + '/' + bottom;
-    if (VULGAR_FRACTIONS[key]) {
-      return VULGAR_FRACTIONS[key];
-    }
-    return digitRun(top, SUPERSCRIPT_DIGITS) + '⁄' + digitRun(bottom, SUBSCRIPT_DIGITS);
-  }
-
-  function insertAtCaret(value, start, end, insertion) {
-    var source = String(value == null ? '' : value);
-    var text = String(insertion == null ? '' : insertion);
-    var startNumber = Number(start);
-    var endNumber = Number(end);
-    var from = isFinite(startNumber) ? Math.floor(startNumber) : 0;
-    from = Math.max(0, Math.min(from, source.length));
-    var to = isFinite(endNumber) ? Math.floor(endNumber) : from;
-    to = Math.max(from, Math.min(to, source.length));
-
-    return {
-      value: source.slice(0, from) + text + source.slice(to),
-      start: from,
-      end: to,
-      caret: from + text.length,
-      changed: text.length > 0
-    };
   }
 
   function utf8ByteLength(text) {
@@ -273,6 +85,154 @@
     return 'neutral';
   }
 
+  function insertAtCaret(value, start, end, insertion) {
+    var source = String(value == null ? '' : value);
+    var text = String(insertion == null ? '' : insertion);
+    var startNumber = Number(start);
+    var endNumber = Number(end);
+    var from = isFinite(startNumber) ? Math.floor(startNumber) : 0;
+    from = Math.max(0, Math.min(from, source.length));
+    var to = isFinite(endNumber) ? Math.floor(endNumber) : from;
+    to = Math.max(from, Math.min(to, source.length));
+
+    return {
+      value: source.slice(0, from) + text + source.slice(to),
+      start: from,
+      end: to,
+      caret: from + text.length,
+      changed: text.length > 0
+    };
+  }
+
+  // Shape values are freeform, but never a way to forge or split markers.
+  function cleanValue(value, forbidden) {
+    var text = String(value == null ? '' : value).trim();
+    if (!text || /[<>]/.test(text)) {
+      return '';
+    }
+    if (forbidden && text.indexOf(forbidden) !== -1) {
+      return '';
+    }
+    return text;
+  }
+
+  function fractionMarkup(numerator, denominator) {
+    var top = cleanValue(numerator, '/');
+    var bottom = cleanValue(denominator, '/');
+    if (!top || !bottom) {
+      return '';
+    }
+    return '<frac>' + top + '/' + bottom + '</frac>';
+  }
+
+  function exponentMarkup(base, exponent) {
+    var stem = cleanValue(base);
+    var power = cleanValue(exponent);
+    if (!stem || !power) {
+      return '';
+    }
+    return stem + '<sup>' + power + '</sup>';
+  }
+
+  function subscriptMarkup(base, subscript) {
+    var stem = cleanValue(base);
+    var index = cleanValue(subscript);
+    if (!stem || !index) {
+      return '';
+    }
+    return stem + '<sub>' + index + '</sub>';
+  }
+
+  function rootMarkup(radicand) {
+    var value = cleanValue(radicand);
+    if (!value) {
+      return '';
+    }
+    return '<sqrt>' + value + '</sqrt>';
+  }
+
+  function matrixMarkup(first, second, third, fourth) {
+    var cells = [first, second, third, fourth];
+    var cleaned = [];
+    for (var index = 0; index < cells.length; index += 1) {
+      var cell = cleanValue(cells[index], '|');
+      if (!cell) {
+        return '';
+      }
+      cleaned.push(cell);
+    }
+    return '<matrix>' + cleaned.join('|') + '</matrix>';
+  }
+
+  var SHAPES = [
+    {
+      id: 'fraction',
+      label: 'Fraction',
+      button: 'a/b',
+      hint: 'Enter a numerator and a denominator without / or < >.',
+      fields: [
+        { key: 'numerator', label: 'Fraction numerator', placeholder: 'num' },
+        { key: 'denominator', label: 'Fraction denominator', placeholder: 'den' }
+      ],
+      build: function (values) {
+        return fractionMarkup(values.numerator, values.denominator);
+      }
+    },
+    {
+      id: 'exponent',
+      label: 'Exponent',
+      button: 'x\u00b2',
+      hint: 'Enter a base and an exponent without < >.',
+      fields: [
+        { key: 'base', label: 'Exponent base', placeholder: 'base' },
+        { key: 'exponent', label: 'Exponent value', placeholder: 'power' }
+      ],
+      build: function (values) {
+        return exponentMarkup(values.base, values.exponent);
+      }
+    },
+    {
+      id: 'subscript',
+      label: 'Subscript',
+      button: 'x\u2081',
+      hint: 'Enter a base and a subscript without < >.',
+      fields: [
+        { key: 'base', label: 'Subscript base', placeholder: 'base' },
+        { key: 'subscript', label: 'Subscript value', placeholder: 'index' }
+      ],
+      build: function (values) {
+        return subscriptMarkup(values.base, values.subscript);
+      }
+    },
+    {
+      id: 'root',
+      label: 'Root',
+      button: '\u221a',
+      hint: 'Enter the value under the root without < >.',
+      fields: [
+        { key: 'radicand', label: 'Root radicand', placeholder: 'radicand' }
+      ],
+      build: function (values) {
+        return rootMarkup(values.radicand);
+      }
+    },
+    {
+      id: 'matrix',
+      label: '2x2 matrix',
+      button: '2\u00d72',
+      hint: 'Enter all four cells without | or < >.',
+      fields: [
+        { key: 'first', label: 'Matrix cell 1', placeholder: 'a' },
+        { key: 'second', label: 'Matrix cell 2', placeholder: 'b' },
+        { key: 'third', label: 'Matrix cell 3', placeholder: 'c' },
+        { key: 'fourth', label: 'Matrix cell 4', placeholder: 'd' }
+      ],
+      build: function (values) {
+        return matrixMarkup(values.first, values.second, values.third, values.fourth);
+      }
+    }
+  ];
+
   function init(root) {
     var document = root && root.document;
     if (!document) {
@@ -286,6 +246,7 @@
       return null;
     }
 
+    var textApi = root.CBTText && typeof root.CBTText.render === 'function' ? root.CBTText : null;
     var selection = {
       start: typeof textarea.selectionStart === 'number' ? textarea.selectionStart : 0,
       end: typeof textarea.selectionEnd === 'number' ? textarea.selectionEnd : 0
@@ -401,100 +362,153 @@
     toolbar.setAttribute('role', 'toolbar');
     toolbar.setAttribute('aria-label', 'Math symbols');
 
-    var quick = element('div', 'math-tool-quick');
-    for (var quickIndex = 0; quickIndex < QUICK_ROW.length; quickIndex += 1) {
-      var quickCharacter = QUICK_ROW[quickIndex];
-      quick.appendChild(symbolButton(quickCharacter, QUICK_LABELS[quickCharacter] || quickCharacter));
+    var operatorRow = element('div', 'math-tool-operators');
+    for (var operatorIndex = 0; operatorIndex < OPERATORS.length; operatorIndex += 1) {
+      operatorRow.appendChild(symbolButton(OPERATORS[operatorIndex].character, OPERATORS[operatorIndex].character));
     }
+    toolbar.appendChild(operatorRow);
 
-    var toggle = element('button', 'math-tool-toggle', 'More symbols');
-    toggle.type = 'button';
-    toggle.setAttribute('aria-label', 'Show all math symbols');
-    toggle.setAttribute('aria-controls', 'math_tool_drawer');
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.addEventListener('mousedown', preventBlur);
+    var shapeRow = element('div', 'math-tool-shapes');
+    toolbar.appendChild(shapeRow);
 
-    toolbar.appendChild(quick);
-    toolbar.appendChild(toggle);
+    var panels = element('div', 'math-tool-panels');
+    panels.id = 'math_tool_panels';
 
-    var drawer = element('div', 'math-tool-drawer');
-    drawer.id = 'math_tool_drawer';
-    drawer.hidden = true;
+    var shapeButtons = [];
+    var panelElements = [];
 
-    function customFractionRow() {
-      var row = element('div', 'math-tool-custom-fraction');
-      row.appendChild(element('span', 'math-tool-custom-fraction-title', 'Custom'));
+    for (var shapeIndex = 0; shapeIndex < SHAPES.length; shapeIndex += 1) {
+      (function (shape) {
+        var panelId = 'math_tool_panel_' + shape.id;
+        var button = element('button', 'math-tool-shape', shape.button);
+        button.type = 'button';
+        button.setAttribute('aria-label', 'Insert ' + shape.label);
+        button.setAttribute('aria-controls', panelId);
+        button.setAttribute('aria-expanded', 'false');
+        button.addEventListener('mousedown', preventBlur);
+        shapeRow.appendChild(button);
+        shapeButtons.push(button);
 
-      function fractionInput(label, placeholder) {
-        var input = element('input', 'math-tool-custom-fraction-input');
-        input.type = 'text';
-        input.setAttribute('aria-label', label);
-        input.setAttribute('placeholder', placeholder);
-        input.setAttribute('inputmode', 'numeric');
-        input.setAttribute('pattern', '[0-9]*');
-        input.addEventListener('keydown', function (event) {
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            insertCustomFraction();
+        var panel = element('section', 'math-tool-panel');
+        panel.id = panelId;
+        panel.hidden = true;
+        panel.appendChild(element('span', 'math-tool-panel-title', shape.label));
+
+        var fields = element(
+          'div',
+          shape.id === 'matrix' ? 'math-tool-fields math-tool-matrix-fields' : 'math-tool-fields'
+        );
+        var inputs = {};
+
+        function values() {
+          var collected = {};
+          for (var index = 0; index < shape.fields.length; index += 1) {
+            var key = shape.fields[index].key;
+            collected[key] = inputs[key].value;
           }
-        });
-        return input;
-      }
-
-      function insertCustomFraction() {
-        var fraction = customFraction(numerator.value, denominator.value);
-        if (!fraction) {
-          if (typeof numerator.focus === 'function') {
-            numerator.focus();
-          }
-          return;
+          return collected;
         }
-        insertCharacter(fraction);
-      }
 
-      var numerator = fractionInput('Custom fraction numerator', 'num');
-      var denominator = fractionInput('Custom fraction denominator', 'den');
-      var slash = element('span', 'math-tool-custom-fraction-slash', '/');
-      slash.setAttribute('aria-hidden', 'true');
-      var insertButton = element('button', 'math-tool-custom-fraction-insert', 'Insert');
-      insertButton.type = 'button';
-      insertButton.setAttribute('aria-label', 'Insert custom fraction');
-      insertButton.addEventListener('mousedown', preventBlur);
-      insertButton.addEventListener('click', insertCustomFraction);
+        function currentMarkup() {
+          return shape.build(values());
+        }
 
-      row.appendChild(numerator);
-      row.appendChild(slash);
-      row.appendChild(denominator);
-      row.appendChild(insertButton);
-      return row;
+        var preview = element('div', 'math-tool-preview');
+        preview.setAttribute('aria-live', 'polite');
+
+        function refreshPreview() {
+          var markup = currentMarkup();
+          if (textApi) {
+            textApi.render(preview, markup);
+          } else {
+            preview.textContent = markup;
+          }
+          return markup;
+        }
+
+        var hint = element('p', 'math-tool-hint', '');
+        hint.hidden = true;
+
+        function focusFirstEmpty() {
+          for (var index = 0; index < shape.fields.length; index += 1) {
+            var candidate = inputs[shape.fields[index].key];
+            if (!candidate.value.trim() && typeof candidate.focus === 'function') {
+              candidate.focus();
+              return;
+            }
+          }
+        }
+
+        function attemptInsert() {
+          var markup = currentMarkup();
+          if (!markup) {
+            hint.textContent = shape.hint;
+            hint.hidden = false;
+            focusFirstEmpty();
+            return;
+          }
+          hint.hidden = true;
+          insertCharacter(markup);
+          refreshPreview();
+        }
+
+        for (var fieldIndex = 0; fieldIndex < shape.fields.length; fieldIndex += 1) {
+          (function (field) {
+            var input = element('input', 'math-tool-field-input');
+            input.type = 'text';
+            input.setAttribute('aria-label', field.label);
+            input.setAttribute('placeholder', field.placeholder);
+            input.addEventListener('input', function () {
+              hint.hidden = true;
+              refreshPreview();
+            });
+            input.addEventListener('keydown', function (event) {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                attemptInsert();
+              }
+            });
+            inputs[field.key] = input;
+            fields.appendChild(input);
+          })(shape.fields[fieldIndex]);
+        }
+
+        var insertButton = element('button', 'math-tool-insert', 'Insert');
+        insertButton.type = 'button';
+        insertButton.setAttribute('aria-label', 'Insert ' + shape.label);
+        insertButton.addEventListener('mousedown', preventBlur);
+        insertButton.addEventListener('click', attemptInsert);
+
+        panel.appendChild(fields);
+        panel.appendChild(preview);
+        panel.appendChild(hint);
+        panel.appendChild(insertButton);
+        panels.appendChild(panel);
+        panelElements.push(panel);
+
+        button.addEventListener('click', function () {
+          var expanded = button.getAttribute('aria-expanded') === 'true';
+          for (var index = 0; index < shapeButtons.length; index += 1) {
+            shapeButtons[index].setAttribute('aria-expanded', 'false');
+          }
+          for (var panelIndex = 0; panelIndex < panelElements.length; panelIndex += 1) {
+            panelElements[panelIndex].hidden = true;
+          }
+          if (expanded) {
+            return;
+          }
+          button.setAttribute('aria-expanded', 'true');
+          panel.hidden = false;
+          focusFirstEmpty();
+          refreshPreview();
+        });
+
+        panel.refreshPreview = refreshPreview;
+      })(SHAPES[shapeIndex]);
     }
-
-    for (var categoryIndex = 0; categoryIndex < CATEGORIES.length; categoryIndex += 1) {
-      var category = CATEGORIES[categoryIndex];
-      var section = element('div', 'math-tool-category');
-      section.appendChild(element('span', 'math-tool-category-title', category.title));
-      var characters = element('div', 'math-tool-chars');
-      for (var characterIndex = 0; characterIndex < category.characters.length; characterIndex += 1) {
-        var categoryCharacter = category.characters[characterIndex];
-        characters.appendChild(symbolButton(categoryCharacter, categoryCharacter));
-      }
-      section.appendChild(characters);
-      if (category.title === 'Fractions') {
-        section.appendChild(customFractionRow());
-      }
-      drawer.appendChild(section);
-    }
-
-    toggle.addEventListener('click', function () {
-      var expanded = toggle.getAttribute('aria-expanded') === 'true';
-      drawer.hidden = expanded;
-      toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-      toggle.textContent = expanded ? 'More symbols' : 'Fewer symbols';
-      toggle.setAttribute('aria-label', expanded ? 'Show all math symbols' : 'Hide extra math symbols');
-    });
 
     textarea.parentNode.insertBefore(toolbar, textarea);
-    textarea.parentNode.insertBefore(drawer, textarea);
+    textarea.parentNode.insertBefore(panels, textarea);
     if (textarea.nextSibling) {
       textarea.parentNode.insertBefore(counter, textarea.nextSibling);
     } else {
@@ -530,7 +544,7 @@
 
     return {
       toolbar: toolbar,
-      drawer: drawer,
+      panels: panels,
       counter: counter,
       insert: insertCharacter,
       update: updateCounter,
@@ -541,11 +555,15 @@
   return {
     BYTE_LIMIT: BYTE_LIMIT,
     AMBER_THRESHOLD: AMBER_THRESHOLD,
-    QUICK_ROW: QUICK_ROW,
-    CATEGORIES: CATEGORIES,
+    OPERATORS: OPERATORS,
+    SHAPES: SHAPES,
     symbolName: symbolName,
     formatByteCount: formatByteCount,
-    customFraction: customFraction,
+    fractionMarkup: fractionMarkup,
+    exponentMarkup: exponentMarkup,
+    subscriptMarkup: subscriptMarkup,
+    rootMarkup: rootMarkup,
+    matrixMarkup: matrixMarkup,
     insertAtCaret: insertAtCaret,
     utf8ByteLength: utf8ByteLength,
     byteStatus: byteStatus,

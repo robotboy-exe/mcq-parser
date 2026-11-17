@@ -37,17 +37,22 @@ shapes.
 
 `src/underline-toolbar.js` adds the runtime Underline button for Constant Text,
 question text, and options A–D. `src/owner-tool/render.js` remains the browser
-exact-`<u>` renderer used by `cbt.php`; `deployed/render.php` is its server-side
-twin and adds `cbt_format_text` for the other server pages. Both escape first
-and restore only exact lowercase `<u>`/`</u>` markers. Never render stored
-question text with permissive `strip_tags` or unrestricted `innerHTML`.
+renderer used by `cbt.php`; `deployed/render.php` is its server-side twin and
+adds `cbt_format_text` for the other server pages. Both escape first and restore
+only the six exact lowercase marker pairs: `<u>`, `<frac>`, `<sup>`, `<sub>`,
+`<sqrt>`, and `<matrix>`. Fractions split at their first top-level `/`, matrices
+at their four top-level `|` cells, and everything malformed stays literal. Never
+render stored question text with permissive `strip_tags` or unrestricted
+`innerHTML`.
 
 `src/question-preview.js` creates the read-only admin preview for Constant Text
 and Question and uses `window.CBTText`; it must never write form values, storage,
-or the network. `src/math-tool.js` mounts the symbol palette and advisory byte
-counter around `#question_text` in the same Add and Edit forms; it has no
-storage, network, submit, underline-marker, or `constant_text` behavior, and the
-server's 60,000-byte check plus the native `maxlength` remain authoritative.
+or the network. `src/math-tool.js` mounts the operator row, the five freeform
+shape editors (fraction, exponent, subscript, root, 2×2 matrix), and the
+advisory byte counter around `#question_text` in the same Add and Edit forms; it
+inserts only exact shape markers, has no storage, network, submit,
+underline-marker, or `constant_text` behavior, and the server's 60,000-byte check
+plus the native `maxlength` remain authoritative.
 Root `ocr_helper.js` has no `constant_text` integration. A
 passage/cloze-shaped paste may follow the ordinary-question fallback and carry
 review flags, but it must never populate Constant Text.
@@ -136,7 +141,7 @@ deliverable.
 | `salvageNormalize` / `splitSectionsWithSalvage` | The repair must stay a no-op on bank text. The `inserts >= 2` trigger and the `after > before` chunk gate are mandatory; a repair that does not add questions must be discarded and the strict result kept byte-for-byte (INV-72). |
 | `splitBulletQuestions` / `splitQuestionItems` | Bullet mode is only for text with no line-start `N.` marker. Never invent numbers: bullet chunks keep `num: null` and the `question number missing` flag. Do not mix bullet and numbered chunks in one paste (INV-74). |
 | `extractStimuli` / `applyStimulusFlags` | The block must stay inside one question chunk and must not remove a question or option line. Standard intro needs table evidence; `[missing text]` is not a marker; a marker with no valid block removes only itself. Preserve blank lines outside a removed block and remove those inside it, or paragraph cleanup will delete/invent structure. `applyStimulusFlags` must clear old `needsImage`, assign order by queue order, and keep out-of-paste targets in `missing` (D-59, D-66, INV-92, INV-93). |
-| Exact-text renderers | `src/owner-tool/render.js` and `deployed/render.php` must remain behaviorally paired: escape first, format only balanced lowercase exact `<u>` pairs, and keep every unsupported/malformed marker literal. Candidate paths use DOM nodes; options/explanations stay plain (D-66, INV-97–INV-99). |
+| Exact-text renderers | `src/owner-tool/render.js` and `deployed/render.php` must remain behaviorally paired: escape first, format only balanced lowercase exact `<u>`, `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>` pairs, split fractions and matrices only at top-level separators, and keep every unsupported/malformed marker literal. Both run `tests/fixtures/render-markup.json`. Candidate paths use DOM nodes; options/explanations stay plain (D-66, D-97, INV-97–INV-99). |
 | English Lexis ordering | Group only the rows already selected by `cbt.php`, activate only from the trusted exact subject name, keep `NULL`/empty rows independent, restore each group's members to ascending original `id` (authored order), preserve every row field, and never move grouping into the SQL selection or `cbt_practice.php` (D-96, INV-143–INV-144). |
 | English Lexis subject operation | `03` omits the ID and changes only `is_active` on an exact existing row; `04` deactivates and never deletes. Both refuse a collation-only collision or incompatible key contract. The real 8-check harness passes on isolated Oracle MySQL Community Server 8.0.41 ARM64 (D-95, INV-142). |
 | Owner parser-version refusal | A stale `cbtOwnerTool:v1` value is read-only. Key-only paste and native submit must not call a path that stamps it with the current parser version. Only full re-paste or explicit Reset replaces it (D-66, INV-95). |

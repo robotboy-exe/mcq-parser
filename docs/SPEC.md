@@ -751,20 +751,31 @@ All server-derived text is rendered with `textContent` or created nodes, never
 
 ## 8. Formatting and multiline text
 
-- Stored Constant Text, question, and option text may contain exactly two
-  formatting markers, `<u>` and `</u>`; nothing else is formatting (D-66).
+- Stored Constant Text, question, and option text may contain only these exact
+  lowercase marker pairs: `<u>`/`</u>` (D-66) and the five math shapes
+  `<frac>`/`</frac>`, `<sup>`/`</sup>`, `<sub>`/`</sub>`, `<sqrt>`/`</sqrt>`,
+  and `<matrix>`/`</matrix>` (D-97). Nothing else is formatting.
 - Stems keep blank-line paragraph breaks; single wrapped lines fold into one
   space. Option values are always folded to one line, and explanations stay
   plain text in this release.
 - Rendering escapes first and restores only the exact markers.
-  `src/owner-tool/render.js` provides `format()` (escaped HTML with the two
-  tags restored), `render()` (text nodes plus real `<u>` elements) and
-  `strip()` (plain text for summaries); `deployed/render.php` provides the same
-  rules server-side as `cbt_format_text()` and `cbt_strip_formatting()`. Never
-  use permissive `strip_tags`.
-- `<u class=…>`, `<U>`, other tags, encoded `&lt;u&gt;`, and unmatched opening or
-  closing markers stay literal text. A second `<u>` inside an open underline
-  also stays literal. The Underline button refuses to create any of these.
+  `src/owner-tool/render.js` provides `format()` (escaped HTML with the six tag
+  pairs restored), `render()` (created nodes, including the fraction, root, and
+  matrix spans) and `strip()` (plain text for summaries); `deployed/render.php`
+  provides the same rules server-side as `cbt_format_text()` and
+  `cbt_strip_formatting()`. Both consume
+  `tests/fixtures/render-markup.json`. A fraction splits at its first top-level
+  `/` into `.cbt-frac-num` over `.cbt-frac-den` (horizontal border rule); a root
+  renders `√` plus an over-lined `.cbt-sqrt-body`; a matrix with exactly four
+  top-level `|` cells renders a bracketed 2×2 grid. Never use permissive
+  `strip_tags`.
+- `<u class=…>`, `<U>`, `<FRAC>`, other tags, encoded `&lt;u&gt;`, and unmatched
+  opening or closing markers stay literal text. A marker whose own tag is
+  already open, such as a second `<u>` inside an underline, also stays literal;
+  that rule caps real nesting at the six distinct markers. The Underline button
+  and the shape editors refuse to create malformed markers, and the shape
+  editors additionally reject `<`, `>`, and the separator that would split the
+  active shape.
 - Constant Text, question stems, and the result table render with
   `white-space: pre-wrap`, so manual newlines and OCR paragraph breaks survive;
   the admin list summary is truncated after stripping the markers.

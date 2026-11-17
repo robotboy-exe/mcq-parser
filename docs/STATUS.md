@@ -22,6 +22,11 @@ Last updated: 2026-11-17.
   review-settled; implementation, local evidence, and the real 8-check
   operation harness on isolated Oracle MySQL Community Server 8.0.41 ARM64
   pass; review `PASS WITH ACCEPTED FINDINGS`, `NOTE-1`–`NOTE-4` corrected).
+- [`MS01`](plan/math-editor/ms-01-visual-math-shapes.md) — phase 5 visual math
+  shapes: `in progress`, implementation handoff recorded 2026-11-17 at base
+  `0410ecb`, review pending. Palette keeps the basic operators, five freeform
+  editors insert exact `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>`
+  markers, and fractions/roots get horizontal bars in every rendering surface.
 - Ordering: ST01 replaced OT12 because running the context migration was judged
   riskier and more complex than one optional passage per question. The owner
   chose the reset on 2026-11-14.
@@ -37,8 +42,10 @@ Last updated: 2026-11-17.
   dependency is satisfied.
 - Planning constraint: the measured live-origin diffs are
   `admin_questions.php` +89/−80 (ST01 +87 plus ME01's two asset tags, unchanged
-  by ME02's token edit),
-  `cbt.php` +59/−35, `answer_details.php` +8/−3, and `ocr_helper.js` +57/−20 —
+  by the ME02 and MS01 token edits),
+  `cbt.php` +74/−35 (MS01 shape rules plus the renderer token),
+  `answer_details.php` +21/−3 (MS01 shape rules), `cbt_practice.php` +20/−2 (its
+  `FIX-1` renderer token), and `ocr_helper.js` +57/−20 —
   all within the 100-addition externalize-first cap. No cap exception remains.
 - Last review-settled packages: ST01 (`PASS`, third closure-focused re-review),
   ME01 (`PASS`, phase-2 closure re-review), ME02 (`PASS WITH ACCEPTED
@@ -46,9 +53,13 @@ Last updated: 2026-11-17.
   ACCEPTED FINDINGS`; `NOTE-1`–`NOTE-4` corrected 2026-11-17). Archived cycle
   close `45807ea`, archive commit `134305c`.
 - Cycle close for `math-editor-2026-11` completed 2026-11-17 at phase-4
-  boundary commit `e08b922`; every package is done and review-settled, no
-  `BLOCK` or required `FIX` remains, and no live write occurred. The cycle stays
-  active pending the owner's explicit archive decision.
+  boundary commit `e08b922` and cycle-close docs `0410ecb`; every earlier package
+  is done and review-settled, no `BLOCK` or required `FIX` remains, and no live
+  write occurred. On 2026-11-17 the owner reopened the cycle (it was never
+  archived) and added phase 5, [`MS01`](plan/math-editor/ms-01-visual-math-shapes.md)
+  (visual math shapes), whose phase-5 review recorded `PASS WITH ACCEPTED
+  FINDINGS` and whose `FIX-1` cache-key fix is applied; the closure-focused
+  re-review is pending.
 - Archived cycle: [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md);
   summary in [`plan/history.md`](plan/history.md).
 
@@ -104,6 +115,9 @@ Last updated: 2026-11-17.
 | EL01 implementation handoff (2026-11-17, dirty base at `3f5d2ea`) | failing-first real-module test; `php tests/cbt-question-order.php`; disposable HTTP `cbt.php` POST; real `03`/`04` operation harness on disposable MariaDB; full Node/PHP baseline, PHP lint, bank extractor, syntax, and live-origin measurement | 10 ordering/wiring and 6 HTTP staging checks PASS; 8 SQL operation checks PASS preliminarily on MariaDB 13.0.2; 60 runner, 163 unit, 11 helper, 10 underline, 4 preview, 20 math-tool, 9 renderer, 8 store PASS; `cbt.php` package `+5/−0`, final 1068 / 45755 and **+59/−35** from live; exact MySQL 8.0.41 run pending at that checkpoint (closed by the next row); no live write |
 | EL01 MySQL 8.0.41 acceptance (2026-11-17, dirty base at `3f5d2ea`) | real `tests/english-lexis-sql.sh` against an isolated Oracle MySQL Community Server 8.0.41 ARM64 instance (`127.0.0.1:3307`), no non-target override; server stopped and disposable databases dropped by the harness | 8 SQL operation checks PASS on `8.0.41`: absent, rerun, rollback/no-delete, reactivation, active rerun, forward collision refusal, rollback collision refusal, and schema-contract refusal; external EL01 gate closed; no live write |
 | EL01 phase-4 rigorous review (2026-11-17, reviewed `HEAD` `3f5d2ea` plus the EL01 worktree) | independent original review: acceptance reproduction, per-file externalize-first measurements, real module/wiring, HTTP staging, and MySQL 8.0.41 harnesses, manifest, PHP lint, syntax, `git diff --check`, and five adversarial probes | `PASS WITH ACCEPTED FINDINGS`; no `BLOCK` or `FIX`; `NOTE-1`–`NOTE-4` were docs/scope-only and are corrected; 11 ordering/wiring, 6 HTTP staging, 8 MySQL 8.0.41, 18/18 manifest, live-origin `cbt.php` +59 within the +60 cap; no live write |
+| MS01 implementation (2026-11-17, base `0410ecb`, uncommitted) | `node tests/runner.js`, `unit.js`, `ocr-helper.js`, `underline-toolbar.js`, `question-preview.js`, `math-tool.js`, `render-markup.js`, `extract-bank --check`, and the PHP 8.3.32 suites plus `php -l` | 60 runner; 163 unit; 11 helper; 10 underline; 5 preview; 25 math-tool; 67 shared marker vectors in JS and 32 in PHP; store 8; ordering 11; bank 7 hashes; lint PASS; live-origin +89/−80, +74/−35, +21/−3; no browser, MySQL, or live check |
+| MS01 phase-5 review (2026-11-17, reviewed `0410ecb` plus the MS01 worktree) | independent original review: acceptance reproduction, per-file measurements, 409-input JS/PHP parity fuzz, injection and strip probes, three-surface CSS parity, manifest re-hash, and `git diff --check` | `PASS WITH ACCEPTED FINDINGS`; `FIX-1` (stale cache keys on three consumers) plus `NOTE-1`–`NOTE-6`; no `BLOCK`; manifest 18/18; all suites and counts reproduced; no live write |
+| MS01 `FIX-1` fix (2026-11-17, base `0410ecb`, uncommitted) | strengthened asset vector in `tests/math-tool.js`, `node tests/math-tool.js`, full Node/PHP baseline, PHP lint, `git diff --check`, manifest re-hash, and `--no-index` live numstat | 25 math-tool vectors PASS with the new token assertions; 60 runner, 163 unit, 11 helper, 10 underline, 5 preview, 67 JS + 32 PHP marker vectors, 8 store, 11 ordering; lint PASS; `admin_questions.php` 1055 / 62662 at **+89/−80**; `cbt_practice.php` 886 / 37246 at **+20/−2**; no browser, MySQL, staging, or live check |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -236,6 +250,11 @@ gates.
   isolated Oracle MySQL Community Server 8.0.41 ARM64, and the phase-4 review
   settled on 2026-11-17 with `PASS WITH ACCEPTED FINDINGS` and `NOTE-1`–`NOTE-4`
   corrected.
+- MS01: visual math shapes. Replace the palette's symbol grids with five freeform
+  shape editors (fraction, exponent, subscript, root, 2×2 matrix), store shapes
+  as exact `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, `<matrix>` markers, and paint the
+  fraction divider and radical vinculum as horizontal rules in the admin preview,
+  exam page, and details page. Not started; Gate 1 prepared 2026-11-17.
 
 ## Source of truth
 

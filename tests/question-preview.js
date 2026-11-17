@@ -67,6 +67,9 @@ function makeEnvironment(actionValue = 'save_question') {
     createElement(tagName) {
       return makeElement(tagName, this);
     },
+    createTextNode(value) {
+      return { text: String(value), children: [] };
+    },
     querySelector(selector) {
       if (selector === 'input[name=action][value=' + actionValue + ']') return this.action;
       return null;
@@ -165,6 +168,23 @@ test('mounts on the native edit form', () => {
   const mounted = preview.init(env.root);
   assert(mounted);
   assert.strictEqual(env.root.document.getElementById('owner_tool_preview').textContent, env.question.value);
+});
+
+test('renders math shape markers with the real shared renderer', () => {
+  const env = makeEnvironment();
+  env.root.CBTText = require('../src/owner-tool/render.js');
+  env.question.value = 'Solve <frac>3/7</frac> of it';
+  env.constant.value = '';
+  preview.init(env.root);
+
+  const rendered = env.root.document.getElementById('owner_tool_preview');
+  const fractions = descendants({ children: rendered.children })
+    .filter((element) => element.className === 'cbt-frac');
+  assert.strictEqual(fractions.length, 1);
+  assert.strictEqual(fractions[0].children[0].className, 'cbt-frac-num');
+  assert.strictEqual(fractions[0].children[0].children[0].text, '3');
+  assert.strictEqual(fractions[0].children[1].children[0].text, '7');
+  assert.strictEqual(env.question.value, 'Solve <frac>3/7</frac> of it');
 });
 
 test('module has no storage, network, or form-value writes', () => {

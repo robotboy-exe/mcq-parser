@@ -514,6 +514,21 @@ include __DIR__ . '/header.php';
     .cbt-actions { flex-wrap: wrap; }
     .cbt-btn { flex: 1; }
 }
+
+/* Exact-marker math shapes. Keep in parity with src/question-preview.css and
+   deployed/answer_details.php. */
+.cbt-frac { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; vertical-align: middle; line-height: 1.05; margin: 0 .12em; }
+.cbt-frac-num, .cbt-frac-den { display: block; padding: 0 .22em; text-align: center; }
+.cbt-frac-den { border-top: 1px solid currentColor; }
+.cbt-frac-single { display: inline; }
+.cbt-sqrt { display: inline-flex; align-items: flex-start; vertical-align: middle; margin: 0 .08em; }
+.cbt-sqrt-sign { font-size: 1.15em; line-height: 1.05; }
+.cbt-sqrt-body { padding: 0 .12em 0 .06em; border-top: 1px solid currentColor; line-height: 1.2; }
+.cbt-matrix { display: inline-flex; align-items: stretch; vertical-align: middle; gap: .08em; margin: 0 .12em; }
+.cbt-matrix-bracket { display: inline-flex; align-items: center; font-size: 2.1em; line-height: .9; }
+.cbt-matrix-grid { display: inline-grid; grid-template-columns: repeat(2, auto); column-gap: .65em; row-gap: .15em; align-content: center; }
+.cbt-matrix-cell { text-align: center; }
+.cbt-matrix-single { display: inline; }
 </style>
 
 <main class="cbt-page">
@@ -783,7 +798,7 @@ include __DIR__ . '/header.php';
 </main>
 
 <?php if ($examStarted): ?>
-<script src="src/owner-tool/render.js?v=2.3.2g"></script>
+<script src="src/owner-tool/render.js?v=2.3.3"></script>
 <script>
 // Questions are randomly selected from MySQL for the chosen subject/category.\n// Subject 6 (English Language) allows 100; subject 12 (Oral English) allows 60; others allow 50.
 // JSON_HEX_* prevents question text from breaking the script context.
@@ -1049,7 +1064,7 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
-// Only the exact <u> markers are formatting; everything else stays text.
+// Only the exact shape and underline markers are formatting; everything else stays text.
 const renderQuestionText = (element, value) => {
     if (window.CBTText) {
         window.CBTText.render(element, value);

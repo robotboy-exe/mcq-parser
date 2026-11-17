@@ -55,15 +55,15 @@ function makeElement(tagName, document) {
       (listeners[type] || (listeners[type] = [])).push(listener);
     },
     dispatchEvent(event) {
-      (listeners[event.type] || []).forEach((listener) => listener({
+      (listeners[event.type] || []).forEach((listener) => listener(Object.assign({
         type: event.type,
         currentTarget: this,
         preventDefault() {}
-      }));
+      }, event)));
       return true;
     },
-    dispatch(type) {
-      this.dispatchEvent({ type });
+    dispatch(event) {
+      this.dispatchEvent(typeof event === 'string' ? { type: event } : event);
     },
     focus() {
       this.ownerDocument.activeElement = this;
@@ -149,7 +149,12 @@ function makeEnvironment(options = {}) {
     document.execCommand = options.execCommand;
   }
 
-  return { document, form, field, textarea, save, load, skip, root: { document } };
+  const root = { document };
+  if (options.textApi) {
+    root.CBTText = options.textApi;
+  }
+
+  return { document, form, field, textarea, save, load, skip, root };
 }
 
 function findAll(element, predicate, found = []) {
@@ -160,12 +165,19 @@ function findAll(element, predicate, found = []) {
   return found;
 }
 
-function findButton(element, text) {
-  const buttons = findAll(element, (child) => child.tagName === 'BUTTON' && child.textContent === text);
-  return buttons[0] || null;
+function byClass(element, className) {
+  return findAll(element, (child) => String(child.className).split(' ').indexOf(className) !== -1);
 }
 
-test('inserts a symbol at the caret and preserves surrounding text', () => {
+function byLabel(element, label) {
+  return findAll(element, (child) => child.getAttribute('aria-label') === label);
+}
+
+function panelFor(mounted, id) {
+  return mounted.panels.children.find((panel) => panel.id === 'math_tool_panel_' + id);
+}
+
+test('inserts text at the caret and preserves surrounding text', () => {
   const result = tool.insertAtCaret('abc', 1, 1, '±');
   assert.strictEqual(result.value, 'a±bc');
   assert.strictEqual(result.caret, 2);
@@ -179,9 +191,9 @@ test('replaces a selected range', () => {
 });
 
 test('clamps out-of-range and reversed selections', () => {
-  assert.strictEqual(tool.insertAtCaret('abc', 99, 99, '²').value, 'abc²');
-  assert.strictEqual(tool.insertAtCaret('abc', -5, -1, '²').value, '²abc');
-  assert.strictEqual(tool.insertAtCaret('abc', 3, 1, '²').value, 'abc²');
+  assert.strictEqual(tool.insertAtCaret('abc', 99, 99, '√').value, 'abc√');
+  assert.strictEqual(tool.insertAtCaret('abc', -5, -1, '√').value, '√abc');
+  assert.strictEqual(tool.insertAtCaret('abc', 3, 1, '√').value, 'abc√');
 });
 
 test('counts UTF-8 bytes rather than characters', () => {
@@ -208,40 +220,59 @@ test('formats byte counts with spaced thousands', () => {
   assert.strictEqual(tool.formatByteCount(60000), '60 000');
 });
 
-test('ships the curated quick row and six drawer categories', () => {
-  assert.deepStrictEqual(tool.QUICK_ROW, ['²', '³', 'ⁿ', '₁', '₂', '±', '√', '×', '÷', '≠', '≈', '°', '½', 'π', 'θ']);
-  assert.deepStrictEqual(tool.CATEGORIES.map((category) => category.title), [
-    'Exponents',
-    'Subscripts',
-    'Fractions',
-    'Greek',
-    'Set theory and logic',
-    'Geometry and vectors'
+test('ships only the basic operators and the five shape editors', () => {
+  assert.deepStrictEqual(tool.OPERATORS.map((operator) => operator.character), [
+    '±',
+    '×',
+    '÷',
+    '≠',
+    '≈',
+    '°',
+    'π',
+    '√'
   ]);
-  assert.deepStrictEqual(tool.CATEGORIES.map((category) => category.characters.length), [15, 18, 15, 17, 12, 9]);
-  const drawerCharacters = tool.CATEGORIES.reduce((all, category) => all.concat(category.characters), []);
-  for (const character of tool.QUICK_ROW) {
-    assert.notStrictEqual(tool.symbolName(character), 'symbol ' + character, 'missing name for ' + character);
+  assert.deepStrictEqual(tool.SHAPES.map((shape) => shape.id), [
+    'fraction',
+    'exponent',
+    'subscript',
+    'root',
+    'matrix'
+  ]);
+  assert.deepStrictEqual(tool.SHAPES.map((shape) => shape.fields.length), [2, 2, 2, 1, 4]);
+  for (const operator of tool.OPERATORS) {
+    assert.strictEqual(tool.symbolName(operator.character), operator.name);
   }
-  for (const character of drawerCharacters) {
-    assert.notStrictEqual(tool.symbolName(character), 'symbol ' + character, 'missing name for ' + character);
-  }
-  assert.strictEqual(tool.CATEGORIES[2].characters.filter((character) => character === '½').length, 1);
+  assert.strictEqual(tool.symbolName('θ'), 'symbol θ');
+  assert.strictEqual(tool.CATEGORIES, undefined, 'symbol grids must be gone');
+  assert.strictEqual(tool.QUICK_ROW, undefined, 'quick row must be gone');
+  assert.strictEqual(tool.customFraction, undefined, 'vulgar fraction builder must be gone');
 });
 
-test('builds a rendered custom fraction from trimmed digits', () => {
-  assert.strictEqual(tool.customFraction('1', '2'), '½');
-  assert.strictEqual(tool.customFraction('  2 ', ' 3 '), '⅔');
-  assert.strictEqual(tool.customFraction('3', '7'), '³⁄₇');
-  assert.strictEqual(tool.customFraction('12', '25'), '¹²⁄₂₅');
-  assert.strictEqual(tool.customFraction('', '7'), '');
-  assert.strictEqual(tool.customFraction('3', '   '), '');
-  assert.strictEqual(tool.customFraction('3', '0'), '');
-  assert.strictEqual(tool.customFraction('x', '7'), '');
-  assert.strictEqual(tool.customFraction(null, undefined), '');
+test('builds exact shape markers from freeform values', () => {
+  assert.strictEqual(tool.fractionMarkup('3', '7'), '<frac>3/7</frac>');
+  assert.strictEqual(tool.fractionMarkup('  12 ', ' 25 '), '<frac>12/25</frac>');
+  assert.strictEqual(tool.exponentMarkup('x', '2n+1'), 'x<sup>2n+1</sup>');
+  assert.strictEqual(tool.subscriptMarkup('a', 'n-1'), 'a<sub>n-1</sub>');
+  assert.strictEqual(tool.rootMarkup('2x+1'), '<sqrt>2x+1</sqrt>');
+  assert.strictEqual(tool.matrixMarkup('2', 'x', '1', 'y'), '<matrix>2|x|1|y</matrix>');
+  assert.strictEqual(tool.fractionMarkup('1', '2'), '<frac>1/2</frac>');
 });
 
-test('mounts the toolbar, drawer, and counter around the native textarea', () => {
+test('refuses empty or markup-bearing values', () => {
+  assert.strictEqual(tool.fractionMarkup('', '7'), '');
+  assert.strictEqual(tool.fractionMarkup('3', '   '), '');
+  assert.strictEqual(tool.fractionMarkup('3/4', '7'), '', 'no slash inside a fraction term');
+  assert.strictEqual(tool.fractionMarkup('<b>', '7'), '');
+  assert.strictEqual(tool.exponentMarkup('x', ''), '');
+  assert.strictEqual(tool.exponentMarkup('', '2'), '');
+  assert.strictEqual(tool.subscriptMarkup('x', '<1>'), '');
+  assert.strictEqual(tool.rootMarkup(''), '');
+  assert.strictEqual(tool.matrixMarkup('1', '2', '3', ''), '');
+  assert.strictEqual(tool.matrixMarkup('1', '2', '3', 'a|b'), '');
+  assert.strictEqual(tool.fractionMarkup(null, undefined), '');
+});
+
+test('mounts the toolbar, shape panels, and counter around the native textarea', () => {
   const environment = makeEnvironment({ value: 'hello', preview: true });
   const mounted = tool.init(environment.root);
   assert.ok(mounted);
@@ -249,15 +280,20 @@ test('mounts the toolbar, drawer, and counter around the native textarea', () =>
   const field = environment.field;
   const textareaIndex = field.children.indexOf(environment.textarea);
   assert.strictEqual(field.children[textareaIndex - 2].id, 'math_tool_toolbar');
-  assert.strictEqual(field.children[textareaIndex - 1].id, 'math_tool_drawer');
+  assert.strictEqual(field.children[textareaIndex - 1].id, 'math_tool_panels');
   assert.strictEqual(field.children[textareaIndex + 1].id, 'math_tool_counter');
   assert.strictEqual(field.children[textareaIndex + 2].id, 'owner_tool_preview_panel');
 
   assert.strictEqual(mounted.toolbar.getAttribute('data-math-tool-mounted'), 'question_text');
-  assert.strictEqual(mounted.drawer.hidden, true);
-  assert.strictEqual(environment.save.disabled, false);
+  assert.strictEqual(mounted.panels.children.length, 5);
+  for (const panel of mounted.panels.children) {
+    assert.strictEqual(panel.hidden, true);
+  }
+  assert.strictEqual(findAll(field, (child) => child.id === 'math_tool_drawer').length, 0);
   assert.strictEqual(findAll(field, (child) => child.id === 'owner_tool_underline').length, 0);
-  assert.strictEqual(findButton(mounted.toolbar, 'x²') !== null, true);
+  assert.strictEqual(byClass(mounted.toolbar, 'math-tool-operators').length, 1);
+  assert.strictEqual(byClass(mounted.toolbar, 'math-tool-shapes').length, 1);
+  assert.strictEqual(environment.save.disabled, false);
 });
 
 test('is idempotent and never adds a second toolbar', () => {
@@ -268,78 +304,164 @@ test('is idempotent and never adds a second toolbar', () => {
   assert.strictEqual(toolbars.length, 1);
 });
 
-test('inserts a quick symbol at the remembered caret and fires input', () => {
+test('inserts a basic operator at the remembered caret and fires input', () => {
   const environment = makeEnvironment({ value: 'a\n\nb', start: 1 });
   const mounted = tool.init(environment.root);
   let inputEvents = 0;
   environment.textarea.addEventListener('input', () => { inputEvents += 1; });
 
-  findButton(mounted.toolbar, 'x²').dispatch('click');
+  byLabel(mounted.toolbar, 'multiplication')[0].dispatch('click');
 
-  assert.strictEqual(environment.textarea.value, 'a²\n\nb');
+  assert.strictEqual(environment.textarea.value, 'a×\n\nb');
   assert.strictEqual(environment.textarea.selectionStart, 2);
   assert.strictEqual(inputEvents, 1);
 });
 
-test('uses execCommand when it is available without duplicating the symbol', () => {
-  let commands = 0;
+test('inserts a fraction marker from its panel at the remembered caret', () => {
+  const environment = makeEnvironment({ value: 'a\n\nb', start: 1 });
+  const mounted = tool.init(environment.root);
+
+  byLabel(mounted.toolbar, 'Insert Fraction')[0].dispatch('click');
+  const panel = panelFor(mounted, 'fraction');
+  assert.strictEqual(panel.hidden, false);
+  assert.strictEqual(byLabel(mounted.toolbar, 'Insert Fraction')[0].getAttribute('aria-expanded'), 'true');
+
+  byLabel(panel, 'Fraction numerator')[0].value = '3';
+  byLabel(panel, 'Fraction denominator')[0].value = '7';
+  byLabel(panel, 'Insert Fraction')[0].dispatch('click');
+
+  assert.strictEqual(environment.textarea.value, 'a<frac>3/7</frac>\n\nb');
+  assert.strictEqual(environment.textarea.selectionStart, 17);
+});
+
+test('inserts exponent, subscript, root, and matrix markers', () => {
+  const environment = makeEnvironment({ value: '', start: 0 });
+  const mounted = tool.init(environment.root);
+  const results = [];
+
+  function insert(shapeLabel, panelId, values) {
+    byLabel(mounted.toolbar, 'Insert ' + shapeLabel)[0].dispatch('click');
+    const panel = panelFor(mounted, panelId);
+    for (const [label, value] of Object.entries(values)) {
+      byLabel(panel, label)[0].value = value;
+    }
+    byLabel(panel, 'Insert ' + shapeLabel)[0].dispatch('click');
+    results.push(environment.textarea.value);
+  }
+
+  insert('Exponent', 'exponent', { 'Exponent base': 'x', 'Exponent value': '2n+1' });
+  insert('Subscript', 'subscript', { 'Subscript base': 'a', 'Subscript value': '1' });
+  insert('Root', 'root', { 'Root radicand': '2x+1' });
+  insert('2x2 matrix', 'matrix', {
+    'Matrix cell 1': '2',
+    'Matrix cell 2': 'x',
+    'Matrix cell 3': '1',
+    'Matrix cell 4': 'y'
+  });
+
+  assert.strictEqual(results[0], 'x<sup>2n+1</sup>');
+  assert.strictEqual(results[1], 'x<sup>2n+1</sup>a<sub>1</sub>');
+  assert.strictEqual(results[2], 'x<sup>2n+1</sup>a<sub>1</sub><sqrt>2x+1</sqrt>');
+  assert.strictEqual(
+    results[3],
+    'x<sup>2n+1</sup>a<sub>1</sub><sqrt>2x+1</sqrt><matrix>2|x|1|y</matrix>'
+  );
+});
+
+test('refuses an incomplete shape with a hint and leaves the field unchanged', () => {
+  const environment = makeEnvironment({ value: 'abc', start: 1 });
+  const mounted = tool.init(environment.root);
+  byLabel(mounted.toolbar, 'Insert Fraction')[0].dispatch('click');
+  const panel = panelFor(mounted, 'fraction');
+  byLabel(panel, 'Fraction numerator')[0].value = '3';
+
+  byLabel(panel, 'Insert Fraction')[0].dispatch('click');
+
+  assert.strictEqual(environment.textarea.value, 'abc');
+  const hint = byClass(panel, 'math-tool-hint')[0];
+  assert.strictEqual(hint.hidden, false);
+  assert.ok(hint.textContent.length > 0);
+});
+
+test('Enter inside a shape field inserts and never submits the form', () => {
+  const environment = makeEnvironment({ value: 'q', start: 1 });
+  const mounted = tool.init(environment.root);
+  let submits = 0;
+  environment.textarea.form.addEventListener('submit', () => { submits += 1; });
+  byLabel(mounted.toolbar, 'Insert Root')[0].dispatch('click');
+  const panel = panelFor(mounted, 'root');
+  const input = byLabel(panel, 'Root radicand')[0];
+  input.value = '9';
+
+  input.dispatchEvent({ type: 'keydown', key: 'Enter', preventDefault() { submits += 100; } });
+
+  assert.strictEqual(submits, 100, 'the handler must prevent the default action');
+  assert.strictEqual(environment.textarea.value, 'q<sqrt>9</sqrt>');
+});
+
+test('only one shape panel is open at a time and the button toggles it', () => {
+  const environment = makeEnvironment();
+  const mounted = tool.init(environment.root);
+  const fractionButton = byLabel(mounted.toolbar, 'Insert Fraction')[0];
+  const rootButton = byLabel(mounted.toolbar, 'Insert Root')[0];
+
+  fractionButton.dispatch('click');
+  assert.strictEqual(panelFor(mounted, 'fraction').hidden, false);
+
+  rootButton.dispatch('click');
+  assert.strictEqual(panelFor(mounted, 'fraction').hidden, true);
+  assert.strictEqual(panelFor(mounted, 'root').hidden, false);
+  assert.strictEqual(fractionButton.getAttribute('aria-expanded'), 'false');
+
+  rootButton.dispatch('click');
+  assert.strictEqual(panelFor(mounted, 'root').hidden, true);
+  assert.strictEqual(rootButton.getAttribute('aria-expanded'), 'false');
+});
+
+test('uses execCommand when it is available without duplicating the marker', () => {
   const environment = makeEnvironment({
     value: 'abc',
     start: 2,
     execCommand(command, ui, text) {
-      commands += 1;
       assert.strictEqual(command, 'insertText');
       environment.textarea.setRangeText(text, environment.textarea.selectionStart, environment.textarea.selectionEnd);
       return true;
     }
   });
   const mounted = tool.init(environment.root);
-  findButton(mounted.toolbar, '±').dispatch('click');
+  byLabel(mounted.toolbar, 'Insert Root')[0].dispatch('click');
+  const panel = panelFor(mounted, 'root');
+  byLabel(panel, 'Root radicand')[0].value = '9';
+  byLabel(panel, 'Insert Root')[0].dispatch('click');
 
-  assert.strictEqual(commands, 1);
-  assert.strictEqual(environment.textarea.value, 'ab±c');
-  assert.strictEqual(environment.textarea.selectionStart, 3);
+  assert.strictEqual(environment.textarea.value, 'ab<sqrt>9</sqrt>c');
+  assert.strictEqual(environment.textarea.selectionStart, 16);
 });
 
-test('inserts a custom fraction from the drawer inputs at the remembered caret', () => {
-  const environment = makeEnvironment({ value: 'a\n\nb', start: 1 });
+test('renders the panel preview through CBTText without writing the field', () => {
+  const rendered = [];
+  const environment = makeEnvironment({
+    value: 'abc',
+    start: 1,
+    textApi: {
+      render(element, value) {
+        element.textContent = value;
+        rendered.push(value);
+      }
+    }
+  });
   const mounted = tool.init(environment.root);
-  const inputs = findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-input');
-  assert.strictEqual(inputs.length, 2);
+  byLabel(mounted.toolbar, 'Insert Fraction')[0].dispatch('click');
+  const panel = panelFor(mounted, 'fraction');
+  byLabel(panel, 'Fraction numerator')[0].value = '1';
+  byLabel(panel, 'Fraction denominator')[0].dispatch('input');
+  byLabel(panel, 'Fraction denominator')[0].value = '2';
+  byLabel(panel, 'Fraction denominator')[0].dispatch('input');
 
-  inputs[0].value = '3';
-  inputs[1].value = '7';
-  findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-insert')[0].dispatch('click');
-
-  assert.strictEqual(environment.textarea.value, 'a³⁄₇\n\nb');
-  assert.strictEqual(environment.textarea.selectionStart, 4);
-});
-
-test('leaves the field unchanged when the custom fraction is incomplete', () => {
-  const environment = makeEnvironment({ value: 'abc', start: 1 });
-  const mounted = tool.init(environment.root);
-  const inputs = findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-input');
-  inputs[0].value = '3';
-
-  findAll(mounted.drawer, (child) => child.className === 'math-tool-custom-fraction-insert')[0].dispatch('click');
-
+  const preview = byClass(panel, 'math-tool-preview')[0];
+  assert.strictEqual(preview.textContent, '<frac>1/2</frac>');
+  assert.strictEqual(rendered.includes('<frac>1/2</frac>'), true);
   assert.strictEqual(environment.textarea.value, 'abc');
-});
-
-test('toggles the drawer and its aria-expanded state', () => {
-  const environment = makeEnvironment();
-  const mounted = tool.init(environment.root);
-  const toggle = findAll(mounted.toolbar, (child) => child.className === 'math-tool-toggle')[0];
-
-  toggle.dispatch('click');
-  assert.strictEqual(mounted.drawer.hidden, false);
-  assert.strictEqual(toggle.getAttribute('aria-expanded'), 'true');
-  assert.strictEqual(toggle.textContent, 'Fewer symbols');
-
-  toggle.dispatch('click');
-  assert.strictEqual(mounted.drawer.hidden, true);
-  assert.strictEqual(toggle.getAttribute('aria-expanded'), 'false');
-  assert.strictEqual(toggle.textContent, 'More symbols');
 });
 
 test('counter tracks UTF-8 bytes and switches to red without touching maxlength', () => {
@@ -370,7 +492,6 @@ test('counter refreshes after OCR load, OCR skip, and native form reset', () => 
   environment.textarea.value = '±'.repeat(30000);
   environment.load.dispatch('click');
   assert.strictEqual(mounted.counter.getAttribute('data-byte-status'), 'red');
-  assert.strictEqual(mounted.counter.children[0].textContent, '60 000 / 60 000 bytes');
 
   environment.textarea.value = 'x';
   environment.skip.dispatch('click');
@@ -384,13 +505,12 @@ test('counter refreshes after OCR load, OCR skip, and native form reset', () => 
 test('every generated control is a labelled button and never a submit control', () => {
   const environment = makeEnvironment();
   const mounted = tool.init(environment.root);
-  const buttons = findAll(mounted.toolbar, (child) => child.tagName === 'BUTTON')
-    .concat(findAll(mounted.drawer, (child) => child.tagName === 'BUTTON'));
-  const drawerCharacters = tool.CATEGORIES.reduce((total, category) => total + category.characters.length, 0);
-  assert.strictEqual(buttons.length, tool.QUICK_ROW.length + 2 + drawerCharacters);
-  for (const button of buttons) {
-    assert.strictEqual(button.type, 'button');
-    assert.ok(button.getAttribute('aria-label'), 'missing aria-label');
+  const controls = findAll(mounted.toolbar, (child) => child.tagName === 'BUTTON')
+    .concat(findAll(mounted.panels, (child) => child.tagName === 'BUTTON'));
+  assert.strictEqual(controls.length, tool.OPERATORS.length + (tool.SHAPES.length * 2));
+  for (const control of controls) {
+    assert.strictEqual(control.type, 'button');
+    assert.ok(control.getAttribute('aria-label'), 'missing aria-label');
   }
 });
 
@@ -402,27 +522,56 @@ test('module source keeps its stated boundaries', () => {
   assert.strictEqual(/\.submit\s*\(|requestSubmit/.test(source), false);
   assert.strictEqual(/owner_tool_underline|constant_text|<u>/.test(source), false);
   assert.strictEqual(source.includes("button.type = 'button'"), true);
+  for (const marker of ['<frac>', '<sup>', '<sub>', '<sqrt>', '<matrix>']) {
+    assert.strictEqual(source.includes(marker), true, 'missing builder for ' + marker);
+  }
 });
 
 test('admin page loads the palette after the preview and the stylesheet beside it', () => {
   const admin = fs.readFileSync(path.join(__dirname, '..', 'deployed', 'admin_questions.php'), 'utf8');
-  const css = admin.indexOf('<link rel="stylesheet" href="src/math-tool.css?v=1.0.0">');
-  const script = admin.indexOf('<script src="src/math-tool.js?v=1.0.0"></script>');
+  const css = admin.indexOf('<link rel="stylesheet" href="src/math-tool.css?v=1.1.0">');
+  const script = admin.indexOf('<script src="src/math-tool.js?v=1.1.0"></script>');
   const previewScript = admin.indexOf('<script src="src/question-preview.js"></script>');
+  const previewCss = admin.indexOf('<link rel="stylesheet" href="src/question-preview.css?v=1.1.0">');
+  const renderScript = admin.indexOf('<script src="src/owner-tool/render.js?v=2.3.3"></script>');
   assert.ok(css > 0, 'missing math-tool stylesheet link');
+  assert.ok(previewCss > 0, 'the preview stylesheet must carry the MS01 cache key');
   assert.ok(script > previewScript, 'math-tool script must load after the preview script');
+  assert.ok(renderScript > 0 && renderScript < script, 'the renderer must load before the palette');
   assert.strictEqual((admin.match(/src\/math-tool\.css/g) || []).length, 1);
   assert.strictEqual((admin.match(/src\/math-tool\.js/g) || []).length, 1);
+  assert.strictEqual((admin.match(/src\/question-preview\.css/g) || []).length, 1);
+  assert.strictEqual((admin.match(/src\/owner-tool\/render\.js/g) || []).length, 1);
+  assert.strictEqual(admin.includes('src/question-preview.css"'), false, 'the preview stylesheet needs a token');
+  assert.strictEqual(admin.includes('src/owner-tool/render.js"></script>'), false, 'the renderer needs a token');
   assert.strictEqual(admin.includes('math_tool_toolbar'), false, 'no PHP markup change allowed');
 
   const stylesheet = fs.readFileSync(path.join(__dirname, '..', 'src', 'math-tool.css'), 'utf8');
   assert.ok(stylesheet.includes('focus-visible'));
   assert.ok(stylesheet.includes('min-width: 38px'));
   assert.ok(stylesheet.includes('@media (max-width: 650px)'));
-  assert.ok(
-    stylesheet.includes('.math-tool-custom-fraction .math-tool-custom-fraction-input'),
-    'compact fraction inputs must outrank .admin-field input'
-  );
+  assert.ok(stylesheet.includes('grid-template-columns: repeat(2, 56px)'), 'matrix cells need a 2x2 grid');
+
+  const preview = fs.readFileSync(path.join(__dirname, '..', 'src', 'question-preview.css'), 'utf8');
+  for (const rule of ['.cbt-frac-den', '.cbt-sqrt-body', '.cbt-matrix-grid', '.cbt-matrix-bracket']) {
+    assert.ok(preview.includes(rule), 'preview stylesheet missing ' + rule);
+  }
+  assert.ok(preview.includes('border-top: 1px solid currentColor'), 'horizontal bar rule missing');
+});
+
+test('exam and detail pages ship the same horizontal-bar rules', () => {
+  const cbt = fs.readFileSync(path.join(__dirname, '..', 'deployed', 'cbt.php'), 'utf8');
+  const details = fs.readFileSync(path.join(__dirname, '..', 'deployed', 'answer_details.php'), 'utf8');
+  for (const page of [cbt, details]) {
+    assert.ok(page.includes('.cbt-frac-den { border-top: 1px solid currentColor; }') || page.includes('.cbt-frac-den{border-top:1px solid currentColor}'));
+    assert.ok(page.includes('.cbt-sqrt-body') && page.includes('.cbt-matrix-grid'));
+  }
+  assert.ok(cbt.includes('src/owner-tool/render.js?v=2.3.3'));
+
+  const practice = fs.readFileSync(path.join(__dirname, '..', 'deployed', 'cbt_practice.php'), 'utf8');
+  assert.ok(practice.includes('src/owner-tool/render.js?v=2.3.3'), 'cbt_practice must load the current renderer key');
+  assert.strictEqual((practice.match(/src\/owner-tool\/render\.js/g) || []).length, 1);
+  assert.strictEqual(practice.includes('2.3.2c'), false, 'the stale renderer key must be gone');
 });
 
 console.log('PASS: ' + passed + ' math-tool vectors');

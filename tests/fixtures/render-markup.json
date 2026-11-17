@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "name": "underline",
+      "input": "<u>a</u>",
+      "format": "<u>a</u>",
+      "strip": "a"
+    },
+    {
+      "name": "script tag stays text",
+      "input": "<script>alert(1)</script>",
+      "format": "&lt;script&gt;alert(1)&lt;/script&gt;",
+      "strip": "<script>alert(1)</script>"
+    },
+    {
+      "name": "attributes stay text",
+      "input": "<u onclick=\"x\">click</u>",
+      "format": "&lt;u onclick=&quot;x&quot;&gt;click&lt;/u&gt;",
+      "strip": "<u onclick=\"x\">click</u>"
+    },
+    {
+      "name": "encoded markers stay text",
+      "input": "&lt;u&gt;x&lt;/u&gt;",
+      "format": "&amp;lt;u&amp;gt;x&amp;lt;/u&amp;gt;",
+      "strip": "&lt;u&gt;x&lt;/u&gt;"
+    },
+    {
+      "name": "uppercase markers stay text",
+      "input": "<U>x</U>",
+      "format": "&lt;U&gt;x&lt;/U&gt;",
+      "strip": "<U>x</U>"
+    },
+    {
+      "name": "stray closing marker stays text",
+      "input": "x</u>",
+      "format": "x&lt;/u&gt;",
+      "strip": "x</u>"
+    },
+    {
+      "name": "unclosed marker stays text",
+      "input": "<u>x",
+      "format": "&lt;u&gt;x",
+      "strip": "<u>x"
+    },
+    {
+      "name": "repeated underline open stays text",
+      "input": "<u>one <u>two</u>",
+      "format": "<u>one &lt;u&gt;two</u>",
+      "strip": "one <u>two"
+    },
+    {
+      "name": "escaping inside underline",
+      "input": "<u>😀 & \" ' < ></u>",
+      "format": "<u>😀 &amp; &quot; &#039; &lt; &gt;</u>",
+      "strip": "😀 & \" ' < >"
+    },
+    {
+      "name": "empty underline",
+      "input": "<u></u>",
+      "format": "<u></u>",
+      "strip": ""
+    },
+    {
+      "name": "fraction",
+      "input": "<frac>3/7</frac>",
+      "format": "<span class=\"cbt-frac\"><span class=\"cbt-frac-num\">3</span><span class=\"cbt-frac-den\">7</span></span>",
+      "strip": "3/7"
+    },
+    {
+      "name": "multi-digit fraction",
+      "input": "<frac>12/25</frac>",
+      "format": "<span class=\"cbt-frac\"><span class=\"cbt-frac-num\">12</span><span class=\"cbt-frac-den\">25</span></span>",
+      "strip": "12/25"
+    },
+    {
+      "name": "fraction without separator keeps text",
+      "input": "<frac>3</frac>",
+      "format": "<span class=\"cbt-frac cbt-frac-single\">3</span>",
+      "strip": "3"
+    },
+    {
+      "name": "fraction keeps inline text around it",
+      "input": "2 <frac>3/7</frac> of it",
+      "format": "2 <span class=\"cbt-frac\"><span class=\"cbt-frac-num\">3</span><span class=\"cbt-frac-den\">7</span></span> of it",
+      "strip": "2 3/7 of it"
+    },
+    {
+      "name": "escaping inside a fraction keeps the separator split",
+      "input": "<frac><b>/</frac>",
+      "format": "<span class=\"cbt-frac\"><span class=\"cbt-frac-num\">&lt;b&gt;</span><span class=\"cbt-frac-den\"></span></span>",
+      "strip": "<b>/"
+    },
+    {
+      "name": "exponent",
+      "input": "x<sup>2n+1</sup>",
+      "format": "x<sup>2n+1</sup>",
+      "strip": "x2n+1"
+    },
+    {
+      "name": "subscript",
+      "input": "x<sub>1</sub>",
+      "format": "x<sub>1</sub>",
+      "strip": "x1"
+    },
+    {
+      "name": "root",
+      "input": "<sqrt>2x+1</sqrt>",
+      "format": "<span class=\"cbt-sqrt\"><span class=\"cbt-sqrt-sign\" aria-hidden=\"true\">√</span><span class=\"cbt-sqrt-body\">2x+1</span></span>",
+      "strip": "2x+1"
+    },
+    {
+      "name": "matrix",
+      "input": "<matrix>2|x|1|y</matrix>",
+      "format": "<span class=\"cbt-matrix\"><span class=\"cbt-matrix-bracket\" aria-hidden=\"true\">[</span><span class=\"cbt-matrix-grid\"><span class=\"cbt-matrix-cell\">2</span><span class=\"cbt-matrix-cell\">x</span><span class=\"cbt-matrix-cell\">1</span><span class=\"cbt-matrix-cell\">y</span></span><span class=\"cbt-matrix-bracket\" aria-hidden=\"true\">]</span></span>",
+      "strip": "2|x|1|y"
+    },
+    {
+      "name": "matrix with too many cells keeps text",
+      "input": "<matrix>2|x|1|y|9</matrix>",
+      "format": "<span class=\"cbt-matrix cbt-matrix-single\">2|x|1|y|9</span>",
+      "strip": "2|x|1|y|9"
+    },
+    {
+      "name": "matrix with too few cells keeps text",
+      "input": "<matrix>2|x|1</matrix>",
+      "format": "<span class=\"cbt-matrix cbt-matrix-single\">2|x|1</span>",
+      "strip": "2|x|1"
+    },
+    {
+      "name": "nested exponent inside a fraction",
+      "input": "<frac>x<sup>2</sup>/2</frac>",
+      "format": "<span class=\"cbt-frac\"><span class=\"cbt-frac-num\">x<sup>2</sup></span><span class=\"cbt-frac-den\">2</span></span>",
+      "strip": "x2/2"
+    },
+    {
+      "name": "fraction inside a root",
+      "input": "<sqrt><frac>1/2</frac></sqrt>",
+      "format": "<span class=\"cbt-sqrt\"><span class=\"cbt-sqrt-sign\" aria-hidden=\"true\">√</span><span class=\"cbt-sqrt-body\"><span class=\"cbt-frac\"><span class=\"cbt-frac-num\">1</span><span class=\"cbt-frac-den\">2</span></span></span></span>",
+      "strip": "1/2"
+    },
+    {
+      "name": "underline wraps a fraction",
+      "input": "<u><frac>3/7</frac></u>",
+      "format": "<u><span class=\"cbt-frac\"><span class=\"cbt-frac-num\">3</span><span class=\"cbt-frac-den\">7</span></span></u>",
+      "strip": "3/7"
+    },
+    {
+      "name": "underline inside a root",
+      "input": "<sqrt><u>x</u></sqrt>",
+      "format": "<span class=\"cbt-sqrt\"><span class=\"cbt-sqrt-sign\" aria-hidden=\"true\">√</span><span class=\"cbt-sqrt-body\"><u>x</u></span></span>",
+      "strip": "x"
+    },
+    {
+      "name": "uppercase shape marker stays text",
+      "input": "<FRAC>3/7</FRAC>",
+      "format": "&lt;FRAC&gt;3/7&lt;/FRAC&gt;",
+      "strip": "<FRAC>3/7</FRAC>"
+    },
+    {
+      "name": "shape attributes stay text",
+      "input": "<frac onclick=\"x\">3/7</frac>",
+      "format": "&lt;frac onclick=&quot;x&quot;&gt;3/7&lt;/frac&gt;",
+      "strip": "<frac onclick=\"x\">3/7</frac>"
+    },
+    {
+      "name": "unclosed shape marker stays text",
+      "input": "<frac>3/7",
+      "format": "&lt;frac&gt;3/7",
+      "strip": "<frac>3/7"
+    },
+    {
+      "name": "stray shape close stays text",
+      "input": "</frac>",
+      "format": "&lt;/frac&gt;",
+      "strip": "</frac>"
+    },
+    {
+      "name": "repeated shape open stays text",
+      "input": "<sup>a<sup>b</sup></sup>",
+      "format": "<sup>a&lt;sup&gt;b</sup>&lt;/sup&gt;",
+      "strip": "a<sup>b</sup>"
+    },
+    {
+      "name": "four different shapes nest through their children",
+      "input": "<sup><sub><sqrt><frac><matrix>a|b|c|d</matrix>/2</frac></sqrt></sub></sup>",
+      "format": "<sup><sub><span class=\"cbt-sqrt\"><span class=\"cbt-sqrt-sign\" aria-hidden=\"true\">√</span><span class=\"cbt-sqrt-body\"><span class=\"cbt-frac\"><span class=\"cbt-frac-num\"><span class=\"cbt-matrix\"><span class=\"cbt-matrix-bracket\" aria-hidden=\"true\">[</span><span class=\"cbt-matrix-grid\"><span class=\"cbt-matrix-cell\">a</span><span class=\"cbt-matrix-cell\">b</span><span class=\"cbt-matrix-cell\">c</span><span class=\"cbt-matrix-cell\">d</span></span><span class=\"cbt-matrix-bracket\" aria-hidden=\"true\">]</span></span></span><span class=\"cbt-frac-den\">2</span></span></span></span></sub></sup>",
+      "strip": "a|b|c|d/2"
+    },
+    {
+      "name": "markers split across text stay literal",
+      "input": "<fr ac>3/7</fr ac>",
+      "format": "&lt;fr ac&gt;3/7&lt;/fr ac&gt;",
+      "strip": "<fr ac>3/7</fr ac>"
+    }
+  ]
+}

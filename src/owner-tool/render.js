@@ -1,5 +1,6 @@
-// Shared question/context text renderer for the owner tool and the CBT pages.
-// Only the exact markers <u> and </u> are formatting; everything else is text.
+// Shared question/constant text renderer for the admin preview and the CBT
+// pages. Only the exact lowercase markers <u>, <frac>, <sup>, <sub>, <sqrt>,
+// and <matrix> are formatting; everything else is escaped text.
 (function (root, factory) {
   var api = factory();
   if (typeof module !== 'undefined' && module.exports) module.exports = api.text;
@@ -10,8 +11,9 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  var OPEN = '<u>';
-  var CLOSE = '</u>';
+  var MAX_DEPTH = 8;
+  var TAGS = ['u', 'frac', 'sup', 'sub', 'sqrt', 'matrix'];
+  var MATRIX_CELLS = 4;
 
   function escapeText(text) {
     return String(text === null || text === undefined ? '' : text)
@@ -19,91 +21,288 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+      .replace(/'/g, '&#039;');
   }
 
-  // Splits text into plain and underlined parts. A marker only counts when it
-  // is exactly <u> or </u> and matches the current state; anything else,
-  // including attributes, other tags and encoded markers, stays text.
-  function segments(text) {
+  function openToken(tag) {
+    return '<' + tag + '>';
+  }
+
+  function closeToken(tag) {
+    return '</' + tag + '>';
+  }
+
+  // A marker opens only when its closing marker appears later, its own tag is
+  // not already open, and the depth budget allows it. Anything else stays text.
+  function parse(text) {
     var source = String(text === null || text === undefined ? '' : text);
-    var parts = [];
-    var buffer = '';
-    var open = false;
-    var i = 0;
-    var remainingCloses = 0;
-    var scan = 0;
-    while ((scan = source.indexOf(CLOSE, scan)) !== -1) {
-      remainingCloses++;
-      scan += CLOSE.length;
+    var pos = 0;
+
+    function parseLevel(stopTag, openTags, depth) {
+      var nodes = [];
+      var buffer = '';
+
+      function flush() {
+        if (buffer) {
+          nodes.push({ text: buffer });
+          buffer = '';
+        }
+      }
+
+      while (pos < source.length) {
+        if (stopTag && source.slice(pos, pos + closeToken(stopTag).length) === closeToken(stopTag)) {
+          pos += closeToken(stopTag).length;
+          flush();
+          return nodes;
+        }
+        var tag = null;
+        for (var index = 0; index < TAGS.length; index += 1) {
+          var candidate = TAGS[index];
+          if (source.slice(pos, pos + openToken(candidate).length) === openToken(candidate)) {
+            tag = candidate;
+            break;
+          }
+        }
+        if (
+          tag
+          && depth < MAX_DEPTH
+          && openTags.indexOf(tag) === -1
+          && source.indexOf(closeToken(tag), pos + openToken(tag).length) !== -1
+        ) {
+          flush();
+          pos += openToken(tag).length;
+          nodes.push({ tag: tag, children: parseLevel(tag, openTags.concat(tag), depth + 1) });
+          continue;
+        }
+        buffer += source.charAt(pos);
+        pos += 1;
+      }
+      flush();
+      return nodes;
     }
 
-    function flush() {
-      if (!buffer) return;
-      parts.push({ text: buffer, underline: open });
-      buffer = '';
-    }
+    return parseLevel(null, [], 0);
+  }
 
-    while (i < source.length) {
-      if (source.slice(i, i + OPEN.length) === OPEN) {
-        if (!open && remainingCloses > 0) {
-          flush();
-          open = true;
-        } else {
-          buffer += OPEN;
+  // Splits a node list at the first separator that appears in its own text.
+  function takeAt(nodes, separator) {
+    var head = [];
+    for (var index = 0; index < nodes.length; index += 1) {
+      var node = nodes[index];
+      if (typeof node.text === 'string') {
+        var at = node.text.indexOf(separator);
+        if (at !== -1) {
+          if (at > 0) head.push({ text: node.text.slice(0, at) });
+          var tail = [];
+          var rest = node.text.slice(at + separator.length);
+          if (rest) tail.push({ text: rest });
+          for (var next = index + 1; next < nodes.length; next += 1) tail.push(nodes[next]);
+          return { head: head, tail: tail, found: true };
         }
-        i += OPEN.length;
-        continue;
       }
-      if (source.slice(i, i + CLOSE.length) === CLOSE) {
-        if (open) {
-          flush();
-          open = false;
-        } else {
-          buffer += CLOSE;
-        }
-        remainingCloses--;
-        i += CLOSE.length;
-        continue;
-      }
-      buffer += source.charAt(i);
-      i += 1;
+      head.push(node);
     }
-    flush();
+    return { head: head, tail: [], found: false };
+  }
+
+  function matrixCells(nodes) {
+    var groups = [];
+    var rest = nodes;
+    for (var index = 0; index < MATRIX_CELLS - 1; index += 1) {
+      var part = takeAt(rest, '|');
+      if (!part.found) return null;
+      groups.push(part.head);
+      rest = part.tail;
+    }
+    if (takeAt(rest, '|').found) return null;
+    groups.push(rest);
+    return groups;
+  }
+
+  function formatNodes(nodes) {
+    var html = '';
+    for (var index = 0; index < nodes.length; index += 1) {
+      html += formatNode(nodes[index]);
+    }
+    return html;
+  }
+
+  function formatNode(node) {
+    if (typeof node.text === 'string') return escapeText(node.text);
+    var tag = node.tag;
+    var children = node.children || [];
+    if (tag === 'u') return '<u>' + formatNodes(children) + '</u>';
+    if (tag === 'sup') return '<sup>' + formatNodes(children) + '</sup>';
+    if (tag === 'sub') return '<sub>' + formatNodes(children) + '</sub>';
+    if (tag === 'frac') {
+      var split = takeAt(children, '/');
+      if (!split.found) {
+        return '<span class="cbt-frac cbt-frac-single">' + formatNodes(children) + '</span>';
+      }
+      return '<span class="cbt-frac">'
+        + '<span class="cbt-frac-num">' + formatNodes(split.head) + '</span>'
+        + '<span class="cbt-frac-den">' + formatNodes(split.tail) + '</span>'
+        + '</span>';
+    }
+    if (tag === 'sqrt') {
+      return '<span class="cbt-sqrt">'
+        + '<span class="cbt-sqrt-sign" aria-hidden="true">\u221a</span>'
+        + '<span class="cbt-sqrt-body">' + formatNodes(children) + '</span>'
+        + '</span>';
+    }
+    if (tag === 'matrix') {
+      var cells = matrixCells(children);
+      if (!cells) {
+        return '<span class="cbt-matrix cbt-matrix-single">' + formatNodes(children) + '</span>';
+      }
+      var grid = '';
+      for (var cell = 0; cell < cells.length; cell += 1) {
+        grid += '<span class="cbt-matrix-cell">' + formatNodes(cells[cell]) + '</span>';
+      }
+      return '<span class="cbt-matrix">'
+        + '<span class="cbt-matrix-bracket" aria-hidden="true">[</span>'
+        + '<span class="cbt-matrix-grid">' + grid + '</span>'
+        + '<span class="cbt-matrix-bracket" aria-hidden="true">]</span>'
+        + '</span>';
+    }
+    return formatNodes(children);
+  }
+
+  // Safe HTML string: every text run is escaped here, and only recognized
+  // markers are re-emitted as tags.
+  function format(text) {
+    return formatNodes(parse(text));
+  }
+
+  function pushPart(parts, text, underline) {
+    if (!text) return;
+    var last = parts[parts.length - 1];
+    if (last && last.underline === underline) {
+      last.text += text;
+      return;
+    }
+    parts.push({ text: text, underline: underline });
+  }
+
+  function flatten(nodes, underline, parts) {
+    for (var index = 0; index < nodes.length; index += 1) {
+      var node = nodes[index];
+      if (typeof node.text === 'string') {
+        pushPart(parts, node.text, underline);
+        continue;
+      }
+      flatten(node.children || [], node.tag === 'u' ? true : underline, parts);
+    }
     return parts;
   }
 
-  // Safe HTML string: every part is escaped here, and only the two markers are
-  // re-emitted as tags.
-  function format(text) {
-    return segments(text).map(function (part) {
-      return part.underline ? '<u>' + escapeText(part.text) + '</u>' : escapeText(part.text);
-    }).join('');
+  // Underline-only view kept for the shared context card API.
+  function segments(text) {
+    return flatten(parse(text), false, []);
   }
 
-  // Sets an element's contents with text nodes plus real <u> elements, so no
-  // stored text is ever parsed as HTML.
+  // Sets an element's contents with real elements, so no stored text is ever
+  // parsed as HTML.
+  function renderNode(doc, parent, node) {
+    if (typeof node.text === 'string') {
+      parent.appendChild(doc.createTextNode(node.text));
+      return;
+    }
+    var tag = node.tag;
+    var children = node.children || [];
+    var index;
+    if (tag === 'u' || tag === 'sup' || tag === 'sub') {
+      var simple = doc.createElement(tag);
+      for (index = 0; index < children.length; index += 1) renderNode(doc, simple, children[index]);
+      parent.appendChild(simple);
+      return;
+    }
+    if (tag === 'frac') {
+      var split = takeAt(children, '/');
+      var fraction = doc.createElement('span');
+      if (!split.found) {
+        fraction.className = 'cbt-frac cbt-frac-single';
+        for (index = 0; index < children.length; index += 1) renderNode(doc, fraction, children[index]);
+        parent.appendChild(fraction);
+        return;
+      }
+      fraction.className = 'cbt-frac';
+      var numerator = doc.createElement('span');
+      numerator.className = 'cbt-frac-num';
+      var denominator = doc.createElement('span');
+      denominator.className = 'cbt-frac-den';
+      for (index = 0; index < split.head.length; index += 1) renderNode(doc, numerator, split.head[index]);
+      for (index = 0; index < split.tail.length; index += 1) renderNode(doc, denominator, split.tail[index]);
+      fraction.appendChild(numerator);
+      fraction.appendChild(denominator);
+      parent.appendChild(fraction);
+      return;
+    }
+    if (tag === 'sqrt') {
+      var root = doc.createElement('span');
+      root.className = 'cbt-sqrt';
+      var sign = doc.createElement('span');
+      sign.className = 'cbt-sqrt-sign';
+      sign.setAttribute('aria-hidden', 'true');
+      sign.textContent = '\u221a';
+      var body = doc.createElement('span');
+      body.className = 'cbt-sqrt-body';
+      for (index = 0; index < children.length; index += 1) renderNode(doc, body, children[index]);
+      root.appendChild(sign);
+      root.appendChild(body);
+      parent.appendChild(root);
+      return;
+    }
+    if (tag === 'matrix') {
+      var cells = matrixCells(children);
+      var matrix = doc.createElement('span');
+      if (!cells) {
+        matrix.className = 'cbt-matrix cbt-matrix-single';
+        for (index = 0; index < children.length; index += 1) renderNode(doc, matrix, children[index]);
+        parent.appendChild(matrix);
+        return;
+      }
+      matrix.className = 'cbt-matrix';
+      var left = doc.createElement('span');
+      left.className = 'cbt-matrix-bracket';
+      left.setAttribute('aria-hidden', 'true');
+      left.textContent = '[';
+      var grid = doc.createElement('span');
+      grid.className = 'cbt-matrix-grid';
+      for (var cell = 0; cell < cells.length; cell += 1) {
+        var cellElement = doc.createElement('span');
+        cellElement.className = 'cbt-matrix-cell';
+        for (index = 0; index < cells[cell].length; index += 1) renderNode(doc, cellElement, cells[cell][index]);
+        grid.appendChild(cellElement);
+      }
+      var right = doc.createElement('span');
+      right.className = 'cbt-matrix-bracket';
+      right.setAttribute('aria-hidden', 'true');
+      right.textContent = ']';
+      matrix.appendChild(left);
+      matrix.appendChild(grid);
+      matrix.appendChild(right);
+      parent.appendChild(matrix);
+      return;
+    }
+    for (index = 0; index < children.length; index += 1) renderNode(doc, parent, children[index]);
+  }
+
   function render(element, text) {
     if (!element) return element;
     var doc = element.ownerDocument || (typeof document !== 'undefined' ? document : null);
     if (!doc) return element;
     element.textContent = '';
-    segments(text).forEach(function (part) {
-      var node = doc.createTextNode(part.text);
-      if (!part.underline) {
-        element.appendChild(node);
-        return;
-      }
-      var underlined = doc.createElement('u');
-      underlined.appendChild(node);
-      element.appendChild(underlined);
-    });
+    var nodes = parse(text);
+    for (var index = 0; index < nodes.length; index += 1) {
+      renderNode(doc, element, nodes[index]);
+    }
     return element;
   }
 
-  // Plain text with the exact markers removed, for list summaries and titles.
+  // Plain text with every recognized marker removed, for list summaries.
   function strip(text) {
-    return segments(text).map(function (part) {
+    return flatten(parse(text), false, []).map(function (part) {
       return part.text;
     }).join('');
   }
