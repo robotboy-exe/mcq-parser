@@ -265,3 +265,31 @@ Archived 2026-11-14: the phase map is preserved unchanged at
 `docs/plan/prompts/cycles/owner-tool-2026-11.md` and must not be edited. No
 cycle is active; new product scope starts a new cycle under
 `prompts/cycles/README.md` after the owner confirms it.
+
+## Math Editor Cycle — math-editor-2026-11 (cycle close 2026-11-17)
+
+ST01 returned production to root `ocr_helper.js`, retired the shared-text
+context subsystem, added optional `questions.constant_text` and the underline
+toolbar, and completed the D-91 option-label grammar. ME01/ME02 added the math
+palette, custom-fraction builder, advisory byte counter, versioned assets, and
+release evidence. EL01 added the exact `English (Lexis & Structure)` subject
+operations and post-selection Constant Text grouping in `cbt.php`.
+
+The phase-4 boundary is committed at `e08b922`. Reviews settled as follows:
+ST01 `PASS` with `FIX-1`/`FIX-2` closed; ME01 `PASS` with `FIX-1` and both
+notes closed; ME02 `PASS WITH ACCEPTED FINDINGS` plus the owner-accepted
+Brave/Android check on 2026-11-17; EL01 `PASS WITH ACCEPTED FINDINGS` with
+`NOTE-1`–`NOTE-4` corrected. No `BLOCK` or required `FIX` remains open.
+
+Final local evidence: 60 runner PASS, 163 unit, 11 helper, 10 underline, 4
+preview, 20 math-tool, 11 English Lexis ordering/wiring, 6 disposable HTTP
+staging, 9 PHP renderer, 8 admin-store, 8 real SQL-operation checks on isolated
+Oracle MySQL Community Server 8.0.41 ARM64, bank extractor, PHP lint, syntax,
+and `git diff --check` all pass. The deployment manifest is 18/18 exact.
+Live-origin additions remain `admin_questions.php` +89/−80, `cbt.php` +59/−35,
+`answer_details.php` +8/−3, and `ocr_helper.js` +57/−20, all within the
+100-addition cap with no exception.
+
+No live deploy, migration, subject write, question write, or cleanup was
+performed. The cycle remains active pending the owner's explicit archive
+decision.

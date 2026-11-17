@@ -18,7 +18,8 @@ including the real 8-check operation/rollback run on isolated Oracle MySQL
 Community Server 8.0.41 ARM64. ME02 is done after the owner's 2026-11-17
 Brave/Android acceptance. EL01 is done and phase-4 review-settled 2026-11-17
 with `PASS WITH ACCEPTED FINDINGS`; `NOTE-1`–`NOTE-4` are corrected. Cycle close
-is next. Status lives in the coordinator.
+completed 2026-11-17. The cycle remains active pending the owner's explicit
+archive decision. Status lives in the coordinator.
 
 ## Starting a new cycle
 

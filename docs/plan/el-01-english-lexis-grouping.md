@@ -278,11 +278,12 @@ deploy authorization. Target PHP 8.3 lint remains a deployment check.
 [`reviews/math-editor-2026-11-phase-4.md`](reviews/math-editor-2026-11-phase-4.md).
 No `BLOCK` or `FIX`. `NOTE-1`–`NOTE-4` were corrected as docs/scope changes.
 
-**Commit:** phase-4 boundary commit authorized by the owner on 2026-11-17; this
+**Commit:** phase-4 boundary commit `e08b922` on `owner-tool-integration`; this
 record is part of that commit.
 
-**Next:** cycle close via `docs/plan/prompts/cycle-close.md`; the optional `main`
-fast-forward and archiving each need separate explicit owner authorization.
+**Next:** cycle close completed 2026-11-17. The `math-editor-2026-11` cycle
+remains active pending the owner's explicit archive decision; the optional
+`main` fast-forward also needs separate explicit authorization.
 
 ## Fix — 2026-11-17
 

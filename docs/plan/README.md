@@ -271,16 +271,18 @@ verifies the detail path with the rest of Release A.
    [`prompts/review-session.md`](prompts/review-session.md):
    `PASS WITH ACCEPTED FINDINGS`; `NOTE-1`–`NOTE-4` corrected. No fix or
    re-review round is required.
-8. **Cycle close** via [`prompts/cycle-close.md`](prompts/cycle-close.md); the
-   phase-4 boundary commit is authorized, while the optional `main`
-   fast-forward and archiving each need separate explicit owner authorization.
+8. **Cycle close** — complete 2026-11-17 via
+   [`prompts/cycle-close.md`](prompts/cycle-close.md). The phase-4 boundary is
+   committed at `e08b922`; the optional `main` fast-forward and archiving still
+   need separate explicit owner authorization.
 
-Current workflow stop: EL01 is review-settled and the phase-4 boundary commit is
-authorized. Cycle close Gate 1 is the next step; it executes no package and
-waits for explicit `go` before any final-field update or commit.
+Current workflow stop: cycle close is complete and the `math-editor-2026-11`
+cycle remains active. The cycle-close status/history updates are uncommitted;
+the owner must decide whether to authorize that docs commit. Archiving and an
+optional `main` fast-forward remain separate explicit owner decisions.
 
 ```text
-NEXT COMMAND: read docs/plan/prompts/cycle-close.md and run cycle close
+NEXT COMMAND: Commit the cycle-close status and history updates
 ```
 
 ## Session protocol
