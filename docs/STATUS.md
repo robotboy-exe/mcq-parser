@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-17.
+Last updated: 2026-11-18.
 
 ## Active cycle
 
@@ -33,7 +33,9 @@ Last updated: 2026-11-17.
 - D-105 palette restoration (owner request 2026-11-18): a `More symbols` drawer
   returns only the Greek, set theory and logic, and geometry and vectors grids;
   exponents, subscripts, fractions, and square root stay with the visual shape
-  editors. Committed at `23a406c` and pushed; no package review yet.
+  editors. Committed at `23a406c` and pushed; cycle-reviewed at `596fb31`
+  (`PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`, `NOTE-9`–`NOTE-12`), and the
+  owner accepted the desktop/Brave drawer check on 2026-11-18.
 - Ordering: ST01 replaced OT12 because running the context migration was judged
   riskier and more complex than one optional passage per question. The owner
   chose the reset on 2026-11-14.
@@ -59,7 +61,9 @@ Last updated: 2026-11-17.
   FINDINGS`; owner phone gate accepted 2026-11-17), EL01 (`PASS WITH ACCEPTED
   FINDINGS`; `NOTE-1`–`NOTE-4` corrected 2026-11-17), and MS01 (original
   `FIX-1` closure re-review `PASS`; D-103/D-104 focused review `PASS WITH
-  ACCEPTED FINDINGS`, both notes corrected, owner visual gate accepted).
+  ACCEPTED FINDINGS`, both notes corrected, owner visual gate accepted), plus the
+  cycle-wide review at `596fb31` (`PASS WITH ACCEPTED FINDINGS`; `NOTE-9`–`NOTE-12`,
+  `NOTE-10`/`NOTE-11` corrected, D-105 owner-accepted 2026-11-18).
   Archived cycle close `45807ea`, archive commit `134305c`.
 - Cycle close for `math-editor-2026-11` completed 2026-11-17 at phase-4
   boundary commit `e08b922` and cycle-close docs `0410ecb`; every earlier package
@@ -132,6 +136,7 @@ Last updated: 2026-11-17.
 | MS01 D-104 owner-preview correction (2026-11-17, base `c6a81fb`, uncommitted with D-103) | failing-first `node tests/question-preview.js`, focused preview/palette checks, full Node/PHP baseline, PHP lint, cache/hash refresh, and live-origin numstat | Constant Text preview is a fixed 150px border-box with vertical overflow; Question preview stays content-sized; 6 preview and 25 math-tool vectors plus the full baseline pass; caps remain +89/+74/+21/+20; focused review and owner desktop/Brave recheck pending |
 | MS01 D-103/D-104 focused review and owner acceptance (2026-11-17) | independent real-path suites, manifest/cap measurements, disposable Chromium at 900px/320px and 48 radical font/size combinations, then owner desktop/Brave checklist | `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; `NOTE-7` regression guard and `NOTE-8` stale docs corrected; owner reported PASS for the sole Root control, joined vinculum, fixed scrollable Constant Text preview, and content-sized Question preview; no agent live action |
 | Math palette grid restoration (2026-11-18, dirty base at `120a5db`, owner request) | `node tests/math-tool.js` with new drawer, toggle, category and shape-exclusion vectors, the full Node baseline, `node --check`, `extract-bank --check`, `git diff --check`, hash/line measurements, then the PHP 8.3.32 suites and `php -l` on every `deployed/` file after provisioning the CLI into `$HOME/php83` | 26 math-tool vectors PASS; 60 runner, 163 unit, 11 helper, 10 underline, 6 preview, 67 renderer checks, 7 bank hashes; PHP renderer 32, admin store 8, ordering 11, lint 7/7 PASS; `src/math-tool.js` 660 / 21427, `.css` 255 / 4118, `tests/math-tool.js` 660 / 28485; `admin_questions.php` 1055 / 62662 with both palette tokens rotated in place; a re-review found and fixed the toggle rule sitting before the shared button rule (proved by mutating the order: the assertion fails, then passes when restored); browser, MySQL, staging, live, and deploy checks not run |
+| Math-editor cycle review (2026-11-18, reviewed `HEAD` `596fb31`, clean worktree) | independent cycle-wide review of phases 1–5 plus D-105: all Node/PHP suites, PHP 8.3.32 lint, bank extractor, manifest re-hash, live-origin numstat, 513-input JS/PHP parity fuzz, asset-token audit, D-105 drawer probe, D-104 mutation re-challenge, and an authenticated fetch of the authoritative ref | `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; 60 runner, 163 unit, 11 helper, 10 underline, 6 preview, 26 math-tool, 67 renderer, 32 PHP renderer, 8 store, 11 ordering, lint 0 failures; manifest 13/13; parity mismatches 0; caps +89/+74/+21/+20/+57; remote `owner-tool-integration` = `HEAD`; `NOTE-9`–`NOTE-12`, owner D-105 drawer check accepted 2026-11-18; no live, deploy, MySQL, staging, or browser action by the agent |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -186,6 +191,7 @@ Supplied DDL SHA-256:
 | Owner Brave/Android Constant Text/underline/preview check | ST01/ME01/ME02 | Satisfied by explicit owner acceptance 2026-11-17; no live write |
 | Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Satisfied: desktop Chrome 156 staging recorded and owner accepted the final Brave/Android recheck 2026-11-17; no live write |
 | Owner desktop/Brave correction recheck | MS01 D-103/D-104 | Satisfied 2026-11-17: owner reported PASS for the sole Root control, joined vinculum, fixed-height scrollable Constant Text preview, and content-sized Question preview; no agent live action |
+| Owner desktop/Brave drawer check | D-105 | Satisfied 2026-11-18: owner reported PASS for the `More symbols` drawer, the three restored grids, insertion at the remembered caret, 38px phone targets, and no second square-root control; no agent live action |
 | Disposable MySQL 8.0.41 English Lexis operation/rollback | EL01 | Satisfied 2026-11-17: 8-check harness PASS on isolated Oracle MySQL Community Server 8.0.41 ARM64; MariaDB 13.0.2 stayed preliminary only |
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | Archived OT08/OT09 acceptance | Satisfied 2026-11-08 with `sample-passages.txt`; no longer a production requirement after D-83 |
@@ -278,8 +284,9 @@ gates.
   package): a `More symbols` drawer restores only the Greek, set theory and
   logic, and geometry and vectors grids. Exponents, subscripts, fractions, and
   square root stay out because the visual editors cover them. Committed at
-  `23a406c` and pushed to `owner-tool-integration`; no rigorous package review
-  exists for it yet.
+  `23a406c` and pushed to `owner-tool-integration`; reviewed by the cycle-wide
+  record at `596fb31` (`PASS WITH ACCEPTED FINDINGS`, `NOTE-9`–`NOTE-12`) and
+  owner-accepted 2026-11-18.
 
 ## Source of truth
 

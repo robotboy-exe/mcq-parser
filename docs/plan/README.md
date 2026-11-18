@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-17.
+Last updated: 2026-11-18.
 
 ## Current state
 
@@ -194,7 +194,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | done; rigorous review recorded and owner phone recheck accepted 2026-11-17 | satisfied; deployment-time live artifacts remain deferred |
 | 4 | EL01 | [English Lexis Subject and Constant-Text Grouping](el-01-english-lexis-grouping.md) | current branch/worktree baseline; preserve unrelated changes | done; phase-4 review PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected | satisfied; disposable MySQL 8.0.41 operation/rollback PASS 2026-11-17 |
 | 5 | MS01 | [Visual Math Shapes and Palette Cleanup](math-editor/ms-01-visual-math-shapes.md) | EL01 review-settled; cycle reopened 2026-11-17 | done; original review and `FIX-1` closure re-review passed; boundary `c6a81fb` committed/pushed; D-103/D-104 focused review passed with no `BLOCK`/`FIX`, notes corrected, owner desktop/Brave recheck accepted 2026-11-17; corrections committed at `120a5db` | satisfied; live-origin caps remain admin +89, cbt +74, answer_details +21, cbt_practice +20 |
-| — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, no package review yet | none; Node/PHP suites and lint only, no browser or live check |
+| — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -269,6 +269,7 @@ verifies the detail path with the rest of Release A.
 | phase 3 close | ME02 release, evidence, and handoff | rigorous | done; PASS WITH ACCEPTED FINDINGS and owner phone acceptance recorded |
 | phase 4 | EL01 subject operation and grouped exam ordering | rigorous | settled 2026-11-17: PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected |
 | phase 5 | MS01 visual math shapes, palette cleanup, and horizontal bars | rigorous | settled 2026-11-17: original review and `FIX-1` re-review passed; D-103/D-104 focused review passed with accepted notes corrected; owner desktop/Brave recheck accepted |
+| cycle | phases 1–5 and D-105 at the `596fb31` tip | rigorous | settled 2026-11-18: `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; `NOTE-9`–`NOTE-12`, `NOTE-10`/`NOTE-11` corrected, owner drawer check accepted |
 
 ## Remaining path to cycle close
 
@@ -316,14 +317,23 @@ verifies the detail path with the rest of Release A.
     recheck with D-103.
 
 Current workflow stop: MS01 is done and review-settled. Its D-103/D-104
-corrections are committed at `120a5db`, and the owner's direct palette request
-is implemented as the D-105 restoration and committed at `23a406c`, both pushed
-to `owner-tool-integration`. The D-105 work has no package row or rigorous review
-of its own, so the next action is a review of that commit or a new package that
-adopts it.
+corrections are committed at `120a5db`, the owner's palette request is
+implemented as the D-105 restoration and committed at `23a406c`, and the docs
+reconciliation is `596fb31`; all are pushed, and the authenticated remote tip
+`owner-tool-integration` equals `596fb31`. The cycle-wide rigorous review is
+recorded at
+[`reviews/math-editor-2026-11-cycle-review.md`](reviews/math-editor-2026-11-cycle-review.md):
+`PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`, `NOTE-9`–`NOTE-12`, of which
+`NOTE-10` and `NOTE-11` are corrected here. The owner accepted the desktop and
+Brave/Android check for the D-105 drawer on 2026-11-18, so every cycle
+acceptance row and external gate is satisfied. Only accepted residual risk
+remains: `NOTE-9` (root `ocr_helper.js` is untokened, so the D-91 grammar depends
+on the documented deploy-time cache purge) and `NOTE-12`'s optional labelling of
+the drawer region. Archiving the cycle and advancing `main` to `596fb31` are
+separate explicit owner decisions.
 
 ```text
-NEXT COMMAND: review 23a406c (D-105 palette grid restoration)
+NEXT COMMAND: NONE - the cycle is reviewed and owner-accepted; archiving it or advancing main to 596fb31 needs an explicit owner decision
 ```
 
 ## Session protocol

@@ -117,7 +117,10 @@ are committed at `120a5db`. The owner's later request to restore the palette's
 non-shape content is D-105: a `More symbols` drawer brings back the Greek, set
 theory and logic, and geometry and vectors grids while exponents, subscripts,
 fractions, and square root stay with the visual editors. It is committed at
-`23a406c` and has no package review yet.
+`23a406c`, and the cycle-wide review of phases 1–5 plus D-105
+([record](docs/plan/reviews/math-editor-2026-11-cycle-review.md)) passed with
+accepted findings; the owner accepted its desktop/Brave drawer check on
+2026-11-18.
 
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The

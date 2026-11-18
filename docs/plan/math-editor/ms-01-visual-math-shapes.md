@@ -93,9 +93,10 @@ Contract:
 
 ### Visual editors
 
-One toolbar row, no "More symbols" drawer. The operator row plus five shape
-buttons; choosing a shape opens a compact panel filled with freeform inputs and
-a live shape preview:
+One toolbar row, no "More symbols" drawer. (Superseded by D-105 on 2026-11-18:
+the drawer returns with only the Greek, set theory and logic, and geometry and
+vectors grids.) The operator row plus five shape buttons; choosing a shape opens
+a compact panel filled with freeform inputs and a live shape preview:
 
 | Editor | Inputs | Inserted text |
 |---|---|---|
@@ -120,7 +121,9 @@ editor panel is UI only and writes nothing.
 - Keep the basic operators `± × ÷ ≠ ≈ ° π` in the always-visible row. The visual
   Root editor is the only square-root control (D-103 supersedes D-99 here).
 - Remove the Exponents, Subscripts, Fractions, Greek, Set theory and logic, and
-  Geometry and vectors grids; remove the drawer and its toggle.
+  Geometry and vectors grids; remove the drawer and its toggle. (Superseded by
+  D-105: the Greek, set theory and logic, and geometry and vectors grids return
+  in a `More symbols` drawer; the shape-covered grids stay out.)
 - Remove `customFraction`, the vulgar-fraction table, and the digit maps: a
   fraction always inserts `<frac>`, so `1/2` also gets a horizontal bar.
 - Keep the byte counter, its thresholds, and all of its refresh wiring exactly as
@@ -601,7 +604,20 @@ rule fails the new assertion; restoring it passes. Final measurements:
 `src/math-tool.js` 660 / 21427, `src/math-tool.css` 255 / 4118,
 `tests/math-tool.js` 660 / 28485, `deployed/admin_questions.php` 1055 / 62662.
 
-**Not run:** browser visual check, MySQL, staging, live, or deploy.
+**Not run:** MySQL, staging, live, or deploy. The browser visual check was run by
+the owner on 2026-11-18.
 
-**Commit:** `23a406c`, pushed to `owner-tool-integration`. No rigorous package
-review covers this follow-up yet.
+**Review and owner acceptance (2026-11-18).** The cycle-wide record
+[`math-editor-2026-11-cycle-review.md`](../reviews/math-editor-2026-11-cycle-review.md)
+reviews this follow-up at tip `596fb31`: `PASS WITH ACCEPTED FINDINGS`, no
+`BLOCK`, no `FIX`, with `NOTE-9`–`NOTE-12`. It independently reproduced the
+26-vector palette suite, the three restored grids (38 characters, none
+shape-covered, all named), the toggle rule order, the `[hidden]` rule, and the
+asset token rotation. The owner then reported **PASS** for the desktop and
+Brave/Android drawer check: the drawer opens and closes from `More symbols`,
+shows only the Greek, set theory and logic, and geometry and vectors grids,
+inserts at the remembered caret, keeps 38px phone targets, and adds no second
+square-root control.
+
+**Commit:** `23a406c` plus the docs reconciliation at `596fb31`, pushed to
+`owner-tool-integration`.

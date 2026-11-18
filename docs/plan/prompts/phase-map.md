@@ -1,7 +1,7 @@
 # Current Phase Map
 
 Current cycle: `math-editor-2026-11`
-Updated: 2026-11-17
+Updated: 2026-11-18
 
 `phase N` means phase N of this cycle. Status lives in
 `docs/plan/README.md`; this file only maps phase numbers to packages.
@@ -31,7 +31,11 @@ MS01 is done and review-settled; the cycle was never archived. The owner then
 asked for the palette's non-shape content back, which is implemented as D-105
 (restored Greek, set theory and logic, and geometry and vectors grids; exponents,
 subscripts, fractions, and square root stay with the visual editors) and
-committed at `23a406c` without a package review. Status lives in the coordinator.
+committed at `23a406c` and reviewed by the cycle-wide record
+[`reviews/math-editor-2026-11-cycle-review.md`](../reviews/math-editor-2026-11-cycle-review.md)
+(`PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`, `NOTE-9`–`NOTE-12`), with the
+owner's desktop/Brave drawer check accepted on 2026-11-18. Status lives in the
+coordinator.
 
 ## Starting a new cycle
 
