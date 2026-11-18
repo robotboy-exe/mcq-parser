@@ -31,6 +31,9 @@ Last updated: 2026-11-17.
   operators and replaces the symbol grids with five freeform visual editors
   (fraction, exponent, subscript, root, 2×2 matrix); fractions get a full
   horizontal bar and roots a vinculum through five exact shape markers. The
+  owner later asked for the palette content back without the editor-covered
+  categories, so D-105 restores only the Greek, set theory and logic, and
+  geometry and vectors grids behind a `More symbols` drawer. The
   original review and closure re-review passed and boundary `c6a81fb` was
   committed/pushed. The owner's visual gate then found a duplicate bare-root
   control and a gap at the vinculum; D-103 removes the old control and joins the
@@ -190,7 +193,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | done; phase-2 re-review PASS, `FIX-1` and both notes closed (17 vectors) | `admin_questions.php` re-measured PASS (+89); Brave/Android and desktop checks deferred to ME02 |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | done; rigorous review recorded and owner phone recheck accepted 2026-11-17 | satisfied; deployment-time live artifacts remain deferred |
 | 4 | EL01 | [English Lexis Subject and Constant-Text Grouping](el-01-english-lexis-grouping.md) | current branch/worktree baseline; preserve unrelated changes | done; phase-4 review PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected | satisfied; disposable MySQL 8.0.41 operation/rollback PASS 2026-11-17 |
-| 5 | MS01 | [Visual Math Shapes and Palette Cleanup](math-editor/ms-01-visual-math-shapes.md) | EL01 review-settled; cycle reopened 2026-11-17 | done; original review and `FIX-1` closure re-review passed; boundary `c6a81fb` committed/pushed; D-103/D-104 focused review passed with no `BLOCK`/`FIX`, notes corrected, owner desktop/Brave recheck accepted 2026-11-17; corrections uncommitted | satisfied; live-origin caps remain admin +89, cbt +74, answer_details +21, cbt_practice +20 |
+| 5 | MS01 | [Visual Math Shapes and Palette Cleanup](math-editor/ms-01-visual-math-shapes.md) | EL01 review-settled; cycle reopened 2026-11-17 | done; original review and `FIX-1` closure re-review passed; boundary `c6a81fb` committed/pushed; D-103/D-104 focused review passed with no `BLOCK`/`FIX`, notes corrected, owner desktop/Brave recheck accepted 2026-11-17; corrections committed at `120a5db` | satisfied; live-origin caps remain admin +89, cbt +74, answer_details +21, cbt_practice +20 |
+| — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, no package review yet | none; Node/PHP suites and lint only, no browser or live check |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -312,11 +316,14 @@ verifies the detail path with the rest of Release A.
     recheck with D-103.
 
 Current workflow stop: MS01 is done and review-settled. Its D-103/D-104
-corrections are owner-accepted and uncommitted on top of `c6a81fb`; the next
-action requires explicit phase-boundary commit approval.
+corrections are committed at `120a5db`, and the owner's direct palette request
+is implemented as the D-105 restoration and committed at `23a406c`, both pushed
+to `owner-tool-integration`. The D-105 work has no package row or rigorous review
+of its own, so the next action is a review of that commit or a new package that
+adopts it.
 
 ```text
-NEXT COMMAND: commit phase 5 visual corrections
+NEXT COMMAND: review 23a406c (D-105 palette grid restoration)
 ```
 
 ## Session protocol

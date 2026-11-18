@@ -561,3 +561,47 @@ exception, deployment, database operation, or live action occurred.
 gate pass. **Commit:** deferred pending explicit owner authorization.
 
 NEXT COMMAND: commit phase 5 visual corrections
+
+## Owner follow-up — 2026-11-18 (D-105 palette grid restoration)
+
+**Owner request:** reinstate the math palette's content without reintroducing
+anything the visual editors already cover, so exponents, subscripts, fractions,
+and square roots stay out.
+
+**Change.** `src/math-tool.js` adds a `More symbols` toggle and one drawer holding
+only the Greek, Set theory and logic, and Geometry and vectors grids, with an
+accessible name for every restored character. `src/math-tool.css` adds the
+drawer, category, chars, and toggle rules; the toggle rule is declared after the
+shared palette button rule so its size and colour win. `deployed/admin_questions.php`
+rotates both palette tokens (`math-tool.css?v=1.1.1`,
+`math-tool.js?v=1.1.2`). `tests/math-tool.js` grows from 25 to 26 vectors: exact
+category contents, refusal of every shape-covered character, drawer mount and
+toggle behaviour, insertion at the remembered caret, and the CSS rule-order
+regression.
+
+**Evidence.**
+
+```sh
+node tests/math-tool.js             # 26 PASS
+node tests/runner.js                # 60 PASS, 0 FAIL, 0 PENDING
+node tests/unit.js                  # 163 PASS, 0 FAIL
+node tests/ocr-helper.js            # 11 PASS
+node tests/underline-toolbar.js     # 10 PASS
+node tests/question-preview.js      # 6 PASS
+node tests/render-markup.js         # 67 PASS
+node tools/extract-bank.js --check  # 7 hashes OK
+php tests/php-render.php            # 32 PASS (PHP 8.3.32)
+php tests/admin-question-store.php  # 8 PASS
+php tests/cbt-question-order.php    # 11 PASS, 0 FAIL
+php -l deployed/*.php               # 7/7 PASS
+```
+
+Mutation check for the CSS fix: moving the toggle rule back above the shared
+rule fails the new assertion; restoring it passes. Final measurements:
+`src/math-tool.js` 660 / 21427, `src/math-tool.css` 255 / 4118,
+`tests/math-tool.js` 660 / 28485, `deployed/admin_questions.php` 1055 / 62662.
+
+**Not run:** browser visual check, MySQL, staging, live, or deploy.
+
+**Commit:** `23a406c`, pushed to `owner-tool-integration`. No rigorous package
+review covers this follow-up yet.

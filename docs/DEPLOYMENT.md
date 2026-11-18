@@ -3,8 +3,9 @@
 Recorded: 2026-11-14; amended through 2026-11-17 for D-91–D-104. Target: PHP
 8.3, MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`. This
 manifest covers ST01 (root `ocr_helper.js`, optional `questions.constant_text`,
-the underline toolbar, and the read-only multiline preview) plus ME01/ME02 (the
-operator row, five freeform math-shape editors, and advisory UTF-8 byte counter on the admin form) and EL01
+the underline toolbar, and the read-only multiline preview) plus ME01/ME02/MS01 (the
+operator row, five freeform math-shape editors, the non-shape `More symbols`
+drawer, and advisory UTF-8 byte counter on the admin form) and EL01
 (the exact English Lexis subject operation and post-selection Constant Text
 grouping). It does **not** authorize a production deploy.
 A deploy needs a separate explicit owner instruction. See

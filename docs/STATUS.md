@@ -27,9 +27,13 @@ Last updated: 2026-11-17.
   passed and boundary `c6a81fb` was committed/pushed. The owner visual gate then
   requested D-103: remove the duplicate bare `√` operator and join the radical
   vinculum, then D-104: fix the Constant Text preview at 150px and scroll long
-  passages. Both follow-ups are implemented and uncommitted; their focused
-  review passed with no `BLOCK`/`FIX`, `NOTE-7`/`NOTE-8` are corrected, and the
-  owner accepted the desktop/Brave recheck on 2026-11-17.
+  passages. Both follow-ups are committed at `120a5db`; their focused review
+  passed with no `BLOCK`/`FIX`, `NOTE-7`/`NOTE-8` are corrected, and the owner
+  accepted the desktop/Brave recheck on 2026-11-17.
+- D-105 palette restoration (owner request 2026-11-18): a `More symbols` drawer
+  returns only the Greek, set theory and logic, and geometry and vectors grids;
+  exponents, subscripts, fractions, and square root stay with the visual shape
+  editors. Committed at `23a406c` and pushed; no package review yet.
 - Ordering: ST01 replaced OT12 because running the context migration was judged
   riskier and more complex than one optional passage per question. The owner
   chose the reset on 2026-11-14.
@@ -269,7 +273,13 @@ gates.
   committed at `c6a81fb`; D-103 removes the duplicate bare-root operator and
   visibly joins the radical bar, while D-104 fixes the Constant Text preview at
   150px with vertical overflow. Both follow-ups are review-settled,
-  owner-accepted, and awaiting only explicit commit approval.
+  owner-accepted, and committed at `120a5db`.
+- D-105 palette grid restoration (owner request 2026-11-18, direct work without a
+  package): a `More symbols` drawer restores only the Greek, set theory and
+  logic, and geometry and vectors grids. Exponents, subscripts, fractions, and
+  square root stay out because the visual editors cover them. Committed at
+  `23a406c` and pushed to `owner-tool-integration`; no rigorous package review
+  exists for it yet.
 
 ## Source of truth
 

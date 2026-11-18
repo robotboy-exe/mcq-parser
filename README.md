@@ -112,8 +112,12 @@ Current test counts and live-test state are in [`docs/STATUS.md`](docs/STATUS.md
 Current work state, package gates, and branch strategy are in
 [`docs/plan/README.md`](docs/plan/README.md). All five phases of the active
 `math-editor-2026-11` cycle are done and review-settled. MS01's D-103/D-104
-visual corrections passed focused review and the owner desktop/Brave recheck;
-the uncommitted phase-5 correction boundary awaits explicit commit approval.
+visual corrections passed focused review and the owner desktop/Brave recheck and
+are committed at `120a5db`. The owner's later request to restore the palette's
+non-shape content is D-105: a `More symbols` drawer brings back the Greek, set
+theory and logic, and geometry and vectors grids while exponents, subscripts,
+fractions, and square root stay with the visual editors. It is committed at
+`23a406c` and has no package review yet.
 
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The

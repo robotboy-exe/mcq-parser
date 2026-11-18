@@ -1750,7 +1750,8 @@ Greek, Set theory and logic, and Geometry and vectors grids. The Exponents,
 Subscripts, Fractions, and precomposed square-root character grids stay out
 because the visual shape editors already cover those forms. The operator row
 stays `± × ÷ ≠ ≈ ° π`, there is no quick row, and a drawer button writes one
-character through the existing insertion path. This supersedes D-99's grid
+character through the existing insertion path. Both changed assets rotate:
+`math-tool.js?v=1.1.2` and `math-tool.css?v=1.1.1`. This supersedes D-99's grid
 removal for the three named categories only.
 
 **Why.** The owner asked for the math palette's content back without

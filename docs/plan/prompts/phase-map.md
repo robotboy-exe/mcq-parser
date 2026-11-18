@@ -27,8 +27,11 @@ operator and join the radical vinculum, followed by D-104: keep the Constant
 Text preview at 150px and scroll long passages. Both follow-ups are implemented
 and uncommitted; their focused review passed with no `BLOCK`/`FIX`, its two notes
 are corrected, and the owner accepted the desktop/Brave recheck on 2026-11-17.
-MS01 is done and review-settled; the cycle was never archived. Status lives in
-the coordinator.
+MS01 is done and review-settled; the cycle was never archived. The owner then
+asked for the palette's non-shape content back, which is implemented as D-105
+(restored Greek, set theory and logic, and geometry and vectors grids; exponents,
+subscripts, fractions, and square root stay with the visual editors) and
+committed at `23a406c` without a package review. Status lives in the coordinator.
 
 ## Starting a new cycle
 
