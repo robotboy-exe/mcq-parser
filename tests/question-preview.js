@@ -187,6 +187,37 @@ test('renders math shape markers with the real shared renderer', () => {
   assert.strictEqual(env.question.value, 'Solve <frac>3/7</frac> of it');
 });
 
+test('keeps the Constant Text preview at input height with vertical scrolling', () => {
+  const css = fs.readFileSync(path.join(__dirname, '../src/question-preview.css'), 'utf8');
+  function hasViewportContract(source) {
+    function declarations(pattern) {
+      const match = source.match(pattern);
+      if (!match) return null;
+      return Object.fromEntries(match[1].split(';').map((item) => item.trim()).filter(Boolean).map((item) => {
+        const colon = item.indexOf(':');
+        return [item.slice(0, colon).trim(), item.slice(colon + 1).trim()];
+      }));
+    }
+
+    const base = declarations(/(?:^|\n)\.owner-tool-preview\s*\{([^}]*)\}/);
+    const constant = declarations(/\.owner-tool-preview-constant \.owner-tool-preview\s*\{([^}]*)\}/);
+    return Boolean(base && constant
+      && constant.height === '150px'
+      && constant['box-sizing'] === 'border-box'
+      && constant['overflow-y'] === 'auto'
+      && !Object.hasOwn(base, 'height')
+      && !Object.hasOwn(base, 'max-height')
+      && !Object.hasOwn(base, 'overflow-y'));
+  }
+
+  assert.strictEqual(hasViewportContract(css), true);
+  assert.strictEqual(hasViewportContract(css.replace('height: 150px', 'xheight: 150px')), false);
+  assert.strictEqual(hasViewportContract(css.replace(
+    '.owner-tool-preview {',
+    '.owner-tool-preview {\n  height: 150px;\n  overflow-y: auto;'
+  )), false);
+});
+
 test('module has no storage, network, or form-value writes', () => {
   const source = fs.readFileSync(path.join(__dirname, '../src/question-preview.js'), 'utf8');
   assert.strictEqual(source.includes('localStorage'), false);

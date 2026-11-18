@@ -83,9 +83,9 @@ tests/
   and the documented E/F collapse.
 - Folds OCR wrap lines in stems while preserving blank-line paragraphs; options
   remain single-line.
-- Formats only balanced exact lowercase `<u>...</u>` markers through the browser
-  and PHP renderers; every other tag or malformed marker stays literal and
-  escaped.
+- Formats only the six balanced exact lowercase marker pairs: `<u>`, `<frac>`,
+  `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>`. Every other tag or malformed
+  marker stays literal and escaped.
 - One exam year per paste. Multi-year bank text is split with
   `tools/extract-bank.js`, not pasted whole.
 - Root helper flags are advisory and never block saving.
@@ -97,7 +97,8 @@ tests/
 - The Underline button wraps or unwraps the last-focused Constant Text, question,
   or option field with exact lowercase tags and refuses partial marker overlap.
 - A read-only admin preview renders Constant Text and Question with the same safe
-  exact-tag renderer and preserves blank-line paragraphs.
+  exact-tag renderer and preserves blank-line paragraphs. Its Constant Text box
+  matches the input's default 150px height and scrolls longer passages.
 - The OCR helper never reads or writes `constant_text`; passage/cloze-shaped
   input can only follow its ordinary-question path and may be flagged for review.
 - Saves stay manual through the existing PRG flow; the four-option rule, CSRF,
@@ -109,11 +110,10 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 Current test counts and live-test state are in [`docs/STATUS.md`](docs/STATUS.md).
 Current work state, package gates, and branch strategy are in
-[`docs/plan/README.md`](docs/plan/README.md). ST01 has an implementation
-checkpoint and fix commit. The third phase-1 re-review closed D-91 `FIX-1` on
-2026-11-15; `FIX-2` remains closed and ST01 is review-settled. The active cycle
-is `math-editor-2026-11`: ST01 (Constant Text reset) is done, ME01 (math palette
-and editor byte counter) is next, and ME02 handles the final release and handoff.
+[`docs/plan/README.md`](docs/plan/README.md). All five phases of the active
+`math-editor-2026-11` cycle are done and review-settled. MS01's D-103/D-104
+visual corrections passed focused review and the owner desktop/Brave recheck;
+the uncommitted phase-5 correction boundary awaits explicit commit approval.
 
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The

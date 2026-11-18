@@ -12,8 +12,9 @@ Last updated: 2026-11-17.
   cycle on 2026-11-14: ST01 returns the shipped workflow to the root
   `ocr_helper.js`, removes the shared-text/context subsystem, and adds one
   optional Constant Text passage per question. ME01 adds the math editor, ME02
-  records release evidence, and EL01 adds English Lexis grouped delivery.
-- Packages: ST01, ME01, ME02, then EL01. ST01 is done and review-settled: its third re-review closed
+  records release evidence, EL01 adds English Lexis grouped delivery, and MS01
+  adds visual math shapes.
+- Packages: ST01, ME01, ME02, EL01, then MS01. ST01 is done and review-settled: its third re-review closed
   D-91 `FIX-1`, `FIX-2` remains closed, and all 11 helper checks pass. ME01 is
   done and review-settled: the phase-2 re-review passed, closing `FIX-1` and
   both notes, with 17 module vectors. ME02 has a recorded handoff (2026-11-16):
@@ -29,9 +30,14 @@ Last updated: 2026-11-17.
   was never archived — and added visual math shapes. The palette keeps the basic
   operators and replaces the symbol grids with five freeform visual editors
   (fraction, exponent, subscript, root, 2×2 matrix); fractions get a full
-  horizontal bar and roots a vinculum through five exact shape markers. Gate 1
-  passed and the implementation handoff is recorded (2026-11-17); the phase-5
-  review is the next action.
+  horizontal bar and roots a vinculum through five exact shape markers. The
+  original review and closure re-review passed and boundary `c6a81fb` was
+  committed/pushed. The owner's visual gate then found a duplicate bare-root
+  control and a gap at the vinculum; D-103 removes the old control and joins the
+  radical strokes. The owner then requested D-104 so long Constant Text previews
+  stay at the input's default height and scroll. Both corrections are
+  implemented; the focused review passed with no `BLOCK`/`FIX`, its two notes
+  are corrected, and the owner accepted the desktop/Brave recheck on 2026-11-17.
 - Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
   archived/historical. Their records remain under `owner-tool/` and `reviews/`
   for evidence; do not continue that architecture.
@@ -53,7 +59,9 @@ Last updated: 2026-11-17.
   [package record](owner-tool/st-01-constant-text-reset.md) and ME01's
   [package record](math-editor/me-01-math-palette.md) with the phase-2 review,
   `FIX-1` fix note, closure re-review, and ME02's release handoff. EL01 has a
-  review-settled handoff; its external MySQL gate closed 2026-11-17.
+  review-settled handoff; its external MySQL gate closed 2026-11-17. MS01's
+  original boundary is committed, and its D-103/D-104 correction handoff is
+  review-settled and owner-accepted but remains uncommitted.
   [`owner-tool/next-steps.md`](owner-tool/next-steps.md) is archived-cycle
   history and must not be repurposed.
 
@@ -182,7 +190,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | done; phase-2 re-review PASS, `FIX-1` and both notes closed (17 vectors) | `admin_questions.php` re-measured PASS (+89); Brave/Android and desktop checks deferred to ME02 |
 | 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | done; rigorous review recorded and owner phone recheck accepted 2026-11-17 | satisfied; deployment-time live artifacts remain deferred |
 | 4 | EL01 | [English Lexis Subject and Constant-Text Grouping](el-01-english-lexis-grouping.md) | current branch/worktree baseline; preserve unrelated changes | done; phase-4 review PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected | satisfied; disposable MySQL 8.0.41 operation/rollback PASS 2026-11-17 |
-| 5 | MS01 | [Visual Math Shapes and Palette Cleanup](math-editor/ms-01-visual-math-shapes.md) | EL01 review-settled; cycle reopened 2026-11-17 | in progress; phase-5 review recorded `PASS WITH ACCEPTED FINDINGS` 2026-11-17; `FIX-1` cache keys fixed, closure re-review pending | live-origin caps satisfied: admin +89, cbt +74, answer_details +21, cbt_practice +20; owner desktop/Brave check remains |
+| 5 | MS01 | [Visual Math Shapes and Palette Cleanup](math-editor/ms-01-visual-math-shapes.md) | EL01 review-settled; cycle reopened 2026-11-17 | done; original review and `FIX-1` closure re-review passed; boundary `c6a81fb` committed/pushed; D-103/D-104 focused review passed with no `BLOCK`/`FIX`, notes corrected, owner desktop/Brave recheck accepted 2026-11-17; corrections uncommitted | satisfied; live-origin caps remain admin +89, cbt +74, answer_details +21, cbt_practice +20 |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -225,10 +233,10 @@ verifies the detail path with the rest of Release A.
 
 ## Branch strategy
 
-- `owner-tool-integration` is the authoritative work branch. It contains `main`,
-  the merged OT12 tip (`e64513f`), the ST01 checkpoint (`6e301bb`), and the
-  first fix commit (`84be892`). The replacement phase-1 `FIX-1` is
-  review-settled, and the owner requested this phase-boundary commit and push.
+- `owner-tool-integration` is the authoritative work branch. It contains the
+  review-settled phase-1 through phase-5 history at `c6a81fb`, which is also on
+  `origin/owner-tool-integration`. The reviewed and owner-accepted D-103/D-104
+  corrections are the current uncommitted work.
 - `main` is the published baseline and the remote default. It is not the current
   work branch. Advance it only at a reviewed release boundary or cycle close, by
   fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite
@@ -256,7 +264,7 @@ verifies the detail path with the rest of Release A.
 | phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | review-settled 2026-11-15: PASS, `FIX-1` and both notes closed |
 | phase 3 close | ME02 release, evidence, and handoff | rigorous | done; PASS WITH ACCEPTED FINDINGS and owner phone acceptance recorded |
 | phase 4 | EL01 subject operation and grouped exam ordering | rigorous | settled 2026-11-17: PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected |
-| phase 5 | MS01 visual math shapes, palette cleanup, and horizontal bars | rigorous | review recorded 2026-11-17: `PASS WITH ACCEPTED FINDINGS`; `FIX-1` fixed, closure re-review pending |
+| phase 5 | MS01 visual math shapes, palette cleanup, and horizontal bars | rigorous | settled 2026-11-17: original review and `FIX-1` re-review passed; D-103/D-104 focused review passed with accepted notes corrected; owner desktop/Brave recheck accepted |
 
 ## Remaining path to cycle close
 
@@ -289,14 +297,26 @@ verifies the detail path with the rest of Release A.
    acceptance green (Node 60/163/11/10/5/25/67, PHP 32/8/11, lint PASS, caps
    +89/+74/+21/+20); the rigorous phase-5 review then recorded `PASS WITH
    ACCEPTED FINDINGS` and its `FIX-1` (cache keys for the changed shared assets)
-   is fixed. The closure-focused re-review remains.
+   was fixed and closed by re-review. Boundary `c6a81fb` was committed/pushed.
+10. **MS01 owner-visual correction (D-103)** — the owner reported that the old
+    bare `√` operator duplicated the visual Root editor and that the radical
+    vinculum did not meet the glyph. The follow-up removes the old operator,
+    overlaps/scales the radical bar on all three surfaces, rotates only the two
+    changed admin asset keys, and adds regression evidence. The focused review
+    passed and the owner accepted the desktop/Brave recheck on 2026-11-17.
+11. **MS01 owner-preview correction (D-104)** — the owner requested that the
+    Constant Text preview match the input's default 150px height and scroll long
+    passages. The follow-up constrains only that preview, rotates its stylesheet
+    key to `1.1.2`, and adds a failing-first CSS regression. The focused review's
+    regression-strength note is corrected, and the owner accepted the visual
+    recheck with D-103.
 
-Current workflow stop: the `MS01` implementation and its `FIX-1` cache-key fix
-are applied and no file is committed. The next session is the phase-5
-closure-focused re-review of `FIX-1`; only the review record may be written.
+Current workflow stop: MS01 is done and review-settled. Its D-103/D-104
+corrections are owner-accepted and uncommitted on top of `c6a81fb`; the next
+action requires explicit phase-boundary commit approval.
 
 ```text
-NEXT COMMAND: review phase 5
+NEXT COMMAND: commit phase 5 visual corrections
 ```
 
 ## Session protocol

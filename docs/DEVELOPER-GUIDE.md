@@ -1,6 +1,6 @@
 # Developer Guide — Constant Text, Math Editor, and English Lexis
 
-Recorded: 2026-11-14; amended through 2026-11-17 for D-91–D-96. This is the
+Recorded: 2026-11-14; amended through 2026-11-17 for D-91–D-104. This is the
 human-developer handoff for ST01, the math editor, and EL01 in the
 `math-editor-2026-11` cycle. It covers the production architecture, source of
 truth, stored state, parser extension rules, Constant Text lifecycle, the math
@@ -20,7 +20,7 @@ testing commands, and known limitations. Deployment steps are in
 | `deployed/render.php` | Server-side safe renderer: escape first, restore only the exact `<u>`, `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>` pairs, and run the shared parity vectors. |
 | `ocr_helper.js` | Shipping OCR helper. Parses pasted OCR into the native form, preserves blank-line paragraphs, fills `ocrQueue`/`ocrMeta`, and never submits. |
 | `src/underline-toolbar.js` | Runtime Underline button for Constant Text, question text, and options A–D. |
-| `src/question-preview.js` / `.css` | Read-only Constant Text/Question preview, rendered with `window.CBTText` and `white-space: pre-wrap`, including the horizontal fraction bar, radical vinculum, and 2×2 matrix grid styles; no form, storage, or network writes. |
+| `src/question-preview.js` / `.css` | Read-only Constant Text/Question preview, rendered with `window.CBTText` and `white-space: pre-wrap`; Constant Text uses a fixed 150px vertically scrollable box while Question remains content-sized; includes the horizontal fraction bar, radical vinculum, and 2×2 matrix grid styles; no form, storage, or network writes. |
 | `src/math-tool.js` | Operator row, five freeform shape editors (fraction, exponent, subscript, root, 2×2 matrix), and advisory UTF-8 byte counter around `#question_text`, mounted once in Add and Edit forms with `data-math-tool-mounted`; inserts only exact shape markers at the remembered caret and writes no storage, network, submit, underline marker, or `constant_text`. |
 | `src/math-tool.css` | Operator row, shape panels, 2×2 matrix input grid, live preview, hint, counter, focus, and mobile-target styles; all selectors are `.math-tool-*` (D-92, D-100). |
 | `src/owner-tool/render.js` | Browser safe renderer (`window.CBTText`) used by `cbt.php` and the admin preview; restores the six exact marker pairs and builds fraction/root/matrix nodes. The legacy context-card helpers remain in the file but no page calls them. |
@@ -38,20 +38,22 @@ archived under `archive/owner-tool-2026-11/`; do not load or extend them. The
 `src/owner-tool/context*` helper functions inside `render.js` are inert and
 kept only because that file is shared with `cbt_practice.php`.
 
-**Math editor (MS01, D-92–D-100).** One pair of assets serves the native form.
+**Math editor (MS01, D-92–D-103).** One pair of assets serves the native form.
 The module builds its operator row, shape panels, and counter with
 `createElement`/`textContent`, remembers the textarea selection across toolbar
 focus loss, and inserts through `execCommand('insertText')` then `setRangeText`
 then `.value`; it never rewrites line breaks or underline markers. The
-operator row is `± × ÷ ≠ ≈ ° π √`; the symbol grids, drawer, vulgar-fraction
-table, and digit maps are gone. Five shape buttons open one freeform panel at a
+operator row is `± × ÷ ≠ ≈ ° π`; the symbol grids, drawer, vulgar-fraction
+table, digit maps, and legacy `√` operator are gone. The visual Root editor is
+the only square-root control. Five shape buttons open one freeform panel at a
 time:
 
 - Fraction: numerator and denominator → `<frac>3/7</frac>` (stacked, horizontal
   rule).
 - Exponent: base and exponent → `x<sup>2n+1</sup>`.
 - Subscript: base and subscript → `x<sub>1</sub>`.
-- Root: radicand → `<sqrt>2x+1</sqrt>` (`√` plus a horizontal vinculum).
+- Root: radicand → `<sqrt>2x+1</sqrt>` (`√` joined to a scalable horizontal
+  vinculum).
 - 2×2 matrix: four cells → `<matrix>a|b|c|d</matrix>` (bracketed grid).
 
 Each panel previews the shape through `window.CBTText`, inserts on Enter or
@@ -61,10 +63,12 @@ right of the Question label row on desktop and mobile.
 The counter is advisory
 (neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+) and
 refreshes after typing, the page's OCR Load/Skip, and a native form reset. The
-admin page loads both files with `?v=1.1.0`, plus the read-only preview
-stylesheet as `question-preview.css?v=1.1.0` and the renderer as
-`render.js?v=2.3.3`; `cbt.php` and `cbt_practice.php` both load the current
-`render.js?v=2.3.3` (D-102).
+admin page loads the changed palette script as `math-tool.js?v=1.1.1`, the
+unchanged palette stylesheet as `math-tool.css?v=1.1.0`, the read-only preview
+stylesheet as `question-preview.css?v=1.1.2`, and the renderer as
+`render.js?v=2.3.3`;
+`cbt.php` and `cbt_practice.php` both load the current `render.js?v=2.3.3`
+(D-102, D-103, D-104).
 
 **English Lexis (EL01, D-95–D-96).** The subject operation inserts
 `English (Lexis & Structure)` without an ID or reactivates a byte-exact existing
@@ -164,6 +168,9 @@ ocrMeta  = { subject_id, exam_category_id, exam_year }
 6. Blank-line paragraphs survive in Constant Text and question stems through
    `white-space: pre-wrap`; single wraps fold to one space, and options stay
    one line.
+7. The read-only Constant Text preview is a fixed 150px border-box and scrolls
+   vertically when its rendered passage is taller. The Question preview remains
+   content-sized.
 
 ## 6. Security renderer
 
@@ -202,7 +209,8 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 - root helper: 11 PASS, including the complete D-91 spacing grammar, selected
   boundaries, and duplicate-set warning controls;
 - underline toolbar: 10 PASS;
-- read-only preview: 5 PASS, including a real-renderer fraction vector;
+- read-only preview: 6 PASS, including a real-renderer fraction vector and the
+  strengthened Constant Text/Question viewport boundary;
 - math palette/shape editors: 25 PASS (real module and mount);
 - marker renderers: 67 PASS against `tests/fixtures/render-markup.json`, run in
   JS and again through `php tests/php-render.php` (32 vectors there);
@@ -235,6 +243,10 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
   collision, rollback, no-delete, and schema-contract probes on isolated Oracle
   MySQL Community Server 8.0.41 ARM64. An earlier MariaDB 13.0.2 run was
   preliminary only and is not the acceptance evidence.
+- The focused phase-5 review loaded the real preview stylesheet and renderer in
+  disposable Chromium, including long text at 320px and radical geometry across
+  fonts/sizes. The owner accepted the D-103/D-104 desktop/Brave recheck on
+  2026-11-17.
 
 No live site, production database, or production cleanup was used. The owner
 accepted the ME02 Brave/Android check on 2026-11-17. The EL01 subject operation
@@ -261,9 +273,10 @@ passed its required disposable MySQL 8.0.41 run.
 - Palette undo is reliable only on the `execCommand` path; the
   `setRangeText`/`.value` fallbacks are browser-dependent (D-92).
 - There is no browser test suite. ST01 behavior is covered by Node/PHP checks,
-  static source assertions, and owner browser evidence. ME01/ME02 add 20 module
-  vectors and disposable staging browser evidence; the owner accepted the
-  Brave/Android check on 2026-11-17.
+  static source assertions, and owner browser evidence. ME01/ME02/MS01 have 25
+  math-tool vectors, 6 preview vectors, and disposable browser evidence; the
+  owner accepted the original and D-103/D-104 desktop/Brave checks on
+  2026-11-17.
 - EL01's `tests/english-lexis-sql.sh` passed 8 checks against an isolated
   disposable MySQL 8.0.41 server; production execution still needs the
   deployment backup, target preflight, and explicit owner authorization.

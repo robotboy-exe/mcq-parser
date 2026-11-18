@@ -33,7 +33,10 @@
 }
 
 .owner-tool-preview-constant .owner-tool-preview {
+  box-sizing: border-box;
+  height: 150px;
   border-left: 4px solid #1769aa;
+  overflow-y: auto;
 }
 
 /* Exact-marker math shapes. Keep these rules in parity with the inline blocks
@@ -76,8 +79,9 @@
 }
 
 .cbt-sqrt-body {
+  margin: .075em 0 0 -.05em;
   padding: 0 .12em 0 .06em;
-  border-top: 1px solid currentColor;
+  border-top: .06em solid currentColor;
   line-height: 1.2;
 }
 

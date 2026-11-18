@@ -29,8 +29,7 @@
     { character: '≠', name: 'not equal' },
     { character: '≈', name: 'approximately equal' },
     { character: '°', name: 'degree' },
-    { character: 'π', name: 'pi' },
-    { character: '√', name: 'square root' }
+    { character: 'π', name: 'pi' }
   ];
 
   function symbolName(character) {

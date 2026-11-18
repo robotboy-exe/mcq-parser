@@ -766,9 +766,11 @@ All server-derived text is rendered with `textContent` or created nodes, never
   `cbt_strip_formatting()`. Both consume
   `tests/fixtures/render-markup.json`. A fraction splits at its first top-level
   `/` into `.cbt-frac-num` over `.cbt-frac-den` (horizontal border rule); a root
-  renders `√` plus an over-lined `.cbt-sqrt-body`; a matrix with exactly four
-  top-level `|` cells renders a bracketed 2×2 grid. Never use permissive
-  `strip_tags`.
+  renders `√` plus a `.cbt-sqrt-body` whose scalable top border overlaps and
+  joins the glyph; a matrix with exactly four top-level `|` cells renders a
+  bracketed 2×2 grid. Never use permissive `strip_tags`.
+- The basic operator row is `± × ÷ ≠ ≈ ° π`. Square root appears only as the
+  visual Root editor, which inserts `<sqrt>...</sqrt>` (D-103).
 - `<u class=…>`, `<U>`, `<FRAC>`, other tags, encoded `&lt;u&gt;`, and unmatched
   opening or closing markers stay literal text. A marker whose own tag is
   already open, such as a second `<u>` inside an underline, also stays literal;
@@ -779,6 +781,9 @@ All server-derived text is rendered with `textContent` or created nodes, never
 - Constant Text, question stems, and the result table render with
   `white-space: pre-wrap`, so manual newlines and OCR paragraph breaks survive;
   the admin list summary is truncated after stripping the markers.
+- In the read-only admin panel, the Constant Text preview is a fixed 150px
+  border-box matching the input's default height and uses vertical scrolling for
+  overflow. The Question preview remains content-sized (D-104).
 - Header year inference accepts 1900–2099.
 - `cbtOwnerTool:v1` state belongs to the archived owner tool and is not read by
   the production helper; full re-paste or explicit Reset is required after a

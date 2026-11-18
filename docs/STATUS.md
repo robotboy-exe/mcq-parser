@@ -9,7 +9,7 @@ Last updated: 2026-11-17.
   shared-text/context subsystem, add optional `questions.constant_text`, and add
   exact lowercase `<u>` underlining.
 - Map: [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md) — ST01, ME01,
-  ME02, EL01. Statuses live in [`plan/README.md`](plan/README.md).
+  ME02, EL01, MS01. Statuses live in [`plan/README.md`](plan/README.md).
 - Packages: [`ST01`](plan/owner-tool/st-01-constant-text-reset.md) (done and
   review-settled; the third phase-1 re-review closed D-91 `FIX-1`, `FIX-2`
   remains closed, and all 11 helper checks pass),
@@ -23,10 +23,13 @@ Last updated: 2026-11-17.
   operation harness on isolated Oracle MySQL Community Server 8.0.41 ARM64
   pass; review `PASS WITH ACCEPTED FINDINGS`, `NOTE-1`–`NOTE-4` corrected).
 - [`MS01`](plan/math-editor/ms-01-visual-math-shapes.md) — phase 5 visual math
-  shapes: `in progress`, implementation handoff recorded 2026-11-17 at base
-  `0410ecb`, review pending. Palette keeps the basic operators, five freeform
-  editors insert exact `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>`
-  markers, and fractions/roots get horizontal bars in every rendering surface.
+  shapes: `done`; the original review and `FIX-1` closure re-review
+  passed and boundary `c6a81fb` was committed/pushed. The owner visual gate then
+  requested D-103: remove the duplicate bare `√` operator and join the radical
+  vinculum, then D-104: fix the Constant Text preview at 150px and scroll long
+  passages. Both follow-ups are implemented and uncommitted; their focused
+  review passed with no `BLOCK`/`FIX`, `NOTE-7`/`NOTE-8` are corrected, and the
+  owner accepted the desktop/Brave recheck on 2026-11-17.
 - Ordering: ST01 replaced OT12 because running the context migration was judged
   riskier and more complex than one optional passage per question. The owner
   chose the reset on 2026-11-14.
@@ -49,17 +52,20 @@ Last updated: 2026-11-17.
   all within the 100-addition externalize-first cap. No cap exception remains.
 - Last review-settled packages: ST01 (`PASS`, third closure-focused re-review),
   ME01 (`PASS`, phase-2 closure re-review), ME02 (`PASS WITH ACCEPTED
-  FINDINGS`; owner phone gate accepted 2026-11-17), and EL01 (`PASS WITH
-  ACCEPTED FINDINGS`; `NOTE-1`–`NOTE-4` corrected 2026-11-17). Archived cycle
-  close `45807ea`, archive commit `134305c`.
+  FINDINGS`; owner phone gate accepted 2026-11-17), EL01 (`PASS WITH ACCEPTED
+  FINDINGS`; `NOTE-1`–`NOTE-4` corrected 2026-11-17), and MS01 (original
+  `FIX-1` closure re-review `PASS`; D-103/D-104 focused review `PASS WITH
+  ACCEPTED FINDINGS`, both notes corrected, owner visual gate accepted).
+  Archived cycle close `45807ea`, archive commit `134305c`.
 - Cycle close for `math-editor-2026-11` completed 2026-11-17 at phase-4
   boundary commit `e08b922` and cycle-close docs `0410ecb`; every earlier package
   is done and review-settled, no `BLOCK` or required `FIX` remains, and no live
   write occurred. On 2026-11-17 the owner reopened the cycle (it was never
   archived) and added phase 5, [`MS01`](plan/math-editor/ms-01-visual-math-shapes.md)
   (visual math shapes), whose phase-5 review recorded `PASS WITH ACCEPTED
-  FINDINGS` and whose `FIX-1` cache-key fix is applied; the closure-focused
-  re-review is pending.
+  FINDINGS`, whose `FIX-1` cache-key fix passed closure re-review, and whose
+  boundary is committed at `c6a81fb`. The D-103/D-104 corrections on top of that
+  boundary are review-settled and owner-accepted; their commit is pending.
 - Archived cycle: [`plan/prompts/cycles/owner-tool-2026-11.md`](plan/prompts/cycles/owner-tool-2026-11.md);
   summary in [`plan/history.md`](plan/history.md).
 
@@ -118,6 +124,9 @@ Last updated: 2026-11-17.
 | MS01 implementation (2026-11-17, base `0410ecb`, uncommitted) | `node tests/runner.js`, `unit.js`, `ocr-helper.js`, `underline-toolbar.js`, `question-preview.js`, `math-tool.js`, `render-markup.js`, `extract-bank --check`, and the PHP 8.3.32 suites plus `php -l` | 60 runner; 163 unit; 11 helper; 10 underline; 5 preview; 25 math-tool; 67 shared marker vectors in JS and 32 in PHP; store 8; ordering 11; bank 7 hashes; lint PASS; live-origin +89/−80, +74/−35, +21/−3; no browser, MySQL, or live check |
 | MS01 phase-5 review (2026-11-17, reviewed `0410ecb` plus the MS01 worktree) | independent original review: acceptance reproduction, per-file measurements, 409-input JS/PHP parity fuzz, injection and strip probes, three-surface CSS parity, manifest re-hash, and `git diff --check` | `PASS WITH ACCEPTED FINDINGS`; `FIX-1` (stale cache keys on three consumers) plus `NOTE-1`–`NOTE-6`; no `BLOCK`; manifest 18/18; all suites and counts reproduced; no live write |
 | MS01 `FIX-1` fix (2026-11-17, base `0410ecb`, uncommitted) | strengthened asset vector in `tests/math-tool.js`, `node tests/math-tool.js`, full Node/PHP baseline, PHP lint, `git diff --check`, manifest re-hash, and `--no-index` live numstat | 25 math-tool vectors PASS with the new token assertions; 60 runner, 163 unit, 11 helper, 10 underline, 5 preview, 67 JS + 32 PHP marker vectors, 8 store, 11 ordering; lint PASS; `admin_questions.php` 1055 / 62662 at **+89/−80**; `cbt_practice.php` 886 / 37246 at **+20/−2**; no browser, MySQL, staging, or live check |
+| MS01 D-103 owner-visual correction (2026-11-17, base `c6a81fb`, uncommitted) | failing-first `node tests/math-tool.js`, full Node/PHP baseline, PHP lint, local Chromium radical geometry at 16–48px, asset/hash refresh, and live-origin numstat | legacy bare `√` operator removed; visual Root editor remains; joined `.06em` vinculum passes all three-surface assertions and local Arial/system-font checks; 25 math-tool vectors and full baseline pass; caps remain +89/+74/+21/+20; focused review and owner desktop/Brave recheck pending |
+| MS01 D-104 owner-preview correction (2026-11-17, base `c6a81fb`, uncommitted with D-103) | failing-first `node tests/question-preview.js`, focused preview/palette checks, full Node/PHP baseline, PHP lint, cache/hash refresh, and live-origin numstat | Constant Text preview is a fixed 150px border-box with vertical overflow; Question preview stays content-sized; 6 preview and 25 math-tool vectors plus the full baseline pass; caps remain +89/+74/+21/+20; focused review and owner desktop/Brave recheck pending |
+| MS01 D-103/D-104 focused review and owner acceptance (2026-11-17) | independent real-path suites, manifest/cap measurements, disposable Chromium at 900px/320px and 48 radical font/size combinations, then owner desktop/Brave checklist | `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; `NOTE-7` regression guard and `NOTE-8` stale docs corrected; owner reported PASS for the sole Root control, joined vinculum, fixed scrollable Constant Text preview, and content-sized Question preview; no agent live action |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -171,6 +180,7 @@ Supplied DDL SHA-256:
 |---|---|---|
 | Owner Brave/Android Constant Text/underline/preview check | ST01/ME01/ME02 | Satisfied by explicit owner acceptance 2026-11-17; no live write |
 | Brave/Android and desktop Chromium math-editor checks | ME01/ME02 | Satisfied: desktop Chrome 156 staging recorded and owner accepted the final Brave/Android recheck 2026-11-17; no live write |
+| Owner desktop/Brave correction recheck | MS01 D-103/D-104 | Satisfied 2026-11-17: owner reported PASS for the sole Root control, joined vinculum, fixed-height scrollable Constant Text preview, and content-sized Question preview; no agent live action |
 | Disposable MySQL 8.0.41 English Lexis operation/rollback | EL01 | Satisfied 2026-11-17: 8-check harness PASS on isolated Oracle MySQL Community Server 8.0.41 ARM64; MariaDB 13.0.2 stayed preliminary only |
 | Main-question reader/writer inventory | OT06 | Satisfied 2026-11-05; see [`plan/owner-tool/ot-06-reader-writer-audit.md`](plan/owner-tool/ot-06-reader-writer-audit.md) |
 | Representative context paste with answer key | Archived OT08/OT09 acceptance | Satisfied 2026-11-08 with `sample-passages.txt`; no longer a production requirement after D-83 |
@@ -254,7 +264,11 @@ gates.
   shape editors (fraction, exponent, subscript, root, 2×2 matrix), store shapes
   as exact `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, `<matrix>` markers, and paint the
   fraction divider and radical vinculum as horizontal rules in the admin preview,
-  exam page, and details page. Not started; Gate 1 prepared 2026-11-17.
+  exam page, and details page. The original boundary is review-settled and
+  committed at `c6a81fb`; D-103 removes the duplicate bare-root operator and
+  visibly joins the radical bar, while D-104 fixes the Constant Text preview at
+  150px with vertical overflow. Both follow-ups are review-settled,
+  owner-accepted, and awaiting only explicit commit approval.
 
 ## Source of truth
 

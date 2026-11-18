@@ -20,10 +20,15 @@ Community Server 8.0.41 ARM64. ME02 is done after the owner's 2026-11-17
 Brave/Android acceptance. EL01 is done and phase-4 review-settled 2026-11-17
 with `PASS WITH ACCEPTED FINDINGS`; `NOTE-1`–`NOTE-4` are corrected. Cycle close
 completed 2026-11-17 at `0410ecb`. The owner reopened the cycle on 2026-11-17
-for phase 5 (`MS01`, visual math shapes); its phase-5 review recorded `PASS WITH
-ACCEPTED FINDINGS` on 2026-11-17 and its `FIX-1` cache-key fix is applied, with
-the closure-focused re-review pending. The cycle was never archived. Status
-lives in the coordinator.
+for phase 5 (`MS01`, visual math shapes); its original review and `FIX-1`
+closure re-review passed, and boundary `c6a81fb` was committed/pushed. The
+owner's visual gate then requested D-103: remove the duplicate bare-root
+operator and join the radical vinculum, followed by D-104: keep the Constant
+Text preview at 150px and scroll long passages. Both follow-ups are implemented
+and uncommitted; their focused review passed with no `BLOCK`/`FIX`, its two notes
+are corrected, and the owner accepted the desktop/Brave recheck on 2026-11-17.
+MS01 is done and review-settled; the cycle was never archived. Status lives in
+the coordinator.
 
 ## Starting a new cycle
 

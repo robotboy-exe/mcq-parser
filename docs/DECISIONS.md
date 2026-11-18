@@ -1699,3 +1699,45 @@ changed file per page makes a deploy deterministic without changing behavior
 
 **Scope.** Tokens only; no markup, filter, selection, or style change, and
 `cbt_practice.php` remains outside the package's feature scope.
+
+## D-103 — One square-root control with a joined vinculum
+
+**Choice.** The basic operator row is `± × ÷ ≠ ≈ ° π`; its legacy bare `√`
+button is removed, leaving the visual Root editor as the only square-root
+control. On all three rendering surfaces, `.cbt-sqrt-body` uses a scalable
+`.06em` top border, a `.075em` top margin, and a `-.05em` left overlap so the
+vinculum meets the radical glyph instead of starting as a separate line. The
+changed admin assets rotate to `math-tool.js?v=1.1.1` and
+`question-preview.css?v=1.1.1`; the unchanged palette stylesheet remains
+`math-tool.css?v=1.1.0`. This supersedes D-99 only where it retained the bare
+`√` operator, and supersedes D-102 only for the two newly changed admin asset
+keys.
+
+**Why.** The owner's visual acceptance check found two square-root controls and
+a visible seam. The renderer creates the glyph and radicand as adjacent spans;
+the glyph's right side bearing and line-box offset meant adjacency alone could
+not connect their painted strokes. A small overlap and vertical alignment make
+the two spans read as one radical without changing stored marker text or the
+renderer contract.
+
+**Risk.** Radical glyph metrics vary by font. The rule was checked locally in
+Chromium with Arial and the system sans font at 16, 18, 20, 24, and 48px,
+including a fraction nested under the root; the owner's desktop/Brave recheck
+remains the external visual gate.
+
+## D-104 — Fixed-height scrollable Constant Text preview
+
+**Choice.** The admin panel's Constant Text preview uses `box-sizing: border-box`,
+a fixed `150px` height matching the textarea's default height, and
+`overflow-y: auto`. The Question preview remains content-sized. Because the
+preview stylesheet changed again, its admin cache key advances to
+`question-preview.css?v=1.1.2`; the other asset keys are unchanged.
+
+**Why.** A long passage made the read-only preview expand indefinitely and
+pushed the rest of the form down the page. A bounded viewport keeps input and
+preview visually aligned while retaining the complete rendered passage through
+scrolling.
+
+**Risk.** Part of a long passage is below the fold until the administrator
+scrolls. The input can still be resized independently, but the owner explicitly
+requested a fixed preview height.

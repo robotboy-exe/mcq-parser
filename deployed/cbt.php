@@ -523,7 +523,7 @@ include __DIR__ . '/header.php';
 .cbt-frac-single { display: inline; }
 .cbt-sqrt { display: inline-flex; align-items: flex-start; vertical-align: middle; margin: 0 .08em; }
 .cbt-sqrt-sign { font-size: 1.15em; line-height: 1.05; }
-.cbt-sqrt-body { padding: 0 .12em 0 .06em; border-top: 1px solid currentColor; line-height: 1.2; }
+.cbt-sqrt-body { margin: .075em 0 0 -.05em; padding: 0 .12em 0 .06em; border-top: .06em solid currentColor; line-height: 1.2; }
 .cbt-matrix { display: inline-flex; align-items: stretch; vertical-align: middle; gap: .08em; margin: 0 .12em; }
 .cbt-matrix-bracket { display: inline-flex; align-items: center; font-size: 2.1em; line-height: .9; }
 .cbt-matrix-grid { display: inline-grid; grid-template-columns: repeat(2, auto); column-gap: .65em; row-gap: .15em; align-content: center; }

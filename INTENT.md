@@ -1,7 +1,7 @@
 # Constant Text Reset Intent
 
 Approved: 2026-11-14; owner-amended 2026-11-15 (D-91) and 2026-11-17
-(EL01). Supersedes the `owner-tool-2026-11` product intent.
+(EL01, D-103, D-104). Supersedes the `owner-tool-2026-11` product intent.
 
 This file is the behavior tie-breaker for the `math-editor-2026-11` cycle. The
 package files own implementation detail. If a package conflicts with this file,
@@ -35,8 +35,13 @@ stop and ask instead of silently changing the product direction.
   breaks. The administrator can edit the resulting textarea before saving.
 - Keep a read-only preview beside Question that safely renders Constant Text and
   Question with their blank-line paragraphs and exact lowercase underline tags.
+- Keep the Constant Text preview at the input's default 150px height and scroll
+  long passages vertically; the Question preview remains content-sized.
 - Infer exam years from 1900 through 2099.
 - Defer the math-symbol palette and editor byte counter to ME01.
+- The visual Root editor is the only square-root control in the math palette.
+  Its vinculum visibly joins the radical glyph instead of appearing as a
+  separate horizontal line.
 
 ## Parser intent
 
