@@ -50,10 +50,13 @@ and Question and uses `window.CBTText`; it must never write form values, storage
 or the network. Its Constant Text preview is a fixed 150px border-box with
 vertical scrolling, while the Question preview stays content-sized.
 `src/math-tool.js` mounts the operator row, the five freeform
-shape editors (fraction, exponent, subscript, root, 2×2 matrix), and the
-advisory byte counter around `#question_text` in the same Add and Edit forms;
-the basic operator row excludes `√`, so the visual Root editor is the only
-square-root control. It inserts only exact shape markers, has no storage,
+shape editors (fraction, exponent, subscript, root, 2×2 matrix), the restored
+`More symbols` drawer, and the advisory byte counter around `#question_text` in
+the same Add and Edit forms; the basic operator row excludes `√`, so the visual
+Root editor is the only square-root control, and the drawer restores only the
+Greek, set theory and logic, and geometry and vectors grids because the visual
+editors already cover exponents, subscripts, fractions, and square root. It
+inserts only exact shape markers, has no storage,
 network, submit,
 underline-marker, or `constant_text` behavior, and the server's 60,000-byte check
 plus the native `maxlength` remain authoritative.

@@ -220,7 +220,7 @@ test('formats byte counts with spaced thousands', () => {
   assert.strictEqual(tool.formatByteCount(60000), '60 000');
 });
 
-test('ships only the basic operators and the five shape editors', () => {
+test('ships the basic operators, five shape editors, and the restored grids', () => {
   assert.deepStrictEqual(tool.OPERATORS.map((operator) => operator.character), [
     '±',
     '×',
@@ -238,13 +238,41 @@ test('ships only the basic operators and the five shape editors', () => {
     'matrix'
   ]);
   assert.deepStrictEqual(tool.SHAPES.map((shape) => shape.fields.length), [2, 2, 2, 1, 4]);
+  assert.deepStrictEqual(tool.CATEGORIES.map((category) => category.title), [
+    'Greek',
+    'Set theory and logic',
+    'Geometry and vectors'
+  ]);
+  assert.deepStrictEqual(tool.CATEGORIES[0].characters, [
+    'α', 'β', 'γ', 'δ', 'ε', 'θ', 'λ', 'μ', 'π', 'ρ', 'σ', 'τ', 'φ', 'ω', 'Δ', 'Ω', 'Σ'
+  ]);
+  assert.deepStrictEqual(tool.CATEGORIES[1].characters, [
+    '∈', '∉', '⊂', '⊆', '∪', '∩', '∅', '∧', '∨', '¬', '⇒', '⇔'
+  ]);
+  assert.deepStrictEqual(tool.CATEGORIES[2].characters, [
+    '∠', '⊥', '∥', '△', '→', '←', '↔', '↑', '↓'
+  ]);
   for (const operator of tool.OPERATORS) {
     assert.strictEqual(tool.symbolName(operator.character), operator.name);
   }
-  assert.strictEqual(tool.symbolName('θ'), 'symbol θ');
-  assert.strictEqual(tool.CATEGORIES, undefined, 'symbol grids must be gone');
-  assert.strictEqual(tool.QUICK_ROW, undefined, 'quick row must be gone');
-  assert.strictEqual(tool.customFraction, undefined, 'vulgar fraction builder must be gone');
+  const shapeCovered = /[\u00b2\u00b3\u00b9\u2070-\u209f\u00bc-\u00be\u2150-\u215e\u221a]/;
+  for (const category of tool.CATEGORIES) {
+    for (const character of category.characters) {
+      assert.strictEqual(
+        shapeCovered.test(character),
+        false,
+        'a shape-covered character was restored: ' + character
+      );
+      assert.notStrictEqual(
+        tool.symbolName(character),
+        'symbol ' + character,
+        'restored symbol needs an accessible name: ' + character
+      );
+    }
+  }
+  assert.strictEqual(tool.symbolName('☃'), 'symbol ☃');
+  assert.strictEqual(tool.QUICK_ROW, undefined, 'quick row must stay gone');
+  assert.strictEqual(tool.customFraction, undefined, 'vulgar fraction builder must stay gone');
 });
 
 test('builds exact shape markers from freeform values', () => {
@@ -278,8 +306,9 @@ test('mounts the toolbar, shape panels, and counter around the native textarea',
 
   const field = environment.field;
   const textareaIndex = field.children.indexOf(environment.textarea);
-  assert.strictEqual(field.children[textareaIndex - 2].id, 'math_tool_toolbar');
-  assert.strictEqual(field.children[textareaIndex - 1].id, 'math_tool_panels');
+  assert.strictEqual(field.children[textareaIndex - 3].id, 'math_tool_toolbar');
+  assert.strictEqual(field.children[textareaIndex - 2].id, 'math_tool_panels');
+  assert.strictEqual(field.children[textareaIndex - 1].id, 'math_tool_drawer');
   assert.strictEqual(field.children[textareaIndex + 1].id, 'math_tool_counter');
   assert.strictEqual(field.children[textareaIndex + 2].id, 'owner_tool_preview_panel');
 
@@ -288,7 +317,18 @@ test('mounts the toolbar, shape panels, and counter around the native textarea',
   for (const panel of mounted.panels.children) {
     assert.strictEqual(panel.hidden, true);
   }
-  assert.strictEqual(findAll(field, (child) => child.id === 'math_tool_drawer').length, 0);
+  assert.strictEqual(mounted.drawer.id, 'math_tool_drawer');
+  assert.strictEqual(mounted.drawer.hidden, true);
+  assert.strictEqual(mounted.toggle.getAttribute('aria-controls'), 'math_tool_drawer');
+  assert.strictEqual(mounted.toggle.getAttribute('aria-expanded'), 'false');
+  assert.strictEqual(byClass(mounted.drawer, 'math-tool-category').length, 3);
+  for (const category of tool.CATEGORIES) {
+    assert.strictEqual(
+      byClass(mounted.drawer, 'math-tool-category-title').some((node) => node.textContent === category.title),
+      true,
+      'missing restored category: ' + category.title
+    );
+  }
   assert.strictEqual(findAll(field, (child) => child.id === 'owner_tool_underline').length, 0);
   assert.strictEqual(byClass(mounted.toolbar, 'math-tool-operators').length, 1);
   assert.strictEqual(byClass(mounted.toolbar, 'math-tool-shapes').length, 1);
@@ -400,6 +440,30 @@ test('Enter inside a shape field inserts and never submits the form', () => {
   assert.strictEqual(environment.textarea.value, 'q<sqrt>9</sqrt>');
 });
 
+test('toggles the extra symbol grids and inserts a restored symbol', () => {
+  const environment = makeEnvironment({ value: 'a\n\nb', start: 1 });
+  const mounted = tool.init(environment.root);
+  const toggle = mounted.toggle;
+  assert.strictEqual(mounted.drawer.hidden, true);
+
+  toggle.dispatch('click');
+  assert.strictEqual(mounted.drawer.hidden, false);
+  assert.strictEqual(toggle.getAttribute('aria-expanded'), 'true');
+  assert.strictEqual(toggle.textContent, 'Fewer symbols');
+
+  byLabel(mounted.drawer, 'theta')[0].dispatch('click');
+  assert.strictEqual(environment.textarea.value, 'aθ\n\nb');
+  assert.strictEqual(environment.textarea.selectionStart, 2);
+
+  toggle.dispatch('click');
+  assert.strictEqual(mounted.drawer.hidden, true);
+  assert.strictEqual(toggle.getAttribute('aria-expanded'), 'false');
+  assert.strictEqual(toggle.textContent, 'More symbols');
+  assert.strictEqual(byLabel(mounted.drawer, 'element of').length, 1);
+  assert.strictEqual(byLabel(mounted.drawer, 'capital omega').length, 1);
+  assert.strictEqual(byLabel(mounted.drawer, 'square root').length, 0, 'no legacy root operator may return');
+});
+
 test('only one shape panel is open at a time and the button toggles it', () => {
   const environment = makeEnvironment();
   const mounted = tool.init(environment.root);
@@ -507,8 +571,10 @@ test('every generated control is a labelled button and never a submit control', 
   const environment = makeEnvironment();
   const mounted = tool.init(environment.root);
   const controls = findAll(mounted.toolbar, (child) => child.tagName === 'BUTTON')
-    .concat(findAll(mounted.panels, (child) => child.tagName === 'BUTTON'));
-  assert.strictEqual(controls.length, tool.OPERATORS.length + (tool.SHAPES.length * 2));
+    .concat(findAll(mounted.panels, (child) => child.tagName === 'BUTTON'))
+    .concat(findAll(mounted.drawer, (child) => child.tagName === 'BUTTON'));
+  const restoredSymbols = tool.CATEGORIES.reduce((total, category) => total + category.characters.length, 0);
+  assert.strictEqual(controls.length, tool.OPERATORS.length + restoredSymbols + 1 + (tool.SHAPES.length * 2));
   for (const control of controls) {
     assert.strictEqual(control.type, 'button');
     assert.ok(control.getAttribute('aria-label'), 'missing aria-label');
@@ -530,8 +596,8 @@ test('module source keeps its stated boundaries', () => {
 
 test('admin page loads the palette after the preview and the stylesheet beside it', () => {
   const admin = fs.readFileSync(path.join(__dirname, '..', 'deployed', 'admin_questions.php'), 'utf8');
-  const css = admin.indexOf('<link rel="stylesheet" href="src/math-tool.css?v=1.1.0">');
-  const script = admin.indexOf('<script src="src/math-tool.js?v=1.1.1"></script>');
+  const css = admin.indexOf('<link rel="stylesheet" href="src/math-tool.css?v=1.1.1">');
+  const script = admin.indexOf('<script src="src/math-tool.js?v=1.1.2"></script>');
   const previewScript = admin.indexOf('<script src="src/question-preview.js"></script>');
   const previewCss = admin.indexOf('<link rel="stylesheet" href="src/question-preview.css?v=1.1.2">');
   const renderScript = admin.indexOf('<script src="src/owner-tool/render.js?v=2.3.3"></script>');
@@ -546,11 +612,17 @@ test('admin page loads the palette after the preview and the stylesheet beside i
   assert.strictEqual(admin.includes('src/question-preview.css"'), false, 'the preview stylesheet needs a token');
   assert.strictEqual(admin.includes('src/owner-tool/render.js"></script>'), false, 'the renderer needs a token');
   assert.strictEqual(admin.includes('src/math-tool.js?v=1.1.0'), false, 'the changed palette script needs a fresh token');
+  assert.strictEqual(admin.includes('src/math-tool.js?v=1.1.1'), false, 'the restored-grids palette script needs a fresh token');
+  assert.strictEqual(admin.includes('src/math-tool.css?v=1.1.0'), false, 'the changed palette stylesheet needs a fresh token');
   assert.strictEqual(admin.includes('src/question-preview.css?v=1.1.0'), false, 'the changed preview stylesheet needs its MS01 token');
   assert.strictEqual(admin.includes('src/question-preview.css?v=1.1.1'), false, 'the changed preview stylesheet needs a fresh token');
   assert.strictEqual(admin.includes('math_tool_toolbar'), false, 'no PHP markup change allowed');
 
   const stylesheet = fs.readFileSync(path.join(__dirname, '..', 'src', 'math-tool.css'), 'utf8');
+  const sharedButtonRule = stylesheet.indexOf('.math-tool-symbol,\n.math-tool-shape,\n.math-tool-toggle,');
+  const toggleRule = stylesheet.indexOf('.math-tool-toggle {\n  margin-left: auto;');
+  assert.ok(sharedButtonRule > 0, 'missing the shared palette button rule');
+  assert.ok(toggleRule > sharedButtonRule, 'the toggle rule must follow the shared rule or its size and colour lose');
   assert.ok(stylesheet.includes('focus-visible'));
   assert.ok(stylesheet.includes('min-width: 38px'));
   assert.ok(stylesheet.includes('@media (max-width: 650px)'));

@@ -1642,7 +1642,8 @@ rules in all three.
 **Choice.** The toolbar keeps `± × ÷ ≠ ≈ ° π √` and five shape buttons, and
 removes the Exponents, Subscripts, Fractions, Greek, Set theory and logic, and
 Geometry and vectors grids, the drawer, the vulgar-fraction table, and every
-digit map. A fraction always inserts `<frac>`, so `1/2` renders with a horizontal
+digit map. D-105 returns the three non-shape grids; the precomposed exponent,
+subscript, fraction, and square-root refusal below still stands. A fraction always inserts `<frac>`, so `1/2` renders with a horizontal
 bar instead of `½`. Already-stored precomposed text is not converted.
 
 **Why.** The owner asked to keep the basic operators and replace the symbol grids
@@ -1741,3 +1742,23 @@ scrolling.
 **Risk.** Part of a long passage is below the fold until the administrator
 scrolls. The input can still be resized independently, but the owner explicitly
 requested a fixed preview height.
+
+## D-105 — The palette restores only the non-shape symbol grids
+
+**Choice.** A `More symbols` toggle in the toolbar opens one drawer holding the
+Greek, Set theory and logic, and Geometry and vectors grids. The Exponents,
+Subscripts, Fractions, and precomposed square-root character grids stay out
+because the visual shape editors already cover those forms. The operator row
+stays `± × ÷ ≠ ≈ ° π`, there is no quick row, and a drawer button writes one
+character through the existing insertion path. This supersedes D-99's grid
+removal for the three named categories only.
+
+**Why.** The owner asked for the math palette's content back without
+reintroducing anything the visual editors already provide. Greek letters,
+set/logic relations, and geometry/vector arrows have no visual editor, while
+exponent, subscript, fraction, and square-root characters would duplicate an
+editor and give the same shape two representations.
+
+**Risk.** `π` can be inserted from both the operator row and the Greek grid; that
+duplication is intentional and harmless. Stored precomposed shapes (`½`, `x²`,
+`³⁄₇`) still render as plain Unicode and are not converted.

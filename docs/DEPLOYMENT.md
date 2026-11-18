@@ -49,7 +49,7 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 
 | File | Lines / LF bytes | SHA-256 (LF) | Deploy to | Notes |
 |---|---:|---|---|---|
-| `deployed/admin_questions.php` | 1055 / 62662 | `f0ab89c4b09ff21a023ed61eff76d6c9fab9c88fa4ca4c3ee2ad6962f2abac69` | site root | native form, Constant Text, session prefill; loads helper, underline, the renderer as `?v=2.3.3`, the read-only preview as `question-preview.css?v=1.1.2`, `math-tool.js?v=1.1.1`, and unchanged `math-tool.css?v=1.1.0`; context code removed |
+| `deployed/admin_questions.php` | 1055 / 62662 | `da2cea1735bd54a80d6c834b06b2a93c62635da938c49926223fdb64f694cb94` | site root | native form, Constant Text, session prefill; loads helper, underline, the renderer as `?v=2.3.3`, the read-only preview as `question-preview.css?v=1.1.2`, `math-tool.js?v=1.1.2`, and `math-tool.css?v=1.1.1`; context code removed |
 | `deployed/admin_question_store.php` | 113 / 4918 | `ff93f0c924159662f843ec83ed9e78c3815dc1549805a8c79a631f702577dc1b` | site root | extracted save/delete transaction; explicit columns; `constant_text` |
 | `deployed/cbt.php` | 1083 / 46953 | `075b6f1a6f1745ee2bb67ba60633e4d8f2a5b66d20ba747befe336e1779f0ba4` | site root | standalone delivery; existing limited selection plus EL01 post-fetch ordering; Constant Text block; marker options; inline fraction/connected-root/matrix rules; loads `src/owner-tool/render.js?v=2.3.3` |
 | `deployed/cbt_question_order.php` | 56 / 1444 | `5c0a9b8c125b4a1d72737b3e9a532d6e386c50b7455ba8e1f1df39c122547fb7` | site root beside `cbt.php` | exact trusted-subject grouped display ordering only; members restored to ascending original `id`, shuffled groups, blank singletons |
@@ -59,8 +59,8 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 | `src/underline-toolbar.js` | 136 / 4288 | `55f3d7f4953e44aac7d911e902b6deb413897e56b35d8669d607e6bab4a47315` | site root `src/` | runtime Underline button for Constant Text, question, and options; sits at the far right of the Question label row |
 | `src/question-preview.js` | 104 / 3759 | `472c69fedda6353f5ee1f527b8f5b0591774cd7fd8c837bad1c910268020bec9` | site root `src/` | read-only Constant Text/Question preview; uses `window.CBTText` |
 | `src/question-preview.css` | 117 / 2069 | `2baa333125836885616f2845000b62cec8d74f2556cc98f6eddbabeee9c213fc` | site root `src/` | preview layout, fixed-height scrollable Constant Text box, `white-space: pre-wrap`, horizontal fraction bar, joined radical, and 2×2 matrix grid; loaded as `?v=1.1.2` |
-| `src/math-tool.js` | 571 / 18151 | `480ea3c157ba38c21cfececd2ec91848fe4c3bed9af9c2601314f9d960a6c2d6` | site root `src/` | seven basic operators, five freeform shape editors emitting exact markers, and advisory byte counter for `#question_text`; the visual Root editor is the only square-root control; no storage, network, submit, underline-marker, or `constant_text` behavior |
-| `src/math-tool.css` | 206 / 3334 | `da630779060a617582da5c2f909e03d9f5883bf3d72348aaf1522cded6828850` | site root `src/` | operator row, shape panels, 2×2 matrix input grid, preview, hint, counter, focus, and mobile-target styles |
+| `src/math-tool.js` | 660 / 21427 | `1cd92542ee44c9736ea06773478032faf3ab0df50f8263e366869dee1ff24719` | site root `src/` | seven basic operators, five freeform shape editors emitting exact markers, a `More symbols` drawer with only the Greek, set theory and logic, and geometry and vectors grids, and advisory byte counter for `#question_text`; the visual Root editor is the only square-root control; no storage, network, submit, underline-marker, or `constant_text` behavior |
+| `src/math-tool.css` | 255 / 4118 | `fb87dbd9b0654140c3673c338b035a7ea8470274a6485374de8267f54129780f` | site root `src/` | operator row, symbol drawer, shape panels, 2×2 matrix input grid, preview, hint, counter, focus, and mobile-target styles; the toggle rule follows the shared button rule so its size and colour win |
 | `src/owner-tool/render.js` | 408 / 13764 | `216ebb513ef48ee82c71e6d0af4e8657e6a0579ac674b2e0e5a6c6d55ad87933` | site root `src/owner-tool/` | browser renderer for the six exact marker pairs, including fraction/root/matrix nodes; unchanged path |
 | `deployed/sql/01-constant-text.sql` (ops) | 49 / 1719 | `7c3666af857f976f444013055e94b2599b85fabf1e050ae08ebda153c5d0cba4` | ops directory | guarded, rerunnable `constant_text` migration |
 | `deployed/sql/02-constant-text-rollback.sql` (ops) | 38 / 1169 | `09b4293d88f8a4436839ccef740d70e00bbc085c8f49ec60fcc184bfca861d45` | ops directory | rollback; refuses non-empty data |
@@ -86,9 +86,9 @@ support. Do not deploy any file under `archive/`.
    `?v=2.3.3`. Its markup, filters, and selection stay out of scope (D-102).
 5. Cache handling: `admin_questions.php` loads root `ocr_helper.js` and
    `src/underline-toolbar.js` without query tokens, and loads
-    `src/question-preview.css?v=1.1.2`, `src/math-tool.css?v=1.1.0`,
-    `src/owner-tool/render.js?v=2.3.3`, and `src/math-tool.js?v=1.1.1` (D-94,
-    D-102, D-103, D-104). A standalone deployment must purge server/CDN caches, clear the
+    `src/question-preview.css?v=1.1.2`, `src/math-tool.css?v=1.1.1`,
+    `src/owner-tool/render.js?v=2.3.3`, and `src/math-tool.js?v=1.1.2` (D-94,
+    D-102, D-103, D-104, D-105). A standalone deployment must purge server/CDN caches, clear the
    site's browser cache, and verify the live helper and palette hashes.
    `cbt.php` and `cbt_practice.php` both load
    `src/owner-tool/render.js?v=2.3.3`; no page may keep `?v=2.3.2c`.
@@ -159,6 +159,7 @@ missing unique-name contract. Full disposable commands are in
 | Helper boundary | paste `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four` | Question is `Which is correct?`; Option A keeps `The notation A ) stays in option A`; B-D are `Two`/`Three`/`Four`; no duplicate warning solely for the internal `A )` |
 | Helper isolation | prefill Constant Text, then load passage/cloze-shaped OCR | Constant Text remains byte-for-byte unchanged; any ordinary-question interpretation stays in Question/options with review flags |
 | Palette | open Add a New Question and inspect the toolbar, then pick an operator after placing the caret mid-text | the basic row is exactly `± × ÷ ≠ ≈ ° π`, the operator lands at the remembered caret, the visual Root button is the only square-root control, and no second Underline button appears |
+| Symbol drawer | click `More symbols` and insert one character from each grid | the drawer opens with only Greek, Set theory and logic, and Geometry and vectors grids, holds no exponent, subscript, fraction, or square-root character, toggles `aria-expanded` back to `false`, and each symbol lands at the remembered caret |
 | Shape editors | open each of the fraction, exponent, subscript, root, and 2×2 matrix panels | one panel opens at a time, the live preview matches the shape, and only one shape button reports `aria-expanded="true"` |
 | Fraction | enter numerator `3` and denominator `7`, then Insert | `<frac>3/7</frac>` lands at the remembered caret, the preview shows `3` over a full horizontal rule above `7`, blank lines are unchanged, and Enter does not submit |
 | Root | enter radicand `2x+1` | the preview shows one holistic radical: `√` visibly joined to a horizontal vinculum across the radicand |
@@ -167,7 +168,7 @@ missing unique-name contract. Full disposable commands are in
 | Palette keyboard | Tab to a palette button and press Enter or Space | the focused symbol inserts; every control has an accessible name |
 | Byte counter | paste or type multi-byte symbols and watch the counter | neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+ with visible warning copy; nothing truncates and Save stays enabled |
 | Byte counter refresh | click `Load questions`/`Skip` or reset the form | the counter matches the field's new UTF-8 byte count after the page's own fill, including red at 60,000+ |
-| Tokens | view source of the admin page, `cbt.php`, and `cbt_practice.php` | exactly one `src/math-tool.css?v=1.1.0` link and one `src/math-tool.js?v=1.1.1` script on the admin page, script after the preview script; one `src/question-preview.css?v=1.1.2` link and one `src/owner-tool/render.js?v=2.3.3` script there too; `cbt.php` and `cbt_practice.php` each load `src/owner-tool/render.js?v=2.3.3` exactly once, and stale preview `?v=1.1.1` plus renderer `?v=2.3.2c` appear nowhere |
+| Tokens | view source of the admin page, `cbt.php`, and `cbt_practice.php` | exactly one `src/math-tool.css?v=1.1.1` link and one `src/math-tool.js?v=1.1.2` script on the admin page, script after the preview script; one `src/question-preview.css?v=1.1.2` link and one `src/owner-tool/render.js?v=2.3.3` script there too; `cbt.php` and `cbt_practice.php` each load `src/owner-tool/render.js?v=2.3.3` exactly once, and stale preview `?v=1.1.1` plus renderer `?v=2.3.2c` appear nowhere |
 | CBT | open delivered questions with preserved constant text | passage renders above the question; `<u>` is real underline |
 | English Lexis subject | inspect the active subject list after `03` and after a rerun | exactly one byte-exact active row; generated ID and existing description/timestamp remain unchanged |
 | English Lexis ordering | start a 50-question exam containing repeated exact non-empty passages plus blank passages | selected IDs and filters are unchanged; repeated passages are contiguous; blank rows stay independent; every member renders its passage |

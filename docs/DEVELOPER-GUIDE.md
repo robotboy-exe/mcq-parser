@@ -38,15 +38,17 @@ archived under `archive/owner-tool-2026-11/`; do not load or extend them. The
 `src/owner-tool/context*` helper functions inside `render.js` are inert and
 kept only because that file is shared with `cbt_practice.php`.
 
-**Math editor (MS01, D-92–D-103).** One pair of assets serves the native form.
-The module builds its operator row, shape panels, and counter with
+**Math editor (MS01, D-92–D-105).** One pair of assets serves the native form.
+The module builds its operator row, shape panels, symbol drawer, and counter with
 `createElement`/`textContent`, remembers the textarea selection across toolbar
 focus loss, and inserts through `execCommand('insertText')` then `setRangeText`
 then `.value`; it never rewrites line breaks or underline markers. The
-operator row is `± × ÷ ≠ ≈ ° π`; the symbol grids, drawer, vulgar-fraction
-table, digit maps, and legacy `√` operator are gone. The visual Root editor is
-the only square-root control. Five shape buttons open one freeform panel at a
-time:
+operator row is `± × ÷ ≠ ≈ ° π`; the `More symbols` drawer restores the Greek,
+set theory and logic, and geometry and vectors grids, while the exponent,
+subscript, fraction, and square-root character grids, the vulgar-fraction table,
+the digit maps, and the legacy `√` operator stay gone because the visual editors
+cover those shapes. The visual Root editor is the only square-root control.
+Five shape buttons open one freeform panel at a time:
 
 - Fraction: numerator and denominator → `<frac>3/7</frac>` (stacked, horizontal
   rule).
@@ -63,8 +65,8 @@ right of the Question label row on desktop and mobile.
 The counter is advisory
 (neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+) and
 refreshes after typing, the page's OCR Load/Skip, and a native form reset. The
-admin page loads the changed palette script as `math-tool.js?v=1.1.1`, the
-unchanged palette stylesheet as `math-tool.css?v=1.1.0`, the read-only preview
+admin page loads the changed palette script as `math-tool.js?v=1.1.2`, the
+changed palette stylesheet as `math-tool.css?v=1.1.1`, the read-only preview
 stylesheet as `question-preview.css?v=1.1.2`, and the renderer as
 `render.js?v=2.3.3`;
 `cbt.php` and `cbt_practice.php` both load the current `render.js?v=2.3.3`
@@ -201,8 +203,23 @@ php tests/admin-question-store.php
 php tests/cbt-question-order.php
 ```
 
-Current local evidence through 2026-11-17. The D-91 fix run used PHP 8.5.12 for
-the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
+This VM has no root and therefore no `apt` PHP. Provision the declared PHP 8.3
+runtime into the chat user's home, outside the workspace, before running the PHP
+suites or lint:
+
+```sh
+mkdir -p "$HOME/php83" && cd "$HOME/php83"
+curl -fsSL -o php.tar.gz \
+  https://dl.static-php.dev/static-php-cli/bulk/php-8.3.32-cli-linux-x86_64.tar.gz
+tar xzf php.tar.gz
+export PATH="$HOME/php83:$PATH"
+php -v   # PHP 8.3.32 (cli)
+```
+
+That binary is not committed and does not survive archiving; rerun the block if
+`php -v` fails. Current local evidence through 2026-11-18. The D-91 fix run used
+PHP 8.5.12 for the unchanged PHP suites/lint; the original review separately
+passed PHP 8.3.32:
 
 - runner: 60 fixtures, 60 PASS, 0 FAIL, 0 PENDING;
 - unit: 163 PASS;
@@ -211,13 +228,16 @@ the unchanged PHP suites/lint; the original review separately passed PHP 8.3.32:
 - underline toolbar: 10 PASS;
 - read-only preview: 6 PASS, including a real-renderer fraction vector and the
   strengthened Constant Text/Question viewport boundary;
-- math palette/shape editors: 25 PASS (real module and mount);
+- math palette/shape editors: 26 PASS (real module and mount), including the
+  restored Greek, set theory and logic, and geometry and vectors grids and the
+  exclusion of every shape-covered character;
 - marker renderers: 67 PASS against `tests/fixtures/render-markup.json`, run in
   JS and again through `php tests/php-render.php` (32 vectors there);
 - admin store: 8 PASS;
 - English Lexis ordering/wiring: 11 PASS against the real module and real
   `cbt.php`;
-- `php -l` on every changed PHP file: PASS;
+- `php -l` on every file under `deployed/`: 7/7 PASS (PHP 8.3.32 on
+  2026-11-18);
 - `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
   output hashes matching;
 - civic fixture: 50/50 questions, no flags;

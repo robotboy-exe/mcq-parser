@@ -24,6 +24,7 @@
 
 .math-tool-symbol,
 .math-tool-shape,
+.math-tool-toggle,
 .math-tool-insert {
   min-width: 34px;
   height: 32px;
@@ -45,24 +46,71 @@
   color: #1769aa;
 }
 
+.math-tool-toggle {
+  margin-left: auto;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1769aa;
+}
+
 .math-tool-symbol:hover,
 .math-tool-shape:hover,
+.math-tool-toggle:hover,
 .math-tool-insert:hover {
   background: #e8eef6;
   border-color: #94a3b8;
 }
 
 .math-tool-symbol:active,
-.math-tool-shape[aria-expanded="true"] {
+.math-tool-shape[aria-expanded="true"],
+.math-tool-toggle[aria-expanded="true"] {
   background: #dbe5f1;
 }
 
 .math-tool-symbol:focus-visible,
 .math-tool-shape:focus-visible,
+.math-tool-toggle:focus-visible,
 .math-tool-insert:focus-visible,
 .math-tool-field-input:focus-visible {
   outline: 2px solid #1769aa;
   outline-offset: 1px;
+}
+
+.math-tool-drawer {
+  margin: 0 0 6px;
+  padding: 8px;
+  background: #ffffff;
+  border: 1px solid #d5dfe9;
+  border-radius: 8px;
+}
+
+.math-tool-drawer[hidden] {
+  display: none;
+}
+
+.math-tool-category {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.math-tool-category:last-child {
+  margin-bottom: 0;
+}
+
+.math-tool-category-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.math-tool-chars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .math-tool-panels {
@@ -186,6 +234,7 @@
 @media (max-width: 650px) {
   .math-tool-symbol,
   .math-tool-shape,
+  .math-tool-toggle,
   .math-tool-insert {
     min-width: 38px;
     height: 38px;

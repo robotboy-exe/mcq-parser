@@ -32,11 +32,62 @@
     { character: 'π', name: 'pi' }
   ];
 
+  // Only the non-shape categories return; exponents, subscripts, fractions,
+  // and square root are covered by the visual editors.
+  var SYMBOL_NAMES = {
+    'α': 'alpha',
+    'β': 'beta',
+    'γ': 'gamma',
+    'δ': 'delta',
+    'ε': 'epsilon',
+    'θ': 'theta',
+    'λ': 'lambda',
+    'μ': 'mu',
+    'ρ': 'rho',
+    'σ': 'sigma',
+    'τ': 'tau',
+    'φ': 'phi',
+    'ω': 'omega',
+    'Δ': 'capital delta',
+    'Ω': 'capital omega',
+    'Σ': 'capital sigma',
+    '∈': 'element of',
+    '∉': 'not an element of',
+    '⊂': 'subset of',
+    '⊆': 'subset of or equal to',
+    '∪': 'union',
+    '∩': 'intersection',
+    '∅': 'empty set',
+    '∧': 'and',
+    '∨': 'or',
+    '¬': 'not',
+    '⇒': 'implies',
+    '⇔': 'if and only if',
+    '∠': 'angle',
+    '⊥': 'perpendicular',
+    '∥': 'parallel',
+    '△': 'triangle',
+    '→': 'right arrow',
+    '←': 'left arrow',
+    '↔': 'left right arrow',
+    '↑': 'up arrow',
+    '↓': 'down arrow'
+  };
+
+  var CATEGORIES = [
+    { title: 'Greek', characters: ['α', 'β', 'γ', 'δ', 'ε', 'θ', 'λ', 'μ', 'π', 'ρ', 'σ', 'τ', 'φ', 'ω', 'Δ', 'Ω', 'Σ'] },
+    { title: 'Set theory and logic', characters: ['∈', '∉', '⊂', '⊆', '∪', '∩', '∅', '∧', '∨', '¬', '⇒', '⇔'] },
+    { title: 'Geometry and vectors', characters: ['∠', '⊥', '∥', '△', '→', '←', '↔', '↑', '↓'] }
+  ];
+
   function symbolName(character) {
     for (var index = 0; index < OPERATORS.length; index += 1) {
       if (OPERATORS[index].character === character) {
         return OPERATORS[index].name;
       }
+    }
+    if (Object.prototype.hasOwnProperty.call(SYMBOL_NAMES, character)) {
+      return SYMBOL_NAMES[character];
     }
     return 'symbol ' + character;
   }
@@ -370,6 +421,39 @@
     var shapeRow = element('div', 'math-tool-shapes');
     toolbar.appendChild(shapeRow);
 
+    var toggle = element('button', 'math-tool-toggle', 'More symbols');
+    toggle.type = 'button';
+    toggle.setAttribute('aria-label', 'Show extra math symbols');
+    toggle.setAttribute('aria-controls', 'math_tool_drawer');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('mousedown', preventBlur);
+    toolbar.appendChild(toggle);
+
+    var drawer = element('div', 'math-tool-drawer');
+    drawer.id = 'math_tool_drawer';
+    drawer.hidden = true;
+
+    for (var categoryIndex = 0; categoryIndex < CATEGORIES.length; categoryIndex += 1) {
+      var category = CATEGORIES[categoryIndex];
+      var section = element('div', 'math-tool-category');
+      section.appendChild(element('span', 'math-tool-category-title', category.title));
+      var characters = element('div', 'math-tool-chars');
+      for (var characterIndex = 0; characterIndex < category.characters.length; characterIndex += 1) {
+        var categoryCharacter = category.characters[characterIndex];
+        characters.appendChild(symbolButton(categoryCharacter, categoryCharacter));
+      }
+      section.appendChild(characters);
+      drawer.appendChild(section);
+    }
+
+    toggle.addEventListener('click', function () {
+      var expanded = toggle.getAttribute('aria-expanded') === 'true';
+      drawer.hidden = expanded;
+      toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      toggle.textContent = expanded ? 'More symbols' : 'Fewer symbols';
+      toggle.setAttribute('aria-label', expanded ? 'Show extra math symbols' : 'Hide extra math symbols');
+    });
+
     var panels = element('div', 'math-tool-panels');
     panels.id = 'math_tool_panels';
 
@@ -508,6 +592,7 @@
 
     textarea.parentNode.insertBefore(toolbar, textarea);
     textarea.parentNode.insertBefore(panels, textarea);
+    textarea.parentNode.insertBefore(drawer, textarea);
     if (textarea.nextSibling) {
       textarea.parentNode.insertBefore(counter, textarea.nextSibling);
     } else {
@@ -544,6 +629,8 @@
     return {
       toolbar: toolbar,
       panels: panels,
+      drawer: drawer,
+      toggle: toggle,
       counter: counter,
       insert: insertCharacter,
       update: updateCounter,
@@ -556,6 +643,8 @@
     AMBER_THRESHOLD: AMBER_THRESHOLD,
     OPERATORS: OPERATORS,
     SHAPES: SHAPES,
+    CATEGORIES: CATEGORIES,
+    SYMBOL_NAMES: SYMBOL_NAMES,
     symbolName: symbolName,
     formatByteCount: formatByteCount,
     fractionMarkup: fractionMarkup,
