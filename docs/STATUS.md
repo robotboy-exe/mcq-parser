@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-18.
+Last updated: 2026-11-19.
 
 ## Active cycle
 
@@ -36,6 +36,23 @@ Last updated: 2026-11-18.
   editors. Committed at `23a406c` and pushed; cycle-reviewed at `596fb31`
   (`PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`, `NOTE-9`–`NOTE-12`), and the
   owner accepted the desktop/Brave drawer check on 2026-11-18.
+- D-106 save diagnostics (owner request 2026-11-18): authenticated question
+  save/update PDO failures keep the existing lead-in and append the exact error
+  through `h()`, so the owner can diagnose the target schema without server-log
+  access. The production file is changed locally; no deployment or live save was
+  performed.
+- D-108 display alias (owner request 2026-11-19): the exact stored
+  `English (Lexis & Structure)` subject displays as
+  `English (Comprehension Pages / Lexis & Structure)` on all admin subject selects
+  and rows and on the CBT setup/exam views, without changing IDs, the grouping
+  key, `cbt_practice.php`, or SQL. CBT Constant Text is weight 800 and the
+  question stem remains weight 700. Local static, disposable HTTP, and
+  desktop/390px browser checks pass; deployment and the owner's live check remain
+  external.
+- The owner reported on 2026-11-19 that the production Constant Text migration
+  completed successfully. The temporary pre-migration compatibility work was
+  reverted before deployment; the application again uses the migrated column
+  directly. This does not confirm the separate English Lexis operation `03`.
 - Ordering: ST01 replaced OT12 because running the context migration was judged
   riskier and more complex than one optional passage per question. The owner
   chose the reset on 2026-11-14.
@@ -50,9 +67,8 @@ Last updated: 2026-11-18.
   passed the independent third re-review; ST01 is settled and the ME01 review
   dependency is satisfied.
 - Planning constraint: the measured live-origin diffs are
-  `admin_questions.php` +89/−80 (ST01 +87 plus ME01's two asset tags, unchanged
-  by the ME02 and MS01 token edits),
-  `cbt.php` +74/−35 (MS01 shape rules plus the renderer token),
+  `admin_questions.php` +94/−84 (ST01, ME01/ME02, MS01, D-106, and D-108),
+  `cbt.php` +78/−37 (MS01, the renderer token, and D-108),
   `answer_details.php` +21/−3 (MS01 shape rules), `cbt_practice.php` +20/−2 (its
   `FIX-1` renderer token), and `ocr_helper.js` +57/−20 —
   all within the 100-addition externalize-first cap. No cap exception remains.
@@ -137,6 +153,8 @@ Last updated: 2026-11-18.
 | MS01 D-103/D-104 focused review and owner acceptance (2026-11-17) | independent real-path suites, manifest/cap measurements, disposable Chromium at 900px/320px and 48 radical font/size combinations, then owner desktop/Brave checklist | `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; `NOTE-7` regression guard and `NOTE-8` stale docs corrected; owner reported PASS for the sole Root control, joined vinculum, fixed scrollable Constant Text preview, and content-sized Question preview; no agent live action |
 | Math palette grid restoration (2026-11-18, dirty base at `120a5db`, owner request) | `node tests/math-tool.js` with new drawer, toggle, category and shape-exclusion vectors, the full Node baseline, `node --check`, `extract-bank --check`, `git diff --check`, hash/line measurements, then the PHP 8.3.32 suites and `php -l` on every `deployed/` file after provisioning the CLI into `$HOME/php83` | 26 math-tool vectors PASS; 60 runner, 163 unit, 11 helper, 10 underline, 6 preview, 67 renderer checks, 7 bank hashes; PHP renderer 32, admin store 8, ordering 11, lint 7/7 PASS; `src/math-tool.js` 660 / 21427, `.css` 255 / 4118, `tests/math-tool.js` 660 / 28485; `admin_questions.php` 1055 / 62662 with both palette tokens rotated in place; a re-review found and fixed the toggle rule sitting before the shared button rule (proved by mutating the order: the assertion fails, then passes when restored); browser, MySQL, staging, live, and deploy checks not run |
 | Math-editor cycle review (2026-11-18, reviewed `HEAD` `596fb31`, clean worktree) | independent cycle-wide review of phases 1–5 plus D-105: all Node/PHP suites, PHP 8.3.32 lint, bank extractor, manifest re-hash, live-origin numstat, 513-input JS/PHP parity fuzz, asset-token audit, D-105 drawer probe, D-104 mutation re-challenge, and an authenticated fetch of the authoritative ref | `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; 60 runner, 163 unit, 11 helper, 10 underline, 6 preview, 26 math-tool, 67 renderer, 32 PHP renderer, 8 store, 11 ordering, lint 0 failures; manifest 13/13; parity mismatches 0; caps +89/+74/+21/+20/+57; remote `owner-tool-integration` = `HEAD`; `NOTE-9`–`NOTE-12`, owner D-105 drawer check accepted 2026-11-18; no live, deploy, MySQL, staging, or browser action by the agent |
+| D-106 authenticated save diagnostics (2026-11-18, direct owner request) | full Node/PHP baseline, `php -l deployed/admin_questions.php`, bank extractor, `git diff --check`, deployment hash/size refresh, and live-origin numstat | 60 runner, 163 unit, 11 helper, 10 underline, 6 preview, 26 math-tool, 67 JS renderer, 32 PHP renderer, 8 store, and 11 ordering checks PASS; extractor and PHP lint PASS; admin remains 1055 lines and +89/−80, now 62631 bytes with manifest hash `429d25f2…deed6f`; no browser, database, live, or deployment action |
+| D-108 subject display alias and CBT weight hierarchy (2026-11-19, direct owner request) | failing-first 14-check production ordering/alias suite; disposable HTTP staging through the real `cbt.php`; authenticated admin page and CBT exam view in Chromium at 1280px and 390px; full Node/PHP baseline, PHP lint, deployment hash/size refresh, and live-origin numstat | 60 runner, 163 unit, 11 helper, 10 underline, 6 preview, 26 math-tool, 67 JS renderer, 32 PHP renderer, 8 store, 14 ordering/alias, and 7 HTTP staging checks PASS; PHP lint 8/8; admin alias appears in all three selects and table cells; CBT metadata is aliased with Constant Text/question weights 800/700, exact underline, and no overflow; live-origin caps +94/−84 and +78/−37; no live write or deployment |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save
@@ -287,6 +305,13 @@ gates.
   `23a406c` and pushed to `owner-tool-integration`; reviewed by the cycle-wide
   record at `596fb31` (`PASS WITH ACCEPTED FINDINGS`, `NOTE-9`–`NOTE-12`) and
   owner-accepted 2026-11-18.
+- D-106 authenticated save diagnostics (owner request 2026-11-18, direct work
+  without a package): replace the misleading migration-only save failure with
+  the same lead-in plus the exact escaped PDO message for logged-in
+  administrators. Implemented locally; no deployment or live save was run.
+- The temporary D-107 pre-migration compatibility work was reverted on
+  2026-11-19 after the owner reported the production Constant Text migration
+  successful. No D-107 runtime file remains.
 
 ## Source of truth
 

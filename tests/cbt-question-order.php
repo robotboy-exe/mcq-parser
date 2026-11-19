@@ -8,6 +8,13 @@ if (!is_file($modulePath)) {
 }
 require_once $modulePath;
 
+$subjectDisplayPath = __DIR__ . '/../deployed/subject_display.php';
+if (!is_file($subjectDisplayPath)) {
+    fwrite(STDERR, "[FAIL] production subject display module is missing\n");
+    exit(1);
+}
+require_once $subjectDisplayPath;
+
 $passed = 0;
 $failed = 0;
 
@@ -254,6 +261,49 @@ el_check(
         && !str_contains($practiceSource, 'cbt_question_order.php')
         && !str_contains($practiceSource, $callNeedle),
     'every selected row keeps its Constant Text renderer and cbt_practice.php stays isolated'
+);
+
+el_check(
+    CBT_ENGLISH_LEXIS_SUBJECT_NAME === CBT_GROUPED_SUBJECT_NAME
+        && cbt_subject_display_name(CBT_GROUPED_SUBJECT_NAME) === 'English (Comprehension Pages / Lexis & Structure)'
+        && cbt_subject_display_name('English (Lexis & Structure) ') === 'English (Lexis & Structure) '
+        && cbt_subject_display_name('English Language') === 'English Language',
+    'maps only the exact grouped database subject name to the frontend label'
+);
+
+$adminSource = file_get_contents(__DIR__ . '/../deployed/admin_questions.php');
+$displayIncludeNeedle = "require_once __DIR__ . '/subject_display.php';";
+$adminSelectNeedle = "h(cbt_subject_display_name((string) \$subject['subject_name']))";
+$adminTableNeedle = "h(cbt_subject_display_name((string) \$item['subject_name']))";
+$cbtSelectNeedle = "htmlspecialchars(cbt_subject_display_name((string) \$subject['subject_name']), ENT_QUOTES, 'UTF-8')";
+$cbtSelectedNeedle = "cbt_subject_display_name((string) \$subjectsById[\$selectedSubjectId]['subject_name'])";
+el_check(
+    substr_count($adminSource, $displayIncludeNeedle) === 1
+        && substr_count($cbtSource, $displayIncludeNeedle) === 1
+        && substr_count($adminSource, $adminSelectNeedle) === 3
+        && substr_count($adminSource, $adminTableNeedle) === 1
+        && substr_count($cbtSource, $cbtSelectNeedle) === 1
+        && substr_count($cbtSource, $cbtSelectedNeedle) === 1
+        && !str_contains($practiceSource, $displayIncludeNeedle)
+        && !str_contains($practiceSource, 'cbt_subject_display_name')
+        && !str_contains($practiceSource, CBT_ENGLISH_LEXIS_DISPLAY_NAME),
+    'uses the display label throughout admin and CBT while keeping CBT Practice unchanged'
+);
+
+$constantWeight = null;
+$questionWeight = null;
+if (preg_match('/\.constant-text\s*\{[^}]*font-weight:\s*(\d+)\s*;/s', $cbtSource, $match) === 1) {
+    $constantWeight = (int) $match[1];
+}
+if (preg_match('/\.question-text\s*\{[^}]*font-weight:\s*(\d+)\s*;/s', $cbtSource, $match) === 1) {
+    $questionWeight = (int) $match[1];
+}
+el_check(
+    $constantWeight !== null
+        && $questionWeight !== null
+        && $constantWeight > $questionWeight
+        && $questionWeight >= 700,
+    'keeps both CBT text blocks bold with Constant Text at the heavier weight'
 );
 
 echo "\nPASS: {$passed}\nFAIL: {$failed}\n";

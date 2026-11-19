@@ -66,9 +66,12 @@ below are unchanged.
 
 ### 1.2 English Lexis candidate ordering
 
-The active subject name is exactly `English (Lexis & Structure)` and its ID is
-database-generated. `cbt.php` trusts the name loaded from the active `subjects`
-row, not a posted label or a fixed numeric ID. It keeps the existing
+The active database subject name is exactly `English (Lexis & Structure)` and
+its ID is database-generated. On `admin_questions.php` and `cbt.php`, only that
+exact name is displayed as `English (Comprehension Pages / Lexis & Structure)`;
+`cbt_practice.php`, the stored row, and subject IDs are unchanged. `cbt.php`
+trusts the original name loaded from the active `subjects` row for grouping, not
+a posted or displayed label or a fixed numeric ID. It keeps the existing
 active/category/year filters, `ORDER BY RAND()`, and subject-based limit; this
 subject follows the default limit of 50.
 
@@ -539,6 +542,10 @@ the current rendered page (`archive/live-sources/admin_questions.html`):
   limited to `id <= 10`.
 - Success text is rendered after a Post/Redirect/Get as
   `Question saved successfully (Question ID: N).`
+- An authenticated save/update PDO failure is logged server-side and rendered
+  in `.admin-error` as `The question could not be saved. Database error: ...`.
+  The exact exception text passes through the page's `h()` HTML-escaping helper;
+  logged-out visitors cannot reach this save branch.
 - CSRF is carried by the form's hidden `csrf_token`; the bookmarklet posts the
   form as-is.
 
@@ -560,6 +567,8 @@ fail even though the bookmarklet and PHP agree.
 - Display: `cbt.php` renders the passage above the question in the exam view,
   and `answer_details.php` renders it above the question. It is not shown on the
   result sheet or `cbt_practice.php`.
+- CBT weight hierarchy: the exam-view Constant Text block is bold at weight 800;
+  the larger question stem remains bold at weight 700.
 - Formatting: Constant Text, question text, and options all accept exact
   lowercase `<u>...</u>`. The Underline button targets the last-focused of those
   fields and refuses partial markers or nested pairs. Constant Text and question
@@ -784,6 +793,8 @@ All server-derived text is rendered with `textContent` or created nodes, never
 - Constant Text, question stems, and the result table render with
   `white-space: pre-wrap`, so manual newlines and OCR paragraph breaks survive;
   the admin list summary is truncated after stripping the markers.
+- In `cbt.php`, Constant Text uses weight 800 and the question stem uses weight
+  700. Both remain bold, with the existing 17px/20px sizes retaining hierarchy.
 - In the read-only admin panel, the Constant Text preview is a fixed 150px
   border-box matching the input's default height and uses vertical scrolling for
   overflow. The Question preview remains content-sized (D-104).

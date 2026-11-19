@@ -2,6 +2,7 @@
 $page_title = "Online CBT Examination | Skymenu";
 require_once __DIR__ . '/cbt_db.php';
 require_once __DIR__ . '/cbt_question_order.php';
+require_once __DIR__ . '/subject_display.php';
 $subjects = [];
 $examCategories = [];
 $examYears = [];
@@ -204,7 +205,7 @@ try {
                 $attemptId = (int) $pdo->lastInsertId();
 
                 $examStarted = true;
-                $selectedSubjectName = $subjectsById[$selectedSubjectId]['subject_name'];
+                $selectedSubjectName = cbt_subject_display_name((string) $subjectsById[$selectedSubjectId]['subject_name']);
                 $selectedCategoryName = $categoriesById[$selectedCategoryId]['category_name'];
             }
         }
@@ -326,6 +327,7 @@ include __DIR__ . '/header.php';
     margin: 0 0 20px;
     font-size: 17px;
     line-height: 1.7;
+    font-weight: 800;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
@@ -568,7 +570,7 @@ include __DIR__ . '/header.php';
                             <option value="">-- Select Subject --</option>
                             <?php foreach ($subjects as $subject): ?>
                                 <option value="<?php echo (int) $subject['id']; ?>" <?php echo ((int) $subject['id'] === $selectedSubjectId) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($subject['subject_name'], ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php echo htmlspecialchars(cbt_subject_display_name((string) $subject['subject_name']), ENT_QUOTES, 'UTF-8'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

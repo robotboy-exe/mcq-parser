@@ -1,6 +1,6 @@
 # Developer Guide — Constant Text, Math Editor, and English Lexis
 
-Recorded: 2026-11-14; amended through 2026-11-17 for D-91–D-104. This is the
+Recorded: 2026-11-14; amended through 2026-11-19 for D-91–D-108. This is the
 human-developer handoff for ST01, the math editor, and EL01 in the
 `math-editor-2026-11` cycle. It covers the production architecture, source of
 truth, stored state, parser extension rules, Constant Text lifecycle, the math
@@ -12,10 +12,11 @@ testing commands, and known limitations. Deployment steps are in
 
 | File | Responsibility |
 |---|---|
-| `deployed/admin_questions.php` | Question entry point: session/CSRF, login, native question form, Constant Text, PRG dispatch, and asset wiring. Requires `admin_question_store.php`; loads root `ocr_helper.js`, the underline tool, and the read-only preview. |
+| `deployed/admin_questions.php` | Question entry point: session/CSRF, login, native question form, Constant Text, PRG dispatch, authenticated save-error diagnostics, subject display alias wiring, and assets. Requires `admin_question_store.php`; loads root `ocr_helper.js`, the underline tool, and the read-only preview. |
 | `deployed/admin_question_store.php` | Extracted standalone save/delete transaction with explicit column lists and `constant_text` null-when-empty. |
-| `deployed/cbt.php` | Standalone CBT delivery: subject/category/year queries, limited random selection, EL01 post-selection ordering call, exam UI, Constant Text block, exact-`<u>` questions/options, result panel. Loads `src/owner-tool/render.js`. |
+| `deployed/cbt.php` | Standalone CBT delivery: subject/category/year queries, limited random selection, EL01 post-selection ordering call, aliased subject display, exam UI, bold Constant Text/question hierarchy, exact-`<u>` questions/options, result panel. Loads `src/owner-tool/render.js`. |
 | `deployed/cbt_question_order.php` | Focused exact-subject grouping of already-selected English Lexis rows; original-order members (ascending `id`), shuffled groups, blank singletons. |
+| `deployed/subject_display.php` | Exact-name-only frontend alias for the English Lexis subject; consumed by `admin_questions.php` and `cbt.php`, never `cbt_practice.php`. |
 | `deployed/answer_details.php` | Answer explanation page. Uses `render.php` for Constant Text, questions, options, and explanations. |
 | `deployed/render.php` | Server-side safe renderer: escape first, restore only the exact `<u>`, `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>` pairs, and run the shared parity vectors. |
 | `ocr_helper.js` | Shipping OCR helper. Parses pasted OCR into the native form, preserves blank-line paragraphs, fills `ocrQueue`/`ocrMeta`, and never submits. |
@@ -82,6 +83,12 @@ Only then does `cbt_question_order.php` group equal non-empty exact
 order (ascending `id`). `NULL` and empty
 values remain independent. Every selected row still carries and renders its own
 passage; other subjects and `cbt_practice.php` are unchanged.
+
+**English Lexis display (D-108).** `subject_display.php` maps only the exact
+stored name to `English (Comprehension Pages / Lexis & Structure)` on the admin
+question page and `cbt.php`. Every form continues posting the numeric subject
+ID, and grouped ordering receives the original database name. There is no SQL
+rename or migration. `cbt_practice.php` does not load the helper.
 
 ## 2. Source of truth
 
@@ -173,6 +180,8 @@ ocrMeta  = { subject_id, exam_category_id, exam_year }
 7. The read-only Constant Text preview is a fixed 150px border-box and scrolls
    vertically when its rendered passage is taller. The Question preview remains
    content-sized.
+8. In the `cbt.php` exam view, Constant Text uses bold weight 800 and the larger
+   question stem remains bold at weight 700.
 
 ## 6. Security renderer
 
@@ -217,7 +226,7 @@ php -v   # PHP 8.3.32 (cli)
 ```
 
 That binary is not committed and does not survive archiving; rerun the block if
-`php -v` fails. Current local evidence through 2026-11-18. The D-91 fix run used
+`php -v` fails. Current local evidence through 2026-11-19. The D-91 fix run used
 PHP 8.5.12 for the unchanged PHP suites/lint; the original review separately
 passed PHP 8.3.32:
 
@@ -234,10 +243,10 @@ passed PHP 8.3.32:
 - marker renderers: 67 PASS against `tests/fixtures/render-markup.json`, run in
   JS and again through `php tests/php-render.php` (32 vectors there);
 - admin store: 8 PASS;
-- English Lexis ordering/wiring: 11 PASS against the real module and real
-  `cbt.php`;
-- `php -l` on every file under `deployed/`: 7/7 PASS (PHP 8.3.32 on
-  2026-11-18);
+- English Lexis ordering/wiring and D-108 presentation: 14 PASS against the real
+  modules and real `admin_questions.php`/`cbt.php`, including CBT Practice
+  isolation;
+- `php -l` on every file under `deployed/`: 8/8 PASS on 2026-11-19;
 - `node tools/extract-bank.js --check`: PASS with all 7 source, slice, and
   output hashes matching;
 - civic fixture: 50/50 questions, no flags;
@@ -256,9 +265,15 @@ passed PHP 8.3.32:
   warning visible, a native reset refreshes the counter to `0 / 60 000 bytes`,
   and a native save flashed `Question saved successfully (Question ID: 102).`
   with the stored `<u>` markers and `x²` round-tripping through the edit page.
-- EL01 disposable HTTP staging through the real `cbt.php`: 6 PASS for the
-  default 50 limit, active/category/year filters, unchanged row payloads,
-  contiguous repeated passages, one attempt insert, and per-row safe rendering.
+- EL01 disposable HTTP staging through the real `cbt.php`: 7 PASS for the
+  display label, default 50 limit, active/category/year filters, unchanged row
+  payloads, contiguous repeated passages, one attempt insert, aliased subject
+  output, and the 800/700 Constant Text/question hierarchy.
+- D-108 disposable Chromium staging: the logged-in admin page showed the alias
+  in all three subject selects and the recent-questions subject cells; the real
+  CBT exam view showed the aliased metadata, Constant Text weight 800, question
+  weight 700, exact underline rendering, and no horizontal overflow at 1280px or
+  390px. The owner's live check and deployment remain external.
 - The real EL01 `03`/`04` operations pass 8 absent/inactive/active/rerun,
   collision, rollback, no-delete, and schema-contract probes on isolated Oracle
   MySQL Community Server 8.0.41 ARM64. An earlier MariaDB 13.0.2 run was
@@ -279,6 +294,10 @@ passed its required disposable MySQL 8.0.41 run.
 - `questions.practice_title` is `NOT NULL` with no default in the supplied DDL,
   while the admin INSERT omits it. This is a known out-of-scope mismatch.
   Verify the target before deploying; do not change the column in this release.
+- D-106 exposes the exact escaped PDO save error to logged-in administrators so
+  they can diagnose this and other schema mismatches without server-log access.
+  SQLSTATE and database object names may therefore be visible inside the
+  authenticated admin page; logged-out visitors still receive no such detail.
 - PDO `charset=utf8mb4` alone reports `utf8mb4_general_ci` on MySQL 8.0.41; the
   target connector/server must set the session collation.
 - `header.php`, `footer.php`, and `cbt_exam_attempts` are live-site artifacts and
@@ -287,7 +306,9 @@ passed its required disposable MySQL 8.0.41 run.
   intentionally untouched.
 - `bank-2021` still raises a duplicate-C flag on its final question from OCR
   answer-key text; this is pre-existing and not a missing-option regression.
-- The ST01 schema migration has not been run against MySQL in this phase.
+- ST01 did not run the migration in its implementation phase. The owner reported
+  production operation `01` successful on 2026-11-19; the agent did not run or
+  independently verify that production operation.
 - `maxlength="60000"` counts UTF-16 code units while the server checks UTF-8
   bytes; the editor counter is advisory and neither limit was changed (D-93).
 - Palette undo is reliable only on the `execCommand` path; the

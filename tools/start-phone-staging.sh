@@ -36,7 +36,7 @@ copy_current() {
     mv -f "$temporary_file" "$target_file"
 }
 
-for filename in admin_questions.php admin_question_store.php render.php cbt.php cbt_question_order.php answer_details.php; do
+for filename in admin_questions.php admin_question_store.php render.php cbt.php cbt_question_order.php subject_display.php answer_details.php; do
     [[ -f "$ROOT/deployed/$filename" ]] || fail "Missing deployed/$filename."
     copy_current "$ROOT/deployed/$filename" "$STAGING_ROOT/$filename"
 done

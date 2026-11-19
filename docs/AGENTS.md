@@ -64,6 +64,12 @@ Root `ocr_helper.js` has no `constant_text` integration. A
 passage/cloze-shaped paste may follow the ordinary-question fallback and carry
 review flags, but it must never populate Constant Text.
 
+`deployed/admin_questions.php` logs every question save/update `PDOException`
+and, under D-106, also appends its exact message to the existing failure lead-in
+for the logged-in administrator. The page's `h()` helper must remain the sole
+rendering path for that message; do not expose it outside the authenticated save
+branch.
+
 `deployed/cbt_question_order.php` is the focused EL01 candidate-ordering helper.
 It runs only after `cbt.php` completes its existing filtered, random, limited
 selection and only for the trusted exact database subject name
@@ -72,6 +78,13 @@ groups whose members are restored to their original question order (ascending
 `id`), not the random row order; blank values are singleton groups. It must never change
 the selected ID multiset, row values, query, limit, another subject, or
 `cbt_practice.php`.
+
+`deployed/subject_display.php` maps only that exact stored subject name to
+`English (Comprehension Pages / Lexis & Structure)` for visible output on
+`admin_questions.php` and `cbt.php`. Form values stay numeric IDs, the ordering
+helper still receives the unmodified database name, and `cbt_practice.php` must
+not load the alias. In the `cbt.php` exam view, Constant Text remains weight 800
+and the still-bold question stem remains weight 700 (D-108).
 
 D-91 is the root-helper label contract. A-D is case-insensitive;
 whitespace is optional after `(`, before `)`, and before `.`, and every unspaced
@@ -151,6 +164,7 @@ deliverable.
 | Exact-text renderers | `src/owner-tool/render.js` and `deployed/render.php` must remain behaviorally paired: escape first, format only balanced lowercase exact `<u>`, `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>` pairs, split fractions and matrices only at top-level separators, and keep every unsupported/malformed marker literal. Both run `tests/fixtures/render-markup.json`. Candidate paths use DOM nodes; options/explanations stay plain (D-66, D-97, INV-97–INV-99). |
 | English Lexis ordering | Group only the rows already selected by `cbt.php`, activate only from the trusted exact subject name, keep `NULL`/empty rows independent, restore each group's members to ascending original `id` (authored order), preserve every row field, and never move grouping into the SQL selection or `cbt_practice.php` (D-96, INV-143–INV-144). |
 | English Lexis subject operation | `03` omits the ID and changes only `is_active` on an exact existing row; `04` deactivates and never deletes. Both refuse a collation-only collision or incompatible key contract. The real 8-check harness passes on isolated Oracle MySQL Community Server 8.0.41 ARM64 (D-95, INV-142). |
+| English Lexis display alias | Keep `English (Lexis & Structure)` persisted and use `cbt_subject_display_name()` only on `admin_questions.php` and `cbt.php`. Do not pass the alias into grouping, change subject IDs, add an SQL rename, or touch `cbt_practice.php`; preserve CBT weights 800/700 for Constant Text/question (D-108, INV-150–INV-151). |
 | Owner parser-version refusal | A stale `cbtOwnerTool:v1` value is read-only. Key-only paste and native submit must not call a path that stamps it with the current parser version. Only full re-paste or explicit Reset replaces it (D-66, INV-95). |
 | `fillForm` / `tick` | They must agree on the E/F→D mapping and on ticking nothing when E/F text is absent. `tick()` computes radio index 3 for E/F; radio values 4/5 do not exist (INV-27, INV-28, INV-30). |
 | Save detector | Hard-coded to the exact success text. The archived PHP confirms the PRG flash flow, so the detector matches the server contract. Do not change one side without the other (INV-49; qwen-2 H07/H09). |

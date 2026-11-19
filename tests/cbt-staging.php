@@ -18,13 +18,21 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 $pdo->exec('PRAGMA foreign_keys = ON');
 
-$subjectId = 42;
+$subjectLookup = $pdo->prepare('SELECT id FROM subjects WHERE subject_name = :name');
+$subjectLookup->execute([':name' => 'English (Lexis & Structure)']);
+$existingSubjectId = $subjectLookup->fetchColumn();
+$subjectLookup->closeCursor();
+$subjectId = $existingSubjectId === false ? 42 : (int) $existingSubjectId;
 $categoryId = 3;
 $examYear = 2032;
 $candidateName = 'EL01 staging candidate';
 $pdo->prepare(
-    'INSERT OR REPLACE INTO subjects (id, subject_name, description, is_active)
-     VALUES (:id, :name, :description, 1)'
+    'INSERT INTO subjects (id, subject_name, description, is_active)
+     VALUES (:id, :name, :description, 1)
+     ON CONFLICT(id) DO UPDATE SET
+         subject_name = excluded.subject_name,
+         description = excluded.description,
+         is_active = excluded.is_active'
 )->execute([
     ':id' => $subjectId,
     ':name' => 'English (Lexis & Structure)',
@@ -103,6 +111,9 @@ foreach ([
     ]);
 }
 
+$setupHtml = file_get_contents($baseUrl . '/cbt.php');
+$setupStatusLine = $http_response_header[0] ?? '';
+
 $postBody = http_build_query([
     'candidate_name' => $candidateName,
     'subject_id' => $subjectId,
@@ -143,6 +154,13 @@ $check = static function (bool $condition, string $label) use (&$passed, &$faile
     $failed++;
     echo "[FAIL] {$label}\n";
 };
+
+$check(
+    is_string($setupHtml)
+        && str_contains($setupStatusLine, ' 200 ')
+        && str_contains($setupHtml, 'English (Comprehension Pages / Lexis &amp; Structure)'),
+    'actual CBT setup form uses the English Lexis display label'
+);
 
 $ids = array_map(static fn(array $question): int => (int) $question['id'], $questions);
 $check(
@@ -193,10 +211,12 @@ $check(
     'actual start path inserts exactly one attempt with the current candidate fields'
 );
 $check(
-    str_contains($html, 'Subject: English (Lexis &amp; Structure)')
-        && str_contains($html, 'src/owner-tool/render.js?v=2.3.2g')
-        && str_contains($html, 'renderQuestionText(questionArea.querySelector(\'.constant-text\'), q.constant)'),
-    'actual page keeps trusted subject output and per-question safe Constant Text rendering'
+    str_contains($html, 'Subject: English (Comprehension Pages / Lexis &amp; Structure)')
+        && str_contains($html, 'src/owner-tool/render.js?v=2.3.3')
+        && str_contains($html, 'renderQuestionText(questionArea.querySelector(\'.constant-text\'), q.constant)')
+        && preg_match('/\.constant-text\s*\{[^}]*font-weight:\s*800\s*;/s', $html) === 1
+        && preg_match('/\.question-text\s*\{[^}]*font-weight:\s*700\s*;/s', $html) === 1,
+    'actual page keeps aliased subject output and the bold Constant Text hierarchy'
 );
 
 echo "\nPASS: {$passed}\nFAIL: {$failed}\n";

@@ -1763,3 +1763,39 @@ editor and give the same shape two representations.
 **Risk.** `π` can be inserted from both the operator row and the Greek grid; that
 duplication is intentional and harmless. Stored precomposed shapes (`½`, `x²`,
 `³⁄₇`) still render as plain Unicode and are not converted.
+
+## D-106 — Authenticated save failures show the exact database error
+
+**Choice.** Keep logging every save/update `PDOException`, and also append its
+exact message to the existing question-save failure lead-in. The message is
+shown only inside the already-authenticated save/update branch and is rendered
+through the page's `h()` helper. Login, delete, page-load, upload, success-flash,
+CSRF, field, and Post/Redirect/Get behavior are unchanged.
+
+**Why.** The owner can operate the admin frontend but cannot inspect the server
+log. The previous message claimed every database failure was a missing migration
+and hid actionable errors such as a different required column.
+
+**Risk.** A PDO message can reveal SQLSTATE and schema, table, column, or database
+account names to a logged-in administrator. It remains unavailable to logged-out
+visitors and is escaped as text, but the admin authentication boundary must not
+be weakened.
+
+## D-108 — Display alias and bold Constant Text hierarchy
+
+**Choice.** Keep the persisted subject name exactly `English (Lexis &
+Structure)` and map only that exact string to `English (Comprehension Pages /
+Lexis & Structure)` on `admin_questions.php` and `cbt.php`. Apply the alias to
+all subject form controls and the other subject-name displays on those two
+pages. `cbt_practice.php` is excluded. In the `cbt.php` question view, Constant
+Text uses `font-weight: 800` and the question stem remains bold at `700`.
+
+**Why.** The owner wants a clearer frontend label without a data migration or a
+change to the exact-name grouping trigger. Distinct bold weights make the
+passage visibly stronger while the existing 17px passage and 20px question sizes
+retain the question hierarchy.
+
+**Risk.** The database, SQL operations, and excluded pages still expose the
+persisted name. The alias must stay exact-name-only so a near-name subject is not
+silently relabelled, and `cbt.php` must continue passing the unmodified database
+name into grouped ordering.

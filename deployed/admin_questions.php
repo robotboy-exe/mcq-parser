@@ -5,6 +5,7 @@ session_start();
 
 require_once __DIR__ . '/render.php';
 require_once __DIR__ . '/admin_question_store.php';
+require_once __DIR__ . '/subject_display.php';
 
 if (empty($_SESSION['cbt_admin_csrf'])) {
     $_SESSION['cbt_admin_csrf'] = bin2hex(random_bytes(32));
@@ -570,7 +571,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     delete_question_image_file($newImagePath);
                 }
                 error_log('Admin question insert/update failed: ' . $e->getMessage());
-                $pageError = 'The question could not be saved. Check that the database migration has been imported and try again.';
+                $pageError = 'The question could not be saved. Database error: ' . $e->getMessage();
             } catch (RuntimeException $e) {
                 if (isset($pdo) && $pdo->inTransaction()) {
                     $pdo->rollBack();
@@ -779,7 +780,7 @@ if (is_file(__DIR__ . '/header.php')) {
                             <select id="subject_id" name="subject_id" required>
                                 <option value="">-- Select Subject --</option>
                                 <?php foreach ($subjects as $subject): ?>
-                                    <option value="<?php echo (int) $subject['id']; ?>" <?php echo ((string) $subject['id'] === $formValues['subject_id']) ? 'selected' : ''; ?>><?php echo h($subject['subject_name']); ?></option>
+                                    <option value="<?php echo (int) $subject['id']; ?>" <?php echo ((string) $subject['id'] === $formValues['subject_id']) ? 'selected' : ''; ?>><?php echo h(cbt_subject_display_name((string) $subject['subject_name'])); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -920,7 +921,7 @@ if (is_file(__DIR__ . '/header.php')) {
                     <select id="subject_id_filter" name="subject_id" style="max-width:320px;border:1px solid #d5dfe9;border-radius:8px;padding:10px 12px;background:#fff;color:#263445;font:inherit">
                         <option value="0" <?php echo $selectedSubjectId === 0 ? 'selected' : ''; ?>>All Subjects</option>
                         <?php foreach ($subjects as $subject): ?>
-                            <option value="<?php echo (int) $subject['id']; ?>" <?php echo $selectedSubjectId === (int) $subject['id'] ? 'selected' : ''; ?>><?php echo h($subject['subject_name']); ?></option>
+                            <option value="<?php echo (int) $subject['id']; ?>" <?php echo $selectedSubjectId === (int) $subject['id'] ? 'selected' : ''; ?>><?php echo h(cbt_subject_display_name((string) $subject['subject_name'])); ?></option>
                         <?php endforeach; ?>
                     </select>
                     <button class="admin-btn" type="submit" style="padding:10px 16px">Show Subject</button>
@@ -931,7 +932,7 @@ if (is_file(__DIR__ . '/header.php')) {
                         <select id="combined_subject_id" name="subject_id" style="min-width:190px;border:1px solid #d5dfe9;border-radius:8px;padding:10px 12px;background:#fff;color:#263445;font:inherit">
                             <option value="0">All Subjects</option>
                             <?php foreach ($subjects as $subject): ?>
-                                <option value="<?php echo (int) $subject['id']; ?>" <?php echo $selectedSubjectId === (int) $subject['id'] ? 'selected' : ''; ?>><?php echo h($subject['subject_name']); ?></option>
+                                <option value="<?php echo (int) $subject['id']; ?>" <?php echo $selectedSubjectId === (int) $subject['id'] ? 'selected' : ''; ?>><?php echo h(cbt_subject_display_name((string) $subject['subject_name'])); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -963,7 +964,7 @@ if (is_file(__DIR__ . '/header.php')) {
                             <tr>
                                 <td><?php echo (int) $item['id']; ?></td>
                                 <td><?php echo h(short_text(cbt_strip_formatting((string) $item['question_text']), 140)); ?></td>
-                                <td><?php echo h($item['subject_name']); ?></td>
+                                <td><?php echo h(cbt_subject_display_name((string) $item['subject_name'])); ?></td>
                                 <td><?php echo h($item['category_name']); ?></td>
                                 <td><?php echo (int) $item['exam_year']; ?></td>
                                 <td><?php echo is_question_image_path((string) ($item['question_image_path'] ?? '')) ? 'Uploaded' : '—'; ?></td>

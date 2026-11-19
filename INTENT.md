@@ -1,7 +1,8 @@
 # Constant Text Reset Intent
 
 Approved: 2026-11-14; owner-amended 2026-11-15 (D-91), 2026-11-17
-(EL01, D-103, D-104), and 2026-11-18 (D-105). Supersedes the
+(EL01, D-103, D-104), 2026-11-18 (D-105, D-106), and 2026-11-19
+(D-108). Supersedes the
 `owner-tool-2026-11` product intent.
 
 This file is the behavior tie-breaker for the `math-editor-2026-11` cycle. The
@@ -17,12 +18,19 @@ stop and ask instead of silently changing the product direction.
 - Use the existing native form submit and Post/Redirect/Get flow. Keep saving
   manual; do not ship auto-save, dry run, batch history, or automatic image
   injection.
+- When a logged-in administrator's save reaches a database error, show the
+  escaped PDO message with the existing failure lead-in so an owner without
+  server-log access can diagnose the target schema. Do not expose it to
+  logged-out visitors or render it as HTML.
 - Add one optional Constant Text passage per question. It survives the native
   save, prefills the next new question in the same browser session, and clears
   on login/logout. It never crosses browser sessions.
 - Show Constant Text above the question in the `cbt.php` exam view and in
   `answer_details.php`; do not show it in the result sheet or
   `cbt_practice.php`.
+- In the `cbt.php` exam view, keep both Constant Text and the question stem bold:
+  Constant Text uses weight 800 and the question stem keeps weight 700, while
+  their existing sizes preserve the question hierarchy.
 - Keep `cbt_practice.php`, `practice_title`, and the legacy bookmarklet out of
   scope.
 
@@ -70,6 +78,10 @@ stop and ask instead of silently changing the product direction.
 
 - Add one active subject named exactly `English (Lexis & Structure)` without a
   fixed database ID. It follows the existing default limit of 50 questions.
+- Display that exact row as `English (Comprehension Pages / Lexis & Structure)`
+  throughout `admin_questions.php` and `cbt.php`. Keep the stored name and
+  subject ID unchanged, require no SQL operation, and leave `cbt_practice.php`
+  untouched.
 - Keep the existing active/category/year filters and random limited row
   selection. For this subject only, reorder the selected rows so equal,
   non-empty exact Constant Text values stay contiguous and shuffle at that

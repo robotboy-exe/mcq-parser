@@ -1,6 +1,6 @@
 # Deployment Manifest — Constant Text, Math Editor, and English Lexis
 
-Recorded: 2026-11-14; amended through 2026-11-17 for D-91–D-104. Target: PHP
+Recorded: 2026-11-14; amended through 2026-11-19 for D-91–D-108. Target: PHP
 8.3, MySQL 8.0.41, InnoDB, `utf8mb4_unicode_ci`. This
 manifest covers ST01 (root `ocr_helper.js`, optional `questions.constant_text`,
 the underline toolbar, and the read-only multiline preview) plus ME01/ME02/MS01 (the
@@ -42,7 +42,7 @@ for the package contract.
 6. Put the site in maintenance mode and stop every web worker, importer, cron
    job, and CLI process that can write `questions`.
 
-## 2. File manifest (13 production files + 5 ops)
+## 2. File manifest (14 production files + 5 ops)
 
 Line counts are `wc -l`; bytes are LF-normalized UTF-8; SHA-256 is over the
 LF-normalized content. Deploy PHP/JS assets to the site root preserving relative
@@ -50,10 +50,11 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 
 | File | Lines / LF bytes | SHA-256 (LF) | Deploy to | Notes |
 |---|---:|---|---|---|
-| `deployed/admin_questions.php` | 1055 / 62662 | `da2cea1735bd54a80d6c834b06b2a93c62635da938c49926223fdb64f694cb94` | site root | native form, Constant Text, session prefill; loads helper, underline, the renderer as `?v=2.3.3`, the read-only preview as `question-preview.css?v=1.1.2`, `math-tool.js?v=1.1.2`, and `math-tool.css?v=1.1.1`; context code removed |
+| `deployed/admin_questions.php` | 1056 / 62818 | `874fcbfe0d693e0bb7308076cfd8df6a24553f8393494bb14822b336c2780a40` | site root | native form, Constant Text, session prefill, authenticated exact PDO save diagnostics, and the D-108 subject display alias; loads helper, underline, the renderer as `?v=2.3.3`, the read-only preview as `question-preview.css?v=1.1.2`, `math-tool.js?v=1.1.2`, and `math-tool.css?v=1.1.1`; context code removed |
 | `deployed/admin_question_store.php` | 113 / 4918 | `ff93f0c924159662f843ec83ed9e78c3815dc1549805a8c79a631f702577dc1b` | site root | extracted save/delete transaction; explicit columns; `constant_text` |
-| `deployed/cbt.php` | 1083 / 46953 | `075b6f1a6f1745ee2bb67ba60633e4d8f2a5b66d20ba747befe336e1779f0ba4` | site root | standalone delivery; existing limited selection plus EL01 post-fetch ordering; Constant Text block; marker options; inline fraction/connected-root/matrix rules; loads `src/owner-tool/render.js?v=2.3.3` |
+| `deployed/cbt.php` | 1085 / 47092 | `01e3f90ac4618a634c8440aad5562de605b1df763d3f530fd89f72192e7ca806` | site root | standalone delivery; existing limited selection plus EL01 post-fetch ordering; aliased subject displays; Constant Text weight 800 and question weight 700; marker options; inline fraction/connected-root/matrix rules; loads `src/owner-tool/render.js?v=2.3.3` |
 | `deployed/cbt_question_order.php` | 56 / 1444 | `5c0a9b8c125b4a1d72737b3e9a532d6e386c50b7455ba8e1f1df39c122547fb7` | site root beside `cbt.php` | exact trusted-subject grouped display ordering only; members restored to ascending original `id`, shuffled groups, blank singletons |
+| `deployed/subject_display.php` | 12 / 386 | `3f8ce0e86787a66d90b8d87fcd0295ac3c7629f899202443068dfd019b044537` | site root beside `admin_questions.php` and `cbt.php` | exact persisted-name to frontend-label mapping only; no database access or mutation |
 | `deployed/answer_details.php` | 268 / 13671 | `9b50d23da36512cb62e0377bc4072b518ac0856439323573bf88c58cd3d8e915` | site root | Constant Text block; `cbt_format_text` options; inline fraction/connected-root/matrix rules |
 | `deployed/render.php` | 248 / 8161 | `f1152c545bd8f1983995b800cb0b3635439fe5ab3d162ba9d2b588173ecea41f` | site root | server marker renderer for the six exact pairs; consumed by the shared parity vectors |
 | `ocr_helper.js` | 160 / 6284 | `c3e8e96eb2a295eb3ef0a8c0e87089b233cd026afe7fec664c7db16b17732193` | site root | review-settled D-91 spacing grammar and selected boundaries; no Constant Text integration; keeps blank-line paragraphs and folds single wraps |
@@ -80,7 +81,7 @@ support. Do not deploy any file under `archive/`.
    `src/math-tool.js`, `src/math-tool.css`, and `src/owner-tool/render.js`
    (same paths; upload the current bytes).
 3. Upload root `ocr_helper.js` and the PHP files: `render.php`,
-   `admin_question_store.php`, `admin_questions.php`,
+   `admin_question_store.php`, `subject_display.php`, `admin_questions.php`,
    `cbt_question_order.php`, `cbt.php`, `answer_details.php`. The helper must be
    present before the new `cbt.php` is served.
 4. Change only the renderer tag in `cbt_practice.php`: `render.js?v=2.3.2c` →
@@ -144,12 +145,17 @@ Both operations refuse a collation-equivalent byte-different subject or a
 missing unique-name contract. Full disposable commands are in
 `deployed/sql/README.md`; never use `--force`.
 
+D-108 is display-only. It adds no SQL operation and does not rename the exact
+`English (Lexis & Structure)` database row.
+
 ## 5. Smoke checks
 
 | Area | Check | Expected |
 |---|---|---|
 | Migration | run `01-constant-text.sql`, inspect, rerun | column exists as nullable `TEXT`; second run is a no-op |
 | Admin | log in, open Add a New Question | Constant Text textarea present; empty by default; no context fields |
+| Subject alias | inspect all three admin subject selects and the CBT setup subject select | the exact English Lexis row displays as `English (Comprehension Pages / Lexis & Structure)`; form values remain numeric IDs; CBT Practice remains unchanged |
+| CBT weights | start an English Lexis exam with a Constant Text passage | Constant Text is weight 800 and the still-bold question stem is weight 700; the question remains larger, with no horizontal overflow |
 | Admin | enter a passage, question, four options, then Save | exact flash `Question saved successfully (Question ID: …).`; one new row with the passage |
 | Admin | open a new Add page in the same session | the last successfully saved passage prefills; question/options are empty |
 | Admin | open the saved row's Edit page | the row's passage appears; formatting is exact `<u>` |
@@ -170,7 +176,7 @@ missing unique-name contract. Full disposable commands are in
 | Byte counter | paste or type multi-byte symbols and watch the counter | neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+ with visible warning copy; nothing truncates and Save stays enabled |
 | Byte counter refresh | click `Load questions`/`Skip` or reset the form | the counter matches the field's new UTF-8 byte count after the page's own fill, including red at 60,000+ |
 | Tokens | view source of the admin page, `cbt.php`, and `cbt_practice.php` | exactly one `src/math-tool.css?v=1.1.1` link and one `src/math-tool.js?v=1.1.2` script on the admin page, script after the preview script; one `src/question-preview.css?v=1.1.2` link and one `src/owner-tool/render.js?v=2.3.3` script there too; `cbt.php` and `cbt_practice.php` each load `src/owner-tool/render.js?v=2.3.3` exactly once, and stale preview `?v=1.1.1` plus renderer `?v=2.3.2c` appear nowhere |
-| CBT | open delivered questions with preserved constant text | passage renders above the question; `<u>` is real underline |
+| CBT | open delivered questions with preserved constant text | passage renders above the question; `<u>` is real underline; Constant Text is bold at weight 800 and the larger question stem remains bold at weight 700 |
 | English Lexis subject | inspect the active subject list after `03` and after a rerun | exactly one byte-exact active row; generated ID and existing description/timestamp remain unchanged |
 | English Lexis ordering | start a 50-question exam containing repeated exact non-empty passages plus blank passages | selected IDs and filters are unchanged; repeated passages are contiguous; blank rows stay independent; every member renders its passage |
 | Other CBT subjects | start the same existing subject/category/year checks | selected rows retain their existing order; no English Lexis grouping applies |
@@ -244,16 +250,18 @@ Stop and do not continue on the first mismatch:
 - `practice_title` is `NOT NULL` with no default in the supplied DDL, and the
   admin INSERT omits it. This is a known out-of-scope mismatch. Verify the
   target before deploying; do not change the column in this release.
+- A failed authenticated save now shows the exact escaped PDO message after its
+  generic lead-in (D-106). This can reveal SQLSTATE and database object names to
+  logged-in administrators; it remains unavailable to logged-out visitors.
 - The connection collation is a deployment prerequisite. PDO `charset=utf8mb4`
   alone is not sufficient on MySQL 8.0.41.
 - `header.php`, `footer.php`, and `cbt_exam_attempts` are live-site artifacts,
   not supplied. Do not deploy inferred local shims.
 - `cbt_practice.php` does not render Constant Text in ST01; its only change in
   this package is the `render.js?v=2.3.3` cache key (D-102, phase-5 `FIX-1`).
-- The ST01 schema migration has not been executed against a MySQL server in this
-  phase. SQLite phone staging tested the application store against a prepared
-  schema, not the MySQL migration script. Run forward, rerun, and rollback
-  against a disposable production-shaped MySQL database before production.
+- ST01 did not execute the schema migration in its implementation phase. The
+  owner reported production operation `01` successful on 2026-11-19; no agent
+  database action or independent production verification was performed.
 - There is no automated browser suite. ST01 behavior is covered by Node/PHP
   checks, static assertions, and disposable Chromium evidence. ME01/ME02/MS01
   have 25 module vectors and local browser evidence; the owner accepted the

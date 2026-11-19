@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-18.
+Last updated: 2026-11-19.
 
 ## Current state
 
@@ -41,6 +41,21 @@ Last updated: 2026-11-18.
   stay at the input's default height and scroll. Both corrections are
   implemented; the focused review passed with no `BLOCK`/`FIX`, its two notes
   are corrected, and the owner accepted the desktop/Brave recheck on 2026-11-17.
+- Direct owner request D-106 (2026-11-18) appends the exact, HTML-escaped PDO
+  message to authenticated save/update failures. The local production edit,
+  manifest refresh, full Node/PHP baseline, and PHP lint pass; no deployment or
+  live save was performed.
+- Direct owner request D-108 (2026-11-19) displays the exact stored
+  `English (Lexis & Structure)` subject as
+  `English (Comprehension Pages / Lexis & Structure)` on `admin_questions.php`
+  and `cbt.php`, without an SQL rename, ID change, grouping change, or
+  `cbt_practice.php` edit. CBT Constant Text is weight 800 and the question stem
+  remains weight 700. Static, disposable HTTP, and desktop/390px browser checks
+  pass; deployment and the owner's live check remain external.
+- The temporary D-107 pre-migration compatibility work was reverted on
+  2026-11-19 after the owner reported production migration `01` successful. The
+  application again requires the migrated column directly; operation `03` was
+  not confirmed by that report.
 - Superseded: the OT12 shared-text isolation and the OT05–OT11 context work are
   archived/historical. Their records remain under `owner-tool/` and `reviews/`
   for evidence; do not continue that architecture.
@@ -195,6 +210,8 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 4 | EL01 | [English Lexis Subject and Constant-Text Grouping](el-01-english-lexis-grouping.md) | current branch/worktree baseline; preserve unrelated changes | done; phase-4 review PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected | satisfied; disposable MySQL 8.0.41 operation/rollback PASS 2026-11-17 |
 | 5 | MS01 | [Visual Math Shapes and Palette Cleanup](math-editor/ms-01-visual-math-shapes.md) | EL01 review-settled; cycle reopened 2026-11-17 | done; original review and `FIX-1` closure re-review passed; boundary `c6a81fb` committed/pushed; D-103/D-104 focused review passed with no `BLOCK`/`FIX`, notes corrected, owner desktop/Brave recheck accepted 2026-11-17; corrections committed at `120a5db` | satisfied; live-origin caps remain admin +89, cbt +74, answer_details +21, cbt_practice +20 |
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
+| — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
+| — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -330,10 +347,11 @@ acceptance row and external gate is satisfied. Only accepted residual risk
 remains: `NOTE-9` (root `ocr_helper.js` is untokened, so the D-91 grammar depends
 on the documented deploy-time cache purge) and `NOTE-12`'s optional labelling of
 the drawer region. Archiving the cycle and advancing `main` to `596fb31` are
-separate explicit owner decisions.
+separate explicit owner decisions. D-106 is an uncommitted direct owner request;
+deploying it remains a separate explicit owner action.
 
 ```text
-NEXT COMMAND: NONE - the cycle is reviewed and owner-accepted; archiving it or advancing main to 596fb31 needs an explicit owner decision
+NEXT COMMAND: NONE - D-106 is implemented locally; deploying it needs an explicit owner instruction
 ```
 
 ## Session protocol

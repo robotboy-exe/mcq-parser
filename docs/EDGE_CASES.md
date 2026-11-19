@@ -281,10 +281,12 @@ EC-95 through EC-126 above belong to the archived context/owner-tool subsystem
 | EC-150 | Legacy precomposed math text | An older question stores `½`, `³⁄₇`, or `x²` | The text renders unchanged; the palette never converts or rewrites it | CONFIRMED | D-99; `tests/math-tool.js` builder vectors; no migration |
 | EC-151 | Duplicate or split square root | The palette mounts, or a root renders under differing font metrics and sizes | No legacy `√` operator is present; the visual Root editor is the only square-root control, and its scalable vinculum overlaps the glyph with no visible gap | CONFIRMED | D-103; `tests/math-tool.js`; local/focused-review Chromium font-size probes; owner desktop/Brave recheck |
 | EC-152 | Symbol present in two palette places | `π` is inserted from the operator row and again from the restored Greek grid | Both insert the same Unicode character at the remembered caret; nothing converts it to a marker and no shape editor is affected | CONFIRMED | D-105; `tests/math-tool.js` drawer vector |
+| EC-153 | Database migration completed but question save still fails | The INSERT raises a different `PDOException`, such as another required column lacking a default | The logged-in admin alert keeps the generic failure lead-in and appends the exact HTML-escaped database message instead of mislabelling every failure as the Constant Text migration | CONFIRMED | D-106; `deployed/admin_questions.php` |
+| EC-154 | Display alias versus a near subject name | A subject differs from `English (Lexis & Structure)` by case, wording, spacing, or a trailing byte | The near name displays unchanged; only the byte-exact intended row receives the frontend alias, and grouping behavior remains exact-name-only | CONFIRMED | D-108; `deployed/subject_display.php`; `php tests/cbt-question-order.php` |
 
 ## Counts
 
-- Total: 146
-- CONFIRMED: 142
+- Total: 148
+- CONFIRMED: 144
 - UNVERIFIED: 4
 - CONFLICTED: 0

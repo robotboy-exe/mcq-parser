@@ -1,7 +1,7 @@
 # Current Phase Map
 
 Current cycle: `math-editor-2026-11`
-Updated: 2026-11-18
+Updated: 2026-11-19
 
 `phase N` means phase N of this cycle. Status lives in
 `docs/plan/README.md`; this file only maps phase numbers to packages.
@@ -35,7 +35,16 @@ committed at `23a406c` and reviewed by the cycle-wide record
 [`reviews/math-editor-2026-11-cycle-review.md`](../reviews/math-editor-2026-11-cycle-review.md)
 (`PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`, `NOTE-9`–`NOTE-12`), with the
 owner's desktop/Brave drawer check accepted on 2026-11-18. Status lives in the
-coordinator.
+coordinator. The owner's direct D-106 follow-up exposes exact escaped PDO save
+errors only to logged-in administrators; it is implemented locally outside a
+numbered phase, with no deployment or live save. Direct D-108 then aliases only
+the exact stored `English (Lexis & Structure)` subject to
+`English (Comprehension Pages / Lexis & Structure)` on `admin_questions.php` and
+`cbt.php` without SQL, ID, grouping, or CBT Practice changes, and sets CBT
+Constant Text/question weights to 800/700; static, disposable HTTP, and
+desktop/390px browser checks pass locally. Temporary pre-migration compatibility
+work was reverted after the owner reported migration `01` successful on
+2026-11-19.
 
 ## Starting a new cycle
 
