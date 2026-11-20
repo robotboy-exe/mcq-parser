@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "input_origin": "user_sample",
+  "id": "region-orphan-number",
+  "source": [
+    "user-supplied continuation paste (ec20b)"
+  ],
+  "provenance": "Transcribed from the user-supplied continuation OCR document: question 24 lost its number, then questions 25 and 26 follow.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/region-orphan-number.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 3,
+    "nums": [null, 25, 26],
+    "questions": [
+      {
+        "index": 0,
+        "question": "lump",
+        "a": "plump",
+        "b": "lamp",
+        "c": "jump",
+        "d": "limber",
+        "flags": [
+          "question number missing",
+          "question text missing or very short"
+        ]
+      },
+      {
+        "num": 25,
+        "question": "assign",
+        "d": "signal"
+      },
+      {
+        "num": 26,
+        "question": "wall",
+        "d": "wander"
+      }
+    ],
+    "forbidden_flags": [
+      "option D over 500 characters"
+    ]
+  },
+  "must_not": [
+    "The orphaned block merged into question 25 option D"
+  ],
+  "notes": [
+    "The orphaned block stays a num:null item before question 25 and is never merged into a neighbour."
+  ],
+  "discrepancies": []
+}

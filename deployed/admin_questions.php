@@ -1047,7 +1047,8 @@ if (is_file(__DIR__ . '/header.php')) {
 </main>
 
 <script src="src/owner-tool/render.js?v=2.3.3"></script>
-<script src="ocr_helper.js"></script>
+<script src="src/parser/core.js?v=2.4.0"></script>
+<script src="ocr_helper.js?v=2.4.1"></script>
 <script src="src/underline-toolbar.js"></script>
 <script src="src/question-preview.js"></script>
 <script src="src/math-tool.js?v=1.1.2"></script>

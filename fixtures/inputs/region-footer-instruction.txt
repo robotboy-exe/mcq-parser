@@ -1,0 +1,17 @@
+SECTION 1
+
+From the words lettered A to D, choose the option that best completes the gap. Answer questions 1 and 2.
+
+1. The teacher spoke ______.
+   A. loud
+   B. loudly
+   C. loudness
+   D. louder
+
+2. She waited ______.
+   A. patient
+   B. patiently
+   C. patience
+   D. patients
+
+END OF SECTION 1

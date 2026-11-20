@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "region-preamble-paragraphs",
+  "source": [
+    "synthetic preamble built from the user-reported multi-paragraph edge case"
+  ],
+  "provenance": "Hand-written to reproduce the reported case: a title and several prose paragraphs before the first numbered question.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/region-preamble-paragraphs.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [1, 2],
+    "questions": [
+      {
+        "num": 1,
+        "question": "Why did nobody notice the teacher?",
+        "a": "She was late.",
+        "b": "She entered quietly.",
+        "c": "She was loud.",
+        "d": "She left early.",
+        "section_instruction": "ENGLISH ORAL PRACTICE"
+      },
+      {
+        "num": 2,
+        "question": "Where did she place the books?",
+        "d": "In the bag"
+      }
+    ],
+    "regions": [
+      {
+        "kind": "heading",
+        "text": "ENGLISH ORAL PRACTICE",
+        "from": 1,
+        "to": 2
+      },
+      {
+        "kind": "passage",
+        "text_contains": ["The teacher entered the class quietly", "waited for the class to settle"],
+        "from": 1,
+        "to": 2
+      }
+    ],
+    "forbidden_flags": [
+      "option A missing",
+      "option B missing",
+      "option C missing",
+      "option D missing"
+    ]
+  },
+  "must_not": [
+    "Preamble paragraphs inside the question stem",
+    "Preamble paragraphs inside an option"
+  ],
+  "notes": [
+    "Leading prose is reported as a passage region instead of being dropped silently."
+  ],
+  "discrepancies": []
+}

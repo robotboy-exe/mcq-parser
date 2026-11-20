@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.3.3
+// Version: 2.4.0
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.3.3";
+const PARSER_VERSION = "2.4.0";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -121,24 +121,199 @@ function pickCategoryIndex(header, optionTexts) {
   return -1;
 }
 
-function splitQuestions(text) {
-  const marks = [];
-  let last = 0;
-  for (const m of text.matchAll(/(?:^|\n)\s*(\d{1,3})\.\s+/g)) {
-    const n = +m[1];
-    if (last && (n <= last || n > last + 5)) continue;
-    marks.push({ n, start: m.index, end: m.index + m[0].length });
-    last = n;
+const REGION_STEM = /^[^\S\n]*(\d{1,3})\s*\.\s+(\S.*)$/;
+const REGION_OPTION = /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-Fa-f]\s*[.)])[^\S\n]*\S/;
+const REGION_HEADING = /^(?:SECTION|PART|PAPER)\s+[A-Z0-9IVXLC]+\b/i;
+const REGION_INSTRUCTION = /\b(?:lettered\s+A\s+to\s+D|from\s+the\s+words|choose\s+(?:the|a|an|one)|select\s+the|pick\s+the|answer\s+(?:all|the|questions?)|read\s+the|study\s+the|use\s+the|refer\s+to|complete\s+each|fill\s+(?:each|in\s+the)|the\s+following\s+(?:passage|words|sentences?|questions?)|questions?\s+\d{1,3}\s*(?:to|and|[-–—])\s*\d{1,3})\b/i;
+const REGION_PAREN = /(^|[^A-Za-z])\(\s*([A-Fa-f])\s*\)\s*[.)]*[^\S\n]*/g;
+const REGION_LABEL = /(?:^|\n)[^\S\n]*([A-Fa-f])[^\S\n]*(?:\n[^\S\n]*)?[.)][^\S\n]*/g;
+
+function regionHeading(t) {
+  if (t.length > 90) return false;
+  if (/[?.!:;,]$/.test(t)) return false;
+  if (REGION_HEADING.test(t)) return true;
+  if (/[a-z]/.test(t)) return false;
+  return t.split(/\s+/).length >= 2 && /[A-Z]/.test(t);
+}
+
+function regionInstruction(t) {
+  return t.length >= 12 && t.length <= 400 && REGION_INSTRUCTION.test(t);
+}
+
+function structuralOptionText(text) {
+  const t = String(text == null ? '' : text).trim();
+  if (regionHeading(t)) return true;
+  if (/^(?:from\s+the\s+words|choose\s+the|answer\s+all|answer\s+the\s+questions?|read\s+the\s+(?:following|passage|extract)|study\s+the\s+(?:following|passage|table))\b/i.test(t)) return true;
+  return /\blettered\s+A\s+to\s+D\b/i.test(t)
+    || /\bquestions?\s+\d{1,3}\s*(?:to|and|[-–—])\s*\d{1,3}\b/i.test(t);
+}
+
+function regionLineKind(line) {
+  const t = String(line == null ? '' : line).trim();
+  if (!t) return 'blank';
+  if (/^={3,}$/.test(t)) return 'divider';
+  const stem = REGION_STEM.exec(line);
+  if (stem) {
+    const body = stem[2].trim();
+    const bareKey = /^[A-Fa-f]\s*[.)]?$/.test(body);
+    const noStem = /^\(?\s*[A-Fa-f]\s*[.)]/.test(body);
+    if (!bareKey && !noStem) return 'stem';
   }
-  const chunks = marks.map((m, i) => ({ num: m.n, text: text.slice(m.end, marks[i + 1]?.start) }));
-  const head = text.slice(0, marks[0]?.start ?? text.length).trim();
-  if (head) {
-    const headOpts = head.match(OPTION);
-    if (headOpts && headOpts.length >= 2) {
-      chunks.unshift({ num: null, text: head });
+  if (stimulusKeyHeading(line) || KEY_LINE.test(line) || PLACEHOLDER.test(line)) return 'key';
+  if (REGION_OPTION.test(line)) return 'option';
+  if (regionHeading(t)) return 'heading';
+  if (regionInstruction(t)) return 'instruction';
+  return 'text';
+}
+
+function headRegionGroups(lines, list) {
+  let i = 0;
+  while (i < lines.length) {
+    const kind = regionLineKind(lines[i]);
+    if (kind === 'blank') {
+      i++;
+      continue;
+    }
+    const parts = [];
+    let blanks = 0;
+    let j = i;
+    while (j < lines.length) {
+      const k = regionLineKind(lines[j]);
+      if (k === 'blank') {
+        if (kind === 'heading') break;
+        blanks++;
+        j++;
+        continue;
+      }
+      if (k !== kind) break;
+      if (parts.length) parts.push(blanks ? '\n\n' : '\n');
+      parts.push(lines[j].trim());
+      blanks = 0;
+      j++;
+    }
+    list.push({ kind: kind === 'text' || kind === 'option' ? 'passage' : kind, text: parts.join('') });
+    i = j;
+  }
+}
+
+function splitRegions(text) {
+  const src = String(text == null ? '' : text).replace(/\r\n?/g, '\n');
+  const lines = src.split('\n');
+  const chunks = [];
+  const head = [];
+  const trailing = [];
+  let current = null;
+  let pending = [];
+  let last = 0;
+  let sawOption = false;
+
+  function finish() {
+    if (!current) return;
+    chunks.push({ num: current.num, text: current.lines.join('\n'), structural: current.structural });
+    current = null;
+    sawOption = false;
+  }
+
+  for (const line of lines) {
+    const kind = regionLineKind(line);
+    if (kind === 'stem') {
+      const n = +REGION_STEM.exec(line)[1];
+      if (last && (n <= last || n > last + 5)) {
+        (current ? current.lines : head).push(line);
+        continue;
+      }
+      finish();
+      current = { num: n, lines: [REGION_STEM.exec(line)[2]], structural: pending };
+      pending = [];
+      last = n;
+      sawOption = false;
+      continue;
+    }
+    if (kind === 'blank') {
+      (current ? current.lines : head).push(line);
+      continue;
+    }
+    if (kind === 'option') {
+      if (current) {
+        current.lines.push(line);
+        sawOption = true;
+      } else {
+        head.push(line);
+      }
+      continue;
+    }
+    if (current && (kind === 'heading' ||
+      (kind === 'instruction' && sawOption && !STIMULUS_INTRO.test(line) && !STIMULUS_INTRO_RANGE.test(line)))) {
+      pending.push({ kind, text: line.trim() });
+      continue;
+    }
+    (current ? current.lines : head).push(line);
+  }
+  finish();
+  for (const item of pending) trailing.push(item);
+
+  const headText = head.join('\n');
+  const leading = [];
+  if (headText.trim()) {
+    const headOptions = (headText.match(OPTION) || []).length
+      + (headText.match(/\(\s*[A-Fa-f]\s*\)/g) || []).length;
+    if (headOptions >= 2) {
+      chunks.unshift({ num: null, text: headText, structural: [] });
+    } else {
+      headRegionGroups(head, leading);
     }
   }
-  return chunks;
+
+  const flat = [];
+  chunks.forEach((chunk, index) => {
+    for (const item of chunk.structural || []) flat.push({ kind: item.kind, text: item.text, at: index });
+  });
+  for (const item of trailing) flat.push({ kind: item.kind, text: item.text, at: chunks.length });
+
+  const all = [];
+  const leadingStop = (flat.length ? flat[0].at : chunks.length) - 1;
+  for (const item of leading) all.push({ kind: item.kind, text: item.text, fromIndex: 0, toIndex: leadingStop });
+  for (let i = 0; i < flat.length; i++) {
+    const item = flat[i];
+    let nextAt = chunks.length;
+    for (let j = i + 1; j < flat.length; j++) {
+      if (flat[j].at > item.at) {
+        nextAt = flat[j].at;
+        break;
+      }
+    }
+    all.push({
+      kind: item.kind,
+      text: item.text,
+      fromIndex: item.at,
+      toIndex: item.at >= chunks.length ? chunks.length : nextAt - 1
+    });
+  }
+
+  chunks.forEach((chunk, index) => {
+    const governing = all.filter(region =>
+      index >= region.fromIndex && index <= region.toIndex &&
+      (region.kind === 'heading' || region.kind === 'instruction'));
+    if (governing.length) chunk.sectionInstruction = governing.map(region => region.text).join('\n');
+  });
+
+  const regions = all.map(region => ({
+    kind: region.kind,
+    text: region.text,
+    from: chunks[region.fromIndex] ? chunks[region.fromIndex].num : null,
+    to: chunks[region.toIndex] ? chunks[region.toIndex].num : null
+  }));
+  return { chunks, regions };
+}
+
+function splitQuestions(text) {
+  return splitRegions(text).chunks;
+}
+
+function splitQuestionRegions(text) {
+  if (/(?:^|\n)[^\S\n]*\d{1,3}\.\s+/.test(text)) return splitRegions(text);
+  const bullets = splitBulletQuestions(text);
+  return bullets ? { chunks: bullets, regions: [] } : splitRegions(text);
 }
 
 function splitBulletQuestions(text) {
@@ -151,9 +326,7 @@ function splitBulletQuestions(text) {
 }
 
 function splitQuestionItems(text) {
-  if (/(?:^|\n)[^\S\n]*\d{1,3}\.\s+/.test(text)) return splitQuestions(text);
-  const bullets = splitBulletQuestions(text);
-  return bullets || splitQuestions(text);
+  return splitQuestionRegions(text).chunks;
 }
 
 function isOptionAbbreviation(raw, match) {
@@ -166,12 +339,29 @@ const REQUIRED_OPTION_LETTERS = 'ABCD';
 const QUESTION_BOUNDARY = /(?:^|\s)\d{1,3}\.\s/;
 
 function optionLabelMatches(raw, scanRaw) {
-  const matches = [];
+  const found = [];
   for (const m of scanRaw.matchAll(OPTION)) {
     const letter = m[1] || m[2];
     if (!letter) continue;
     if (isOptionAbbreviation(raw, m)) continue;
-    matches.push({ letter, start: m.index, end: m.index + m[0].length });
+    found.push({ letter, start: m.index, end: m.index + m[0].length });
+  }
+  for (const m of scanRaw.matchAll(REGION_PAREN)) {
+    found.push({ letter: m[2].toUpperCase(), start: m.index + m[1].length, end: m.index + m[0].length });
+  }
+  for (const m of scanRaw.matchAll(REGION_LABEL)) {
+    const offset = m[0].indexOf(m[1]);
+    found.push({ letter: m[1].toUpperCase(), start: m.index + offset, end: m.index + m[0].length });
+  }
+  found.sort((a, b) => a.start - b.start || b.end - a.end);
+  const matches = [];
+  for (const item of found) {
+    const last = matches[matches.length - 1];
+    if (last && item.start < last.end) {
+      if (item.end > last.end) last.end = item.end;
+      continue;
+    }
+    matches.push(item);
   }
   return matches;
 }
@@ -556,8 +746,21 @@ function applyStimulusFlags(items) {
   return list;
 }
 
-function parseQuestion({ num, text }) {
-  const normalized = text.replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+function hasCompleteOptionSet(matches) {
+  return REQUIRED_OPTION_LETTERS.split('').every(letter => matches.some(match => match.letter === letter));
+}
+
+function optionInlineMatches(raw) {
+  const found = [];
+  for (const m of raw.matchAll(/(?:^|[^\w])([A-Fa-f])[^\S\n]*(?:\n[^\S\n]*)?[.)][^\S\n]*/g)) {
+    found.push({ letter: m[1].toUpperCase(), start: m.index + m[0].indexOf(m[1]), end: m.index + m[0].length });
+  }
+  return found;
+}
+
+function parseQuestion(chunk) {
+  const { num, text } = chunk || {};
+  const normalized = String(text == null ? '' : text).replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
   const extracted = extractStimuli(normalized, num);
   const raw = extracted.text.replace(/\n{3,}/g, '\n\n');
   // Options stay one line; stems keep blank-line paragraphs and fold single wraps.
@@ -578,7 +781,18 @@ function parseQuestion({ num, text }) {
       return paragraphs;
     }, { done: [], open: [] });
   const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
-  const matches = optionLabelMatches(raw, scanRaw);
+  let matches = optionLabelMatches(raw, scanRaw);
+  if (!hasCompleteOptionSet(matches)) {
+    const loose = optionInlineMatches(raw).concat(matches)
+      .sort((a, b) => a.start - b.start || b.end - a.end);
+    const deduped = [];
+    for (const item of loose) {
+      const last = deduped[deduped.length - 1];
+      if (last && item.start < last.end) continue;
+      deduped.push(item);
+    }
+    matches = deduped;
+  }
   const best = bestOptionCandidate(matches);
   const pos = {};
   if (best) {
@@ -626,7 +840,13 @@ function parseQuestion({ num, text }) {
     if (q[l] && q[l].length > 500) q.flags.push(`option ${l.toUpperCase()} over 500 characters`);
   }
   if (hasUnnumberedDuplicateSet(raw, matches)) q.flags.push('a letter appears twice (merged questions?)');
+  for (const l of 'abcdef') {
+    if (q[l] && structuralOptionText(q[l])) {
+      q.flags.push(`option ${l.toUpperCase()} contains section heading or instruction`);
+    }
+  }
   if (q.e || q.f) q.flags.push('E/F options present');
+  if (chunk && chunk.sectionInstruction) q.sectionInstruction = chunk.sectionInstruction;
   if (extracted.stimuli.length) q.stimuli = extracted.stimuli;
   return q;
 }
@@ -1265,7 +1485,7 @@ function linkComprehension(contexts, items, warnings, engine) {
         item.c = split.options[2];
         item.d = split.options[3];
         item.flags = item.flags.filter(flag => !/^option [ABCD] missing$/.test(flag));
-      } else if (/\(a\)/i.test(item.question)) {
+      } else if (/\(a\)/i.test(item.question) || ['a', 'b', 'c', 'd'].some(letter => !item[letter])) {
         warnings.push(`question ${num} has no complete (a)-(d) option set`);
       }
       item.contextRef = context.id;
@@ -1294,10 +1514,11 @@ function parseBody(text) {
   const sections = salvage.parts;
   const fixed = FIXES.reduce((body, [pattern, replacement]) => body.replace(pattern, replacement), sections.questions);
   const header = parseHeader(fixed);
-  let items = splitQuestionItems(fixed).map(item => parseQuestion(item));
+  const regioned = splitQuestionRegions(fixed);
+  let items = regioned.chunks.map(item => parseQuestion(item));
   items = flagNumberingGaps(items);
   items = applyStimulusFlags(items);
-  return { salvage, sections, header, items };
+  return { salvage, sections, header, items, regions: regioned.regions };
 }
 
 function detectContexts(source, engine, cloze, blocked) {
@@ -1378,6 +1599,7 @@ function parsePaste(raw) {
     header,
     contexts: detected.contexts,
     items,
+    regions: parsed.regions || [],
     key: keyInfo.key,
     keyConflicts: keyInfo.conflicts,
     sectionEvidence: {
@@ -1402,9 +1624,11 @@ const OCRParserCore = {
   parseHeader,
   pickSubjectIndex,
   pickCategoryIndex,
+  splitRegions,
   splitQuestions,
   splitBulletQuestions,
   splitQuestionItems,
+  splitQuestionRegions,
   parseQuestion,
   parseStimulusRange,
   extractStimuli,

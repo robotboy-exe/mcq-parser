@@ -4,6 +4,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const helper = require('../ocr_helper.js');
 
 let passed = 0;
@@ -179,9 +180,136 @@ test('does not recognize a no-stem cloze row as a numbered question', () => {
   assert(questions[0].flags.includes('question text missing or very short'));
 });
 
+test('adapter splits lowercase oral stems and keeps each rubric out of the options', () => {
+  const text = fs.readFileSync(path.join(__dirname, '../fixtures/inputs/region-lowercase-stems.txt'), 'utf8');
+  const questions = parseAll(text);
+  assert.deepStrictEqual(questions.map(q => q.num), [1, 2, 3, 4, 5]);
+  assert.strictEqual(questions[2].d, 'baked');
+  assert.strictEqual(questions[3].a, 'plump');
+  assert(questions[3].sectionInstruction.includes('consonant sound'));
+  for (const question of questions) {
+    assert(!/SECTION \d/.test(question.d), 'question ' + question.num + ' option D');
+  }
+});
+
+test('adapter reports a trailing structural run instead of folding it into option D', () => {
+  const text = fs.readFileSync(path.join(__dirname, '../fixtures/inputs/region-footer-instruction.txt'), 'utf8');
+  const questions = parseAll(text);
+  assert.strictEqual(questions[1].d, 'patients');
+  const regions = helper.splitRegions(text).regions;
+  assert.strictEqual(regions[regions.length - 1].text, 'END OF SECTION 1');
+  assert.strictEqual(regions[regions.length - 1].from, null);
+});
+
+test('adapter keeps an unnumbered option block as its own question', () => {
+  const text = fs.readFileSync(path.join(__dirname, '../fixtures/inputs/region-orphan-number.txt'), 'utf8');
+  const questions = parseAll(text);
+  assert.deepStrictEqual(questions.map(q => q.num), [null, 25, 26]);
+  assert.strictEqual(questions[0].question, 'lump');
+  assert.strictEqual(questions[1].d, 'signal');
+});
+
+test('adapter delegates every parser entry point to the canonical core', () => {
+  const core = require('../src/parser/core.js');
+  assert.strictEqual(helper.splitQuestions, core.splitQuestions);
+  assert.strictEqual(helper.splitRegions, core.splitRegions);
+  assert.strictEqual(helper.parseQuestion, core.parseQuestion);
+  assert.strictEqual(helper.FIXES, core.FIXES);
+});
+
 test('has no Constant Text field integration', () => {
   const source = fs.readFileSync(path.join(__dirname, '../ocr_helper.js'), 'utf8');
   assert.strictEqual(source.includes('constant_text'), false);
+});
+
+function loadHelperInBrowser(options) {
+  const inserted = [];
+  const form = {
+    before(node) { inserted.push(node); },
+    addEventListener() {},
+    querySelectorAll() { return []; }
+  };
+  const anchor = options.withForm === false ? null : { form };
+  const fields = new Map();
+  const storage = new Map();
+  const errors = [];
+  const document = {
+    querySelector(selector) {
+      if (selector === 'input[name=action][value=save_question]') return anchor;
+      return null;
+    },
+    getElementById(id) {
+      if (!fields.has(id)) fields.set(id, { value: '', hidden: false, innerHTML: '', className: '' });
+      return fields.get(id);
+    },
+    createElement() {
+      return { className: '', id: '', textContent: '', innerHTML: '' };
+    }
+  };
+  const sandbox = {
+    window: { OCRParser: options.parser || null },
+    document,
+    location: { search: options.search || '' },
+    localStorage: {
+      getItem: (key) => (storage.has(key) ? storage.get(key) : null),
+      setItem: (key, value) => storage.set(key, String(value)),
+      removeItem: (key) => storage.delete(key)
+    },
+    alert() {},
+    console: { error(message) { errors.push(String(message)); } }
+  };
+  sandbox.window.window = sandbox.window;
+  vm.createContext(sandbox);
+  const source = fs.readFileSync(path.join(__dirname, '../ocr_helper.js'), 'utf8');
+  let thrown = null;
+  try {
+    vm.runInContext(source, sandbox, { filename: 'ocr_helper.js' });
+  } catch (error) {
+    thrown = error;
+  }
+  return { thrown, inserted, errors };
+}
+
+test('fails loudly when the browser parser global is missing', () => {
+  const result = loadHelperInBrowser({ parser: null });
+  assert(result.thrown, 'helper should throw when window.OCRParser is absent');
+  assert(/OCR helper disabled/.test(result.thrown.message));
+  assert(/window\.OCRParser/.test(result.thrown.message));
+  assert.strictEqual(result.errors.length, 1);
+  assert(/window\.OCRParser/.test(result.errors[0]));
+  assert.strictEqual(result.inserted.length, 1);
+  assert.strictEqual(result.inserted[0].id, 'ocr_error');
+  assert(/OCR helper disabled/.test(result.inserted[0].textContent));
+  assert(/not deployed/.test(result.inserted[0].textContent));
+});
+
+test('refuses a parser core whose version does not match the adapter', () => {
+  const parser = Object.assign({}, require('../src/parser/core.js'), { version: '2.3.0' });
+  const result = loadHelperInBrowser({ parser });
+  assert(result.thrown, 'helper should throw on a version mismatch');
+  assert(/2\.3\.0/.test(result.thrown.message));
+  assert(/2\.4\.0/.test(result.thrown.message));
+  assert.strictEqual(result.errors.length, 1);
+  assert.strictEqual(result.inserted.length, 1);
+  assert.strictEqual(result.inserted[0].id, 'ocr_error');
+});
+
+test('logs without throwing when the admin form is absent', () => {
+  const result = loadHelperInBrowser({ parser: null, withForm: false });
+  assert.strictEqual(result.thrown, null);
+  assert.strictEqual(result.errors.length, 1);
+  assert(/window\.OCRParser/.test(result.errors[0]));
+  assert.strictEqual(result.inserted.length, 0);
+});
+
+test('renders the paste panel when the core is present in the browser', () => {
+  const result = loadHelperInBrowser({ parser: require('../src/parser/core.js') });
+  assert.strictEqual(result.thrown, null);
+  assert.strictEqual(result.errors.length, 0);
+  assert.strictEqual(result.inserted.length, 1);
+  assert(result.inserted[0].innerHTML.includes('ocr_input'));
+  assert(result.inserted[0].innerHTML.includes('ocr_text'));
+  assert(result.inserted[0].innerHTML.includes('ocr_load'));
 });
 
 console.log('PASS: ' + passed + ' ocr-helper vectors');

@@ -1,87 +1,55 @@
 (function () {
-  // OCR misspellings to correct: [pattern, replacement]. Add one line per repeated mistake.
-  const FIXES = [
-    [/govemment/gi, 'government'],
-    [/persidential/gi, 'presidential'],
-    [/resposible/gi, 'responsible'],
-  ];
-  const OPTION = /(?<![A-Za-z])(?:\(\s*([A-Da-d])\s*\)|([A-Da-d])\s*[.)])(?:\s*[.)])*\s*/g;
+  // Production adapter over the canonical parser core in src/parser/core.js.
+  // The admin page loads the core first; Node tests resolve it through require.
+  const EXPECTED_CORE_VERSION = '2.4.0';
+  const isNode = typeof module !== 'undefined' && module.exports && typeof require === 'function';
+  const core = isNode
+    ? require('./src/parser/core.js')
+    : (typeof window !== 'undefined' ? window.OCRParser : null);
 
-  function splitQuestions(text) {
-    const marks = [];
-    let last = 0;
-    for (const m of text.matchAll(/(?<!\d)(\d{1,3})\s*\.\s*(?=["“‘'(]?[A-Z]|["“‘'(]?\.{2,})/g)) {
-      const n = +m[1];
-      if (last && (n <= last || n > last + 5)) continue;
-      marks.push({ n, start: m.index, end: m.index + m[0].length });
-      last = n;
-    }
-    const chunks = marks.map((m, i) => ({ num: m.n, text: text.slice(m.end, marks[i + 1]?.start) }));
-    const head = text.slice(0, marks[0]?.start ?? text.length);
-    if (head.search(OPTION) >= 0 && !/(?:IMPROVISED|STRUCTURED).*C\.?\s*R\.?\s*K/i.test(head)) {
-      chunks.unshift({ num: null, text: head });
-    }
-    return chunks;
+  const FIXES = core ? core.FIXES : null;
+  const OPTION = core ? core.OPTION : null;
+  const splitQuestions = core ? core.splitQuestions : null;
+  const splitRegions = core ? core.splitRegions : null;
+  const parseQuestion = core ? core.parseQuestion : null;
+
+  function applyFixes(text) {
+    return FIXES.reduce((value, [pattern, replacement]) => value.replace(pattern, replacement), text);
   }
 
-  function cleanBlock(text) {
-    return String(text)
-      .replace(/\r\n?/g, '\n')
-      .trim()
-      .split(/\n\s*\n/)
-      .map((paragraph) => paragraph.replace(/\s+/g, ' ').trim())
-      .filter(Boolean)
-      .join('\n\n');
+  function parseAll(text) {
+    return splitQuestions(applyFixes(String(text == null ? '' : text))).map(parseQuestion);
   }
 
-  function cleanLine(text) {
-    return String(text).replace(/\s+/g, ' ').trim();
-  }
-
-  function parseQuestion({ num, text }) {
-    const pos = {}, matches = [];
-    for (const m of text.matchAll(OPTION)) {
-      const letter = (m[1] || m[2]).toUpperCase();
-      const p = { letter, start: m.index, end: m.index + m[0].length };
-      matches.push(p);
-      if (!pos[letter]) pos[letter] = p;
-    }
-    const marks = Object.entries(pos).sort((a, b) => a[1].start - b[1].start);
-    const q = { num, question: cleanBlock(text.slice(0, marks[0]?.[1].start ?? text.length)), a: '', b: '', c: '', d: '', flags: [] };
-    marks.forEach(([letter, p], i) => (q[letter.toLowerCase()] = cleanLine(text.slice(p.end, marks[i + 1]?.[1].start))));
-
-    let duplicateSet = false;
-    if ([...'ABCD'].every((letter) => pos[letter])) {
-      const selectedEnd = Math.max(...[...'ABCD'].map((letter) => pos[letter].end));
-      for (let i = 0; i < matches.length; i++) {
-        const secondA = matches[i];
-        if (secondA.letter !== 'A' || secondA.start <= selectedEnd) continue;
-        let next = 1;
-        for (let j = i + 1; j < matches.length && next < 4; j++) {
-          if (matches[j].letter === 'ABCD'[next]) next++;
-        }
-        if (next < 4) continue;
-        duplicateSet = !/(?:^|\s)\d{1,3}\.\s/.test(text.slice(selectedEnd, secondA.start));
-        if (duplicateSet) break;
-      }
-    }
-
-    if (num === null) q.flags.push('question number missing');
-    if (q.question.length < 10) q.flags.push('question text missing or very short');
-    for (const l of 'abcd') {
-      if (!q[l]) q.flags.push(`option ${l.toUpperCase()} missing`);
-      if (q[l].length > 500) q.flags.push(`option ${l.toUpperCase()} over 500 characters`);
-    }
-    if (duplicateSet) q.flags.push('a letter appears twice (merged questions?)');
-    return q;
-  }
-
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { FIXES, OPTION, splitQuestions, parseQuestion };
+  if (isNode) {
+    module.exports = { FIXES, OPTION, splitQuestions, splitRegions, parseQuestion, parseAll };
     return;
   }
 
+  function coreProblem() {
+    if (!core) return 'src/parser/core.js did not load, so window.OCRParser is missing';
+    if (core.version !== EXPECTED_CORE_VERSION) {
+      return 'src/parser/core.js reports version ' + core.version + ' but this helper needs ' + EXPECTED_CORE_VERSION;
+    }
+    return null;
+  }
+
   const form = document.querySelector('input[name=action][value=save_question]')?.form;
+  const problem = coreProblem();
+  if (problem) {
+    const message = 'OCR helper disabled: ' + problem;
+    if (typeof console !== 'undefined' && console.error) console.error(message);
+    if (form && !location.search.includes('edit=')) {
+      const banner = document.createElement('div');
+      banner.className = 'admin-field admin-alert admin-error';
+      banner.id = 'ocr_error';
+      banner.textContent = message + '. Reload the page; if this persists, src/parser/core.js was not deployed.';
+      form.before(banner);
+      throw new Error(message);
+    }
+    return;
+  }
+
   if (!form || location.search.includes('edit=')) return;
 
   const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
@@ -134,8 +102,7 @@
   }
 
   $('ocr_load').onclick = () => {
-    const text = FIXES.reduce((t, [re, fix]) => t.replace(re, fix), $('ocr_text').value);
-    const items = splitQuestions(text).map(parseQuestion);
+    const items = parseAll($('ocr_text').value);
     if (!items.length) return alert('No questions found in that text.');
     saveMeta();
     queue = { items, i: 0 };

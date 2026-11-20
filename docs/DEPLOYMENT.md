@@ -42,7 +42,7 @@ for the package contract.
 6. Put the site in maintenance mode and stop every web worker, importer, cron
    job, and CLI process that can write `questions`.
 
-## 2. File manifest (14 production files + 5 ops)
+## 2. File manifest (15 production files + 5 ops)
 
 Line counts are `wc -l`; bytes are LF-normalized UTF-8; SHA-256 is over the
 LF-normalized content. Deploy PHP/JS assets to the site root preserving relative
@@ -50,14 +50,15 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 
 | File | Lines / LF bytes | SHA-256 (LF) | Deploy to | Notes |
 |---|---:|---|---|---|
-| `deployed/admin_questions.php` | 1056 / 62818 | `874fcbfe0d693e0bb7308076cfd8df6a24553f8393494bb14822b336c2780a40` | site root | native form, Constant Text, session prefill, authenticated exact PDO save diagnostics, and the D-108 subject display alias; loads helper, underline, the renderer as `?v=2.3.3`, the read-only preview as `question-preview.css?v=1.1.2`, `math-tool.js?v=1.1.2`, and `math-tool.css?v=1.1.1`; context code removed |
+| `deployed/admin_questions.php` | 1057 / 62877 | `41e3ce7e01e111ca4515ae5ce83afdb383c3bb1b3b08256830b7a1936c91e5d6` | site root | native form, Constant Text, session prefill, authenticated exact PDO save diagnostics, and the D-108 subject display alias; the helper token is bumped whenever the helper bytes change (`2.4.1` carries the missing-core guard); loads `src/parser/core.js?v=2.4.0` before the thin `ocr_helper.js?v=2.4.1` adapter, underline, the renderer as `?v=2.3.3`, the read-only preview as `question-preview.css?v=1.1.2`, `math-tool.js?v=1.1.2`, and `math-tool.css?v=1.1.1`; context code removed |
 | `deployed/admin_question_store.php` | 113 / 4918 | `ff93f0c924159662f843ec83ed9e78c3815dc1549805a8c79a631f702577dc1b` | site root | extracted save/delete transaction; explicit columns; `constant_text` |
 | `deployed/cbt.php` | 1085 / 47092 | `01e3f90ac4618a634c8440aad5562de605b1df763d3f530fd89f72192e7ca806` | site root | standalone delivery; existing limited selection plus EL01 post-fetch ordering; aliased subject displays; Constant Text weight 800 and question weight 700; marker options; inline fraction/connected-root/matrix rules; loads `src/owner-tool/render.js?v=2.3.3` |
 | `deployed/cbt_question_order.php` | 56 / 1444 | `5c0a9b8c125b4a1d72737b3e9a532d6e386c50b7455ba8e1f1df39c122547fb7` | site root beside `cbt.php` | exact trusted-subject grouped display ordering only; members restored to ascending original `id`, shuffled groups, blank singletons |
 | `deployed/subject_display.php` | 12 / 386 | `3f8ce0e86787a66d90b8d87fcd0295ac3c7629f899202443068dfd019b044537` | site root beside `admin_questions.php` and `cbt.php` | exact persisted-name to frontend-label mapping only; no database access or mutation |
 | `deployed/answer_details.php` | 268 / 13671 | `9b50d23da36512cb62e0377bc4072b518ac0856439323573bf88c58cd3d8e915` | site root | Constant Text block; `cbt_format_text` options; inline fraction/connected-root/matrix rules |
 | `deployed/render.php` | 248 / 8161 | `f1152c545bd8f1983995b800cb0b3635439fe5ab3d162ba9d2b588173ecea41f` | site root | server marker renderer for the six exact pairs; consumed by the shared parity vectors |
-| `ocr_helper.js` | 160 / 6284 | `c3e8e96eb2a295eb3ef0a8c0e87089b233cd026afe7fec664c7db16b17732193` | site root | review-settled D-91 spacing grammar and selected boundaries; no Constant Text integration; keeps blank-line paragraphs and folds single wraps |
+| `ocr_helper.js` | 127 / 4917 | `856b77685b49f20edd5c2726f80676ac3ca1a2eeda20a1e5b97d6192e5fb0993` | site root | thin adapter over `src/parser/core.js`; exports the core's `FIXES`, `OPTION`, `splitQuestions`, `splitRegions`, and `parseQuestion` and owns only `parseAll`, the queue panel, and `fillForm`; requires core version `2.4.0` and renders a visible `#ocr_error` banner plus an uncaught error when `window.OCRParser` is missing or mismatched; no parser implementation and no Constant Text integration |
+| `src/parser/core.js` | 1656 / 57118 | `49a465ecfe0ab1f8da8272bf2f9dbcf669c786f7748001efed133dff80b93868` | site root `src/` | canonical pure parser, version 2.4.0: four-stage region model, D-91 option grammar, comprehension and cloze engines; no DOM, storage, network, or Constant Text write |
 | `src/underline-toolbar.js` | 136 / 4288 | `55f3d7f4953e44aac7d911e902b6deb413897e56b35d8669d607e6bab4a47315` | site root `src/` | runtime Underline button for Constant Text, question, and options; sits at the far right of the Question label row |
 | `src/question-preview.js` | 104 / 3759 | `472c69fedda6353f5ee1f527b8f5b0591774cd7fd8c837bad1c910268020bec9` | site root `src/` | read-only Constant Text/Question preview; uses `window.CBTText` |
 | `src/question-preview.css` | 117 / 2069 | `2baa333125836885616f2845000b62cec8d74f2556cc98f6eddbabeee9c213fc` | site root `src/` | preview layout, fixed-height scrollable Constant Text box, `white-space: pre-wrap`, horizontal fraction bar, joined radical, and 2×2 matrix grid; loaded as `?v=1.1.2` |
@@ -76,18 +77,20 @@ support. Do not deploy any file under `archive/`.
 ## 3. Upload order
 
 1. Back up files and the database.
-2. Upload the six `src/` assets: `src/underline-toolbar.js`,
-   `src/question-preview.js`, `src/question-preview.css`,
-   `src/math-tool.js`, `src/math-tool.css`, and `src/owner-tool/render.js`
-   (same paths; upload the current bytes).
+2. Upload the seven `src/` assets: `src/parser/core.js`,
+   `src/underline-toolbar.js`, `src/question-preview.js`,
+   `src/question-preview.css`, `src/math-tool.js`, `src/math-tool.css`, and
+   `src/owner-tool/render.js` (same paths; upload the current bytes). The core
+   must be present before the page loads; without it the helper stays inert.
 3. Upload root `ocr_helper.js` and the PHP files: `render.php`,
    `admin_question_store.php`, `subject_display.php`, `admin_questions.php`,
    `cbt_question_order.php`, `cbt.php`, `answer_details.php`. The helper must be
    present before the new `cbt.php` is served.
 4. Change only the renderer tag in `cbt_practice.php`: `render.js?v=2.3.2c` →
    `?v=2.3.3`. Its markup, filters, and selection stay out of scope (D-102).
-5. Cache handling: `admin_questions.php` loads root `ocr_helper.js` and
-   `src/underline-toolbar.js` without query tokens, and loads
+5. Cache handling: `admin_questions.php` loads `src/parser/core.js?v=2.4.0`
+   and `ocr_helper.js?v=2.4.1`, loads `src/underline-toolbar.js` without a
+   query token, and loads
     `src/question-preview.css?v=1.1.2`, `src/math-tool.css?v=1.1.1`,
     `src/owner-tool/render.js?v=2.3.3`, and `src/math-tool.js?v=1.1.2` (D-94,
     D-102, D-103, D-104, D-105). A standalone deployment must purge server/CDN caches, clear the

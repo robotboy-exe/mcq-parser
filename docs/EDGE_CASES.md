@@ -39,7 +39,7 @@ Status definitions:
 | EC-20 | Leading chunk without number | Head block with ≥2 option markers | Queued with `num=null`; flag `question number missing` | CONFIRMED | qwen-2-reconciled E09; claude-migration §3 (case 20) |
 | EC-21 | Non-sequential/gapped numbering | `n <= last` or `n > last + 5` | Candidate marker skipped; text absorbed into previous chunk | CONFIRMED | qwen-2-reconciled E13; claude-migration §3 (case 19) |
 | EC-22 | Header-only preamble | Fewer than 2 option matches in head | No pseudo-question chunk | CONFIRMED | qwen-2-reconciled E14 |
-| EC-23 | Continuation instruction before number | `According to Matthew...` before `12.` | Stays at the end of the previous chunk | CONFIRMED | qwen-2-reconciled E30 |
+| EC-23 | Continuation instruction before number | `According to Matthew...` before `12.` | Carried to the next chunk as `sectionInstruction` once an option block has started; never inside an option | CONFIRMED | qwen-2-reconciled E30; RM01 `region-footer-instruction` |
 | EC-95 | Comprehension prose before the first stem | `PASSAGE III` plus paragraphs, then `11.` | Prose becomes the context text and never an option or pseudo-question | CONFIRMED | OT08; `sample-comprehension-passage3` |
 | EC-96 | Dotted initials and A.D. in passage prose | `J. A. Adeyemi`, `1960 A.D.` | Remain context text; no letter option, no extra item | CONFIRMED | OT08; `sample-comprehension-incomplete` |
 | EC-97 | Incomplete parenthesized option set | `(a) one (b) two (c) three` | Stays in the stem with a warning; `(a)`-`(d)` parsed only as a complete ordered set | CONFIRMED | OT08; `sample-comprehension-incomplete`; `tests/unit.js` |
@@ -283,10 +283,15 @@ EC-95 through EC-126 above belong to the archived context/owner-tool subsystem
 | EC-152 | Symbol present in two palette places | `π` is inserted from the operator row and again from the restored Greek grid | Both insert the same Unicode character at the remembered caret; nothing converts it to a marker and no shape editor is affected | CONFIRMED | D-105; `tests/math-tool.js` drawer vector |
 | EC-153 | Database migration completed but question save still fails | The INSERT raises a different `PDOException`, such as another required column lacking a default | The logged-in admin alert keeps the generic failure lead-in and appends the exact HTML-escaped database message instead of mislabelling every failure as the Constant Text migration | CONFIRMED | D-106; `deployed/admin_questions.php` |
 | EC-154 | Display alias versus a near subject name | A subject differs from `English (Lexis & Structure)` by case, wording, spacing, or a trailing byte | The near name displays unchanged; only the byte-exact intended row receives the frontend alias, and grouping behavior remains exact-name-only | CONFIRMED | D-108; `deployed/subject_display.php`; `php tests/cbt-question-order.php` |
+| EC-155 | Lowercase stem after a numbered marker | `1. lout` then A–D, as in the supplied oral-English paste | Every stem splits into its own item; each option set stays with its own stem | CONFIRMED | RM01; `region-lowercase-stems`; `tests/ocr-helper.js` |
+| EC-156 | Instruction block between option sets | A `SECTION 2` heading and rubric after question 3's option D and before question 4 | The rubric leaves option D and becomes question 4's `sectionInstruction` plus a `regions` envelope | CONFIRMED | RM01; `region-lowercase-stems`; `region-footer-instruction` |
+| EC-157 | Lost question number in a continuation paste | `lump` plus A–D, then `25. assign` | The unnumbered block stays a separate `num: null` item and is never merged into question 25 | CONFIRMED | RM01; `region-orphan-number`; `tests/ocr-helper.js` |
+| EC-158 | Trailing structural run after the last option | `END OF SECTION 1` after the final option block | Reported as an unowned `regions` entry with `from: null` and `to: null`; option D is unchanged | CONFIRMED | RM01; `region-footer-instruction` |
+| EC-159 | Title and prose preamble before the first question | A title plus paragraphs before `1.` | Leading `heading` and `passage` regions are reported; the stem and options stay clean and the head is not dropped | CONFIRMED | RM01; `region-preamble-paragraphs` |
 
 ## Counts
 
-- Total: 148
-- CONFIRMED: 144
+- Total: 153
+- CONFIRMED: 149
 - UNVERIFIED: 4
 - CONFLICTED: 0

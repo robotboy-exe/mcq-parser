@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "region-footer-instruction",
+  "source": [
+    "synthetic footer heading built from the user-reported structural-text-in-option defect"
+  ],
+  "provenance": "Hand-written to reproduce the reported case: a section heading and instruction line after the last option block must never become part of option D.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/region-footer-instruction.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [1, 2],
+    "questions": [
+      {
+        "num": 1,
+        "question": "The teacher spoke ______.",
+        "d": "louder",
+        "section_instruction_contains": ["SECTION 1", "Answer questions 1 and 2"]
+      },
+      {
+        "num": 2,
+        "question": "She waited ______.",
+        "a": "patient",
+        "b": "patiently",
+        "c": "patience",
+        "d": "patients"
+      }
+    ],
+    "regions": [
+      {
+        "kind": "heading",
+        "text": "SECTION 1",
+        "from": 1,
+        "to": 2
+      },
+      {
+        "kind": "instruction",
+        "text_contains": ["Answer questions 1 and 2"],
+        "from": 1,
+        "to": 2
+      },
+      {
+        "kind": "heading",
+        "text_contains": ["END OF SECTION 1"],
+        "from": null,
+        "to": null
+      }
+    ],
+    "forbidden_flags": [
+      "option D over 500 characters"
+    ]
+  },
+  "must_not": [
+    "Trailing section heading inside question 2 option D"
+  ],
+  "notes": [
+    "A structural run with no following stem is reported as an unowned region."
+  ],
+  "discrepancies": []
+}

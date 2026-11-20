@@ -25,15 +25,12 @@
     "questions": [
       {
         "num": 7,
-        "question": "The passage is mainly about (a) one record (b) two records (c) three records",
-        "a": "",
-        "b": "",
-        "c": "",
+        "question": "The passage is mainly about",
+        "a": "one record",
+        "b": "two records",
+        "c": "three records",
         "d": "",
         "flags": [
-          "option A missing",
-          "option B missing",
-          "option C missing",
           "option D missing"
         ],
         "context_ref": "ctx-1",
@@ -57,6 +54,6 @@
   },
   "must_not": [
     "Dotted initials become options or pseudo-questions",
-    "A partial (a)-(c) set parsed as options"
+    "The partial set's missing fourth option is silently ignored"
   ]
 }

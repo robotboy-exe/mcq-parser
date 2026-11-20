@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "input_origin": "user_sample",
+  "id": "region-lowercase-stems",
+  "source": [
+    "user-supplied TEST OF ORAL paste (ec20), sections 1 and 2"
+  ],
+  "provenance": "Transcribed from the two user-supplied oral-English OCR documents: lowercase single-word stems, A-D option blocks, a rubric before question 1 and a second rubric before question 4.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/region-lowercase-stems.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 5,
+    "nums": [1, 2, 3, 4, 5],
+    "questions": [
+      {
+        "num": 1,
+        "question": "lout",
+        "a": "cow",
+        "b": "bought",
+        "c": "loud",
+        "d": "crowd",
+        "section_instruction_contains": ["SECTION 1", "vowel sound"]
+      },
+      {
+        "num": 3,
+        "d": "baked",
+        "question_contains": []
+      },
+      {
+        "num": 4,
+        "question": "lump",
+        "a": "plump",
+        "b": "lamp",
+        "c": "jump",
+        "d": "limber",
+        "section_instruction_contains": ["SECTION 2", "consonant sound"]
+      },
+      {
+        "num": 5,
+        "question": "assign",
+        "d": "signal"
+      }
+    ],
+    "forbidden_flags": [
+      "option D over 500 characters",
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "SECTION 2 rubric inside question 3 option D",
+    "Lowercase stems missed by the question splitter"
+  ],
+  "notes": [
+    "A stem shorter than ten characters still carries the advisory short-stem flag."
+  ],
+  "discrepancies": []
+}

@@ -52,6 +52,17 @@ Last updated: 2026-11-19.
   `cbt_practice.php` edit. CBT Constant Text is weight 800 and the question stem
   remains weight 700. Static, disposable HTTP, and desktop/390px browser checks
   pass; deployment and the owner's live check remain external.
+- Direct owner request RM01 (2026-11-19) replaces line-by-line chunking with a
+  four-stage region model (classify, own, split only on stems, structural-text
+  invariant) in `src/parser/core.js`, and collapses the shipping helper onto
+  that core: `admin_questions.php` loads `src/parser/core.js` before the thin
+  `ocr_helper.js` adapter. Four hand-transcribed fixtures cover lowercase stems,
+  a lost question number, a prose preamble, and a trailing section heading.
+  64 runner, 163 unit, and 19 helper checks pass; deployment and the owner's
+  browser re-paste remain external. The 2026-11-20 adapter guard holds the
+  core to version `2.4.0` and renders a visible `#ocr_error` banner plus an
+  uncaught error when `window.OCRParser` is missing, verified on disposable
+  HTTP staging in a desktop browser.
 - The temporary D-107 pre-migration compatibility work was reverted on
   2026-11-19 after the owner reported production migration `01` successful. The
   application again requires the migrated column directly; operation `03` was
@@ -212,6 +223,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 | — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
 | — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
+| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | done locally; four hand-transcribed fixtures, region stages A–D in the canonical core, and `ocr_helper.js` reduced to a thin adapter over `src/parser/core.js`; 64 runner, 163 unit, 19 helper checks pass; the adapter's missing/mismatched-core guard is browser-verified on disposable staging | deployment and the owner's browser re-paste remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.

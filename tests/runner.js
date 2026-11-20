@@ -28,7 +28,7 @@ const INPUT_ORIGINS = new Set(['bank', 'anomaly', 'doc', 'synthetic', 'user_samp
 const OPTION_FIELDS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
 const ASSERTED_KEYS = {
-  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'required_flags', 'forbidden_flags', 'needs_image', 'stimulus_count', 'stimuli', 'contexts', 'warnings'],
+  questions: ['queue_count', 'header', 'questions', 'questions_with_e', 'nums', 'key', 'required_flags', 'forbidden_flags', 'needs_image', 'stimulus_count', 'stimuli', 'regions', 'contexts', 'warnings'],
   question: ['a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'forbidden_flags', 'needs_image'],
   key: ['key']
 };
@@ -38,7 +38,8 @@ const UNASSERTED_KEYS = {
   key: ['ui_notes']
 };
 const HEADER_KEYS = ['year', 'subject_contains_any', 'category_contains_any'];
-const QUESTION_KEYS = ['num', 'index', 'a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'flags', 'needs_image', 'context_ref', 'context_position'];
+const QUESTION_KEYS = ['num', 'index', 'a', 'b', 'c', 'd', 'e', 'f', 'question', 'question_contains', 'section_instruction', 'section_instruction_contains', 'flags', 'needs_image', 'context_ref', 'context_position'];
+const REGION_KEYS = ['kind', 'text', 'text_contains', 'from', 'to'];
 const STIMULUS_KEYS = ['order', 'source_num', 'nums', 'text_contains', 'missing'];
 const CONTEXT_KEYS = ['order', 'type', 'title', 'title_contains', 'text', 'text_contains', 'targets', 'expected_count'];
 
@@ -183,6 +184,32 @@ function validateExpected(spec) {
   if (has(expected, 'warnings')) {
     if (!isStringArray(expected.warnings)) return 'expected.warnings must be an array of strings';
   }
+  if (has(expected, 'regions')) {
+    if (!Array.isArray(expected.regions)) return 'expected.regions must be an array';
+    for (let index = 0; index < expected.regions.length; index++) {
+      const region = expected.regions[index];
+      if (!region || typeof region !== 'object' || Array.isArray(region)) {
+        return `expected.regions[${index}] must be an object`;
+      }
+      for (const key of Object.keys(region)) {
+        if (!REGION_KEYS.includes(key)) return `unknown expected.regions[${index}] key: ${show(key)}`;
+      }
+      if (has(region, 'kind') && typeof region.kind !== 'string') {
+        return `expected.regions[${index}].kind must be a string`;
+      }
+      if (has(region, 'text') && typeof region.text !== 'string') {
+        return `expected.regions[${index}].text must be a string`;
+      }
+      if (has(region, 'text_contains') && !isStringArray(region.text_contains)) {
+        return `expected.regions[${index}].text_contains must be an array of strings`;
+      }
+      for (const field of ['from', 'to']) {
+        if (has(region, field) && region[field] !== null && !isInteger(region[field])) {
+          return `expected.regions[${index}].${field} must be an integer or null`;
+        }
+      }
+    }
+  }
   if (has(expected, 'contexts')) {
     if (!Array.isArray(expected.contexts)) return 'expected.contexts must be an array';
     for (let index = 0; index < expected.contexts.length; index++) {
@@ -277,6 +304,12 @@ function validateExpected(spec) {
       if (has(question, 'question_contains') && !isStringArray(question.question_contains)) {
         return `expected.questions[${index}].question_contains must be an array of strings`;
       }
+      if (has(question, 'section_instruction') && typeof question.section_instruction !== 'string') {
+        return `expected.questions[${index}].section_instruction must be a string`;
+      }
+      if (has(question, 'section_instruction_contains') && !isStringArray(question.section_instruction_contains)) {
+        return `expected.questions[${index}].section_instruction_contains must be an array of strings`;
+      }
       if (has(question, 'flags') && question.flags !== null && !isStringArray(question.flags)) {
         return `expected.questions[${index}].flags must be an array of strings or null`;
       }
@@ -353,6 +386,28 @@ function checkQuestion(question, expected, label, checks) {
       expected.question,
       question.question
     ));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(expected, 'section_instruction')) {
+    const actual = question.sectionInstruction === undefined ? '' : question.sectionInstruction;
+    checks.push(makeCheck(
+      `${label}.section_instruction`,
+      actual === expected.section_instruction,
+      expected.section_instruction,
+      actual
+    ));
+  }
+
+  if (Array.isArray(expected.section_instruction_contains)) {
+    const actual = typeof question.sectionInstruction === 'string' ? question.sectionInstruction : '';
+    for (const needle of expected.section_instruction_contains) {
+      checks.push(makeCheck(
+        `${label}.section_instruction contains ${show(needle)}`,
+        actual.includes(needle),
+        true,
+        actual
+      ));
+    }
   }
 
   if (Array.isArray(expected.question_contains)) {
@@ -514,6 +569,41 @@ function checkStimuli(expected, actual, checks) {
   }
 }
 
+function checkRegions(expected, actual, checks) {
+  const list = Array.isArray(actual) ? actual : [];
+  checks.push(makeCheck('regions count', list.length === expected.length, expected.length, list.length));
+  for (let index = 0; index < expected.length; index++) {
+    const want = expected[index];
+    const region = list[index];
+    const label = `regions[${index}]`;
+    if (!region) {
+      checks.push(makeCheck(label, false, 'region present', 'not found'));
+      continue;
+    }
+    if (has(want, 'kind')) {
+      checks.push(makeCheck(`${label}.kind`, region.kind === want.kind, want.kind, region.kind));
+    }
+    if (has(want, 'text')) {
+      checks.push(makeCheck(`${label}.text`, region.text === want.text, want.text, region.text));
+    }
+    if (Array.isArray(want.text_contains)) {
+      for (const needle of want.text_contains) {
+        checks.push(makeCheck(
+          `${label}.text contains ${show(needle)}`,
+          typeof region.text === 'string' && region.text.includes(needle),
+          true,
+          region.text
+        ));
+      }
+    }
+    for (const field of ['from', 'to']) {
+      if (has(want, field)) {
+        checks.push(makeCheck(`${label}.${field}`, region[field] === want[field], want[field], region[field]));
+      }
+    }
+  }
+}
+
 function checkHeader(expectedHeader, header, checks) {
   if (Object.prototype.hasOwnProperty.call(expectedHeader, 'year')) {
     const actualYear = header.year === null ? null : String(header.year);
@@ -633,6 +723,10 @@ function runFixture(spec, inputText) {
 
     if (Array.isArray(expected.stimuli)) {
       checkStimuli(expected.stimuli, flattenStimuli(actual.items), checks);
+    }
+
+    if (Array.isArray(expected.regions)) {
+      checkRegions(expected.regions, actual.regions, checks);
     }
 
     (expected.questions || []).forEach((expectedQuestion, position) => {

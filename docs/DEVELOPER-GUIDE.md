@@ -230,10 +230,11 @@ That binary is not committed and does not survive archiving; rerun the block if
 PHP 8.5.12 for the unchanged PHP suites/lint; the original review separately
 passed PHP 8.3.32:
 
-- runner: 60 fixtures, 60 PASS, 0 FAIL, 0 PENDING;
+- runner: 64 fixtures, 64 PASS, 0 FAIL, 0 PENDING;
 - unit: 163 PASS;
-- root helper: 11 PASS, including the complete D-91 spacing grammar, selected
-  boundaries, and duplicate-set warning controls;
+- root helper: 15 PASS, including the complete D-91 spacing grammar, selected
+  boundaries, duplicate-set warning controls, and the region-model adapter
+  vectors;
 - underline toolbar: 10 PASS;
 - read-only preview: 6 PASS, including a real-renderer fraction vector and the
   strengthened Constant Text/Question viewport boundary;

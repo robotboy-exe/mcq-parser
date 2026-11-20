@@ -248,23 +248,55 @@ word or option. The UI and the runner call `splitSectionsWithSalvage(raw)`:
   `OCR boundaries repaired (N inserts); verify the split.`
 - Bank inputs must produce zero inserts (INV-72).
 
-### Stage 2 — Question split (`splitQuestions` / `splitQuestionItems`)
+### Stage 2 — Question split (`splitRegions` / `splitQuestions` / `splitQuestionItems`)
 
-- Marker regex: `/(?:^|\n)\s*(\d{1,3})\.\s+/g`.
-- Sequence guard: the first marker is always kept; later markers are kept only
-  when `n > last` and `n <= last + 5`. Repeats, backwards numbers, and jumps
-  greater than 5 are silently skipped, so their text stays with the previous
-  chunk.
+The splitter is a four-stage region model (RM01). Stages A–D run in one pass
+and never let leftover text fall into an option by accident.
+
+**A — classify.** `splitRegions` classifies each line once as `blank`,
+`divider`, `key`, `stem`, `option`, `heading`, `instruction`, or `text`.
+
+- `stem`: a line-start `N.` marker with body text that is not a bare key letter
+  and does not begin with an option label. The body keeps any letter case, so
+  `1. lout` is a stem.
+- `key`: a key heading, `KEY_LINE`, or `PLACEHOLDER` line.
+- `option`: a line-start label in the D-91 grammar.
+- `heading`: a `SECTION`/`PART`/`PAPER` line, or a short all-capitals line.
+- `instruction`: a rubric line naming `lettered A to D`, `from the words`,
+  `choose the`, `answer the questions`, `the following passage`, or a
+  `questions N to M` range.
+
+**B — own.** Options bind to the nearest preceding stem. Headings and
+instructions bind to the nearest following stem: a heading or instruction that
+appears after an option block is removed from that option's text and carried to
+the next stem as `sectionInstruction` and as a `regions` envelope. Same-run
+headings and instructions extend to the item before the next structural run.
+
+**C — split only on stems.** The sequence guard is preserved: the first marker
+is always kept and later markers are kept only when `n > last` and
+`n <= last + 5`. Leftover text with at least two option markers and no stem
+becomes a `num: null` orphan chunk, never merged into a neighbour. Leading text
+without options becomes `heading`, `instruction`, or `passage` regions instead
+of being dropped.
 - After parsing, `flagNumberingGaps` flags a kept jump greater than 1 on the
   later question.
-- Text before the first marker becomes a `num: null` chunk only when it has ≥2
-  option matches.
-- `splitQuestionItems` chooses the mode. A line-start `N.` marker anywhere in
-  the text selects numbered mode. With none, `splitBulletQuestions` splits on
-  `(?:^|\n)[^\S\n]*\*[^\S\n]+`; fewer than 2 bullets returns `null` and the
-  numbered splitter runs. Bullet markers are consumed, every chunk keeps
-  `num: null`, and mixing bullet and numbered questions in one paste is
-  unsupported: numbered markers take precedence and may absorb bullet text.
+
+**D — invariant.** No option value may contain a heading or instruction line.
+A violation raises the advisory flag
+`option X contains section heading or instruction`.
+
+`splitRegions` returns `{ chunks, regions }`, where each region is
+`{kind, text, from, to}`; `from`/`to` are the governed question numbers and are
+`null` for a trailing run with no following stem. `splitQuestions` returns the
+chunks for compatibility, and `parsePaste` exposes the regions alongside the
+items.
+
+`splitQuestionItems` chooses the mode. A line-start `N.` marker anywhere in
+the text selects numbered mode. With none, `splitBulletQuestions` splits on
+`(?:^|\n)[^\S\n]*\*[^\S\n]+`; fewer than 2 bullets returns `null` and the
+numbered splitter runs. Bullet markers are consumed, every chunk keeps
+`num: null`, and mixing bullet and numbered questions in one paste is
+unsupported: numbered markers take precedence and may absorb bullet text.
 
 ### Stage 3 — Option parse (`parseQuestion`)
 
@@ -282,6 +314,12 @@ word or option. The UI and the runner call `splitSectionsWithSalvage(raw)`:
    - Branch 2 (group 2): A–F after a newline, whitespace, then a digit
      lookahead; no dot required. This branch is newline-only.
    - Letter = `m[1] || m[2]`.
+   - The full D-91 production grammar is also accepted: parenthesized labels
+     (`(a)`), line-start bare labels in either case, and a label alone on a line
+     before its punctuation. A first pass uses those forms together with
+     `OPTION`; when they do not yield a complete A–D set, an inline
+     case-insensitive label pass is added. Overlapping matches are merged so one
+     label produces one mark.
 4. Ignore a match as an abbreviation when the label dot has no trailing
    whitespace and the next text begins with an uppercase letter followed by
    `.`, whitespace, or the end. For example, the `B.` in `597 B.C.` is not an

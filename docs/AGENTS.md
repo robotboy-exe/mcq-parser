@@ -13,20 +13,49 @@ features.
 ## Canonical parser core
 
 The pure, canonical parser implementation lives in `src/parser/core.js` (API
-version `2.3.3`). It contains the pure comprehension and cloze engines,
+version `2.4.0`). It contains the pure comprehension and cloze engines,
 including scoped `(a)`-`(d)` parsing, gap/table detection, column inference, and
 synthesized cloze items. Node resolves this module through `require` for the
-historical parser suite; the production admin page does **not** load it. It
-exports:
+historical parser suite, and `deployed/admin_questions.php` loads it from
+`src/parser/core.js` before `ocr_helper.js`, so the browser and the tests run
+the same implementation. It exports:
 - Pure regexes: `FIXES`, `OPTION`, `KEY_LINE`, `PLACEHOLDER`, `STEM_LINE`, `KEY_WORD`, `INLINE_PAIR`, `LOOSE`.
-- Pure parsing & inference: `parseHeader`, `pickSubjectIndex`, `pickCategoryIndex`, `splitQuestions`, `splitBulletQuestions`, `splitQuestionItems`, `parseQuestion`, `parseStimulusRange`, `extractStimuli`, `applyStimulusFlags`, `flagNumberingGaps`, `splitSections`, `salvageNormalize`, `splitSectionsWithSalvage`, `keyPairs`, `parseKeyDetailed`, `parseKey`, `parsePaste`, `comprehensionEngine`, `linkComprehension`, `clozeEngine`, and `mergeClozeItems`.
+- Pure parsing & inference: `parseHeader`, `pickSubjectIndex`, `pickCategoryIndex`, `splitRegions`, `splitQuestions`, `splitBulletQuestions`, `splitQuestionItems`, `splitQuestionRegions`, `parseQuestion`, `parseStimulusRange`, `extractStimuli`, `applyStimulusFlags`, `flagNumberingGaps`, `splitSections`, `salvageNormalize`, `splitSectionsWithSalvage`, `keyPairs`, `parseKeyDetailed`, `parseKey`, `parsePaste`, `comprehensionEngine`, `linkComprehension`, `clozeEngine`, and `mergeClozeItems`.
 - Browser & Node compatibility: Works in Node (`module.exports`) and Browser (`window.OCRParser`).
 - Zero dependencies: No DOM, storage (`localStorage`), fetch, or UI/form references.
 
 `src/parser/parser.js` re-exports the canonical parser core for backward
-compatibility with the legacy bookmarklet and auto-save test harnesses.
-The bookmarklet build and `src/ui/ui.js` are legacy artifacts maintained for
-historical regression testing, not the production delivery path.
+compatibility with the legacy bookmarklet and auto-save test harnesses. Its
+inlined browser copy of the parser remains a legacy artifact and is not part of
+the production delivery path.
+
+Root `ocr_helper.js` is a thin adapter: Node resolves the core through
+`require`, the browser reads `window.OCRParser`, and the adapter owns only
+`FIXES` normalization, `parseAll`, the queue panel, and `fillForm`. Do not add
+parser logic back to it.
+
+### Region model (RM01)
+
+`splitRegions(text)` classifies every line once as `blank`, `divider`, `key`,
+`stem`, `option`, `heading`, `instruction`, or `text`, then applies three rules:
+
+- Options bind to the nearest preceding stem; headings and instructions bind to
+the nearest following stem. A heading or instruction after an option block is
+removed from that option and carried forward.
+- Splitting happens only on stems. Leftover text with at least two option
+markers and no stem stays a `num: null` orphan item; leading prose becomes a
+`passage` region instead of being dropped.
+- No option value may contain a heading or instruction line; a violation raises
+the advisory flag `option X contains section heading or instruction`.
+
+`parsePaste` returns `regions` as `{kind, text, from, to}` and items may carry
+`sectionInstruction` (the governing heading and instruction text). The
+`question` field stays clean. The numbering guard is preserved.
+
+Option labels follow the D-91 production contract in the canonical core too:
+A–F, case-insensitive, with optional whitespace around `(`, `)`, and `.`, a
+label alone on a line before its punctuation, and a later label-like repeat of
+an already selected letter kept inside that option's text.
 
 ## Production path
 
