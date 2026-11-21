@@ -90,6 +90,11 @@
       <textarea id="ocr_text"></textarea>
       <button type="button" class="admin-btn" id="ocr_load">Load questions</button>
     </div>
+    <button type="button" class="admin-btn admin-btn-muted" id="ocr_auto">Start autosave</button>
+    <div id="ocr_progress_wrap" hidden>
+      <progress id="ocr_progress" max="1" value="0" style="width:100%;height:10px"></progress>
+      <div id="ocr_progress_label" class="admin-note"></div>
+    </div>
     <div id="ocr_status" class="admin-note"></div>
     <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button>
     <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear">Clear list</button>`;
@@ -99,6 +104,8 @@
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
   if (!queue.key) queue.key = {};
   const save = () => store.set('ocrQueue', queue);
+  let auto = store.get('ocrAuto') || null;
+  let autoTimer = null;
 
   const savedPaste = paste.get();
   if (typeof savedPaste === 'string') $('ocr_text').value = savedPaste;
@@ -107,6 +114,68 @@
     if (!q || q.num == null || !queue.key) return '';
     const letter = queue.key[q.num];
     return typeof letter === 'string' ? letter.toUpperCase() : '';
+  }
+
+  function dryRunProblems() {
+    const problems = [];
+    if (!queue.items.length) return ['no questions loaded'];
+    const missingMeta = FIELDS.filter((id) => !String($(id).value || '').trim());
+    if (missingMeta.length) problems.push('choose ' + missingMeta.join(', '));
+    let blank = 0;
+    let noKey = 0;
+    let badKey = 0;
+    for (const q of queue.items) {
+      if (!String(q.question || '').trim() || ['a', 'b', 'c', 'd'].some((l) => !String(q[l] || '').trim())) blank++;
+      const letter = keyOf(q);
+      if (!letter) noKey++;
+      else if (LETTERS.indexOf(letter) === -1) badKey++;
+    }
+    if (blank) problems.push(blank + ' question(s) with a blank stem or option');
+    if (noKey) problems.push(noKey + ' question(s) without an answer key');
+    if (badKey) problems.push(badKey + ' question(s) with an unusable key letter');
+    return problems;
+  }
+
+  function renderProgress() {
+    const wrap = $('ocr_progress_wrap');
+    const bar = $('ocr_progress');
+    const label = $('ocr_progress_label');
+    const total = queue.items.length;
+    wrap.hidden = !auto || !total;
+    $('ocr_auto').textContent = auto && auto.running ? 'Stop autosave' : 'Start autosave';
+    if (!auto || !total) return;
+    bar.max = total;
+    bar.value = Math.min(queue.i, total);
+    let text = queue.i + ' of ' + total + ' saved';
+    if (auto.running) text += ' &middot; autosaving...';
+    else if (queue.i >= total) text += ' &middot; autosave complete';
+    else if (auto.ready) text += ' &middot; dry run OK';
+    else text += ' &middot; dry run incomplete';
+    label.innerHTML = text;
+  }
+
+  function submitNow() {
+    if (typeof form.requestSubmit === 'function') return form.requestSubmit();
+    saveMeta();
+    store.set('ocrSubmitted', true);
+    form.submit();
+  }
+
+  function scheduleNext() {
+    if (!auto || !auto.running) return;
+    if (typeof setTimeout !== 'function') return submitNow();
+    autoTimer = setTimeout(submitNow, 900);
+  }
+
+  function stopAuto(message) {
+    if (auto) {
+      auto.running = false;
+      store.set('ocrAuto', auto);
+    }
+    if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
+    autoTimer = null;
+    render();
+    if (message) $('ocr_status').innerHTML = message;
   }
 
   function fillForm(q) {
@@ -129,6 +198,7 @@
       : `Question ${queue.i + 1} of ${queue.items.length} (book number ${q.num ?? '?'})` +
         (keyCount ? ` &middot; key ${keyOf(q) || 'missing'} &middot; ${keyCount} answers` : ' &middot; no key') +
         (q.flags.length ? `<div class="admin-alert admin-error">Check this one: ${q.flags.join(', ')}</div>` : '');
+    renderProgress();
   }
 
   function show() {
@@ -157,19 +227,47 @@
       return alert('No questions found in that text.');
     }
     saveMeta();
+    if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
+    autoTimer = null;
     queue = { items, i: 0, key, how: parsed.sectionEvidence ? parsed.sectionEvidence.how : 'none' };
+    auto = { ready: false, running: false, total: items.length };
     save();
     show();
+    const problems = dryRunProblems();
+    auto.ready = !problems.length;
+    store.set('ocrAuto', auto);
+    renderProgress();
     $('ocr_status').innerHTML += keyCount
       ? ` Answer key: ${keyCount} entries (${queue.how}).`
       : ' No answer-key section found.';
+    $('ocr_status').innerHTML += problems.length
+      ? ` Dry run: ${problems.join('; ')}. Autosave is blocked.`
+      : ` Dry run OK: ready to autosave ${items.length} questions.`;
   };
   $('ocr_skip').onclick = () => { queue.i++; save(); show(); };
+  $('ocr_auto').onclick = () => {
+    if (!queue.items.length) return alert('Load questions first.');
+    if (auto && auto.running) return stopAuto('Autosave stopped at question ' + Math.min(queue.i + 1, queue.items.length) + '.');
+    const problems = dryRunProblems();
+    auto = { ready: !problems.length, running: false, total: queue.items.length };
+    store.set('ocrAuto', auto);
+    render();
+    if (problems.length) return alert('Dry run found problems:\n- ' + problems.join('\n- '));
+    if (queue.i >= queue.items.length) return alert('Every question in this list is already saved.');
+    auto.running = true;
+    store.set('ocrAuto', auto);
+    show();
+    scheduleNext();
+  };
   $('ocr_clear').onclick = () => {
     queue = { items: [], i: 0, key: {} };
+    auto = null;
+    if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
+    autoTimer = null;
     paste.del();
     $('ocr_text').value = '';
     save();
+    store.del('ocrAuto');
     render();
   };
 
@@ -184,5 +282,19 @@
     store.del('ocrSubmitted');
     if (!failed) { queue.i++; save(); }
   }
-  failed ? render() : show();
+  if (auto && auto.running) {
+    if (failed) {
+      stopAuto('Autosave stopped at question ' + (queue.i + 1) + ': ' + String(failed.textContent || 'the save failed').trim() + '. Fix it, then start again.');
+    } else if (queue.i >= queue.items.length) {
+      auto.running = false;
+      store.set('ocrAuto', auto);
+      show();
+      $('ocr_status').innerHTML = 'Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.';
+    } else {
+      show();
+      scheduleNext();
+    }
+  } else {
+    failed ? render() : show();
+  }
 })();

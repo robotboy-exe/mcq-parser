@@ -226,6 +226,7 @@ function loadHelperInBrowser(options) {
   const inserted = [];
   const radios = [0, 1, 2, 3].map((index) => ({ value: String(index), checked: false }));
   const submitHandlers = [];
+  const timers = [];
   const form = {
     before(node) { inserted.push(node); },
     addEventListener(type, handler) { if (type === 'submit') submitHandlers.push(handler); },
@@ -242,6 +243,7 @@ function loadHelperInBrowser(options) {
   const document = {
     querySelector(selector) {
       if (selector === 'input[name=action][value=save_question]') return anchor;
+      if (selector === '.admin-error' && options.withError) return { textContent: 'Duplicate question.' };
       return null;
     },
     getElementById(id) {
@@ -266,6 +268,8 @@ function loadHelperInBrowser(options) {
       setItem: (key, value) => session.set(key, String(value)),
       removeItem: (key) => session.delete(key)
     },
+    setTimeout(fn) { timers.push(fn); return timers.length; },
+    clearTimeout(id) { if (id) timers[id - 1] = null; },
     alert() {},
     console: { error(message) { errors.push(String(message)); } }
   };
@@ -280,7 +284,8 @@ function loadHelperInBrowser(options) {
   }
   return {
     thrown, inserted, errors, fields, radios, form, storage, session,
-    field: (id) => document.getElementById(id)
+    field: (id) => document.getElementById(id),
+    runTimers() { timers.splice(0).forEach((fn) => { if (fn) fn(); }); }
   };
 }
 
@@ -432,6 +437,77 @@ test('clears the stored paste with the list', () => {
   result.field('ocr_clear').onclick();
   assert.strictEqual(result.session.has('ocrPaste'), false, 'paste cleared');
   assert.strictEqual(result.field('ocr_text').value, '');
+});
+
+const AUTO_PASTE = '1. First autosave question? A) One B) Two C) Three D) Four\n' +
+  '2. Second autosave question? A) One B) Two C) Three D) Four\n' +
+  'ANSWER KEY\n1. A\n2. B\n';
+
+function ready(result) {
+  result.field('subject_id').value = '1';
+  result.field('exam_category_id').value = '2';
+  result.field('exam_year').value = '2026';
+  return result;
+}
+
+test('load questions runs a dry run and saves nothing', () => {
+  const result = ready(browserHelperWithCore());
+  loadPaste(result, AUTO_PASTE);
+  assert(/Dry run OK/.test(result.field('ocr_status').innerHTML));
+  assert(/0 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
+  assert(/dry run OK/.test(result.field('ocr_progress_label').innerHTML));
+  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'no save on load');
+});
+
+test('dry run blocks a paste with no answer key', () => {
+  const result = ready(browserHelperWithCore());
+  loadPaste(result, '1. First question here? A) One B) Two C) Three D) Four\n2. Second question here? A) One B) Two C) Three D) Four');
+  assert(/2 question\(s\) without an answer key/.test(result.field('ocr_status').innerHTML));
+  assert(/Autosave is blocked/.test(result.field('ocr_status').innerHTML));
+  assert(/dry run incomplete/.test(result.field('ocr_progress_label').innerHTML));
+  result.field('ocr_auto').onclick();
+  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'blocked start saves nothing');
+});
+
+test('autosave submits one question per reload and completes the run', () => {
+  const first = ready(browserHelperWithCore());
+  loadPaste(first, AUTO_PASTE);
+  first.field('ocr_auto').onclick();
+  assert(/autosaving/.test(first.field('ocr_progress_label').innerHTML));
+  assert.strictEqual(first.storage.has('ocrSubmitted'), false, 'only submits after the delay');
+
+  first.runTimers();
+  assert.strictEqual(first.storage.has('ocrSubmitted'), true, 'first question submitted');
+
+  const second = browserHelperWithCore(persisted(first));
+  assert(/1 of 2 saved/.test(second.field('ocr_progress_label').innerHTML), 'progress after the first save');
+  assert(/autosaving/.test(second.field('ocr_progress_label').innerHTML));
+  second.runTimers();
+
+  const third = browserHelperWithCore(persisted(second));
+  assert(/2 of 2 saved/.test(third.field('ocr_progress_label').innerHTML), 'progress after the second save');
+  assert(/autosave complete/.test(third.field('ocr_progress_label').innerHTML));
+  assert(/Autosave complete: 2 of 2 saved/.test(third.field('ocr_status').innerHTML));
+});
+
+test('autosave stops when the saved page shows an error', () => {
+  const first = ready(browserHelperWithCore());
+  loadPaste(first, AUTO_PASTE);
+  first.field('ocr_auto').onclick();
+  first.runTimers();
+
+  const second = browserHelperWithCore(Object.assign(persisted(first), {
+    parser: require('../src/parser/core.js')
+  }));
+  assert(/Autosave stopped at question 1/.test(second.field('ocr_status').innerHTML) === false, 'no error yet');
+  second.runTimers();
+
+  const failed = browserHelperWithCore(Object.assign(persisted(second), {
+    parser: require('../src/parser/core.js'),
+    withError: true
+  }));
+  assert(/Autosave stopped at question 2/.test(failed.field('ocr_status').innerHTML));
+  assert.strictEqual(JSON.parse(failed.storage.get('ocrAuto')).running, false, 'autosave stopped');
 });
 
 console.log('PASS: ' + passed + ' ocr-helper vectors');
