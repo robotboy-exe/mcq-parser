@@ -58,6 +58,10 @@
 
   if (!form || location.search.includes('edit=')) return;
 
+  // boot.js sets this flag only inside the bundled bookmarklet, so the panel
+  // shows a different title there than on the page's own helper.
+  const bundled = typeof window !== 'undefined' && window.__ocrBookmarklet === true;
+
   const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   const LETTERS = 'ABCD';
 
@@ -80,6 +84,7 @@
   const panel = document.createElement('div');
   panel.className = 'admin-field';
   panel.innerHTML = `
+    <h3 id="ocr_title" style="margin:0 0 8px">OCR paste</h3>
     <div id="ocr_input">
       <label for="ocr_text">Paste OCR text (optional)</label>
       <textarea id="ocr_text"></textarea>
@@ -89,6 +94,7 @@
     <button type="button" class="admin-btn admin-btn-muted" id="ocr_skip">Skip this question</button>
     <button type="button" class="admin-btn admin-btn-muted" id="ocr_clear">Clear list</button>`;
   form.before(panel);
+  if (bundled) $('ocr_title').textContent = 'Bookmarklet paste';
 
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
   if (!queue.key) queue.key = {};
