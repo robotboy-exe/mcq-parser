@@ -224,10 +224,13 @@ test('has no Constant Text field integration', () => {
 
 function loadHelperInBrowser(options) {
   const inserted = [];
+  const radios = [0, 1, 2, 3].map((index) => ({ value: String(index), checked: false }));
   const form = {
     before(node) { inserted.push(node); },
     addEventListener() {},
-    querySelectorAll() { return []; }
+    querySelectorAll(selector) {
+      return selector === '[name=correct_option]' ? radios : [];
+    }
   };
   const anchor = options.withForm === false ? null : { form };
   const fields = new Map();
@@ -267,7 +270,7 @@ function loadHelperInBrowser(options) {
   } catch (error) {
     thrown = error;
   }
-  return { thrown, inserted, errors };
+  return { thrown, inserted, errors, fields, radios, field: (id) => document.getElementById(id) };
 }
 
 test('fails loudly when the browser parser global is missing', () => {
@@ -310,6 +313,69 @@ test('renders the paste panel when the core is present in the browser', () => {
   assert(result.inserted[0].innerHTML.includes('ocr_input'));
   assert(result.inserted[0].innerHTML.includes('ocr_text'));
   assert(result.inserted[0].innerHTML.includes('ocr_load'));
+});
+
+function browserHelperWithCore() {
+  const result = loadHelperInBrowser({ parser: require('../src/parser/core.js') });
+  assert.strictEqual(result.thrown, null);
+  return result;
+}
+
+function loadPaste(result, text) {
+  result.field('ocr_text').value = text;
+  result.field('ocr_load').onclick();
+}
+
+function checkedRadios(result) {
+  return result.radios.filter((radio) => radio.checked).map((radio) => radio.value);
+}
+
+test('loads the whole civic paper with its answer key and ticks the option', () => {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
+  const result = browserHelperWithCore();
+  loadPaste(result, text);
+  assert(result.field('question_text').value.startsWith('By upholding values like honesty'), 'first stem');
+  assert.strictEqual(result.field('option_d').value, 'secure and stable environment.');
+  assert.deepStrictEqual(checkedRadios(result), ['2'], 'question 1 key C');
+  assert(/Question 1 of 50/.test(result.field('ocr_status').innerHTML));
+  assert(/Answer key: 50 entries \(header\)/.test(result.field('ocr_status').innerHTML));
+  assert(/key C/.test(result.field('ocr_status').innerHTML));
+
+  result.field('ocr_skip').onclick();
+  assert(result.field('question_text').value.startsWith('National consciousness'), 'second stem');
+  assert.deepStrictEqual(checkedRadios(result), ['1'], 'question 2 key B');
+
+  for (let index = 2; index < 50; index++) result.field('ocr_skip').onclick();
+  assert(/Question 50 of 50/.test(result.field('ocr_status').innerHTML));
+  assert.deepStrictEqual(checkedRadios(result), ['2'], 'question 50 key C');
+  assert.strictEqual(result.field('option_d').value, 'will only be enjoyed when the citizens are patient.');
+});
+
+test('leaves every radio unticked when the paste has no answer key', () => {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026.txt'), 'utf8');
+  const result = browserHelperWithCore();
+  loadPaste(result, text);
+  assert.deepStrictEqual(checkedRadios(result), []);
+  assert(/No answer-key section found/.test(result.field('ocr_status').innerHTML));
+  assert(/no key/.test(result.field('ocr_status').innerHTML));
+
+  result.field('ocr_clear').onclick();
+  assert.strictEqual(result.field('ocr_status').innerHTML, '');
+});
+
+test('attaches a key-only paste to the queue that is already loaded', () => {
+  const questions = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026.txt'), 'utf8');
+  const result = browserHelperWithCore();
+  loadPaste(result, questions);
+  assert.deepStrictEqual(checkedRadios(result), []);
+
+  loadPaste(result, 'ANSWER KEY\n1. D\n2. A\n');
+  assert.deepStrictEqual(checkedRadios(result), ['3'], 'question 1 key D from the key-only paste');
+  assert(/Answer key updated \(2 entries\)/.test(result.field('ocr_status').innerHTML));
+  assert(result.field('question_text').value.startsWith('By upholding values'), 'form keeps its question');
+
+  result.field('ocr_skip').onclick();
+  assert.deepStrictEqual(checkedRadios(result), ['0'], 'question 2 key A');
 });
 
 console.log('PASS: ' + passed + ' ocr-helper vectors');

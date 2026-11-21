@@ -3,8 +3,11 @@ const path = require('path');
 
 const here = __dirname;
 const root = path.join(here, '..', '..');
-const corePath = path.join(root, 'src', 'parser', 'core.js');
-const uiPath = path.join(here, 'ui.js');
+const sources = [
+  path.join(root, 'src', 'parser', 'core.js'),
+  path.join(here, 'boot.js'),
+  path.join(root, 'ocr_helper.js')
+];
 const outPath = path.join(here, 'bookmarklet.js');
 
 function stripLineComments(text) {
@@ -20,9 +23,12 @@ function flatten(text) {
     .join(' ');
 }
 
-const body = flatten(stripLineComments(fs.readFileSync(corePath, 'utf8')))
-  + ' '
-  + flatten(stripLineComments(fs.readFileSync(uiPath, 'utf8')));
+// The bookmarklet is the live OCR panel plus canonical key parsing: it drops
+// the page's older panel, then installs the current ocr_helper.js, so Load,
+// Skip this question and Clear list behave exactly as on a deployed page.
+const body = sources
+  .map(file => flatten(stripLineComments(fs.readFileSync(file, 'utf8'))))
+  .join(' ');
 
 const bookmarklet = 'javascript:(function(){try{' + body
   + "}catch(e){alert('Bookmarklet Error: '+e.message);}})();";
