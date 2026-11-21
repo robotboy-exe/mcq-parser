@@ -69,6 +69,14 @@
   };
   const saveMeta = () => store.set('ocrMeta', Object.fromEntries(FIELDS.map((id) => [id, $(id).value])));
 
+  // The admin form reloads after every save. The paste is per-tab working
+  // state, so it lives in sessionStorage instead of the shared queue.
+  const paste = {
+    get: () => { try { return sessionStorage.getItem('ocrPaste'); } catch (e) { return null; } },
+    set: (value) => { try { sessionStorage.setItem('ocrPaste', value); } catch (e) { /* private mode */ } },
+    del: () => { try { sessionStorage.removeItem('ocrPaste'); } catch (e) { /* private mode */ } },
+  };
+
   const panel = document.createElement('div');
   panel.className = 'admin-field';
   panel.innerHTML = `
@@ -85,6 +93,9 @@
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
   if (!queue.key) queue.key = {};
   const save = () => store.set('ocrQueue', queue);
+
+  const savedPaste = paste.get();
+  if (typeof savedPaste === 'string') $('ocr_text').value = savedPaste;
 
   function keyOf(q) {
     if (!q || q.num == null || !queue.key) return '';
@@ -110,7 +121,7 @@
     $('ocr_clear').hidden = !active;
     $('ocr_status').innerHTML = !active ? '' : !q ? `All ${queue.items.length} questions done.`
       : `Question ${queue.i + 1} of ${queue.items.length} (book number ${q.num ?? '?'})` +
-        (keyCount ? ` &middot; key ${keyOf(q) || 'missing'}` : ' &middot; no key') +
+        (keyCount ? ` &middot; key ${keyOf(q) || 'missing'} &middot; ${keyCount} answers` : ' &middot; no key') +
         (q.flags.length ? `<div class="admin-alert admin-error">Check this one: ${q.flags.join(', ')}</div>` : '');
   }
 
@@ -120,7 +131,9 @@
   }
 
   $('ocr_load').onclick = () => {
-    const parsed = parsePaste(String($('ocr_text').value == null ? '' : $('ocr_text').value));
+    const raw = String($('ocr_text').value == null ? '' : $('ocr_text').value);
+    paste.set(raw);
+    const parsed = parsePaste(raw);
     const items = parsed.items || [];
     const key = parsed.key || {};
     const keyCount = Object.keys(key).length;
@@ -146,7 +159,13 @@
       : ' No answer-key section found.';
   };
   $('ocr_skip').onclick = () => { queue.i++; save(); show(); };
-  $('ocr_clear').onclick = () => { queue = { items: [], i: 0, key: {} }; save(); render(); };
+  $('ocr_clear').onclick = () => {
+    queue = { items: [], i: 0, key: {} };
+    paste.del();
+    $('ocr_text').value = '';
+    save();
+    render();
+  };
 
   form.addEventListener('submit', () => {
     if (!queue.items.length) return;
