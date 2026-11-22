@@ -13,6 +13,14 @@ A deploy needs a separate explicit owner instruction. See
 [`plan/owner-tool/st-01-constant-text-reset.md`](plan/owner-tool/st-01-constant-text-reset.md)
 for the package contract.
 
+**Supplied sources at the repository root are evidence only.** The release
+line carries `admin_questions.php`, `answer_details.php`, `cbt.php`, and
+`cbt_practice.php` at the repository root because `main` supplied them as the
+byte-exact live snapshots; they are identical to
+`archive/live-sources/*-2026-10-31.php`. They are not release files, are not in
+the table below, and must not be uploaded. `deployed/` remains the deployment
+set, and `cbt_practice.php` is still not part of this release.
+
 ## 1. Before you start
 
 1. Confirm the target runtime: PHP 8.3.x, MySQL 8.0.41, InnoDB,

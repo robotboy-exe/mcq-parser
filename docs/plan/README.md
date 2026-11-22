@@ -280,6 +280,10 @@ verifies the detail path with the rest of Release A.
   review-settled phase-1 through phase-5 history at `c6a81fb`, which is also on
   `origin/owner-tool-integration`. The reviewed and owner-accepted D-103/D-104
   corrections are the current uncommitted work.
+- Release-boundary merge (2026-11-22): `df82512` merges `origin/main` into the
+  release line with `--no-ff`, so `main` is now an ancestor and can be advanced
+  by fast-forward. The merge only added `main`'s four supplied root PHP
+  snapshots; they are evidence only and are not in the deployment manifest.
 - `main` is the published baseline and the remote default. It is not the current
   work branch. Advance it only at a reviewed release boundary or cycle close, by
   fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite

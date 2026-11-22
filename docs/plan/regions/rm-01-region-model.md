@@ -103,14 +103,16 @@ parenthesized-lowercase reading.
 | `BLOCK-8` 3 | Add the case to the shared vector table and prove the old code fails first | vector `crossed marker pairs stay literal`; the pre-fix renderer returned `<u><sup>x&lt;/u&gt;</sup></u>` / strip `x</u>` | failing-first probe below |
 | `BLOCK-8` 4 | Preserve valid nesting, repeated-own-open, unmatched, uppercase, attributed, encoded, and injection vectors | all 32 previous vectors unchanged and passing; no `innerHTML` in the renderer | 69 checks, injection probe unchanged |
 
-`BLOCK-1` is **not** closed by this session. It requires an owner-authorized
-release target that contains current `main`, and the fix-session contract forbids
-committing or merging. A dry run of the merge is conflict-free, but
-`origin/main`'s only unique commit (`002483b`, "provided more deployment files")
-adds root supplied copies of `admin_questions.php`, `answer_details.php`,
-`cbt.php`, `cbt_practice.php`, and three `.sql` files. Per the owner decision
-(option a) those root copies are carried as evidence and stay out of the
-deployment manifest; the working copies in `deployed/` remain the release files.
+`BLOCK-1` was completed after the fix session on the owner's instruction: merge
+commit `df82512` merges `origin/main` into the release line with `--no-ff`, so
+`git merge-base --is-ancestor origin/main HEAD` is now true while `main` keeps
+its history. `origin/main`'s only unique commit (`002483b`, "provided more
+deployment files") added seven root files; the three `.sql` files were already
+byte-identical, so the merge added exactly the four supplied PHP snapshots. Per
+the owner decision (option a) those root copies are carried as evidence and stay
+out of the deployment manifest; the working copies in `deployed/` remain the
+release files. The pre-merge release tip `4cb4a91` is still the code under
+re-review; the merged tree `df82512` is the target for the release review.
 
 ### Per-production-file handoff (base `455ea54` → this worktree)
 
@@ -209,8 +211,11 @@ new format: "&lt;u&gt;&lt;sup&gt;x&lt;/u&gt;&lt;/sup&gt;"  new strip: "<u><sup>x
 
 ### Excluded artifacts
 
-`archive/live-sources/*`, `archive/owner-tool-2026-11/*`,
-`deployed/sql/base-schema.working.sql`, generated `src/bookmarklet.js`, untracked
+`archive/live-sources/*`, `archive/owner-tool-2026-11/*`, the root supplied
+copies `admin_questions.php`, `answer_details.php`, `cbt.php`, and
+`cbt_practice.php` taken from `main` in the release-line merge (evidence only,
+never deployed), `deployed/sql/base-schema.working.sql`, generated
+`src/bookmarklet.js`, untracked
 `src/bookmarklet.min.js`, all fixtures/tests as non-production evidence,
 `tools/phone-staging/*`, the local staging root/database/log/PID, browser
 profile/output files, the local PHP 8.3.9 CLI under `$HOME/php83`, and every file
