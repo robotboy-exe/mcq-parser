@@ -102,17 +102,20 @@
   if (bundled) $('ocr_title').textContent = 'Bookmarklet paste';
 
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
-  if (!queue.key) queue.key = {};
+  let key = store.get('ansKey');
+  if (!key || typeof key !== 'object') key = queue.key || {};
+  if (!Object.keys(key).length && queue.key) key = queue.key;
+  if (Object.keys(key).length) store.set('ansKey', key);
   const save = () => store.set('ocrQueue', queue);
-  let auto = store.get('ocrAuto') || null;
+  let auto = null;
   let autoTimer = null;
 
   const savedPaste = paste.get();
   if (typeof savedPaste === 'string') $('ocr_text').value = savedPaste;
 
   function keyOf(q) {
-    if (!q || q.num == null || !queue.key) return '';
-    const letter = queue.key[q.num];
+    if (!q || q.num == null) return '';
+    const letter = key[q.num];
     return typeof letter === 'string' ? letter.toUpperCase() : '';
   }
 
@@ -147,35 +150,76 @@
     bar.max = total;
     bar.value = Math.min(queue.i, total);
     let text = queue.i + ' of ' + total + ' saved';
-    if (auto.running) text += ' &middot; autosaving...';
+    if (auto.running) text += ' &middot; saving question ' + Math.min(queue.i + 1, total) + '...';
     else if (queue.i >= total) text += ' &middot; autosave complete';
     else if (auto.ready) text += ' &middot; dry run OK';
     else text += ' &middot; dry run incomplete';
     label.innerHTML = text;
   }
 
-  function submitNow() {
-    if (typeof form.requestSubmit === 'function') return form.requestSubmit();
-    saveMeta();
-    store.set('ocrSubmitted', true);
-    form.submit();
-  }
-
-  function scheduleNext() {
-    if (!auto || !auto.running) return;
-    if (typeof setTimeout !== 'function') return submitNow();
-    autoTimer = setTimeout(submitNow, 900);
-  }
-
   function stopAuto(message) {
-    if (auto) {
-      auto.running = false;
-      store.set('ocrAuto', auto);
+    if (auto && auto.inFlight) {
+      auto.stopAfter = true;
+      return;
     }
+    if (auto) auto.running = false;
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
     render();
     if (message) $('ocr_status').innerHTML = message;
+  }
+
+  function saveError(html) {
+    const match = String(html || '').match(/<([a-z]+)[^>]*class="[^"]*admin-error[^"]*"[^>]*>([\s\S]*?)<\/\1>/i);
+    return match ? match[2].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  }
+
+  function autoStep() {
+    if (!auto || !auto.running) return;
+    if (queue.i >= queue.items.length) {
+      stopAuto('Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.');
+      return;
+    }
+    show();
+    saveMeta();
+    if (typeof fetch !== 'function' || typeof FormData !== 'function') {
+      return stopAuto('Autosave needs a browser with fetch; save this question by hand.');
+    }
+    auto.inFlight = true;
+    renderProgress();
+    fetch(location.href, { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
+      .then((response) => response.text())
+      .then((html) => {
+        if (!auto) return;
+        const stopAfter = auto.stopAfter;
+        auto.inFlight = false;
+        auto.stopAfter = false;
+        if (!/Question saved successfully \(Question ID: \d+\)/.test(html)) {
+          return stopAuto('Autosave stopped at question ' + (queue.i + 1) + ': '
+            + (saveError(html) || 'the server did not confirm the save (logged out?)')
+            + '. Fix it, then start again.');
+        }
+        queue.i++;
+        save();
+        if (stopAfter) {
+          auto.running = false;
+          show();
+          $('ocr_status').innerHTML = 'Autosave stopped after question ' + queue.i + ' of ' + queue.items.length + '.';
+          return;
+        }
+        if (queue.i >= queue.items.length) {
+          auto.running = false;
+          show();
+          $('ocr_status').innerHTML = 'Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.';
+          return;
+        }
+        renderProgress();
+        autoTimer = setTimeout(autoStep, 600);
+      })
+      .catch(() => {
+        if (auto) auto.inFlight = false;
+        stopAuto('Autosave stopped at question ' + (queue.i + 1) + ': network problem. Check the question and start again.');
+      });
   }
 
   function fillForm(q) {
@@ -190,7 +234,7 @@
   function render() {
     const q = queue.items[queue.i];
     const active = queue.items.length > 0;
-    const keyCount = queue.key ? Object.keys(queue.key).length : 0;
+    const keyCount = Object.keys(key).length;
     $('ocr_input').hidden = q !== undefined;
     $('ocr_skip').hidden = !q;
     $('ocr_clear').hidden = !active;
@@ -211,11 +255,13 @@
     paste.set(raw);
     const parsed = parsePaste(raw);
     const items = parsed.items || [];
-    const key = parsed.key || {};
-    const keyCount = Object.keys(key).length;
+    const parsedKey = parsed.key || {};
+    const keyCount = Object.keys(parsedKey).length;
     if (!items.length) {
       if (keyCount && queue.items.length) {
+        key = parsedKey;
         queue.key = key;
+        store.set('ansKey', key);
         save();
         show();
         $('ocr_status').innerHTML += ` Answer key updated (${keyCount} entries).`;
@@ -229,13 +275,15 @@
     saveMeta();
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
+    key = parsedKey;
     queue = { items, i: 0, key, how: parsed.sectionEvidence ? parsed.sectionEvidence.how : 'none' };
+    if (keyCount) store.set('ansKey', key);
+    else store.del('ansKey');
     auto = { ready: false, running: false, total: items.length };
     save();
     show();
     const problems = dryRunProblems();
     auto.ready = !problems.length;
-    store.set('ocrAuto', auto);
     renderProgress();
     $('ocr_status').innerHTML += keyCount
       ? ` Answer key: ${keyCount} entries (${queue.how}).`
@@ -250,24 +298,23 @@
     if (auto && auto.running) return stopAuto('Autosave stopped at question ' + Math.min(queue.i + 1, queue.items.length) + '.');
     const problems = dryRunProblems();
     auto = { ready: !problems.length, running: false, total: queue.items.length };
-    store.set('ocrAuto', auto);
     render();
     if (problems.length) return alert('Dry run found problems:\n- ' + problems.join('\n- '));
     if (queue.i >= queue.items.length) return alert('Every question in this list is already saved.');
     auto.running = true;
-    store.set('ocrAuto', auto);
     show();
-    scheduleNext();
+    autoStep();
   };
   $('ocr_clear').onclick = () => {
     queue = { items: [], i: 0, key: {} };
+    key = {};
     auto = null;
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
     paste.del();
     $('ocr_text').value = '';
     save();
-    store.del('ocrAuto');
+    store.del('ansKey');
     render();
   };
 
@@ -282,19 +329,5 @@
     store.del('ocrSubmitted');
     if (!failed) { queue.i++; save(); }
   }
-  if (auto && auto.running) {
-    if (failed) {
-      stopAuto('Autosave stopped at question ' + (queue.i + 1) + ': ' + String(failed.textContent || 'the save failed').trim() + '. Fix it, then start again.');
-    } else if (queue.i >= queue.items.length) {
-      auto.running = false;
-      store.set('ocrAuto', auto);
-      show();
-      $('ocr_status').innerHTML = 'Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.';
-    } else {
-      show();
-      scheduleNext();
-    }
-  } else {
-    failed ? render() : show();
-  }
+  failed ? render() : show();
 })();

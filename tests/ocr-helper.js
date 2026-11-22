@@ -8,11 +8,10 @@ const vm = require('vm');
 const helper = require('../ocr_helper.js');
 
 let passed = 0;
+const tests = [];
 
 function test(name, fn) {
-  fn();
-  passed += 1;
-  console.log('[PASS] ' + name);
+  tests.push([name, fn]);
 }
 
 function parseAll(text) {
@@ -270,6 +269,8 @@ function loadHelperInBrowser(options) {
     },
     setTimeout(fn) { timers.push(fn); return timers.length; },
     clearTimeout(id) { if (id) timers[id - 1] = null; },
+    fetch: options.fetch || (() => Promise.reject(new Error('unexpected fetch'))),
+    FormData: function FormData(element) { this.form = element; },
     alert() {},
     console: { error(message) { errors.push(String(message)); } }
   };
@@ -429,14 +430,32 @@ test('advances past a saved question after the submit reload and keeps ticking',
   assert.strictEqual(second.field('ocr_text').value, text, 'paste still there');
 });
 
-test('clears the stored paste with the list', () => {
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026.txt'), 'utf8');
+test('clears the stored paste and key with the list', () => {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
   const result = browserHelperWithCore();
   loadPaste(result, text);
   assert(result.session.has('ocrPaste'), 'paste stored on load');
+  assert(result.storage.has('ansKey'), 'key stored on load');
   result.field('ocr_clear').onclick();
   assert.strictEqual(result.session.has('ocrPaste'), false, 'paste cleared');
+  assert.strictEqual(result.storage.has('ansKey'), false, 'key cleared');
   assert.strictEqual(result.field('ocr_text').value, '');
+});
+
+test('keeps the answer key in ansKey when the queue is replaced without one', () => {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
+  const first = browserHelperWithCore();
+  loadPaste(first, text);
+  const stored = JSON.parse(first.storage.get('ansKey'));
+  assert.strictEqual(stored['1'], 'C');
+  assert.strictEqual(stored['50'], 'C');
+
+  const queue = JSON.parse(first.storage.get('ocrQueue'));
+  first.storage.set('ocrQueue', JSON.stringify({ items: queue.items, i: 1 }));
+  const second = browserHelperWithCore(persisted(first));
+  assert.deepStrictEqual(checkedRadios(second), ['1'], 'question 2 key B from ansKey');
+  assert(/key B/.test(second.field('ocr_status').innerHTML));
+  assert(/50 answers/.test(second.field('ocr_status').innerHTML));
 });
 
 const AUTO_PASTE = '1. First autosave question? A) One B) Two C) Three D) Four\n' +
@@ -469,45 +488,61 @@ test('dry run blocks a paste with no answer key', () => {
   assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'blocked start saves nothing');
 });
 
-test('autosave submits one question per reload and completes the run', () => {
-  const first = ready(browserHelperWithCore());
-  loadPaste(first, AUTO_PASTE);
-  first.field('ocr_auto').onclick();
-  assert(/autosaving/.test(first.field('ocr_progress_label').innerHTML));
-  assert.strictEqual(first.storage.has('ocrSubmitted'), false, 'only submits after the delay');
+function savedResponse() {
+  return { text: () => Promise.resolve('<div class="admin-alert">Question saved successfully (Question ID: 7).</div>') };
+}
 
-  first.runTimers();
-  assert.strictEqual(first.storage.has('ocrSubmitted'), true, 'first question submitted');
+function failedResponse(message) {
+  return { text: () => Promise.resolve('<div class="admin-alert admin-error">' + message + '</div>') };
+}
 
-  const second = browserHelperWithCore(persisted(first));
-  assert(/1 of 2 saved/.test(second.field('ocr_progress_label').innerHTML), 'progress after the first save');
-  assert(/autosaving/.test(second.field('ocr_progress_label').innerHTML));
-  second.runTimers();
+function flush() {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
 
-  const third = browserHelperWithCore(persisted(second));
-  assert(/2 of 2 saved/.test(third.field('ocr_progress_label').innerHTML), 'progress after the second save');
-  assert(/autosave complete/.test(third.field('ocr_progress_label').innerHTML));
-  assert(/Autosave complete: 2 of 2 saved/.test(third.field('ocr_status').innerHTML));
+test('autosave posts each question and completes without a reload', async () => {
+  let calls = 0;
+  const result = ready(browserHelperWithCore({ fetch: () => { calls++; return Promise.resolve(savedResponse()); } }));
+  loadPaste(result, AUTO_PASTE);
+  result.field('ocr_auto').onclick();
+  assert(/saving question 1/.test(result.field('ocr_progress_label').innerHTML));
+  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'autosave does not use the reload marker');
+
+  await flush();
+  assert.strictEqual(calls, 1, 'one POST for the first question');
+  assert(/1 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
+  assert(/First autosave question/.test(result.field('question_text').value), 'next question is not filled until the delay');
+
+  result.runTimers();
+  await flush();
+  assert.strictEqual(calls, 2, 'one POST for the second question');
+  assert(/2 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
+  assert(/autosave complete/.test(result.field('ocr_progress_label').innerHTML));
+  assert(/Autosave complete: 2 of 2 saved/.test(result.field('ocr_status').innerHTML));
+  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
+  assert.strictEqual(result.storage.has('ocrAuto'), false, 'no new localStorage key');
 });
 
-test('autosave stops when the saved page shows an error', () => {
-  const first = ready(browserHelperWithCore());
-  loadPaste(first, AUTO_PASTE);
-  first.field('ocr_auto').onclick();
-  first.runTimers();
-
-  const second = browserHelperWithCore(Object.assign(persisted(first), {
-    parser: require('../src/parser/core.js')
-  }));
-  assert(/Autosave stopped at question 1/.test(second.field('ocr_status').innerHTML) === false, 'no error yet');
-  second.runTimers();
-
-  const failed = browserHelperWithCore(Object.assign(persisted(second), {
-    parser: require('../src/parser/core.js'),
-    withError: true
-  }));
-  assert(/Autosave stopped at question 2/.test(failed.field('ocr_status').innerHTML));
-  assert.strictEqual(JSON.parse(failed.storage.get('ocrAuto')).running, false, 'autosave stopped');
+test('autosave stops on a save error and leaves the question queued', async () => {
+  let calls = 0;
+  const result = ready(browserHelperWithCore({ fetch: () => { calls++; return Promise.resolve(failedResponse('Duplicate question.')); } }));
+  loadPaste(result, AUTO_PASTE);
+  result.field('ocr_auto').onclick();
+  await flush();
+  assert.strictEqual(calls, 1);
+  assert(/Autosave stopped at question 1: Duplicate question/.test(result.field('ocr_status').innerHTML));
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'question stays queued');
+  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
 });
 
-console.log('PASS: ' + passed + ' ocr-helper vectors');
+(async () => {
+  for (const [name, fn] of tests) {
+    await fn();
+    passed += 1;
+    console.log('[PASS] ' + name);
+  }
+  console.log('PASS: ' + passed + ' ocr-helper vectors');
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
