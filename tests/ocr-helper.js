@@ -132,6 +132,27 @@ test('keeps later selected-letter labels inside their option text', () => {
   assert.deepStrictEqual(lowercaseParen.flags, []);
 });
 
+test('keeps a complete mixed-case parenthesized A-D set inside the option boundaries', () => {
+  const question = helper.parseQuestion({
+    num: 4,
+    text: 'Which is correct? (a) Alpha (a) notation stays in option A (B) Bravo (c) Charlie (D) Delta'
+  });
+  assert.strictEqual(question.question, 'Which is correct?');
+  assert.deepStrictEqual([question.a, question.b, question.c, question.d],
+    ['Alpha (a) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  assert.deepStrictEqual(question.flags, []);
+});
+
+test('exported parseAll keeps a complete mixed-case parenthesized A-D set', () => {
+  const questions = helper.parseAll(
+    '1. Which is correct? (a) Alpha (a) notation stays in option A (B) Bravo (c) Charlie (D) Delta');
+  assert.strictEqual(questions.length, 1);
+  assert.strictEqual(questions[0].question, 'Which is correct?');
+  assert.deepStrictEqual([questions[0].a, questions[0].b, questions[0].c, questions[0].d],
+    ['Alpha (a) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  assert.deepStrictEqual(questions[0].flags, []);
+});
+
 test('still flags a second complete A-D option set', () => {
   const question = helper.parseQuestion({
     num: 1,
@@ -295,7 +316,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.1/.test(result.thrown.message));
+  assert(/2\.5\.2/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -411,6 +432,19 @@ test('Load keeps an inline option block clean when a heading and instruction fol
   assert(/SECTION 2:/.test(state.queue.items[1].sectionInstruction), 'heading owns the next stem');
   assert(/According to Matthew/.test(state.queue.items[1].sectionInstruction), 'instruction owns the next stem');
   assert.deepStrictEqual(state.queue.items[0].flags, [], 'clean inline layout needs no advisory flag');
+});
+
+test('Load keeps a complete mixed-case parenthesized A-D set in the native form', () => {
+  const state = formState(loadThroughForm(
+    '1. Which is correct? (a) Alpha (a) notation stays in option A (B) Bravo (c) Charlie (D) Delta'));
+  assert.strictEqual(state.queue.items.length, 1);
+  assert.strictEqual(state.question, 'Which is correct?');
+  assert.strictEqual(state.a, 'Alpha (a) notation stays in option A');
+  assert.strictEqual(state.b, 'Bravo');
+  assert.strictEqual(state.c, 'Charlie');
+  assert.strictEqual(state.d, 'Delta');
+  assert(!/missing/.test(state.status), 'status must not report a missing option');
+  assert.deepStrictEqual(state.queue.items[0].flags, []);
 });
 
 test('Load keeps shared stimulus text out of every saveable field', () => {

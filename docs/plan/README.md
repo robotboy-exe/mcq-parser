@@ -85,6 +85,17 @@ Last updated: 2026-11-22.
   `2.5.1`); 68 runner, 166 unit, 28 helper, 69 JS + 33 PHP marker, 8 store, and
   14 ordering checks plus 7/7 lint pass on PHP 8.3.9. Re-review is required;
   commit, deploy, and live checks remain unauthorized.
+- Main-release re-review 2 (2026-11-22) assigned `BLOCK-10`: one complete
+  mixed-case parenthesized A–D set lost Options A and C on the production Load
+  path, and only 2 of 16 case combinations parsed. The fix derives the paren
+  set from every parenthesized label, so one complete ordered set keeps its
+  boundaries while an incomplete lowercase `(a)`-`(c)` set, a complete
+  uppercase set, and the spacing/repeat grammar stay unchanged. Failing-first
+  core, exported-helper, and real Load regressions now pass; core is `?v=2.5.2`
+  (version `2.5.2`) and the helper is `?v=2.4.3` (`EXPECTED_CORE_VERSION`
+  `2.5.2`); 68 runner, 169 unit, 31 helper, 69 JS + 33 PHP marker, 8 store, and
+  14 ordering checks plus 7/7 lint pass on PHP 8.3.32. Re-review is required;
+  commit, deploy, and live checks remain unauthorized.
 - The temporary D-107 pre-migration compatibility work was reverted on
   2026-11-19 after the owner reported production migration `01` successful. The
   application again requires the migrated column directly; operation `03` was
@@ -245,7 +256,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 | — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
 | — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
-| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and first re-review recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-1`/`BLOCK-4`/`BLOCK-5`/`BLOCK-6` open; the owner's `fix` disposition for `BLOCK-4`/`5`/`6` is implemented in the 2026-11-22 closure session (inline A–D structural binding, lowercase repeated-`(a)`, real inline Load vector, ninth production-file handoff row); 68 runner, 166 unit, 28 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.9; independent re-review required | `BLOCK-1` is undisposed and remains an owner release action (current `origin/main` is not an ancestor); deployment and the owner's browser re-paste remain external; no live write by the agent |
+| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and two re-reviews recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-1` open and undisposed; the owner's `fix` disposition for `BLOCK-4`/`5`/`6` is implemented, and the second re-review's `BLOCK-10` (mixed-case parenthesized A–D set lost A/C on Load; 2/16 case combinations) is fixed with failing-first core, exported-helper, and real Load regressions (16/16 now); 68 runner, 169 unit, 31 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.2`, helper `?v=2.4.3`; independent re-review of `BLOCK-10` required | `BLOCK-1` is undisposed and remains an owner release action (current `origin/main` is not an ancestor); deployment and the owner's browser re-paste remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -391,9 +402,10 @@ acceptance row and external gate is satisfied. Only accepted residual risk
 remains: `NOTE-9` (root `ocr_helper.js` is untokened, so the D-91 grammar depends
 on the documented deploy-time cache purge) and `NOTE-12`'s optional labelling of
 the drawer region. The boundary is now the RM01 main release: the 2026-11-21
-review and 2026-11-22 re-review left `BLOCK-1`, `BLOCK-4`, `BLOCK-5`, and
-`BLOCK-6` open, and the owner's `fix` disposition for the last three is
-implemented locally at core `?v=2.5.1` / helper `?v=2.4.2`. `BLOCK-1` has no
+review plus the two 2026-11-22 re-reviews left `BLOCK-1` open and undisposed;
+the owner's `fix` dispositions are implemented and committed to
+`owner-tool-integration`, including the second
+re-review's `BLOCK-10` mixed-case fix, at core `?v=2.5.2` / helper `?v=2.4.3`. `BLOCK-1` has no
 disposition, so commit and `main`-release readiness stay blocked; an independent
 re-review of the closure and an explicit owner release action are the next
 steps. Deployment, the owner's browser re-paste, and every live save remain
@@ -401,7 +413,7 @@ external and unauthorized. D-106 and D-108 are direct owner requests carried by
 this line; deploying them remains a separate explicit owner action.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/review-session.md re-review math-editor-2026-11 main release BLOCK-4 BLOCK-5 BLOCK-6 from docs/plan/reviews/math-editor-2026-11-main-release-re-review.md
+NEXT COMMAND: @docs/plan/prompts/review-session.md re-review math-editor-2026-11 main release BLOCK-10 from docs/plan/reviews/math-editor-2026-11-main-release-re-review-2.md
 ```
 
 ## Session protocol

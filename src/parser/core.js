@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.5.1
+// Version: 2.5.2
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.5.1";
+const PARSER_VERSION = "2.5.2";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -825,19 +825,34 @@ function parseQuestion(chunk) {
     }, { done: [], open: [] });
   const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
   let matches = optionLabelMatches(raw, scanRaw);
-  const lowerParens = matches.filter(match => match.parenLower);
-  const lowerParenSet = [];
-  for (const match of lowerParens) {
-    if (lowerParenSet.some(item => item.letter === match.letter)) continue;
-    lowerParenSet.push(match);
-  }
-  if (lowerParens.length && lowerParenSet.map(match => match.letter).join('') !== 'ABCD') {
-    // EC-97/INV-102: lowercase (a)-(d) labels are options only as one complete ordered set.
-    matches = matches.filter(match => !match.parenLower);
-  } else if (lowerParens.length) {
+  const parenMatches = matches.filter(match => match.parenLower !== undefined);
+  const firstParenSet = list => {
+    const set = [];
+    for (const match of list) {
+      if (set.some(item => item.letter === match.letter)) continue;
+      set.push(match);
+    }
+    return set;
+  };
+  const orderedABCD = set => set.map(match => match.letter).join('') === 'ABCD';
+  const lowerParenSet = firstParenSet(parenMatches.filter(match => match.parenLower));
+  const upperParenSet = firstParenSet(parenMatches.filter(match => !match.parenLower));
+  const allParenSet = firstParenSet(parenMatches);
+  if (lowerParenSet.length && orderedABCD(lowerParenSet)) {
     // D-91: a later label-like repeat of an already selected lowercase label
     // stays inside that option's text instead of resplitting the set.
     matches = matches.filter(match => !match.parenLower || lowerParenSet.includes(match));
+  } else if (upperParenSet.length && orderedABCD(upperParenSet)) {
+    // A complete uppercase set keeps its own boundaries when a lowercase (a)
+    // appears elsewhere, exactly as before (EC-97/INV-102).
+    matches = matches.filter(match => !match.parenLower);
+  } else if (lowerParenSet.length && orderedABCD(allParenSet)) {
+    // BLOCK-10: one complete ordered parenthesized A-D set may mix case; the
+    // first occurrence of each letter wins and a later repeat stays in text.
+    matches = matches.filter(match => !match.parenLower || allParenSet.includes(match));
+  } else if (lowerParenSet.length) {
+    // EC-97/INV-102: lowercase (a)-(d) labels are options only as one complete ordered set.
+    matches = matches.filter(match => !match.parenLower);
   }
   if (chunk && chunk.unlinkedPassage) {
     // EC-98: a PASSAGE heading with fewer than two linked questions is read as ordinary text.
