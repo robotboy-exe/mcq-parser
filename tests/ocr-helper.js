@@ -535,6 +535,46 @@ test('autosave stops on a save error and leaves the question queued', async () =
   assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
 });
 
+test('prefers the key in the current queue over a stale ansKey', () => {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
+  const first = browserHelperWithCore();
+  loadPaste(first, text);
+
+  const queue = JSON.parse(first.storage.get('ocrQueue'));
+  queue.key = { 1: 'D', 2: 'A' };
+  queue.i = 0;
+  first.storage.set('ocrQueue', JSON.stringify(queue));
+  first.storage.set('ansKey', JSON.stringify({ 1: 'C', 2: 'B', 50: 'C' }));
+
+  const second = browserHelperWithCore(persisted(first));
+  assert.deepStrictEqual(checkedRadios(second), ['3'], 'question 1 key D from the queue');
+  assert(/key D/.test(second.field('ocr_status').innerHTML));
+  assert(/2 answers/.test(second.field('ocr_status').innerHTML), 'queue key count wins');
+  assert.strictEqual(JSON.parse(second.storage.get('ansKey'))['1'], 'D', 'ansKey refreshed from the queue');
+});
+
+test('stop autosave works while the save request is still hanging', async () => {
+  let resolveFetch = null;
+  const result = ready(browserHelperWithCore({
+    fetch: () => new Promise((resolve) => { resolveFetch = resolve; })
+  }));
+  loadPaste(result, AUTO_PASTE);
+  result.field('ocr_auto').onclick();
+  assert.strictEqual(result.field('ocr_auto').textContent, 'Stop autosave');
+  assert(/saving question 1/.test(result.field('ocr_progress_label').innerHTML));
+
+  result.field('ocr_auto').onclick();
+  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave', 'stop is immediate');
+  assert(/Autosave stopped at question 1/.test(result.field('ocr_status').innerHTML));
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'question stays queued');
+
+  resolveFetch(savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'late response does not advance the queue');
+  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
+  assert(/Autosave stopped at question 1/.test(result.field('ocr_status').innerHTML), 'status unchanged');
+});
+
 (async () => {
   for (const [name, fn] of tests) {
     await fn();

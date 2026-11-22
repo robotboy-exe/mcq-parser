@@ -102,13 +102,18 @@
   if (bundled) $('ocr_title').textContent = 'Bookmarklet paste';
 
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
-  let key = store.get('ansKey');
-  if (!key || typeof key !== 'object') key = queue.key || {};
-  if (!Object.keys(key).length && queue.key) key = queue.key;
+  // The loaded queue owns the key; ansKey is only the fallback for a queue that
+  // lost its copy, for example after the older page helper reset it.
+  const queueKey = queue.key && typeof queue.key === 'object' && Object.keys(queue.key).length ? queue.key : null;
+  let key = queueKey || store.get('ansKey');
+  if (!key || typeof key !== 'object') key = {};
   if (Object.keys(key).length) store.set('ansKey', key);
   const save = () => store.set('ocrQueue', queue);
   let auto = null;
   let autoTimer = null;
+  // Incremented whenever a run ends or is replaced, so a late POST result from
+  // an older run is ignored instead of advancing this queue.
+  let autoRun = 0;
 
   const savedPaste = paste.get();
   if (typeof savedPaste === 'string') $('ocr_text').value = savedPaste;
@@ -158,11 +163,19 @@
   }
 
   function stopAuto(message) {
-    if (auto && auto.inFlight) {
-      auto.stopAfter = true;
+    if (!auto) {
+      if (message) $('ocr_status').innerHTML = message;
       return;
     }
-    if (auto) auto.running = false;
+    auto.running = false;
+    // Stop is immediate even when the in-flight POST never answers: abort the
+    // request when the browser can and ignore whatever it eventually returns.
+    if (auto.inFlight) {
+      auto.inFlight = false;
+      if (auto.controller && typeof auto.controller.abort === 'function') auto.controller.abort();
+      auto.controller = null;
+      autoRun++;
+    }
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
     render();
@@ -185,15 +198,19 @@
     if (typeof fetch !== 'function' || typeof FormData !== 'function') {
       return stopAuto('Autosave needs a browser with fetch; save this question by hand.');
     }
+    const run = autoRun;
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const options = { method: 'POST', body: new FormData(form), credentials: 'same-origin' };
+    if (controller) options.signal = controller.signal;
     auto.inFlight = true;
+    auto.controller = controller;
     renderProgress();
-    fetch(location.href, { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
+    fetch(location.href, options)
       .then((response) => response.text())
       .then((html) => {
-        if (!auto) return;
-        const stopAfter = auto.stopAfter;
+        if (!auto || run !== autoRun) return;
         auto.inFlight = false;
-        auto.stopAfter = false;
+        auto.controller = null;
         if (!/Question saved successfully \(Question ID: \d+\)/.test(html)) {
           return stopAuto('Autosave stopped at question ' + (queue.i + 1) + ': '
             + (saveError(html) || 'the server did not confirm the save (logged out?)')
@@ -201,12 +218,6 @@
         }
         queue.i++;
         save();
-        if (stopAfter) {
-          auto.running = false;
-          show();
-          $('ocr_status').innerHTML = 'Autosave stopped after question ' + queue.i + ' of ' + queue.items.length + '.';
-          return;
-        }
         if (queue.i >= queue.items.length) {
           auto.running = false;
           show();
@@ -217,7 +228,9 @@
         autoTimer = setTimeout(autoStep, 600);
       })
       .catch(() => {
-        if (auto) auto.inFlight = false;
+        if (!auto || run !== autoRun) return;
+        auto.inFlight = false;
+        auto.controller = null;
         stopAuto('Autosave stopped at question ' + (queue.i + 1) + ': network problem. Check the question and start again.');
       });
   }
@@ -275,6 +288,7 @@
     saveMeta();
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
+    autoRun++;
     key = parsedKey;
     queue = { items, i: 0, key, how: parsed.sectionEvidence ? parsed.sectionEvidence.how : 'none' };
     if (keyCount) store.set('ansKey', key);
@@ -302,6 +316,7 @@
     if (problems.length) return alert('Dry run found problems:\n- ' + problems.join('\n- '));
     if (queue.i >= queue.items.length) return alert('Every question in this list is already saved.');
     auto.running = true;
+    autoRun++;
     show();
     autoStep();
   };
@@ -309,6 +324,7 @@
     queue = { items: [], i: 0, key: {} };
     key = {};
     auto = null;
+    autoRun++;
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
     paste.del();
