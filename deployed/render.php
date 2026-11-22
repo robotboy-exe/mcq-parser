@@ -22,6 +22,67 @@ function cbt_parse_math(string $text): array
     return cbt_parse_level($text, $pos, null, [], 0);
 }
 
+function cbt_open_tag_at(string $text, int $pos): ?string
+{
+    foreach (CBT_MATH_TAGS as $candidate) {
+        $open = '<' . $candidate . '>';
+        if (substr($text, $pos, strlen($open)) === $open) {
+            return $candidate;
+        }
+    }
+    return null;
+}
+
+function cbt_close_tag_at(string $text, int $pos): ?string
+{
+    foreach (CBT_MATH_TAGS as $candidate) {
+        $close = '</' . $candidate . '>';
+        if (substr($text, $pos, strlen($close)) === $close) {
+            return $candidate;
+        }
+    }
+    return null;
+}
+
+/**
+ * Rejects a marker pair that would cross another marker: an inner marker may
+ * not span past this marker's close, and a close whose tag was not opened
+ * inside this span may not appear in it (INV-97). Markers of an already open
+ * tag stay literal, so they are skipped instead of being counted.
+ *
+ * @param list<string> $openTags
+ */
+function cbt_marker_interior_is_clean(string $text, int $start, int $end, array $openTags, string $tag): bool
+{
+    $inside = [];
+    $pos = $start;
+    while ($pos < $end) {
+        $opened = cbt_open_tag_at($text, $pos);
+        if ($opened !== null) {
+            $closeAt = strpos($text, '</' . $opened . '>', $pos + strlen($opened) + 2);
+            if ($closeAt !== false && $closeAt > $end) {
+                return false;
+            }
+            if ($closeAt !== false && $opened !== $tag && !in_array($opened, $openTags, true)) {
+                $inside[] = $opened;
+            }
+            $pos += strlen($opened) + 2;
+            continue;
+        }
+        $closed = cbt_close_tag_at($text, $pos);
+        if ($closed !== null) {
+            if (!$inside || $inside[count($inside) - 1] !== $closed) {
+                return false;
+            }
+            array_pop($inside);
+            $pos += strlen($closed) + 3;
+            continue;
+        }
+        $pos++;
+    }
+    return $inside === [];
+}
+
 /**
  * @param list<string> $openTags
  * @return list<array{text?: string, tag?: string, children?: array}>
@@ -53,7 +114,9 @@ function cbt_parse_level(string $text, int &$pos, ?string $stopTag, array $openT
         }
         if ($tag !== null && $depth < CBT_MATH_MAX_DEPTH && !in_array($tag, $openTags, true)) {
             $close = '</' . $tag . '>';
-            if (strpos($text, $close, $pos + strlen($tag) + 2) !== false) {
+            $closeAt = strpos($text, $close, $pos + strlen($tag) + 2);
+            if ($closeAt !== false
+                && cbt_marker_interior_is_clean($text, $pos + strlen($tag) + 2, $closeAt, $openTags, $tag)) {
                 if ($buffer !== '') {
                     $nodes[] = ['text' => $buffer];
                     $buffer = '';

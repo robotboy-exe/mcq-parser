@@ -32,8 +32,53 @@
     return '</' + tag + '>';
   }
 
+  function openTagAt(source, pos) {
+    for (var index = 0; index < TAGS.length; index += 1) {
+      var candidate = TAGS[index];
+      if (source.slice(pos, pos + openToken(candidate).length) === openToken(candidate)) return candidate;
+    }
+    return null;
+  }
+
+  function closeTagAt(source, pos) {
+    for (var index = 0; index < TAGS.length; index += 1) {
+      var candidate = TAGS[index];
+      if (source.slice(pos, pos + closeToken(candidate).length) === closeToken(candidate)) return candidate;
+    }
+    return null;
+  }
+
+  // Rejects a marker pair that would cross another marker: an inner marker may
+  // not span past this marker's close, and a close whose tag was not opened
+  // inside this span may not appear in it (INV-97). Markers of an already open
+  // tag stay literal, so they are skipped instead of being counted.
+  function markerInteriorIsClean(source, start, end, openTags, tag) {
+    var inside = [];
+    var pos = start;
+    while (pos < end) {
+      var opened = openTagAt(source, pos);
+      if (opened) {
+        var closeAt = source.indexOf(closeToken(opened), pos + openToken(opened).length);
+        if (closeAt !== -1 && closeAt > end) return false;
+        if (closeAt !== -1 && opened !== tag && openTags.indexOf(opened) === -1) inside.push(opened);
+        pos += openToken(opened).length;
+        continue;
+      }
+      var closed = closeTagAt(source, pos);
+      if (closed) {
+        if (!inside.length || inside[inside.length - 1] !== closed) return false;
+        inside.pop();
+        pos += closeToken(closed).length;
+        continue;
+      }
+      pos += 1;
+    }
+    return inside.length === 0;
+  }
+
   // A marker opens only when its closing marker appears later, its own tag is
-  // not already open, and the depth budget allows it. Anything else stays text.
+  // not already open, the interior markers stay properly nested, and the depth
+  // budget allows it. Anything else stays text.
   function parse(text) {
     var source = String(text === null || text === undefined ? '' : text);
     var pos = 0;
@@ -55,24 +100,20 @@
           flush();
           return nodes;
         }
-        var tag = null;
-        for (var index = 0; index < TAGS.length; index += 1) {
-          var candidate = TAGS[index];
-          if (source.slice(pos, pos + openToken(candidate).length) === openToken(candidate)) {
-            tag = candidate;
-            break;
+        var tag = openTagAt(source, pos);
+        if (tag) {
+          var closeAt = source.indexOf(closeToken(tag), pos + openToken(tag).length);
+          if (
+            depth < MAX_DEPTH
+            && openTags.indexOf(tag) === -1
+            && closeAt !== -1
+            && markerInteriorIsClean(source, pos + openToken(tag).length, closeAt, openTags, tag)
+          ) {
+            flush();
+            pos += openToken(tag).length;
+            nodes.push({ tag: tag, children: parseLevel(tag, openTags.concat(tag), depth + 1) });
+            continue;
           }
-        }
-        if (
-          tag
-          && depth < MAX_DEPTH
-          && openTags.indexOf(tag) === -1
-          && source.indexOf(closeToken(tag), pos + openToken(tag).length) !== -1
-        ) {
-          flush();
-          pos += openToken(tag).length;
-          nodes.push({ tag: tag, children: parseLevel(tag, openTags.concat(tag), depth + 1) });
-          continue;
         }
         buffer += source.charAt(pos);
         pos += 1;

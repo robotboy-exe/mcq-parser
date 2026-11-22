@@ -599,8 +599,8 @@ test('admin page loads the palette after the preview and the stylesheet beside i
   const css = admin.indexOf('<link rel="stylesheet" href="src/math-tool.css?v=1.1.1">');
   const script = admin.indexOf('<script src="src/math-tool.js?v=1.1.2"></script>');
   const previewScript = admin.indexOf('<script src="src/question-preview.js"></script>');
-  const previewCss = admin.indexOf('<link rel="stylesheet" href="src/question-preview.css?v=1.1.2">');
-  const renderScript = admin.indexOf('<script src="src/owner-tool/render.js?v=2.3.3"></script>');
+  const previewCss = admin.indexOf('<link rel="stylesheet" href="src/question-preview.css?v=1.1.3">');
+  const renderScript = admin.indexOf('<script src="src/owner-tool/render.js?v=2.3.4"></script>');
   assert.ok(css > 0, 'missing math-tool stylesheet link');
   assert.ok(previewCss > 0, 'the preview stylesheet must carry the MS01 cache key');
   assert.ok(script > previewScript, 'math-tool script must load after the preview script');
@@ -616,6 +616,8 @@ test('admin page loads the palette after the preview and the stylesheet beside i
   assert.strictEqual(admin.includes('src/math-tool.css?v=1.1.0'), false, 'the changed palette stylesheet needs a fresh token');
   assert.strictEqual(admin.includes('src/question-preview.css?v=1.1.0'), false, 'the changed preview stylesheet needs its MS01 token');
   assert.strictEqual(admin.includes('src/question-preview.css?v=1.1.1'), false, 'the changed preview stylesheet needs a fresh token');
+  assert.strictEqual(admin.includes('src/question-preview.css?v=1.1.2'), false, 'the full-width fraction rule needs a fresh token');
+  assert.strictEqual(admin.includes('src/owner-tool/render.js?v=2.3.3'), false, 'the crossed-marker fix needs a fresh renderer token');
   assert.strictEqual(admin.includes('math_tool_toolbar'), false, 'no PHP markup change allowed');
 
   const stylesheet = fs.readFileSync(path.join(__dirname, '..', 'src', 'math-tool.css'), 'utf8');
@@ -649,7 +651,8 @@ test('exam and detail pages ship the same horizontal-bar rules', () => {
     assert.ok(page.includes('.cbt-sqrt-body') && page.includes('.cbt-matrix-grid'));
     assert.match(page, connectedRoot, 'the radical must be connected on every rendered surface');
   }
-  assert.ok(cbt.includes('src/owner-tool/render.js?v=2.3.3'));
+  assert.ok(cbt.includes('src/owner-tool/render.js?v=2.3.4'));
+  assert.strictEqual(cbt.includes('src/owner-tool/render.js?v=2.3.3'), false, 'the crossed-marker fix needs a fresh renderer token');
 });
 
 console.log('PASS: ' + passed + ' math-tool vectors');

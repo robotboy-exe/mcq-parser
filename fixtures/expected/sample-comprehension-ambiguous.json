@@ -16,12 +16,17 @@
     "questions": [
       {
         "num": 6,
-        "question": "Which statement is true?",
-        "a": "one",
-        "b": "two",
-        "c": "three",
-        "d": "four",
-        "flags": [],
+        "question": "Which statement is true? (a) one (b) two (c) three (d) four",
+        "a": "",
+        "b": "",
+        "c": "",
+        "d": "",
+        "flags": [
+          "option A missing",
+          "option B missing",
+          "option C missing",
+          "option D missing"
+        ],
         "context_ref": ""
       }
     ],
@@ -30,6 +35,7 @@
     ]
   },
   "must_not": [
-    "An invented context for PASSAGE IV"
+    "An invented context for PASSAGE IV",
+    "Options parsed from a single-candidate passage"
   ]
 }

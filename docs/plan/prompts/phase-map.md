@@ -44,7 +44,10 @@ the exact stored `English (Lexis & Structure)` subject to
 Constant Text/question weights to 800/700; static, disposable HTTP, and
 desktop/390px browser checks pass locally. Temporary pre-migration compatibility
 work was reverted after the owner reported migration `01` successful on
-2026-11-19.
+2026-11-19. The 2026-11-22 RM01 fix session (`BLOCK-4`/`5`/`6`/`7`/`8` of the
+main-release review) is implemented and green locally; `BLOCK-1` (a
+main-integrable target) remains an owner release action, and re-review of this
+handoff comes next. No new phase was opened.
 
 ## Starting a new cycle
 

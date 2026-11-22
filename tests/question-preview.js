@@ -218,6 +218,76 @@ test('keeps the Constant Text preview at input height with vertical scrolling', 
   )), false);
 });
 
+function cssRules(source) {
+  const rules = [];
+  const pattern = /([^{}]+)\{([^{}]*)\}/g;
+  const stripped = source.replace(/\/\*[\s\S]*?\*\//g, '');
+  let match;
+  while ((match = pattern.exec(stripped))) {
+    rules.push({ selector: match[1].replace(/\s+/g, '').toLowerCase(), body: match[2] });
+  }
+  return rules;
+}
+
+function cssDeclarations(body) {
+  return Object.fromEntries(body.split(';').map((item) => item.trim()).filter(Boolean).map((item) => {
+    const colon = item.indexOf(':');
+    return [item.slice(0, colon).trim().toLowerCase(), item.slice(colon + 1).trim().toLowerCase()];
+  }));
+}
+
+function fractionRules(source) {
+  const rules = cssRules(source);
+  const rulesFor = (selector) => rules.filter((rule) => rule.selector === selector).map((rule) => cssDeclarations(rule.body));
+  return {
+    frac: rulesFor('.cbt-frac').pop(),
+    terms: rulesFor('.cbt-frac-num,.cbt-frac-den').pop(),
+    denominator: rulesFor('.cbt-frac-den').pop()
+  };
+}
+
+// A full-width bar needs the terms to stretch to the wider term's width, so the
+// denominator border spans both; centering is done by text-align inside.
+function hasFullWidthFractionBar({ frac, terms, denominator }) {
+  return Boolean(frac && terms && denominator
+    && frac.display === 'inline-flex'
+    && frac['flex-direction'] === 'column'
+    && frac['align-items'] === 'stretch'
+    && terms['text-align'] === 'center'
+    && denominator['border-top'] === '1px solid currentcolor');
+}
+
+test('paints a full-width fraction bar on all three surfaces', () => {
+  const surfaces = {
+    'src/question-preview.css': fs.readFileSync(path.join(__dirname, '../src/question-preview.css'), 'utf8'),
+    'deployed/cbt.php': fs.readFileSync(path.join(__dirname, '../deployed/cbt.php'), 'utf8'),
+    'deployed/answer_details.php': fs.readFileSync(path.join(__dirname, '../deployed/answer_details.php'), 'utf8')
+  };
+  const parsed = {};
+  for (const [name, source] of Object.entries(surfaces)) {
+    const rules = fractionRules(source);
+    parsed[name] = rules;
+    assert.strictEqual(hasFullWidthFractionBar(rules), true, name + ' full-width bar');
+    assert.strictEqual(
+      hasFullWidthFractionBar({ ...rules, frac: { ...rules.frac, 'align-items': 'center' } }),
+      false,
+      name + ' must reject the denominator-only rule'
+    );
+    assert.strictEqual(
+      hasFullWidthFractionBar({ ...rules, frac: { ...rules.frac, 'align-items': 'flex-start' } }),
+      false,
+      name + ' must not pass a left-aligned rule'
+    );
+    assert.strictEqual(
+      hasFullWidthFractionBar({ ...rules, denominator: { 'border-top': '0' } }),
+      false,
+      name + ' needs the bar itself'
+    );
+  }
+  assert.deepStrictEqual(parsed['deployed/cbt.php'], parsed['src/question-preview.css']);
+  assert.deepStrictEqual(parsed['deployed/answer_details.php'], parsed['src/question-preview.css']);
+});
+
 test('module has no storage, network, or form-value writes', () => {
   const source = fs.readFileSync(path.join(__dirname, '../src/question-preview.js'), 'utf8');
   assert.strictEqual(source.includes('localStorage'), false);

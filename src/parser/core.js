@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.4.0
+// Version: 2.5.0
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.4.0";
+const PARSER_VERSION = "2.5.0";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -126,10 +126,12 @@ const REGION_OPTION = /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-Fa-f]\s*[.)])[^\S\n]*\S
 const REGION_HEADING = /^(?:SECTION|PART|PAPER)\s+[A-Z0-9IVXLC]+\b/i;
 const REGION_INSTRUCTION = /\b(?:lettered\s+A\s+to\s+D|from\s+the\s+words|choose\s+(?:the|a|an|one)|select\s+the|pick\s+the|answer\s+(?:all|the|questions?)|read\s+the|study\s+the|use\s+the|refer\s+to|complete\s+each|fill\s+(?:each|in\s+the)|the\s+following\s+(?:passage|words|sentences?|questions?)|questions?\s+\d{1,3}\s*(?:to|and|[-–—])\s*\d{1,3})\b/i;
 const REGION_PAREN = /(^|[^A-Za-z])\(\s*([A-Fa-f])\s*\)\s*[.)]*[^\S\n]*/g;
+const IGNORED_PASSAGE_HEADING = /^(?:PASSAGE|COMPREHENSION|EXTRACT)\b/i;
 const REGION_LABEL = /(?:^|\n)[^\S\n]*([A-Fa-f])[^\S\n]*(?:\n[^\S\n]*)?[.)][^\S\n]*/g;
 
 function regionHeading(t) {
   if (t.length > 90) return false;
+  if (/^(?:SECTION|PART|PAPER)\s+[A-Z0-9IVXLC]+\s*[:.]?$/i.test(t)) return true;
   if (/[?.!:;,]$/.test(t)) return false;
   if (REGION_HEADING.test(t)) return true;
   if (/[a-z]/.test(t)) return false;
@@ -143,6 +145,8 @@ function regionInstruction(t) {
 function structuralOptionText(text) {
   const t = String(text == null ? '' : text).trim();
   if (regionHeading(t)) return true;
+  if (/(?:^|\s)(?:SECTION|PART|PAPER)\s+[A-Z0-9IVXLC]+\s*[:.]?(?:\s|$)/i.test(t)) return true;
+  if (t.length >= 12 && REGION_INSTRUCTION.test(t)) return true;
   if (/^(?:from\s+the\s+words|choose\s+the|answer\s+all|answer\s+the\s+questions?|read\s+the\s+(?:following|passage|extract)|study\s+the\s+(?:following|passage|table))\b/i.test(t)) return true;
   return /\blettered\s+A\s+to\s+D\b/i.test(t)
     || /\bquestions?\s+\d{1,3}\s*(?:to|and|[-–—])\s*\d{1,3}\b/i.test(t);
@@ -199,6 +203,7 @@ function headRegionGroups(lines, list) {
 function splitRegions(text) {
   const src = String(text == null ? '' : text).replace(/\r\n?/g, '\n');
   const lines = src.split('\n');
+  const kinds = lines.map(regionLineKind);
   const chunks = [];
   const head = [];
   const trailing = [];
@@ -214,8 +219,9 @@ function splitRegions(text) {
     sawOption = false;
   }
 
-  for (const line of lines) {
-    const kind = regionLineKind(line);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const kind = kinds[i];
     if (kind === 'stem') {
       const n = +REGION_STEM.exec(line)[1];
       if (last && (n <= last || n > last + 5)) {
@@ -246,6 +252,18 @@ function splitRegions(text) {
       (kind === 'instruction' && sawOption && !STIMULUS_INTRO.test(line) && !STIMULUS_INTRO_RANGE.test(line)))) {
       pending.push({ kind, text: line.trim() });
       continue;
+    }
+    if (kind === 'text' && current && sawOption) {
+      let following = 0;
+      for (let j = i + 1; j < lines.length; j++) {
+        if (kinds[j] === 'option') following++;
+        else if (kinds[j] !== 'text' && kinds[j] !== 'blank') break;
+      }
+      if (following >= 2) {
+        finish();
+        current = { num: null, lines: [line], structural: [] };
+        continue;
+      }
     }
     (current ? current.lines : head).push(line);
   }
@@ -295,6 +313,11 @@ function splitRegions(text) {
       index >= region.fromIndex && index <= region.toIndex &&
       (region.kind === 'heading' || region.kind === 'instruction'));
     if (governing.length) chunk.sectionInstruction = governing.map(region => region.text).join('\n');
+    if (all.some(region =>
+      region.kind === 'heading' && IGNORED_PASSAGE_HEADING.test(region.text) &&
+      index >= region.fromIndex && index <= region.toIndex)) {
+      chunk.unlinkedPassage = true;
+    }
   });
 
   const regions = all.map(region => ({
@@ -347,7 +370,12 @@ function optionLabelMatches(raw, scanRaw) {
     found.push({ letter, start: m.index, end: m.index + m[0].length });
   }
   for (const m of scanRaw.matchAll(REGION_PAREN)) {
-    found.push({ letter: m[2].toUpperCase(), start: m.index + m[1].length, end: m.index + m[0].length });
+    found.push({
+      letter: m[2].toUpperCase(),
+      start: m.index + m[1].length,
+      end: m.index + m[0].length,
+      parenLower: m[2] !== m[2].toUpperCase()
+    });
   }
   for (const m of scanRaw.matchAll(REGION_LABEL)) {
     const offset = m[0].indexOf(m[1]);
@@ -753,6 +781,8 @@ function hasCompleteOptionSet(matches) {
 function optionInlineMatches(raw) {
   const found = [];
   for (const m of raw.matchAll(/(?:^|[^\w])([A-Fa-f])[^\S\n]*(?:\n[^\S\n]*)?[.)][^\S\n]*/g)) {
+    const at = m[0].indexOf(m[1]);
+    if (at > 0 && m[0][at - 1] === '(') continue;
     found.push({ letter: m[1].toUpperCase(), start: m.index + m[0].indexOf(m[1]), end: m.index + m[0].length });
   }
   return found;
@@ -782,6 +812,15 @@ function parseQuestion(chunk) {
     }, { done: [], open: [] });
   const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
   let matches = optionLabelMatches(raw, scanRaw);
+  const lowerParens = matches.filter(match => match.parenLower);
+  if (lowerParens.length && lowerParens.map(match => match.letter).join('') !== 'ABCD') {
+    // EC-97/INV-102: lowercase (a)-(d) labels are options only as one complete ordered set.
+    matches = matches.filter(match => !match.parenLower);
+  }
+  if (chunk && chunk.unlinkedPassage) {
+    // EC-98: a PASSAGE heading with fewer than two linked questions is read as ordinary text.
+    matches = matches.filter(match => !match.parenLower);
+  }
   if (!hasCompleteOptionSet(matches)) {
     const loose = optionInlineMatches(raw).concat(matches)
       .sort((a, b) => a.start - b.start || b.end - a.end);

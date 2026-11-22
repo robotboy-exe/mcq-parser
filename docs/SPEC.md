@@ -1,10 +1,11 @@
 # Parser Specification
 
-Evidence base: root `ocr_helper.js`, `deployed/admin_questions.php`,
-`deployed/cbt.php`, `deployed/answer_details.php`, and the archived migration
-docs (`archive/migration-docs/`). This describes the current production path;
-the legacy bookmarklet and `src/parser/core.js` sections below are retained for
-historical parser tests.
+Evidence base: root `ocr_helper.js`, `src/parser/core.js`,
+`deployed/admin_questions.php`, `deployed/cbt.php`,
+`deployed/answer_details.php`, and the archived migration docs
+(`archive/migration-docs/`). This describes the current production path;
+`src/parser/core.js` is the shipped canonical parser (RM01), and only the legacy
+bookmarklet sections below stay historical.
 
 ## 1. Scope
 
@@ -57,6 +58,13 @@ Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four
 must produce Question `Which is correct?`, Option A `The notation A ) stays in
 option A`, and Options B-D `Two`, `Three`, and `Four`, with no duplicate-letter
 warning solely for the internal `A )`.
+
+The parenthesized lowercase `(a)`-`(d)` form is options only as one complete
+ordered set (EC-97, INV-102), and a `PASSAGE`/`COMPREHENSION`/`EXTRACT` heading
+that does not link a comprehension context keeps its parenthesized labels in the
+stem with the missing-option flags (EC-98). Both were restored on 2026-11-22 after
+RM01 temporarily parsed them globally; the complete-set spacing matrix above is
+unchanged.
 
 The pre-fix `84be892` state resplit the sample above through both Node and the
 production browser path. The review-settled phase-1 implementation passes 11

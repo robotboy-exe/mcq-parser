@@ -134,6 +134,24 @@ test('parseQuestion keeps single initials inside option text', () => {
   eq(q.flags, []);
 });
 
+test('parseQuestion flags a structural line that reaches an option', () => {
+  const heading = core.parseQuestion({
+    num: 1,
+    text: 'Which is correct?\nA. One\nB. Two\nC. Three\nD. Four SECTION 2:'
+  });
+  eq(heading.flags.includes('option D contains section heading or instruction'), true, 'SECTION line flag');
+  const instruction = core.parseQuestion({
+    num: 1,
+    text: 'Which is correct? A. One B. Two C. Three D. Four According to Matthew, choose the correct answer.'
+  });
+  eq(instruction.flags.includes('option D contains section heading or instruction'), true, 'instruction line flag');
+  const clean = core.parseQuestion({
+    num: 1,
+    text: 'Which is correct? A. One B. Two C. Three D. Four'
+  });
+  eq(clean.flags, [], 'no flag for a clean option set');
+});
+
 test('parseQuestion suppresses the duplicate warning after an inline number', () => {
   const q = parser.parseQuestion({
     num: 1,
@@ -253,7 +271,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.4.0', 'parser version');
+  eq(parsed.version, '2.5.0', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');

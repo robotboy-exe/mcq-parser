@@ -58,11 +58,21 @@ Last updated: 2026-11-19.
   that core: `admin_questions.php` loads `src/parser/core.js` before the thin
   `ocr_helper.js` adapter. Four hand-transcribed fixtures cover lowercase stems,
   a lost question number, a prose preamble, and a trailing section heading.
-  64 runner, 163 unit, and 19 helper checks pass; deployment and the owner's
-  browser re-paste remain external. The 2026-11-20 adapter guard holds the
-  core to version `2.4.0` and renders a visible `#ocr_error` banner plus an
-  uncaught error when `window.OCRParser` is missing, verified on disposable
-  HTTP staging in a desktop browser.
+  The 2026-11-20 adapter guard holds the core to its module version and renders
+  a visible `#ocr_error` banner plus an uncaught error when `window.OCRParser`
+  is missing, verified on disposable HTTP staging in a desktop browser.
+- RM01 fix session (2026-11-22, review `BLOCK-1`, `BLOCK-4`, `BLOCK-5`,
+  `BLOCK-6`, `BLOCK-7`, `BLOCK-8`): the mid-stream unnumbered block and the
+  trailing `SECTION`/instruction lines no longer reach option D, the two pre-RM
+  comprehension expectations are restored (lowercase `(a)`-`(d)` counts only as
+  one complete ordered set, and an unlinked `PASSAGE` wall stays text), the
+  helper suite runs the real `helper.parseAll` plus real Load/DOM vectors, the
+  fraction bar spans the wider term on all three paint surfaces, and crossed
+  markers stay literal in both renderers. 68 runner, 164 unit, 27 helper, 7
+  preview, 26 math-tool, 69 JS marker, and 33 PHP marker checks pass on PHP
+  8.3.9; deployment and the owner's browser re-paste remain external.
+  `BLOCK-1` stays open as an owner release action: `origin/main` is still not an
+  ancestor of the release line.
 - The temporary D-107 pre-migration compatibility work was reverted on
   2026-11-19 after the owner reported production migration `01` successful. The
   application again requires the migrated column directly; operation `03` was
@@ -223,7 +233,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 | — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
 | — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
-| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | done locally; four hand-transcribed fixtures, region stages A–D in the canonical core, and `ocr_helper.js` reduced to a thin adapter over `src/parser/core.js`; 64 runner, 163 unit, 19 helper checks pass; the adapter's missing/mismatched-core guard is browser-verified on disposable staging | deployment and the owner's browser re-paste remain external; no live write by the agent |
+| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | done locally; 2026-11-22 fix session closed `BLOCK-4`/`BLOCK-5`/`BLOCK-6`/`BLOCK-7`/`BLOCK-8` in the main-release review; 68 runner, 164 unit, 27 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks pass on PHP 8.3.9; re-review required | `BLOCK-1` is an owner release action (main-integrable target); deployment and the owner's browser re-paste remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.

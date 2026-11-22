@@ -692,7 +692,7 @@ if (is_file(__DIR__ . '/header.php')) {
     include __DIR__ . '/header.php';
 }
 ?>
-<link rel="stylesheet" href="src/question-preview.css?v=1.1.2">
+<link rel="stylesheet" href="src/question-preview.css?v=1.1.3">
 <link rel="stylesheet" href="src/math-tool.css?v=1.1.1">
 <style>
 .admin-page{background:#f4f7fb;min-height:70vh;padding:32px 16px 50px;color:#263445}
@@ -1046,8 +1046,8 @@ if (is_file(__DIR__ . '/header.php')) {
 </div>
 </main>
 
-<script src="src/owner-tool/render.js?v=2.3.3"></script>
-<script src="src/parser/core.js?v=2.4.0"></script>
+<script src="src/owner-tool/render.js?v=2.3.4"></script>
+<script src="src/parser/core.js?v=2.5.0"></script>
 <script src="ocr_helper.js?v=2.4.1"></script>
 <script src="src/underline-toolbar.js"></script>
 <script src="src/question-preview.js"></script>
