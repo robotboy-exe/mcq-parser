@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-19.
+Last updated: 2026-11-22.
 
 ## Current state
 
@@ -73,6 +73,18 @@ Last updated: 2026-11-19.
   8.3.9; deployment and the owner's browser re-paste remain external.
   `BLOCK-1` stays open as an owner release action: `origin/main` is still not an
   ancestor of the release line.
+- Main-release re-review (2026-11-22) closed `BLOCK-7`/`BLOCK-8` and kept
+  `BLOCK-1`, `BLOCK-4`, `BLOCK-5`, and `BLOCK-6` open after two review rounds.
+  The owner chose `fix` for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` only; `BLOCK-1` has no
+  disposition and remains open. The closure session binds a mid-stream heading
+  or instruction that follows a complete inline A–D set, keeps a repeated
+  lowercase `(a)` inside its option text without weakening D-91, adds the
+  missing real inline Load vector, and completes the ninth production-file
+  handoff row. Core bytes changed, so `src/parser/core.js` is `?v=2.5.1`
+  (version `2.5.1`) and `ocr_helper.js` is `?v=2.4.2` (`EXPECTED_CORE_VERSION`
+  `2.5.1`); 68 runner, 166 unit, 28 helper, 69 JS + 33 PHP marker, 8 store, and
+  14 ordering checks plus 7/7 lint pass on PHP 8.3.9. Re-review is required;
+  commit, deploy, and live checks remain unauthorized.
 - The temporary D-107 pre-migration compatibility work was reverted on
   2026-11-19 after the owner reported production migration `01` successful. The
   application again requires the migrated column directly; operation `03` was
@@ -233,7 +245,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 | — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
 | — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
-| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | done locally; 2026-11-22 fix session closed `BLOCK-4`/`BLOCK-5`/`BLOCK-6`/`BLOCK-7`/`BLOCK-8` in the main-release review; 68 runner, 164 unit, 27 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks pass on PHP 8.3.9; re-review required | `BLOCK-1` is an owner release action (main-integrable target); deployment and the owner's browser re-paste remain external; no live write by the agent |
+| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and first re-review recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-1`/`BLOCK-4`/`BLOCK-5`/`BLOCK-6` open; the owner's `fix` disposition for `BLOCK-4`/`5`/`6` is implemented in the 2026-11-22 closure session (inline A–D structural binding, lowercase repeated-`(a)`, real inline Load vector, ninth production-file handoff row); 68 runner, 166 unit, 28 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.9; independent re-review required | `BLOCK-1` is undisposed and remains an owner release action (current `origin/main` is not an ancestor); deployment and the owner's browser re-paste remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -358,8 +370,14 @@ verifies the detail path with the rest of Release A.
     key to `1.1.2`, and adds a failing-first CSS regression. The focused review's
     regression-strength note is corrected, and the owner accepted the visual
     recheck with D-103.
+12. **Main-release boundary (RM01)** — the 2026-11-21 review and 2026-11-22
+    re-review recorded `BLOCK`; the owner chose `fix` for `BLOCK-4`/`BLOCK-5`/
+    `BLOCK-6`, implemented in the 2026-11-22 closure session. Independent
+    re-review of that closure is the next required review round. `BLOCK-1`
+    (current-`main` ancestry) has no owner disposition and still blocks commit
+    and `main`-release readiness.
 
-Current workflow stop: MS01 is done and review-settled. Its D-103/D-104
+Current workflow stop: the cycle work is done and review-settled. Its D-103/D-104
 corrections are committed at `120a5db`, the owner's palette request is
 implemented as the D-105 restoration and committed at `23a406c`, and the docs
 reconciliation is `596fb31`; all are pushed, and the authenticated remote tip
@@ -372,12 +390,18 @@ Brave/Android check for the D-105 drawer on 2026-11-18, so every cycle
 acceptance row and external gate is satisfied. Only accepted residual risk
 remains: `NOTE-9` (root `ocr_helper.js` is untokened, so the D-91 grammar depends
 on the documented deploy-time cache purge) and `NOTE-12`'s optional labelling of
-the drawer region. Archiving the cycle and advancing `main` to `596fb31` are
-separate explicit owner decisions. D-106 is an uncommitted direct owner request;
-deploying it remains a separate explicit owner action.
+the drawer region. The boundary is now the RM01 main release: the 2026-11-21
+review and 2026-11-22 re-review left `BLOCK-1`, `BLOCK-4`, `BLOCK-5`, and
+`BLOCK-6` open, and the owner's `fix` disposition for the last three is
+implemented locally at core `?v=2.5.1` / helper `?v=2.4.2`. `BLOCK-1` has no
+disposition, so commit and `main`-release readiness stay blocked; an independent
+re-review of the closure and an explicit owner release action are the next
+steps. Deployment, the owner's browser re-paste, and every live save remain
+external and unauthorized. D-106 and D-108 are direct owner requests carried by
+this line; deploying them remains a separate explicit owner action.
 
 ```text
-NEXT COMMAND: NONE - D-106 is implemented locally; deploying it needs an explicit owner instruction
+NEXT COMMAND: @docs/plan/prompts/review-session.md re-review math-editor-2026-11 main release BLOCK-4 BLOCK-5 BLOCK-6 from docs/plan/reviews/math-editor-2026-11-main-release-re-review.md
 ```
 
 ## Session protocol

@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.5.0
+// Version: 2.5.1
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.5.0";
+const PARSER_VERSION = "2.5.1";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -152,6 +152,17 @@ function structuralOptionText(text) {
     || /\bquestions?\s+\d{1,3}\s*(?:to|and|[-–—])\s*\d{1,3}\b/i.test(t);
 }
 
+const INLINE_OPTION_SET = /(?:^|[^A-Za-z])([A-Fa-f])\s*[.)]/g;
+
+function inlineOptionSet(text) {
+  let next = 0;
+  for (const match of String(text == null ? '' : text).matchAll(INLINE_OPTION_SET)) {
+    if (match[1].toUpperCase() === REQUIRED_OPTION_LETTERS[next]) next++;
+    if (next === REQUIRED_OPTION_LETTERS.length) return true;
+  }
+  return false;
+}
+
 function regionLineKind(line) {
   const t = String(line == null ? '' : line).trim();
   if (!t) return 'blank';
@@ -232,7 +243,9 @@ function splitRegions(text) {
       current = { num: n, lines: [REGION_STEM.exec(line)[2]], structural: pending };
       pending = [];
       last = n;
-      sawOption = false;
+      // A complete inline A-D set owns a following heading/instruction the same
+      // way whole-line options do (BLOCK-4 inline layout).
+      sawOption = inlineOptionSet(REGION_STEM.exec(line)[2]);
       continue;
     }
     if (kind === 'blank') {
@@ -813,9 +826,18 @@ function parseQuestion(chunk) {
   const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
   let matches = optionLabelMatches(raw, scanRaw);
   const lowerParens = matches.filter(match => match.parenLower);
-  if (lowerParens.length && lowerParens.map(match => match.letter).join('') !== 'ABCD') {
+  const lowerParenSet = [];
+  for (const match of lowerParens) {
+    if (lowerParenSet.some(item => item.letter === match.letter)) continue;
+    lowerParenSet.push(match);
+  }
+  if (lowerParens.length && lowerParenSet.map(match => match.letter).join('') !== 'ABCD') {
     // EC-97/INV-102: lowercase (a)-(d) labels are options only as one complete ordered set.
     matches = matches.filter(match => !match.parenLower);
+  } else if (lowerParens.length) {
+    // D-91: a later label-like repeat of an already selected lowercase label
+    // stays inside that option's text instead of resplitting the set.
+    matches = matches.filter(match => !match.parenLower || lowerParenSet.includes(match));
   }
   if (chunk && chunk.unlinkedPassage) {
     // EC-98: a PASSAGE heading with fewer than two linked questions is read as ordinary text.

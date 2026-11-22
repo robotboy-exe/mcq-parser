@@ -121,6 +121,14 @@ fractions, and square root stay with the visual editors. It is committed at
 accepted findings; the owner accepted its desktop/Brave drawer check on
 2026-11-18.
 
+The 2026-11-21 main-release review and its 2026-11-22 first re-review are
+recorded: `BLOCK-7`/`BLOCK-8` closed, `BLOCK-1`/`BLOCK-4`/`BLOCK-5`/`BLOCK-6`
+open. The owner's `fix` disposition for the last three is implemented locally
+(inline A–D structural binding, lowercase repeated-`(a)`, real inline Load
+vector, completed nine-file handoff); `BLOCK-1` (current-`main` ancestry) is
+undisposed, so `main` is not ready to advance and an independent re-review is
+required.
+
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The
 fixture runner is the regression gate. After changing the helper, press Reset

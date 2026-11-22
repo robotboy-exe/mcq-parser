@@ -152,6 +152,51 @@ test('parseQuestion flags a structural line that reaches an option', () => {
   eq(clean.flags, [], 'no flag for a clean option set');
 });
 
+test('parsePaste binds a structural line after a complete inline or vertical A-D set', () => {
+  const structural = [
+    { line: 'SECTION 2:', kind: 'heading' },
+    { line: 'SECTION 2.', kind: 'heading' },
+    { line: 'According to Matthew, choose the correct answer.', kind: 'instruction' }
+  ];
+  for (const layout of ['inline', 'vertical']) {
+    for (const item of structural) {
+      const labels = layout === 'inline'
+        ? ['1. Which is correct? A) One B) Two C) Three D) Four']
+        : ['1. Which is correct?', 'A. One', 'B. Two', 'C. Three', 'D. Four'];
+      const parsed = core.parsePaste([
+        ...labels,
+        item.line,
+        '2. Next question here',
+        'A. aaa',
+        'B. bbb',
+        'C. ccc',
+        'D. ddd'
+      ].join('\n'));
+      const label = layout + ' / ' + item.line;
+      eq(parsed.items.length, 2, label + ' item count');
+      eq(parsed.items[0].d, 'Four', label + ' option D');
+      eq(parsed.items[0].flags, [], label + ' flags');
+      eq(parsed.items[0].sectionInstruction, undefined, label + ' first item stays ungoverned');
+      eq(parsed.items[1].sectionInstruction, item.line, label + ' line governs the next stem');
+      eq(parsed.regions.map(region => region.kind), [item.kind], label + ' region kind');
+      eq(parsed.regions[0].from, 2, label + ' region from');
+      eq(parsed.regions[0].to, 2, label + ' region to');
+    }
+  }
+});
+
+test('parsePaste keeps a repeated lowercase (a) inside option A', () => {
+  const parsed = core.parsePaste([
+    '1. Which is correct? (a) Alpha (a) notation stays in option A',
+    '   (b) Bravo (c) Charlie (d) Delta'
+  ].join('\n'));
+  eq(parsed.items.length, 1);
+  eq(parsed.items[0].question, 'Which is correct?');
+  eq([parsed.items[0].a, parsed.items[0].b, parsed.items[0].c, parsed.items[0].d],
+    ['Alpha (a) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  eq(parsed.items[0].flags, []);
+});
+
 test('parseQuestion suppresses the duplicate warning after an inline number', () => {
   const q = parser.parseQuestion({
     num: 1,
@@ -271,7 +316,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.5.0', 'parser version');
+  eq(parsed.version, '2.5.1', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');

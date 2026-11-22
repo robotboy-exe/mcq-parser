@@ -119,6 +119,17 @@ test('keeps later selected-letter labels inside their option text', () => {
   assert.strictEqual(repeated.c, 'Charlie ( C ) stays');
   assert.strictEqual(repeated.d, 'Delta ( D ) . stays');
   assert.deepStrictEqual(repeated.flags, []);
+
+  const lowercaseParen = helper.parseQuestion({
+    num: 3,
+    text: 'Which is correct? (a) Alpha (a) notation stays in option A\n   (b) Bravo (c) Charlie (d) Delta'
+  });
+  assert.strictEqual(lowercaseParen.question, 'Which is correct?');
+  assert.strictEqual(lowercaseParen.a, 'Alpha (a) notation stays in option A');
+  assert.strictEqual(lowercaseParen.b, 'Bravo');
+  assert.strictEqual(lowercaseParen.c, 'Charlie');
+  assert.strictEqual(lowercaseParen.d, 'Delta');
+  assert.deepStrictEqual(lowercaseParen.flags, []);
 });
 
 test('still flags a second complete A-D option set', () => {
@@ -284,7 +295,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.0/.test(result.thrown.message));
+  assert(/2\.5\.1/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -380,6 +391,26 @@ test('Load removes a mid-stream section heading from the previous option D', () 
   assert.strictEqual(state.d, 'Four');
   assert(!/SECTION 2|According to Matthew/.test(state.d), 'option D must stay clean');
   assert(!/SECTION 2|According to Matthew/.test(state.question), 'stem must stay clean');
+});
+
+test('Load keeps an inline option block clean when a heading and instruction follow', () => {
+  const text = [
+    '1. Which is correct? A) One B) Two C) Three D) Four',
+    'SECTION 2:',
+    'According to Matthew, choose the correct answer.',
+    '2. Next question here',
+    'A. aaa', 'B. bbb', 'C. ccc', 'D. ddd'
+  ].join('\n');
+  const state = formState(loadThroughForm(text));
+  assert.strictEqual(state.queue.items.length, 2);
+  assert.strictEqual(state.question, 'Which is correct?');
+  assert.strictEqual(state.a, 'One');
+  assert.strictEqual(state.d, 'Four');
+  assert(!/SECTION 2|According to Matthew/.test(state.question + '\n' + state.d),
+    'structural text must stay out of the native fields');
+  assert(/SECTION 2:/.test(state.queue.items[1].sectionInstruction), 'heading owns the next stem');
+  assert(/According to Matthew/.test(state.queue.items[1].sectionInstruction), 'instruction owns the next stem');
+  assert.deepStrictEqual(state.queue.items[0].flags, [], 'clean inline layout needs no advisory flag');
 });
 
 test('Load keeps shared stimulus text out of every saveable field', () => {
