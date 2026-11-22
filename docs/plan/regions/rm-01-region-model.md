@@ -1,6 +1,6 @@
 # RM01 — Durable Region Model and One Shipped Parser
 
-- **Status:** owner `fix` disposition for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` (2026-11-22) and the frozen `BLOCK-10` fix completed 2026-11-22; acceptance passes; independent re-review required; `BLOCK-1` remains open and undisposed
+- **Status:** owner `fix` dispositions for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` and `BLOCK-10` (2026-11-22); the `BLOCK-10` fix is implemented, but its closure re-review kept it open on the mixed-case selected-repeat path, so one further fix session is authorized against the frozen contract; acceptance does not pass; `BLOCK-1` remains open and undisposed
 - **Commit:** committed and pushed to `owner-tool-integration` on the owner's explicit request (2026-11-22) for the 2nd-machine re-review; no deploy and no live action
 - **Original base:** `455ea5450c50f660ee2cf5f992677a1823a76603`
 - **Depends on:** the `owner-tool-integration` line (D-106/D-108 preserved)
@@ -9,7 +9,9 @@
 - **Intent:** owner request 2026-11-19, recorded in
   [`INTENT.md`](../../../INTENT.md) and in the EC-155–EC-159 rows of
   [`docs/EDGE_CASES.md`](../../EDGE_CASES.md)
-- **Review:** [`../reviews/math-editor-2026-11-main-release-review.md`](../reviews/math-editor-2026-11-main-release-review.md)
+- **Review:** [`main-release review`](../reviews/math-editor-2026-11-main-release-review.md);
+  finding record [`re-review 2`](../reviews/math-editor-2026-11-main-release-re-review-2.md);
+  closure [`re-review 3`](../reviews/math-editor-2026-11-main-release-re-review-3.md)
 
 ## Problem
 
@@ -193,6 +195,39 @@ rotate again: core `?v=2.5.1 → 2.5.2` (`PARSER_VERSION` `2.5.2`) and helper
 `?v=2.4.2 → 2.4.3` (`EXPECTED_CORE_VERSION` `2.5.2`), with the admin wiring and
 manifest hashes refreshed (INV-141, EC-140).
 
+### Owner disposition — 2026-11-22 (`BLOCK-10`)
+
+The closure re-review of `BLOCK-10`
+([`../reviews/math-editor-2026-11-main-release-re-review-3.md`](../reviews/math-editor-2026-11-main-release-re-review-3.md))
+kept the finding **open** after two review rounds. Criteria 1, 2, and 4 pass,
+but criterion 3 fails on a supported D-91 dimension: with one complete
+mixed-case parenthesized set and a later opposite-case repeat of the selected
+label, the current core, exported helper, and real Load path select the later
+repeat and move the intended Option A prefix into the question. The failing
+vector is `1. Which is correct? (a) Alpha (A) notation stays in option A (B)
+Bravo (C) Charlie (D) Delta`; the pre-RM helper returned A `Alpha (A) notation
+stays in option A`, while the current path returns Question `Which is correct?
+(a) Alpha` and A `notation stays in option A`. The opposite-case repeat matrix
+passes 15/16 in core and exported helper; the failing mask is lowercase A with
+uppercase B/C/D. This is a residual silent native-field boundary regression, not
+merely a warning difference.
+
+The owner then chose **`fix`** for `BLOCK-10`, scoped strictly to the frozen
+closure criteria recorded in
+[`../reviews/math-editor-2026-11-main-release-re-review-2.md`](../reviews/math-editor-2026-11-main-release-re-review-2.md)
+and re-verified in the re-review 3 record: the exact three-path vector, all 16
+case combinations, preservation of the D-91 spacing/repeat grammar, incomplete
+lowercase `(a)`-`(c)` refusal, unlinked PASSAGE fallback, both restored
+CONFIRMED fixtures, and failing-first plus full-baseline/token/manifest
+evidence. No requirement change was requested and no new scope was added.
+
+This `fix` choice closes no finding and is not evidence that either review was
+wrong. `BLOCK-10` remains open until an independent re-review accepts the
+closure. Commit readiness and `main`-release readiness stay **not ready**;
+`BLOCK-1` remains open and undisposed, and deployment, the owner's
+post-deployment browser re-paste, and every live save remain external and
+unauthorized.
+
 ### Per-production-file handoff (base `455ea54` → this worktree)
 
 | File | Add / delete | Final lines / bytes | SHA-256 | Responsibility | Deployment inclusion | Direct production-path test |
@@ -313,12 +348,12 @@ profile/output files, the local PHP 8.3.9 CLI under `$HOME/php83`, the static PH
 
 ## Continuation checklist
 
-1. Independently re-review this handoff against the frozen `BLOCK-4`/
-   `BLOCK-5`/`BLOCK-6` criteria in the
-   [`main-release review`](../reviews/math-editor-2026-11-main-release-review.md)
-   and the [first re-review](../reviews/math-editor-2026-11-main-release-re-review.md),
-   plus the frozen `BLOCK-10` criteria in the
-   [second re-review](../reviews/math-editor-2026-11-main-release-re-review-2.md).
+1. Complete one fix session for `BLOCK-10` against the frozen criteria in the
+   [second re-review](../reviews/math-editor-2026-11-main-release-re-review-2.md)
+   and the failing selected-repeat evidence in the
+   [third round](../reviews/math-editor-2026-11-main-release-re-review-3.md), per
+   the owner's 2026-11-22 `fix` disposition. Then independently re-review that
+   closure. `BLOCK-4`/`BLOCK-5`/`BLOCK-6` are already closed.
 2. `BLOCK-1` has no owner disposition: the owner must still create the
    main-integrable release target (current `origin/main` ancestry, carrying the
    root supplied copies per option a) before any commit or `main` advance.

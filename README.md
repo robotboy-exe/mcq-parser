@@ -121,13 +121,16 @@ fractions, and square root stay with the visual editors. It is committed at
 accepted findings; the owner accepted its desktop/Brave drawer check on
 2026-11-18.
 
-The 2026-11-21 main-release review and its 2026-11-22 first re-review are
-recorded: `BLOCK-7`/`BLOCK-8` closed, `BLOCK-1`/`BLOCK-4`/`BLOCK-5`/`BLOCK-6`
-open. The owner's `fix` disposition for the last three is implemented locally
-(inline A–D structural binding, lowercase repeated-`(a)`, real inline Load
-vector, completed nine-file handoff); `BLOCK-1` (current-`main` ancestry) is
-undisposed, so `main` is not ready to advance and an independent re-review is
-required.
+The 2026-11-21 main-release review and its 2026-11-22 re-review rounds are
+recorded: `BLOCK-7`/`BLOCK-8` are closed; the owner's `fix` disposition for
+`BLOCK-4`/`BLOCK-5`/`BLOCK-6` is implemented and closed by re-review 2.
+`BLOCK-10` was then assigned and fixed, but re-review 3 kept it open because a
+complete mixed-case parenthesized set with an opposite-case repeat of the
+selected A label still moves the intended Option A prefix into the question
+(the opposite-case repeat matrix passes 15/16). The owner chose `fix` for one
+further session against the frozen contract, so `BLOCK-10` is not yet closed.
+`BLOCK-1` (current-`main` ancestry) remains undisposed, so `main` is not ready
+to advance.
 
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The
