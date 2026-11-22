@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "region-midstream-heading",
+  "source": [
+    "synthetic mid-stream heading built from the user-supplied ec20 section pattern"
+  ],
+  "provenance": "Hand-written from the owner's field contract: a section heading and instruction between questions must not become option D text and must not enter the question stem.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/region-midstream-heading.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [1, 2],
+    "questions": [
+      {
+        "num": 1,
+        "question": "Which is correct?",
+        "d": "Four"
+      },
+      {
+        "num": 2,
+        "question": "Next question here",
+        "d": "ddd"
+      }
+    ]
+  },
+  "must_not": [
+    "SECTION 2: or the instruction line inside question 1 option D"
+  ],
+  "notes": [
+    "BLOCK-4 failing-first fixture: the current parser leaves 'Four SECTION 2:' in Option D."
+  ],
+  "discrepancies": []
+}

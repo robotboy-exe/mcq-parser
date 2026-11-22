@@ -105,14 +105,13 @@ selection and only for the trusted exact database subject name
 `English (Lexis & Structure)`. Equal non-empty exact Constant Text values form
 groups whose members are restored to their original question order (ascending
 `id`), not the random row order; blank values are singleton groups. It must never change
-the selected ID multiset, row values, query, limit, another subject, or
-`cbt_practice.php`.
+the selected ID multiset, row values, query, limit, or another subject.
 
 `deployed/subject_display.php` maps only that exact stored subject name to
 `English (Comprehension Pages / Lexis & Structure)` for visible output on
 `admin_questions.php` and `cbt.php`. Form values stay numeric IDs, the ordering
-helper still receives the unmodified database name, and `cbt_practice.php` must
-not load the alias. In the `cbt.php` exam view, Constant Text remains weight 800
+helper still receives the unmodified database name. In the `cbt.php` exam view,
+Constant Text remains weight 800
 and the still-bold question stem remains weight 700 (D-108).
 
 D-91 is the root-helper label contract. A-D is case-insensitive;
@@ -191,9 +190,9 @@ deliverable.
 | `splitBulletQuestions` / `splitQuestionItems` | Bullet mode is only for text with no line-start `N.` marker. Never invent numbers: bullet chunks keep `num: null` and the `question number missing` flag. Do not mix bullet and numbered chunks in one paste (INV-74). |
 | `extractStimuli` / `applyStimulusFlags` | The block must stay inside one question chunk and must not remove a question or option line. Standard intro needs table evidence; `[missing text]` is not a marker; a marker with no valid block removes only itself. Preserve blank lines outside a removed block and remove those inside it, or paragraph cleanup will delete/invent structure. `applyStimulusFlags` must clear old `needsImage`, assign order by queue order, and keep out-of-paste targets in `missing` (D-59, D-66, INV-92, INV-93). |
 | Exact-text renderers | `src/owner-tool/render.js` and `deployed/render.php` must remain behaviorally paired: escape first, format only balanced lowercase exact `<u>`, `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>` pairs, split fractions and matrices only at top-level separators, and keep every unsupported/malformed marker literal. Both run `tests/fixtures/render-markup.json`. Candidate paths use DOM nodes; options/explanations stay plain (D-66, D-97, INV-97–INV-99). |
-| English Lexis ordering | Group only the rows already selected by `cbt.php`, activate only from the trusted exact subject name, keep `NULL`/empty rows independent, restore each group's members to ascending original `id` (authored order), preserve every row field, and never move grouping into the SQL selection or `cbt_practice.php` (D-96, INV-143–INV-144). |
+| English Lexis ordering | Group only the rows already selected by `cbt.php`, activate only from the trusted exact subject name, keep `NULL`/empty rows independent, restore each group's members to ascending original `id` (authored order), preserve every row field, and never move grouping into the SQL selection (D-96, INV-143–INV-144). |
 | English Lexis subject operation | `03` omits the ID and changes only `is_active` on an exact existing row; `04` deactivates and never deletes. Both refuse a collation-only collision or incompatible key contract. The real 8-check harness passes on isolated Oracle MySQL Community Server 8.0.41 ARM64 (D-95, INV-142). |
-| English Lexis display alias | Keep `English (Lexis & Structure)` persisted and use `cbt_subject_display_name()` only on `admin_questions.php` and `cbt.php`. Do not pass the alias into grouping, change subject IDs, add an SQL rename, or touch `cbt_practice.php`; preserve CBT weights 800/700 for Constant Text/question (D-108, INV-150–INV-151). |
+| English Lexis display alias | Keep `English (Lexis & Structure)` persisted and use `cbt_subject_display_name()` only on `admin_questions.php` and `cbt.php`. Do not pass the alias into grouping, change subject IDs, or add an SQL rename; preserve CBT weights 800/700 for Constant Text/question (D-108, INV-150–INV-151). |
 | Owner parser-version refusal | A stale `cbtOwnerTool:v1` value is read-only. Key-only paste and native submit must not call a path that stamps it with the current parser version. Only full re-paste or explicit Reset replaces it (D-66, INV-95). |
 | `fillForm` / `tick` | They must agree on the E/F→D mapping and on ticking nothing when E/F text is absent. `tick()` computes radio index 3 for E/F; radio values 4/5 do not exist (INV-27, INV-28, INV-30). |
 | Save detector | Hard-coded to the exact success text. The archived PHP confirms the PRG flash flow, so the detector matches the server contract. Do not change one side without the other (INV-49; qwen-2 H07/H09). |
@@ -204,6 +203,16 @@ deliverable.
 | Auto-Save lock/loop | Use the recursive `setTimeout` heartbeat and `autoLock`; never use `setInterval` as the engine, `MutationObserver` for success, or `button.click()`/`requestSubmit()` to advance. A hidden tab finishes the current save and pauses (INV-67). |
 | Dry run | It must copy the queue, use current metadata, POST nothing, and write nothing to `ocrQueue`, `ocrSaving`, `ocrSavedLog`, `ocrBatchHistory`, or `autoLock` (INV-68). |
 | Dry/live run state | Dry and live have separate state, panels, progress, and blockers and are mutually exclusive; auto dry runs after Load/key-only Load and becomes `STALE` when its inputs change (event-driven; no stored-stamp poll). Live `COMPLETE` beats Stop; a live run token stops an old loop from overwriting a new Load's idle state, and an unexpected run error ends `BLOCKED`; reload state comes only from `deriveLiveState(queue, savedLog)`, with no run-state key and no auto-resume (D-58; INV-90, INV-91). |
+
+## Field contract
+
+`docs/SPEC.md` §3.5 is authoritative for what each native form field accepts.
+`question_text` and options A–D never receive section headings, instruction
+lines, dividers, shared stimulus/table text, E/F options, the answer key, or
+question numbers. Out-of-scope lines are dropped, never reassigned to the
+nearest field. A heading or instruction after an option block must not become
+Option D text. `sectionInstruction` and `regions` are internal metadata; the root
+helper never surfaces them (D-109; INV-154, INV-155).
 
 ## What to preserve
 

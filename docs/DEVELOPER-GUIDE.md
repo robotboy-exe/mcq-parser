@@ -16,7 +16,7 @@ testing commands, and known limitations. Deployment steps are in
 | `deployed/admin_question_store.php` | Extracted standalone save/delete transaction with explicit column lists and `constant_text` null-when-empty. |
 | `deployed/cbt.php` | Standalone CBT delivery: subject/category/year queries, limited random selection, EL01 post-selection ordering call, aliased subject display, exam UI, bold Constant Text/question hierarchy, exact-`<u>` questions/options, result panel. Loads `src/owner-tool/render.js`. |
 | `deployed/cbt_question_order.php` | Focused exact-subject grouping of already-selected English Lexis rows; original-order members (ascending `id`), shuffled groups, blank singletons. |
-| `deployed/subject_display.php` | Exact-name-only frontend alias for the English Lexis subject; consumed by `admin_questions.php` and `cbt.php`, never `cbt_practice.php`. |
+| `deployed/subject_display.php` | Exact-name-only frontend alias for the English Lexis subject; consumed by `admin_questions.php` and `cbt.php`. |
 | `deployed/answer_details.php` | Answer explanation page. Uses `render.php` for Constant Text, questions, options, and explanations. |
 | `deployed/render.php` | Server-side safe renderer: escape first, restore only the exact `<u>`, `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>` pairs, and run the shared parity vectors. |
 | `ocr_helper.js` | Shipping OCR helper. Parses pasted OCR into the native form, preserves blank-line paragraphs, fills `ocrQueue`/`ocrMeta`, and never submits. |
@@ -37,7 +37,7 @@ testing commands, and known limitations. Deployment steps are in
 admin form. The shared-text/context subsystem and the legacy bookmarklet are
 archived under `archive/owner-tool-2026-11/`; do not load or extend them. The
 `src/owner-tool/context*` helper functions inside `render.js` are inert and
-kept only because that file is shared with `cbt_practice.php`.
+kept only as compatibility shims.
 
 **Math editor (MS01, D-92–D-105).** One pair of assets serves the native form.
 The module builds its operator row, shape panels, symbol drawer, and counter with
@@ -70,7 +70,7 @@ admin page loads the changed palette script as `math-tool.js?v=1.1.2`, the
 changed palette stylesheet as `math-tool.css?v=1.1.1`, the read-only preview
 stylesheet as `question-preview.css?v=1.1.2`, and the renderer as
 `render.js?v=2.3.3`;
-`cbt.php` and `cbt_practice.php` both load the current `render.js?v=2.3.3`
+`cbt.php` loads the current `render.js?v=2.3.3`
 (D-102, D-103, D-104).
 
 **English Lexis (EL01, D-95–D-96).** The subject operation inserts
@@ -82,13 +82,13 @@ Only then does `cbt_question_order.php` group equal non-empty exact
 `constant_text`, shuffle groups, and restore each group's original question
 order (ascending `id`). `NULL` and empty
 values remain independent. Every selected row still carries and renders its own
-passage; other subjects and `cbt_practice.php` are unchanged.
+passage; other subjects are unchanged.
 
 **English Lexis display (D-108).** `subject_display.php` maps only the exact
 stored name to `English (Comprehension Pages / Lexis & Structure)` on the admin
 question page and `cbt.php`. Every form continues posting the numeric subject
 ID, and grouped ordering receives the original database name. There is no SQL
-rename or migration. `cbt_practice.php` does not load the helper.
+rename or migration.
 
 ## 2. Source of truth
 
@@ -169,8 +169,7 @@ ocrMeta  = { subject_id, exam_category_id, exam_year }
    row value and must not overwrite the session. Login and logout clear the
    session value.
 4. Constant Text renders above the question in `cbt.php` and
-   `answer_details.php`. It is not shown in the result sheet or
-   `cbt_practice.php`.
+   `answer_details.php`. It is not shown in the result sheet.
 5. Exact lowercase `<u>`/`</u>` formatting applies to Constant Text, question
    text, and options. The Underline button acts on the last-focused field and
    refuses partial marker overlap or nested pairs.
@@ -303,8 +302,6 @@ passed its required disposable MySQL 8.0.41 run.
   target connector/server must set the session collation.
 - `header.php`, `footer.php`, and `cbt_exam_attempts` are live-site artifacts and
   are not supplied. Do not deploy inferred local shims.
-- `cbt_practice.php` does not render Constant Text in ST01 and remains
-  intentionally untouched.
 - `bank-2021` still raises a duplicate-C flag on its final question from OCR
   answer-key text; this is pre-existing and not a missing-option regression.
 - ST01 did not run the migration in its implementation phase. The owner reported

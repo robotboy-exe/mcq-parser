@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "input_origin": "user_sample",
+  "id": "real-ec20",
+  "source": [
+    "user-supplied TEST OF ORAL OCR document (ec20)"
+  ],
+  "provenance": "Transcribed from the user-supplied ec20 OCR document: 23 numbered questions across SECTION 1 and SECTION 2.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/real-ec20.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 23,
+    "nums": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+    "questions": [
+      {
+        "num": 1,
+        "a": "dough",
+        "b": "ought",
+        "c": "hot",
+        "d": "cow"
+      },
+      {
+        "num": 16,
+        "a": "them",
+        "b": "though",
+        "c": "broth",
+        "d": "breathe"
+      },
+      {
+        "num": 23,
+        "a": "begged",
+        "b": "piled",
+        "c": "radioed",
+        "d": "clutched"
+      }
+    ]
+  },
+  "must_not": [
+    "A section heading or instruction inside question text or an option"
+  ],
+  "notes": [
+    "Real user paste: section headings and instructions are classified internally and never become question or option text."
+  ],
+  "discrepancies": []
+}

@@ -86,8 +86,8 @@ support. Do not deploy any file under `archive/`.
    `admin_question_store.php`, `subject_display.php`, `admin_questions.php`,
    `cbt_question_order.php`, `cbt.php`, `answer_details.php`. The helper must be
    present before the new `cbt.php` is served.
-4. Change only the renderer tag in `cbt_practice.php`: `render.js?v=2.3.2c` →
-   `?v=2.3.3`. Its markup, filters, and selection stay out of scope (D-102).
+4. `cbt_practice.php` is not part of this release and is no longer tracked in
+   the repository; leave the live file untouched.
 5. Cache handling: `admin_questions.php` loads `src/parser/core.js?v=2.4.0`
    and `ocr_helper.js?v=2.4.1`, loads `src/underline-toolbar.js` without a
    query token, and loads
@@ -95,8 +95,8 @@ support. Do not deploy any file under `archive/`.
     `src/owner-tool/render.js?v=2.3.3`, and `src/math-tool.js?v=1.1.2` (D-94,
     D-102, D-103, D-104, D-105). A standalone deployment must purge server/CDN caches, clear the
    site's browser cache, and verify the live helper and palette hashes.
-   `cbt.php` and `cbt_practice.php` both load
-   `src/owner-tool/render.js?v=2.3.3`; no page may keep `?v=2.3.2c`.
+   `cbt.php` loads `src/owner-tool/render.js?v=2.3.3`; no page may keep
+   `?v=2.3.2c`.
 6. Run the Constant Text migration:
    - `php -l` every changed PHP file;
    - `mysql --default-character-set=utf8mb4 <database> < deployed/sql/01-constant-text.sql`;
@@ -178,7 +178,7 @@ D-108 is display-only. It adds no SQL operation and does not rename the exact
 | Palette keyboard | Tab to a palette button and press Enter or Space | the focused symbol inserts; every control has an accessible name |
 | Byte counter | paste or type multi-byte symbols and watch the counter | neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+ with visible warning copy; nothing truncates and Save stays enabled |
 | Byte counter refresh | click `Load questions`/`Skip` or reset the form | the counter matches the field's new UTF-8 byte count after the page's own fill, including red at 60,000+ |
-| Tokens | view source of the admin page, `cbt.php`, and `cbt_practice.php` | exactly one `src/math-tool.css?v=1.1.1` link and one `src/math-tool.js?v=1.1.2` script on the admin page, script after the preview script; one `src/question-preview.css?v=1.1.2` link and one `src/owner-tool/render.js?v=2.3.3` script there too; `cbt.php` and `cbt_practice.php` each load `src/owner-tool/render.js?v=2.3.3` exactly once, and stale preview `?v=1.1.1` plus renderer `?v=2.3.2c` appear nowhere |
+| Tokens | view source of the admin page and `cbt.php` | exactly one `src/math-tool.css?v=1.1.1` link and one `src/math-tool.js?v=1.1.2` script on the admin page, script after the preview script; one `src/question-preview.css?v=1.1.2` link and one `src/owner-tool/render.js?v=2.3.3` script there too; `cbt.php` loads `src/owner-tool/render.js?v=2.3.3` exactly once, and stale preview `?v=1.1.1` plus renderer `?v=2.3.2c` appear nowhere |
 | CBT | open delivered questions with preserved constant text | passage renders above the question; `<u>` is real underline; Constant Text is bold at weight 800 and the larger question stem remains bold at weight 700 |
 | English Lexis subject | inspect the active subject list after `03` and after a rerun | exactly one byte-exact active row; generated ID and existing description/timestamp remain unchanged |
 | English Lexis ordering | start a 50-question exam containing repeated exact non-empty passages plus blank passages | selected IDs and filters are unchanged; repeated passages are contiguous; blank rows stay independent; every member renders its passage |
@@ -260,8 +260,8 @@ Stop and do not continue on the first mismatch:
   alone is not sufficient on MySQL 8.0.41.
 - `header.php`, `footer.php`, and `cbt_exam_attempts` are live-site artifacts,
   not supplied. Do not deploy inferred local shims.
-- `cbt_practice.php` does not render Constant Text in ST01; its only change in
-  this package is the `render.js?v=2.3.3` cache key (D-102, phase-5 `FIX-1`).
+- `cbt_practice.php` is not part of this release and is no longer tracked in the
+  repository; leave the live file untouched.
 - ST01 did not execute the schema migration in its implementation phase. The
   owner reported production operation `01` successful on 2026-11-19; no agent
   database action or independent production verification was performed.

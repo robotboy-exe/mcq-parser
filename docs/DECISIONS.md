@@ -1799,3 +1799,26 @@ retain the question hierarchy.
 persisted name. The alias must stay exact-name-only so a near-name subject is not
 silently relabelled, and `cbt.php` must continue passing the unmodified database
 name into grouped ordering.
+
+## D-109 — Field ownership contract
+
+**Choice.** Each native form field has one owner. `question_text` accepts only
+the question stem; `option_a`–`option_d` accept only that option's own text;
+`subject_id`, `exam_category_id`, and `exam_year` accept only saved or selected
+metadata; `constant_text` and `correct_option` are manual only. Section headings,
+instruction lines, dividers, shared stimulus/table text, E/F options, the answer
+key, and question numbers never enter a field. A line whose real home is out of
+scope is dropped, not reassigned. A heading or instruction after an option block
+is discarded rather than appended to Option D. The contract lives in
+`docs/SPEC.md` §3.5 and is enforced by `INV-154`/`INV-155` and the
+`region-midstream-*` fixtures.
+
+**Why.** The owner clarified that headings and instructions belong to Constant
+Text, which this release does not fill. The BLOCK-4 review assumed they should be
+carried forward; the owner wants them to disappear instead. A written field
+contract prevents that ambiguity from recurring.
+
+**Risk.** Internal `sectionInstruction` and `regions` metadata still exists. It
+must never be surfaced by the root helper. Dropping a line is safe only when it
+is genuinely out of scope; ordinary continuation prose must still stay with its
+question.

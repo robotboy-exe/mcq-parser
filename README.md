@@ -43,7 +43,6 @@ deployed/
   admin_question_store.php  standalone save/delete transaction
   cbt.php                CBT exam delivery and result sheet
   answer_details.php     answer explanation and media page
-  cbt_practice.php       practice page (out of ST01 scope)
   render.php             server exact-<u> renderer
   sql/                   Constant Text schema and rollback
 src/
@@ -93,7 +92,7 @@ tests/
   stored as nullable `questions.constant_text`, prefills the next new question
   from the browser session after a successful save, and clears on login/logout.
 - Constant Text appears above the question in the `cbt.php` exam view and in
-  `answer_details.php`, not in the result sheet or `cbt_practice.php`.
+  `answer_details.php`, not in the result sheet.
 - The Underline button wraps or unwraps the last-focused Constant Text, question,
   or option field with exact lowercase tags and refuses partial marker overlap.
 - A read-only admin preview renders Constant Text and Question with the same safe

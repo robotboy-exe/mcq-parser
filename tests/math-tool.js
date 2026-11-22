@@ -650,11 +650,6 @@ test('exam and detail pages ship the same horizontal-bar rules', () => {
     assert.match(page, connectedRoot, 'the radical must be connected on every rendered surface');
   }
   assert.ok(cbt.includes('src/owner-tool/render.js?v=2.3.3'));
-
-  const practice = fs.readFileSync(path.join(__dirname, '..', 'deployed', 'cbt_practice.php'), 'utf8');
-  assert.ok(practice.includes('src/owner-tool/render.js?v=2.3.3'), 'cbt_practice must load the current renderer key');
-  assert.strictEqual((practice.match(/src\/owner-tool\/render\.js/g) || []).length, 1);
-  assert.strictEqual(practice.includes('2.3.2c'), false, 'the stale renderer key must be gone');
 });
 
 console.log('PASS: ' + passed + ' math-tool vectors');

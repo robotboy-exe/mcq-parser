@@ -45,7 +45,7 @@ Last updated: 2026-11-19.
   `English (Lexis & Structure)` subject displays as
   `English (Comprehension Pages / Lexis & Structure)` on all admin subject selects
   and rows and on the CBT setup/exam views, without changing IDs, the grouping
-  key, `cbt_practice.php`, or SQL. CBT Constant Text is weight 800 and the
+  key or SQL. CBT Constant Text is weight 800 and the
   question stem remains weight 700. Local static, disposable HTTP, and
   desktop/390px browser checks pass; deployment and the owner's live check remain
   external.
@@ -69,8 +69,7 @@ Last updated: 2026-11-19.
 - Planning constraint: the measured live-origin diffs are
   `admin_questions.php` +94/−84 (ST01, ME01/ME02, MS01, D-106, and D-108),
   `cbt.php` +78/−37 (MS01, the renderer token, and D-108),
-  `answer_details.php` +21/−3 (MS01 shape rules), `cbt_practice.php` +20/−2 (its
-  `FIX-1` renderer token), and `ocr_helper.js` +57/−20 —
+  `answer_details.php` +21/−3 (MS01 shape rules), and `ocr_helper.js` +57/−20 —
   all within the 100-addition externalize-first cap. No cap exception remains.
 - Last review-settled packages: ST01 (`PASS`, third closure-focused re-review),
   ME01 (`PASS`, phase-2 closure re-review), ME02 (`PASS WITH ACCEPTED
@@ -147,7 +146,7 @@ Last updated: 2026-11-19.
 | EL01 phase-4 rigorous review (2026-11-17, reviewed `HEAD` `3f5d2ea` plus the EL01 worktree) | independent original review: acceptance reproduction, per-file externalize-first measurements, real module/wiring, HTTP staging, and MySQL 8.0.41 harnesses, manifest, PHP lint, syntax, `git diff --check`, and five adversarial probes | `PASS WITH ACCEPTED FINDINGS`; no `BLOCK` or `FIX`; `NOTE-1`–`NOTE-4` were docs/scope-only and are corrected; 11 ordering/wiring, 6 HTTP staging, 8 MySQL 8.0.41, 18/18 manifest, live-origin `cbt.php` +59 within the +60 cap; no live write |
 | MS01 implementation (2026-11-17, base `0410ecb`, uncommitted) | `node tests/runner.js`, `unit.js`, `ocr-helper.js`, `underline-toolbar.js`, `question-preview.js`, `math-tool.js`, `render-markup.js`, `extract-bank --check`, and the PHP 8.3.32 suites plus `php -l` | 60 runner; 163 unit; 11 helper; 10 underline; 5 preview; 25 math-tool; 67 shared marker vectors in JS and 32 in PHP; store 8; ordering 11; bank 7 hashes; lint PASS; live-origin +89/−80, +74/−35, +21/−3; no browser, MySQL, or live check |
 | MS01 phase-5 review (2026-11-17, reviewed `0410ecb` plus the MS01 worktree) | independent original review: acceptance reproduction, per-file measurements, 409-input JS/PHP parity fuzz, injection and strip probes, three-surface CSS parity, manifest re-hash, and `git diff --check` | `PASS WITH ACCEPTED FINDINGS`; `FIX-1` (stale cache keys on three consumers) plus `NOTE-1`–`NOTE-6`; no `BLOCK`; manifest 18/18; all suites and counts reproduced; no live write |
-| MS01 `FIX-1` fix (2026-11-17, base `0410ecb`, uncommitted) | strengthened asset vector in `tests/math-tool.js`, `node tests/math-tool.js`, full Node/PHP baseline, PHP lint, `git diff --check`, manifest re-hash, and `--no-index` live numstat | 25 math-tool vectors PASS with the new token assertions; 60 runner, 163 unit, 11 helper, 10 underline, 5 preview, 67 JS + 32 PHP marker vectors, 8 store, 11 ordering; lint PASS; `admin_questions.php` 1055 / 62662 at **+89/−80**; `cbt_practice.php` 886 / 37246 at **+20/−2**; no browser, MySQL, staging, or live check |
+| MS01 `FIX-1` fix (2026-11-17, base `0410ecb`, uncommitted) | strengthened asset vector in `tests/math-tool.js`, `node tests/math-tool.js`, full Node/PHP baseline, PHP lint, `git diff --check`, manifest re-hash, and `--no-index` live numstat | 25 math-tool vectors PASS with the new token assertions; 60 runner, 163 unit, 11 helper, 10 underline, 5 preview, 67 JS + 32 PHP marker vectors, 8 store, 11 ordering; lint PASS; `admin_questions.php` 1055 / 62662 at **+89/−80**; no browser, MySQL, staging, or live check |
 | MS01 D-103 owner-visual correction (2026-11-17, base `c6a81fb`, uncommitted) | failing-first `node tests/math-tool.js`, full Node/PHP baseline, PHP lint, local Chromium radical geometry at 16–48px, asset/hash refresh, and live-origin numstat | legacy bare `√` operator removed; visual Root editor remains; joined `.06em` vinculum passes all three-surface assertions and local Arial/system-font checks; 25 math-tool vectors and full baseline pass; caps remain +89/+74/+21/+20; focused review and owner desktop/Brave recheck pending |
 | MS01 D-104 owner-preview correction (2026-11-17, base `c6a81fb`, uncommitted with D-103) | failing-first `node tests/question-preview.js`, focused preview/palette checks, full Node/PHP baseline, PHP lint, cache/hash refresh, and live-origin numstat | Constant Text preview is a fixed 150px border-box with vertical overflow; Question preview stays content-sized; 6 preview and 25 math-tool vectors plus the full baseline pass; caps remain +89/+74/+21/+20; focused review and owner desktop/Brave recheck pending |
 | MS01 D-103/D-104 focused review and owner acceptance (2026-11-17) | independent real-path suites, manifest/cap measurements, disposable Chromium at 900px/320px and 48 radical font/size combinations, then owner desktop/Brave checklist | `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; `NOTE-7` regression guard and `NOTE-8` stale docs corrected; owner reported PASS for the sole Root control, joined vinculum, fixed scrollable Constant Text preview, and content-sized Question preview; no agent live action |
@@ -168,7 +167,6 @@ are shelved rather than repaired in this cycle.
 
 - `deployed/admin_questions.php` (OT03 replaced the helper include here)
 - `deployed/cbt.php`
-- `deployed/cbt_practice.php` (retained OT04 evidence; no remaining cycle work)
 - `db_conn.php` (PDO connection contract; added in commit `405439b`)
 - `questions.sql`, `subjects.sql`, `exam_category.sql` (exact DDL supplied in
   `main` commit `002483b`; copied to `owner-tool-integration` 2026-11-03)
