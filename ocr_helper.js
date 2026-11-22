@@ -102,12 +102,15 @@
   if (bundled) $('ocr_title').textContent = 'Bookmarklet paste';
 
   let queue = store.get('ocrQueue') || { items: [], i: 0 };
-  // The loaded queue owns the key; ansKey is only the fallback for a queue that
-  // lost its copy, for example after the older page helper reset it.
-  const queueKey = queue.key && typeof queue.key === 'object' && Object.keys(queue.key).length ? queue.key : null;
-  let key = queueKey || store.get('ansKey');
+  // ansKey is the only place the answer key lives, so any tool that clears it
+  // clears the key. An older build kept a second copy inside the queue; drop
+  // that leftover so a stale copy cannot outlive ansKey.
+  if (Object.prototype.hasOwnProperty.call(queue, 'key')) {
+    delete queue.key;
+    store.set('ocrQueue', queue);
+  }
+  let key = store.get('ansKey');
   if (!key || typeof key !== 'object') key = {};
-  if (Object.keys(key).length) store.set('ansKey', key);
   const save = () => store.set('ocrQueue', queue);
   let auto = null;
   let autoTimer = null;
@@ -273,7 +276,6 @@
     if (!items.length) {
       if (keyCount && queue.items.length) {
         key = parsedKey;
-        queue.key = key;
         store.set('ansKey', key);
         save();
         show();
@@ -290,7 +292,7 @@
     autoTimer = null;
     autoRun++;
     key = parsedKey;
-    queue = { items, i: 0, key, how: parsed.sectionEvidence ? parsed.sectionEvidence.how : 'none' };
+    queue = { items, i: 0, how: parsed.sectionEvidence ? parsed.sectionEvidence.how : 'none' };
     if (keyCount) store.set('ansKey', key);
     else store.del('ansKey');
     auto = { ready: false, running: false, total: items.length };
@@ -321,7 +323,7 @@
     autoStep();
   };
   $('ocr_clear').onclick = () => {
-    queue = { items: [], i: 0, key: {} };
+    queue = { items: [], i: 0 };
     key = {};
     auto = null;
     autoRun++;

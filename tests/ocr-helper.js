@@ -535,22 +535,33 @@ test('autosave stops on a save error and leaves the question queued', async () =
   assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
 });
 
-test('prefers the key in the current queue over a stale ansKey', () => {
+test('keeps the answer key only in ansKey and drops a leftover queue copy', () => {
   const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
   const first = browserHelperWithCore();
   loadPaste(first, text);
-
   const queue = JSON.parse(first.storage.get('ocrQueue'));
+  assert.strictEqual('key' in queue, false, 'no key copy in the queue');
+
   queue.key = { 1: 'D', 2: 'A' };
-  queue.i = 0;
   first.storage.set('ocrQueue', JSON.stringify(queue));
   first.storage.set('ansKey', JSON.stringify({ 1: 'C', 2: 'B', 50: 'C' }));
 
   const second = browserHelperWithCore(persisted(first));
-  assert.deepStrictEqual(checkedRadios(second), ['3'], 'question 1 key D from the queue');
-  assert(/key D/.test(second.field('ocr_status').innerHTML));
-  assert(/2 answers/.test(second.field('ocr_status').innerHTML), 'queue key count wins');
-  assert.strictEqual(JSON.parse(second.storage.get('ansKey'))['1'], 'D', 'ansKey refreshed from the queue');
+  assert.deepStrictEqual(checkedRadios(second), ['2'], 'question 1 key C from ansKey');
+  assert(/key C/.test(second.field('ocr_status').innerHTML));
+  assert(/3 answers/.test(second.field('ocr_status').innerHTML), 'ansKey count used');
+  assert.strictEqual('key' in JSON.parse(second.storage.get('ocrQueue')), false, 'leftover queue copy dropped');
+});
+
+test('clearing ansKey in another tool leaves no key for the helper', () => {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
+  const first = browserHelperWithCore();
+  loadPaste(first, text);
+  first.storage.delete('ansKey');
+
+  const second = browserHelperWithCore(persisted(first));
+  assert.deepStrictEqual(checkedRadios(second), [], 'nothing ticked');
+  assert(/no key/.test(second.field('ocr_status').innerHTML));
 });
 
 test('stop autosave works while the save request is still hanging', async () => {
