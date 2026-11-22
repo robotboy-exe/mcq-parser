@@ -104,10 +104,18 @@ Last updated: 2026-11-22.
   repeat matrix passes only 15/16 in core and exported helper, failing on
   lowercase A with uppercase B/C/D. The owner then chose **`fix`** for
   `BLOCK-10`, scoped only to the frozen criteria in re-review 2 and the failing
-  evidence in re-review 3. One further fix session is authorized; the finding
-  stays open until an independent re-review accepts the closure. `BLOCK-1`
-  remains open and undisposed, so commit and `main`-release readiness stay
-  blocked; deployment and live checks remain unauthorized.
+  evidence in re-review 3. That fix session is implemented and green locally:
+  the uppercase-only branch now applies only when the first parenthesized `A`
+  is uppercase, so a lowercase `A` before the uppercase set keeps the first
+  selected boundary and the later `(A)` inside Option A. Core, exported helper,
+  and real Load return the five exact values with no flags, and the
+  opposite-case repeat matrix is 16/16; core is `?v=2.5.3` (version `2.5.3`)
+  and the helper is `?v=2.4.4` (`EXPECTED_CORE_VERSION` `2.5.3`); 68 runner,
+  171 unit, 34 helper, 69 JS + 33 PHP marker, 8 store, and 14 ordering checks
+  plus 7/7 lint pass on PHP 8.3.32. The finding stays open until an independent
+  re-review accepts the closure. `BLOCK-1` remains open and undisposed, so
+  commit and `main`-release readiness stay blocked; deployment and live checks
+  remain unauthorized.
 - The temporary D-107 pre-migration compatibility work was reverted on
   2026-11-19 after the owner reported production migration `01` successful. The
   application again requires the migrated column directly; operation `03` was
@@ -268,7 +276,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 | — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
 | — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
-| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and three review rounds recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-1` open and undisposed; the owner's `fix` disposition for `BLOCK-4`/`5`/`6` is implemented and closed by re-review 2; `BLOCK-10`'s mixed-case fix passes the exact vector and 16/16 no-repeat cases but re-review 3 kept it open on a selected opposite-case repeat (15/16) that moves the intended Option A prefix into the question; the owner chose `fix` on 2026-11-22 for one further session against the frozen contract; 68 runner, 169 unit, 31 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.2`, helper `?v=2.4.3`; independent re-review of the closure required | `BLOCK-1` is undisposed and remains an owner release action (current `origin/main` is not an ancestor); deployment and the owner's browser re-paste remain external; no live write by the agent |
+| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and three review rounds recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-1` open and undisposed; the owner's `fix` disposition for `BLOCK-4`/`5`/`6` is implemented and closed by re-review 2; `BLOCK-10`'s mixed-case fix passes the exact vector and 16/16 no-repeat cases but re-review 3 kept it open on a selected opposite-case repeat (15/16); the owner's 2026-11-22 `fix` session now guards the uppercase-only branch so a lowercase `A` before the uppercase set keeps the first selected boundary, making the exact vector and the opposite-case repeat matrix 16/16 through core, exported helper, and real Load; 68 runner, 171 unit, 34 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.3`, helper `?v=2.4.4`; independent re-review of the closure required | `BLOCK-1` is undisposed and remains an owner release action (current `origin/main` is not an ancestor); deployment and the owner's browser re-paste remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -395,10 +403,11 @@ verifies the detail path with the rest of Release A.
     recheck with D-103.
 12. **Main-release boundary (RM01)** — the 2026-11-21 review and 2026-11-22
     re-review recorded `BLOCK`; the owner chose `fix` for `BLOCK-4`/`BLOCK-5`/
-    `BLOCK-6`, implemented in the 2026-11-22 closure session. Independent
-    re-review of that closure is the next required review round. `BLOCK-1`
-    (current-`main` ancestry) has no owner disposition and still blocks commit
-    and `main`-release readiness.
+    `BLOCK-6`, implemented in the 2026-11-22 closure session, and then for
+    `BLOCK-10`, implemented in a second 2026-11-22 session. Independent
+    re-review of the `BLOCK-10` closure is the next required review round.
+    `BLOCK-1` (current-`main` ancestry) has no owner disposition and still
+    blocks commit and `main`-release readiness.
 
 Current workflow stop: the cycle work is done and review-settled. Its D-103/D-104
 corrections are committed at `120a5db`, the owner's palette request is
@@ -417,17 +426,20 @@ the drawer region. The boundary is now the RM01 main release: the 2026-11-21
 review plus the 2026-11-22 re-review rounds left `BLOCK-1` open and undisposed.
 The owner's `fix` dispositions are implemented and committed to
 `owner-tool-integration`, including the second re-review's `BLOCK-10`
-mixed-case fix, at core `?v=2.5.2` / helper `?v=2.4.3`, but re-review 3 kept
-`BLOCK-10` open on a selected opposite-case repeat that still moves the intended
-Option A prefix into the question. The owner chose `fix` for one further session
-against the frozen contract; `BLOCK-10` stays open until an independent re-review
-accepts the closure, and `BLOCK-1` has no disposition, so commit and
-`main`-release readiness stay blocked. Deployment, the owner's browser re-paste,
-and every live save remain external and unauthorized. D-106 and D-108 are direct owner requests carried by
+mixed-case fix. Re-review 3 kept `BLOCK-10` open on a selected opposite-case
+repeat that still moved the intended Option A prefix into the question; the
+owner chose `fix` for one further session, which now guards the uppercase-only
+branch so a lowercase `A` before the uppercase set keeps the first selected
+boundary. The exact vector and the opposite-case repeat matrix are 16/16 through
+core, exported helper, and real Load at core `?v=2.5.3` / helper `?v=2.4.4`.
+`BLOCK-10` stays open until an independent re-review accepts the closure, and
+`BLOCK-1` has no disposition, so commit and `main`-release readiness stay
+blocked. Deployment, the owner's browser re-paste, and every live save remain
+external and unauthorized. D-106 and D-108 are direct owner requests carried by
 this line; deploying them remains a separate explicit owner action.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/fix-session.md fix math-editor-2026-11 main release BLOCK-10 from docs/plan/reviews/math-editor-2026-11-main-release-re-review-3.md
+NEXT COMMAND: @docs/plan/prompts/review-session.md re-review math-editor-2026-11 main release BLOCK-10 from docs/plan/reviews/math-editor-2026-11-main-release-re-review-3.md
 ```
 
 ## Session protocol

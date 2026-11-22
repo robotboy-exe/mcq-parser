@@ -153,6 +153,27 @@ test('exported parseAll keeps a complete mixed-case parenthesized A-D set', () =
   assert.deepStrictEqual(questions[0].flags, []);
 });
 
+test('keeps an opposite-case selected A repeat inside option A', () => {
+  const question = helper.parseQuestion({
+    num: 5,
+    text: 'Which is correct? (a) Alpha (A) notation stays in option A (B) Bravo (C) Charlie (D) Delta'
+  });
+  assert.strictEqual(question.question, 'Which is correct?');
+  assert.deepStrictEqual([question.a, question.b, question.c, question.d],
+    ['Alpha (A) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  assert.deepStrictEqual(question.flags, []);
+});
+
+test('exported parseAll keeps an opposite-case selected A repeat inside option A', () => {
+  const questions = helper.parseAll(
+    '1. Which is correct? (a) Alpha (A) notation stays in option A (B) Bravo (C) Charlie (D) Delta');
+  assert.strictEqual(questions.length, 1);
+  assert.strictEqual(questions[0].question, 'Which is correct?');
+  assert.deepStrictEqual([questions[0].a, questions[0].b, questions[0].c, questions[0].d],
+    ['Alpha (A) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  assert.deepStrictEqual(questions[0].flags, []);
+});
+
 test('still flags a second complete A-D option set', () => {
   const question = helper.parseQuestion({
     num: 1,
@@ -316,7 +337,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.2/.test(result.thrown.message));
+  assert(/2\.5\.3/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -440,6 +461,19 @@ test('Load keeps a complete mixed-case parenthesized A-D set in the native form'
   assert.strictEqual(state.queue.items.length, 1);
   assert.strictEqual(state.question, 'Which is correct?');
   assert.strictEqual(state.a, 'Alpha (a) notation stays in option A');
+  assert.strictEqual(state.b, 'Bravo');
+  assert.strictEqual(state.c, 'Charlie');
+  assert.strictEqual(state.d, 'Delta');
+  assert(!/missing/.test(state.status), 'status must not report a missing option');
+  assert.deepStrictEqual(state.queue.items[0].flags, []);
+});
+
+test('Load keeps an opposite-case selected A repeat inside option A', () => {
+  const state = formState(loadThroughForm(
+    '1. Which is correct? (a) Alpha (A) notation stays in option A (B) Bravo (C) Charlie (D) Delta'));
+  assert.strictEqual(state.queue.items.length, 1);
+  assert.strictEqual(state.question, 'Which is correct?');
+  assert.strictEqual(state.a, 'Alpha (A) notation stays in option A');
   assert.strictEqual(state.b, 'Bravo');
   assert.strictEqual(state.c, 'Charlie');
   assert.strictEqual(state.d, 'Delta');

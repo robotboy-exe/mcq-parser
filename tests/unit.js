@@ -208,6 +208,35 @@ test('parseQuestion keeps a complete mixed-case parenthesized A-D set', () => {
   eq(q.flags, []);
 });
 
+test('parseQuestion keeps an opposite-case selected A repeat inside option A', () => {
+  const q = core.parseQuestion({
+    num: 1,
+    text: 'Which is correct? (a) Alpha (A) notation stays in option A (B) Bravo (C) Charlie (D) Delta'
+  });
+  eq(q.question, 'Which is correct?');
+  eq([q.a, q.b, q.c, q.d],
+    ['Alpha (A) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  eq(q.flags, []);
+});
+
+test('parseQuestion accepts an opposite-case selected-A repeat for all 16 case combinations', () => {
+  for (let mask = 0; mask < 16; mask++) {
+    const labels = [...'abcd'].map((letter, index) =>
+      ((mask & (1 << index)) ? letter.toUpperCase() : letter));
+    const repeat = labels[0] === labels[0].toLowerCase()
+      ? labels[0].toUpperCase()
+      : labels[0].toLowerCase();
+    const text = 'Which is correct? (' + labels[0] + ') Alpha (' + repeat
+      + ') notation stays in option A (' + labels[1] + ') Bravo ('
+      + labels[2] + ') Charlie (' + labels[3] + ') Delta';
+    const q = core.parseQuestion({ num: 1, text });
+    eq([q.question, q.a, q.b, q.c, q.d],
+      ['Which is correct?', 'Alpha (' + repeat + ') notation stays in option A', 'Bravo', 'Charlie', 'Delta'],
+      'mask ' + mask);
+    eq(q.flags, [], 'mask ' + mask + ' flags');
+  }
+});
+
 test('parseQuestion accepts all 16 case combinations of one unspaced parenthesized A-D set', () => {
   for (let mask = 0; mask < 16; mask++) {
     const labels = [...'abcd'].map((letter, index) =>
@@ -346,7 +375,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.5.2', 'parser version');
+  eq(parsed.version, '2.5.3', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');
