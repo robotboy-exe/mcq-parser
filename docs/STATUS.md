@@ -49,29 +49,24 @@ Last updated: 2026-11-23.
   question stem remains weight 700. Local static, disposable HTTP, and
   desktop/390px browser checks pass; deployment and the owner's live check remain
   external.
-- Main-release finding disposition (2026-11-23): the owner chose **`fix`** for
-  `BLOCK-1` and directed that `owner-tool-integration` is the mature branch and
-  stays the authoritative release line, with no work lost or regressed. Current
-  `origin/main` (`4d68b28`) is not an ancestor of that line, so the authorized
-  fix is one frozen-contract session: merge current `origin/main` into
-  `owner-tool-integration` with a `--no-ff` merge commit — every commit on both
-  sides is kept, and nothing is rewritten, force-pushed, or deleted — then
-  re-run the full Node/PHP baseline on the merged tip and submit that exact
-  target to an independent re-review. The `fix` choice closes no finding:
-  `BLOCK-1` stays open until its frozen criteria 1–4 pass re-review, so commit
-  readiness and `main`-release readiness remain blocked, and deployment, the
-  owner's browser re-paste, and every live save remain external and
-  unauthorized. `BLOCK-10` is closed as of the fifth re-review (2026-11-23);
-  `NOTE-14`'s stale test counts in root `AGENTS.md` are corrected in this
-  documentation-only session.
-- `BLOCK-1` fix implemented (2026-11-23): merge commit `ea872d0` merges current
-  `origin/main` (`4d68b28`) into the release line whose parent is the re-review 5
-  candidate `3608229`. Both histories are kept; `git merge-base --is-ancestor
-  origin/main HEAD` now exits 0 and the merged tree is byte-identical to the
-  reviewed candidate, so no release file, cache token, manifest row, or line
-  counter changes. The finding stays open until an independent re-review
-  accepts that exact commit; the release boundary commit, a push, the `main`
-  advance, deployment, and live checks remain unauthorized.
+- Main-release finding `BLOCK-1` (2026-11-23): the owner chose **`fix`** and
+  directed that `owner-tool-integration` is the mature branch and stays the
+  authoritative release line, with no work lost or regressed. The authorized fix
+  was one `--no-ff` merge of current `origin/main` (`4d68b28`) into the release
+  line, implemented as `ea872d0` with parents `3608229` and `4d68b28`. Both
+  histories are kept; `git merge-base --is-ancestor origin/main HEAD` exits 0 and
+  the merged tree is byte-identical to the reviewed candidate, so no release
+  file, cache token, manifest row, or line counter changes.
+- `BLOCK-1` closed (2026-11-23): the sixth main-release re-review re-reviewed
+  exact target `ea872d0` and returned `PASS WITH ACCEPTED FINDINGS`. All four
+  frozen criteria pass, so every main-release blocker is closed or withdrawn.
+  Its only finding was non-blocking `NOTE-15` (stale current-facing workflow and
+  remote-state text), corrected in this closure session. The reviewed release
+  boundary is committed and `main` is fast-forwarded to it; no `main` push,
+  deployment, or live action is performed. Deployment, the owner's browser
+  re-paste, and every live save remain external and unauthorized. `BLOCK-10` was
+  closed by the fifth re-review (2026-11-23); `NOTE-14`'s stale test counts in
+  root `AGENTS.md` were corrected in the prior documentation-only session.
 - The owner reported on 2026-11-19 that the production Constant Text migration
   completed successfully. The temporary pre-migration compatibility work was
   reverted before deployment; the application again uses the migrated column

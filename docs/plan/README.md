@@ -137,6 +137,17 @@ Last updated: 2026-11-23.
   `BLOCK-1` remains open pending an independent re-review of that exact merge
   commit; the release boundary commit, a push, the `main` advance, deployment,
   and live checks remain unauthorized.
+- `BLOCK-1` closed (2026-11-23): the sixth main-release re-review
+  ([`reviews/math-editor-2026-11-main-release-re-review-6.md`](reviews/math-editor-2026-11-main-release-re-review-6.md))
+  re-reviewed exact target `ea872d0` and returned `PASS WITH ACCEPTED FINDINGS`.
+  All four frozen criteria pass: the authorized two-parent merge keeps both
+  histories, current `main` (`4d68b28`) is an ancestor, the target tree equals the
+  reviewed candidate with no merge-added artifact, and the full Node/PHP baseline
+  passes. Its only finding is non-blocking `NOTE-15` (stale current-facing
+  workflow and remote-state text), corrected in this closure session. Every
+  main-release blocker is now closed or withdrawn; the reviewed release boundary
+  is committed and `main` is fast-forwarded to it. No `main` push, deployment, or
+  live action is performed.
 - The temporary D-107 pre-migration compatibility work was reverted on
   2026-11-19 after the owner reported production migration `01` successful. The
   application again requires the migrated column directly; operation `03` was
@@ -297,7 +308,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 | — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
 | — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
-| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and five review rounds recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-10` closed by re-review 5, `BLOCK-1` open with an owner `fix` disposition (2026-11-23) that is authorized but not yet run; the owner's `fix` disposition for `BLOCK-4`/`5`/`6` is implemented and closed by re-review 2; `BLOCK-10`'s mixed-case fix passes the exact vector and 16/16 no-repeat cases but re-review 3 kept it open on a selected opposite-case repeat, and re-review 4 showed selected B/C/D repeats still failed 15/16; the 2026-11-23 session replaces the per-letter guard with the general first-occurrence rule, so the first occurrence of every letter is the boundary and later repeats stay text, making the opposite-case selected-repeat matrix A/B/C/D 16/16 each through core, exported helper, and real Load; 68 runner, 173 unit, 36 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.4`, helper `?v=2.4.5`; independent re-review of the closure required | `BLOCK-1`'s owner `fix` disposition (2026-11-23) is implemented as merge `ea872d0` (parents `3608229` + current `origin/main` `4d68b28`), which keeps both histories, leaves every release byte unchanged, and makes `main` an ancestor; the finding stays open until an independent re-review accepts it, so commit/`main`-release readiness stay blocked; deployment and the owner's browser re-paste remain external; no live write by the agent |
+| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and six re-review rounds recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-4`/`BLOCK-5`/`BLOCK-6` closed by re-review 2, `BLOCK-10` closed by re-review 5, and `BLOCK-1` closed by re-review 6 on 2026-11-23 against exact target `ea872d0` with every frozen criterion passing; `NOTE-15` (stale current-facing workflow and remote-state text) is corrected in the closure session; 68 runner, 173 unit, 36 helper, 10 underline, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.4`, helper `?v=2.4.5`; no further review round required | the reviewed release boundary is committed on `owner-tool-integration` and `main` is fast-forwarded to it; no `main` push; deployment and the owner's browser re-paste remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -340,14 +351,19 @@ verifies the detail path with the rest of Release A.
 
 ## Branch strategy
 
-- `owner-tool-integration` is the authoritative work branch. It contains the
-  review-settled phase-1 through phase-5 history at `c6a81fb`, which is also on
-  `origin/owner-tool-integration`. The reviewed and owner-accepted D-103/D-104
-  corrections are the current uncommitted work.
-- Release-boundary merge (2026-11-22): `df82512` merges `origin/main` into the
-  release line with `--no-ff`, so `main` is now an ancestor and can be advanced
-  by fast-forward. The merge only added `main`'s four supplied root PHP
-  snapshots; they are evidence only and are not in the deployment manifest.
+- `owner-tool-integration` is the authoritative work and release branch. It
+  contains the review-settled phase-1 through phase-5 history, the
+  D-103/D-104/D-105 corrections, D-106/D-108, and the RM01 main-release fixes.
+  Its current tip is the reviewed release-boundary commit; the authenticated
+  `origin/owner-tool-integration` ref is at that commit's parent `140b021` (the
+  docs child of `ea872d0`), because this session does not push.
+- RM01 `BLOCK-1` merge (2026-11-23): `ea872d0` merges current `origin/main`
+  (`4d68b28`) into the release line with `--no-ff`, so current `main` is now an
+  ancestor. The earlier 2026-11-22 `df82512` merge covered only the older
+  `002483b`, so it did not make the later `main` commits reachable. The reviewed
+  release boundary is committed on top of `ea872d0`, and `main` is
+  fast-forwarded to it. The merge adds no product byte; `main`'s tree-net-zero
+  commits are evidence/history only.
 - `main` is the published baseline and the remote default. It is not the current
   work branch. Advance it only at a reviewed release boundary or cycle close, by
   fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite
@@ -377,6 +393,7 @@ verifies the detail path with the rest of Release A.
 | phase 4 | EL01 subject operation and grouped exam ordering | rigorous | settled 2026-11-17: PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected |
 | phase 5 | MS01 visual math shapes, palette cleanup, and horizontal bars | rigorous | settled 2026-11-17: original review and `FIX-1` re-review passed; D-103/D-104 focused review passed with accepted notes corrected; owner desktop/Brave recheck accepted |
 | cycle | phases 1–5 and D-105 at the `596fb31` tip | rigorous | settled 2026-11-18: `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; `NOTE-9`–`NOTE-12`, `NOTE-10`/`NOTE-11` corrected, owner drawer check accepted |
+| RM01 main release | 2026-11-21 review and re-reviews 1–6 | rigorous | settled 2026-11-23: re-review 6 closed `BLOCK-1` on exact target `ea872d0`; every blocker is closed or withdrawn, `NOTE-15` corrected, no further round required |
 
 ## Remaining path to cycle close
 
@@ -422,48 +439,44 @@ verifies the detail path with the rest of Release A.
     key to `1.1.2`, and adds a failing-first CSS regression. The focused review's
     regression-strength note is corrected, and the owner accepted the visual
     recheck with D-103.
-12. **Main-release boundary (RM01)** — the 2026-11-21 review and 2026-11-22
-    re-reviews recorded `BLOCK`; the owner chose `fix` for `BLOCK-4`/`BLOCK-5`/
-    `BLOCK-6`, implemented in the 2026-11-22 closure session, and then for
-    `BLOCK-10` across two further sessions. Re-review 4 kept `BLOCK-10` open on
-    selected B/C/D opposite-case repeats; the 2026-11-23 session implements the
-    general first-occurrence rule and is green locally. Independent re-review of
-    the `BLOCK-10` closure is the next required review round. `BLOCK-1`
-    (current-`main` ancestry) has no owner disposition and still blocks commit
-    and `main`-release readiness.
+12. **Main-release boundary (RM01)** — closed 2026-11-23. The 2026-11-21
+    review and the 2026-11-22 re-reviews recorded blockers; the owner chose
+    `fix` for `BLOCK-4`/`BLOCK-5`/`BLOCK-6`, `BLOCK-10`, and then `BLOCK-1`, and
+    each fix is implemented and closed by re-review (re-review 2, re-review 5,
+    and re-review 6 respectively). Re-review 6 reviewed exact merge target
+    `ea872d0` — the `--no-ff` merge of current `origin/main` (`4d68b28`) into the
+    re-review 5 candidate `3608229` — and returned `PASS WITH ACCEPTED FINDINGS`
+    with no blocker. The reviewed release boundary is committed on
+    `owner-tool-integration` and `main` is fast-forwarded to it; no further
+    review round is required.
 
 Current workflow stop: the cycle work is done and review-settled. Its D-103/D-104
 corrections are committed at `120a5db`, the owner's palette request is
 implemented as the D-105 restoration and committed at `23a406c`, and the docs
-reconciliation is `596fb31`; all are pushed, and the authenticated remote tip
-`owner-tool-integration` equals `596fb31`. The cycle-wide rigorous review is
-recorded at
+reconciliation is `596fb31`. The cycle-wide rigorous review is recorded at
 [`reviews/math-editor-2026-11-cycle-review.md`](reviews/math-editor-2026-11-cycle-review.md):
 `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`, `NOTE-9`–`NOTE-12`, of which
-`NOTE-10` and `NOTE-11` are corrected here. The owner accepted the desktop and
+`NOTE-10` and `NOTE-11` are corrected. The owner accepted the desktop and
 Brave/Android check for the D-105 drawer on 2026-11-18, so every cycle
 acceptance row and external gate is satisfied. Only accepted residual risk
 remains: `NOTE-9` (root `ocr_helper.js` is untokened, so the D-91 grammar depends
 on the documented deploy-time cache purge) and `NOTE-12`'s optional labelling of
-the drawer region. The boundary is now the RM01 main release: the 2026-11-21
-review plus the 2026-11-22 re-review rounds left `BLOCK-1` open and undisposed.
-The owner's `fix` dispositions are implemented against
-`owner-tool-integration`, including the two later `BLOCK-10` sessions. Re-review
-3 kept `BLOCK-10` open on a selected opposite-case repeat, and re-review 4 showed
-the follow-up guard covered only A: selected B/C/D repeats still failed 15/16 and
-real Load silently moved the intended prefix. The 2026-11-23 session replaces the
-per-letter guard with the general first-occurrence rule, so the first occurrence
-of every letter is the boundary and later repeats stay text; the exact vector and
-the opposite-case selected-repeat matrix are 16/16 for A, B, C, and D through
-core, exported helper, and real Load at core `?v=2.5.4` / helper `?v=2.4.5`.
-`BLOCK-10` stays open until an independent re-review accepts the closure, and
-`BLOCK-1` has no disposition, so commit and `main`-release readiness stay
-blocked. Deployment, the owner's browser re-paste, and every live save remain
-external and unauthorized. D-106 and D-108 are direct owner requests carried by
-this line; deploying them remains a separate explicit owner action.
+the drawer region.
+
+The RM01 main release is now review-settled: re-review 5 closed `BLOCK-10`,
+re-review 6 closed `BLOCK-1` on exact target `ea872d0`, and all earlier blockers
+are closed or withdrawn. `NOTE-15` (stale current-facing workflow and
+remote-state text) is non-blocking and corrected in this closure session. The
+authenticated remote `owner-tool-integration` ref is `140b021`, the one docs-only
+child of `ea872d0`; this session does not infer separate authorization for that
+earlier remote update and does not push. The reviewed release boundary is
+committed on `owner-tool-integration` and `main` is fast-forwarded to it without
+a history rewrite. Deployment, the owner's browser re-paste, and every live save
+remain external and unauthorized. D-106 and D-108 are direct owner requests
+carried by this line; deploying them remains a separate explicit owner action.
 
 ```text
-NEXT COMMAND: @docs/plan/prompts/review-session.md re-review math-editor-2026-11 main release BLOCK-10 from docs/plan/reviews/math-editor-2026-11-main-release-re-review-4.md
+NEXT COMMAND: Owner decision — authorize deployment of the reviewed release boundary and the browser re-paste on `admin_questions.php`; no further review round is required
 ```
 
 ## Session protocol

@@ -60,7 +60,11 @@ authoritative release line, and the authorized fix merges current `origin/main`
 (`4d68b28`) into it with a `--no-ff` merge commit that keeps every commit on
 both sides. That merge is now `ea872d0`; `origin/main` is an ancestor, the
 merged tree is byte-identical to the reviewed candidate, and the full baseline
-passes, so `BLOCK-1` awaits only its independent re-review.
+passes. The sixth main-release re-review (2026-11-23) closed `BLOCK-1` with
+`PASS WITH ACCEPTED FINDINGS`, so every main-release blocker is closed or
+withdrawn and no further review round is required. The reviewed release boundary
+is committed and `main` is fast-forwarded to it; deployment and live checks
+remain external.
 No new phase was opened.
 
 ## Starting a new cycle

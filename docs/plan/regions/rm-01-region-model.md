@@ -1,7 +1,7 @@
 # RM01 — Durable Region Model and One Shipped Parser
 
-- **Status:** owner `fix` dispositions for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` and `BLOCK-10` (2026-11-22); the third `BLOCK-10` fix (general first-occurrence rule for every selected letter) is implemented and green locally, with the opposite-case selected-repeat matrix at 16/16 for A, B, C, and D, and `BLOCK-10` was closed by the fifth main-release re-review on 2026-11-23; the owner then chose `fix` for `BLOCK-1` (2026-11-23), and that fix is implemented as merge commit `ea872d0` (parents `3608229` and current `origin/main` `4d68b28`), which makes `main` an ancestor while leaving every release byte unchanged; the finding stays open until an independent re-review accepts the closure, so the release boundary commit, a push, the `main` advance, deployment, and live checks remain unauthorized
-- **Commit:** `BLOCK-1` merge commit `ea872d0` created on the release line on the owner's `fix` authorization; the `BLOCK-10` first-occurrence work remains committed through checkpoints `323c9df`/`552ee5c`/`3608229` and pushed to `owner-tool-integration`; no push of the merge, no release boundary commit, no deploy, and no live action
+- **Status:** owner `fix` dispositions for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` and `BLOCK-10` (2026-11-22); the third `BLOCK-10` fix (general first-occurrence rule for every selected letter) is implemented and green locally, with the opposite-case selected-repeat matrix at 16/16 for A, B, C, and D, and `BLOCK-10` was closed by the fifth main-release re-review on 2026-11-23; the owner then chose `fix` for `BLOCK-1` (2026-11-23), and that fix is implemented as merge commit `ea872d0` (parents `3608229` and current `origin/main` `4d68b28`), which makes `main` an ancestor while leaving every release byte unchanged; the sixth main-release re-review (2026-11-23) closed `BLOCK-1` against that exact target with `PASS WITH ACCEPTED FINDINGS`, so every main-release blocker is now closed or withdrawn; `NOTE-15` (stale current-facing workflow and remote-state text) is non-blocking and corrected in this closure session; deployment, the owner's browser re-paste, and every live action remain unauthorized
+- **Commit:** the `BLOCK-10` first-occurrence work is committed through checkpoints `323c9df`/`552ee5c`/`3608229`, and the `BLOCK-1` merge is `ea872d0` on the release line, present in the authenticated `origin/owner-tool-integration` ref at its docs child `140b021`; this closure session commits the reviewed release boundary on top of `140b021` and fast-forwards `main` to it; no deploy and no live action
 - **Original base:** `455ea5450c50f660ee2cf5f992677a1823a76603`
 - **Depends on:** the `owner-tool-integration` line (D-106/D-108 preserved)
 - **Blocks:** nothing; supersedes the narrow-patch alternative for EC-20/-21/-23
@@ -531,7 +531,31 @@ The release boundary commit, the push to `origin/owner-tool-integration`, the
 `BLOCK-1` stays open until an independent re-review accepts this exact merge
 commit.
 
-NEXT COMMAND: @docs/plan/prompts/review-session.md re-review math-editor-2026-11 main release BLOCK-1 from docs/plan/reviews/math-editor-2026-11-main-release-re-review-5.md
+### Closure note — 2026-11-23 (`BLOCK-1`, `NOTE-15`)
+
+The sixth main-release re-review
+([`../reviews/math-editor-2026-11-main-release-re-review-6.md`](../reviews/math-editor-2026-11-main-release-re-review-6.md))
+closed `BLOCK-1` with `PASS WITH ACCEPTED FINDINGS` against exact target
+`ea872d0`. It independently confirmed the exact two-parent topology
+(`3608229` + `4d68b28`), successful current-`main` ancestry, a target tree
+identical to the reviewed candidate, no merge-added artifact, and the full
+Node/PHP baseline. It assigned one non-blocking finding, `NOTE-15`.
+
+`NOTE-15` correction: the authenticated `origin/owner-tool-integration` ref
+resolves to `140b021`, the one docs-only child of `ea872d0`, so the earlier
+"no push of the merge" wording is stale; remote `main` was still `4d68b28` when
+the note was written. The re-review did not infer separate owner authorization
+for that remote update, and this session neither re-litigates it nor pushes.
+
+This closure session records `BLOCK-1` closed in this handoff and the
+coordinator, corrects the stale lower coordinator sections (old branch tip,
+failed 2026-11-22 merge, and the completed `BLOCK-10` review instructions),
+commits the reviewed release boundary, and fast-forwards `main` to it. No
+product, test, fixture, tool, deployment, database, or live byte changes.
+Deployment, the owner's browser re-paste, and every live save remain external
+and unauthorized.
+
+NEXT COMMAND: Owner decision — authorize deployment of the reviewed release boundary and the browser re-paste on `admin_questions.php`; no further review round is required
 
 ## Non-goals
 
@@ -545,17 +569,12 @@ NEXT COMMAND: @docs/plan/prompts/review-session.md re-review math-editor-2026-11
 
 ## Continuation checklist
 
-1. The third `BLOCK-10` fix session against the frozen criteria in the
-   [second re-review](../reviews/math-editor-2026-11-main-release-re-review-2.md)
-   and the selected B/C/D repeat evidence in the
-   [fourth round](../reviews/math-editor-2026-11-main-release-re-review-4.md) is
-   complete and green locally. Independently re-review that closure; it remains
-   open until accepted. `BLOCK-4`/`BLOCK-5`/`BLOCK-6` are already closed.
-2. `BLOCK-1` has the owner's `fix` disposition (2026-11-23): run one fix
-   session against the frozen closure contract, merging current `origin/main`
-   (`4d68b28`) into `owner-tool-integration` with a `--no-ff` merge commit that
-   keeps every commit on both sides, then submit that exact target to an
-   independent re-review before any commit or `main` advance.
+1. `BLOCK-10` and `BLOCK-4`/`BLOCK-5`/`BLOCK-6` are closed, and the sixth
+   main-release re-review closed `BLOCK-1` on 2026-11-23 against exact target
+   `ea872d0`. No further review round is required for any main-release blocker.
+2. The reviewed release boundary is committed on `owner-tool-integration` and
+   `main` is fast-forwarded to it with no history rewrite. No push of `main` is
+   performed by this session.
 3. Deployment, the owner's browser re-paste, and every live save remain external
    and unauthorized until the owner acts.
 
