@@ -174,6 +174,25 @@ test('exported parseAll keeps an opposite-case selected A repeat inside option A
   assert.deepStrictEqual(questions[0].flags, []);
 });
 
+test('exported parseAll keeps an opposite-case selected B/C/D repeat inside its option', () => {
+  const vectors = [
+    ['(A) Alpha (b) Bravo (B) notation stays in option B (C) Charlie (D) Delta',
+      'Alpha', 'Bravo (B) notation stays in option B', 'Charlie', 'Delta'],
+    ['(A) Alpha (B) Bravo (c) Charlie (C) notation stays in option C (D) Delta',
+      'Alpha', 'Bravo', 'Charlie (C) notation stays in option C', 'Delta'],
+    ['(A) Alpha (B) Bravo (C) Charlie (d) Delta (D) notation stays in option D',
+      'Alpha', 'Bravo', 'Charlie', 'Delta (D) notation stays in option D']
+  ];
+  for (const vector of vectors) {
+    const questions = helper.parseAll('1. Which is correct? ' + vector[0]);
+    assert.strictEqual(questions.length, 1);
+    assert.strictEqual(questions[0].question, 'Which is correct?');
+    assert.deepStrictEqual([questions[0].a, questions[0].b, questions[0].c, questions[0].d],
+      vector.slice(1), vector[0]);
+    assert.deepStrictEqual(questions[0].flags, [], vector[0] + ' flags');
+  }
+});
+
 test('still flags a second complete A-D option set', () => {
   const question = helper.parseQuestion({
     num: 1,
@@ -337,7 +356,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.3/.test(result.thrown.message));
+  assert(/2\.5\.4/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -479,6 +498,25 @@ test('Load keeps an opposite-case selected A repeat inside option A', () => {
   assert.strictEqual(state.d, 'Delta');
   assert(!/missing/.test(state.status), 'status must not report a missing option');
   assert.deepStrictEqual(state.queue.items[0].flags, []);
+});
+
+test('Load keeps an opposite-case selected B/C/D repeat inside its option', () => {
+  const vectors = [
+    ['(A) Alpha (b) Bravo (B) notation stays in option B (C) Charlie (D) Delta',
+      'Alpha', 'Bravo (B) notation stays in option B', 'Charlie', 'Delta'],
+    ['(A) Alpha (B) Bravo (c) Charlie (C) notation stays in option C (D) Delta',
+      'Alpha', 'Bravo', 'Charlie (C) notation stays in option C', 'Delta'],
+    ['(A) Alpha (B) Bravo (C) Charlie (d) Delta (D) notation stays in option D',
+      'Alpha', 'Bravo', 'Charlie', 'Delta (D) notation stays in option D']
+  ];
+  for (const vector of vectors) {
+    const state = formState(loadThroughForm('1. Which is correct? ' + vector[0]));
+    assert.strictEqual(state.queue.items.length, 1);
+    assert.strictEqual(state.question, 'Which is correct?');
+    assert.deepStrictEqual([state.a, state.b, state.c, state.d], vector.slice(1), vector[0]);
+    assert(!/missing/.test(state.status), 'status must not report a missing option');
+    assert.deepStrictEqual(state.queue.items[0].flags, [], vector[0] + ' flags');
+  }
 });
 
 test('Load keeps shared stimulus text out of every saveable field', () => {

@@ -237,6 +237,47 @@ test('parseQuestion accepts an opposite-case selected-A repeat for all 16 case c
   }
 });
 
+test('parseQuestion keeps an opposite-case selected-letter repeat for every selected letter', () => {
+  const values = ['Alpha', 'Bravo', 'Charlie', 'Delta'];
+  for (let selected = 0; selected < 4; selected++) {
+    for (let mask = 0; mask < 16; mask++) {
+      const labels = [...'abcd'].map((letter, index) =>
+        ((mask & (1 << index)) ? letter.toUpperCase() : letter));
+      const repeat = labels[selected] === labels[selected].toLowerCase()
+        ? labels[selected].toUpperCase()
+        : labels[selected].toLowerCase();
+      const parts = values.map((value, index) => {
+        const body = index === selected
+          ? value + ' (' + repeat + ') notation stays in option ' + 'ABCD'[index]
+          : value;
+        return '(' + labels[index] + ') ' + body;
+      });
+      const q = core.parseQuestion({ num: 1, text: 'Which is correct? ' + parts.join(' ') });
+      const expected = values.slice();
+      expected[selected] += ' (' + repeat + ') notation stays in option ' + 'ABCD'[selected];
+      eq([q.question, q.a, q.b, q.c, q.d], ['Which is correct?'].concat(expected),
+        'selected ' + selected + ' mask ' + mask);
+      eq(q.flags, [], 'selected ' + selected + ' mask ' + mask + ' flags');
+    }
+  }
+});
+
+test('parseQuestion keeps an opposite-case selected B/C/D repeat inside its option', () => {
+  const vectors = [
+    ['(A) Alpha (b) Bravo (B) notation stays in option B (C) Charlie (D) Delta',
+      'Alpha', 'Bravo (B) notation stays in option B', 'Charlie', 'Delta'],
+    ['(A) Alpha (B) Bravo (c) Charlie (C) notation stays in option C (D) Delta',
+      'Alpha', 'Bravo', 'Charlie (C) notation stays in option C', 'Delta'],
+    ['(A) Alpha (B) Bravo (C) Charlie (d) Delta (D) notation stays in option D',
+      'Alpha', 'Bravo', 'Charlie', 'Delta (D) notation stays in option D']
+  ];
+  for (const vector of vectors) {
+    const q = core.parseQuestion({ num: 1, text: 'Which is correct? ' + vector[0] });
+    eq([q.question, q.a, q.b, q.c, q.d], ['Which is correct?'].concat(vector.slice(1)), vector[0]);
+    eq(q.flags, [], vector[0] + ' flags');
+  }
+});
+
 test('parseQuestion accepts all 16 case combinations of one unspaced parenthesized A-D set', () => {
   for (let mask = 0; mask < 16; mask++) {
     const labels = [...'abcd'].map((letter, index) =>
@@ -375,7 +416,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.5.3', 'parser version');
+  eq(parsed.version, '2.5.4', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');

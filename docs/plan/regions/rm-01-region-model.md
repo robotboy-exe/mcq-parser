@@ -1,7 +1,7 @@
 # RM01 — Durable Region Model and One Shipped Parser
 
-- **Status:** owner `fix` dispositions for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` and `BLOCK-10` (2026-11-22); the second `BLOCK-10` fix (opposite-case selected-A repeat) is implemented and green locally, with the exact vector and the opposite-case repeat matrix at 16/16; independent re-review of the closure is required; `BLOCK-1` remains open and undisposed
-- **Commit:** deferred for this `BLOCK-10` opposite-case fix; the earlier 2026-11-22 work was committed and pushed to `owner-tool-integration` on the owner's explicit request for the 2nd-machine re-review; no deploy and no live action
+- **Status:** owner `fix` dispositions for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` and `BLOCK-10` (2026-11-22); the third `BLOCK-10` fix (general first-occurrence rule for every selected letter) is implemented and green locally, with the opposite-case selected-repeat matrix at 16/16 for A, B, C, and D; independent re-review of the closure is required; `BLOCK-1` remains open and undisposed
+- **Commit:** deferred for this `BLOCK-10` first-occurrence fix; the earlier 2026-11-22 work was committed and pushed to `owner-tool-integration` on the owner's explicit request for the 2nd-machine re-review; no deploy and no live action
 - **Original base:** `455ea5450c50f660ee2cf5f992677a1823a76603`
 - **Depends on:** the `owner-tool-integration` line (D-106/D-108 preserved)
 - **Blocks:** nothing; supersedes the narrow-patch alternative for EC-20/-21/-23
@@ -54,9 +54,9 @@ first, and leftover text is assigned to the nearest preceding chunk.
    over `src/parser/core.js`; `admin_questions.php` loads the core before the
    helper. The adapter keeps `FIXES`, `OPTION`, `splitQuestions`,
    `splitRegions`, `parseQuestion`, and `parseAll`, and keeps the
-   `ocrQueue`/`ocrMeta`/`ocrSubmitted` contract. The 2026-11-22 closure session
-   changes only the adapter's core pin and cache token: `?v=2.4.4` holds
-   `EXPECTED_CORE_VERSION = '2.5.3'`.
+   `ocrQueue`/`ocrMeta`/`ocrSubmitted` contract. The 2026-11-23 first-occurrence
+   session changes only the adapter's core pin and cache token: `?v=2.4.5` holds
+   `EXPECTED_CORE_VERSION = '2.5.4'`.
 
 ## Adapter guard (2026-11-20)
 
@@ -64,7 +64,7 @@ Review follow-up: the new production dependency on `src/parser/core.js` was
 untested in a browser, and a missing or stale core made the adapter return
 silently (no paste panel, no error). `ocr_helper.js` now:
 
-- holds the core to `EXPECTED_CORE_VERSION`, now `2.5.3`;
+- holds the core to `EXPECTED_CORE_VERSION`, now `2.5.4`;
 - logs `OCR helper disabled: …` and renders a `#ocr_error`
   `admin-alert admin-error` banner above the form, then throws, when
   `window.OCRParser` is missing or mismatched;
@@ -264,13 +264,61 @@ flags, and the opposite-case matrix is 16/16. Because `src/parser/core.js` and
 (`EXPECTED_CORE_VERSION` `2.5.3`), with the admin wiring and manifest hashes
 refreshed (INV-141, EC-140).
 
+### Fix note — 2026-11-23 (fifth round: `BLOCK-10` general first-occurrence rule)
+
+Re-review 4 showed the fourth-round guard protected only a repeated selected A.
+With a complete mixed-case set whose selected B, C, or D is lowercase and its
+later repeat is uppercase, the uppercase-only branch still promoted the repeat
+and moved the intended prefix into the previous option (B/C/D 15/16 each; real
+Load silently rewrote the native form with no flag). The owner asked for the
+general rule instead of another per-letter guard.
+
+| ID | Frozen criterion | Implementation | Evidence |
+|---|---|---|---|
+| `BLOCK-10` 1 | The exact vector yields the five expected native values and no flags through `core.parseQuestion`, exported `helper.parseAll`, and real Load/DOM | `parseQuestion` now gives one complete ordered first-occurrence `allParenSet` precedence over the uppercase-only branch, so the first occurrence of every letter is the boundary and every later repeat stays text | `parseQuestion keeps an opposite-case selected B/C/D repeat inside its option` (`tests/unit.js`); `exported parseAll keeps …` and `Load keeps …` (`tests/ocr-helper.js`) |
+| `BLOCK-10` 2 | All 16 no-repeat uppercase/lowercase combinations still parse cleanly | the existing `allParenSet` derivation is unchanged | `parseQuestion accepts all 16 case combinations of one unspaced parenthesized A-D set`; 16/16 |
+| `BLOCK-10` 3 | Case-insensitive selected repeats for every selected letter; preserve the D-91 spacing/repeat grammar, incomplete `(a)`-`(c)` refusal, unlinked `PASSAGE` fallback, and both restored CONFIRMED fixtures | the general branch keeps only non-parenthesized matches plus the exact first-occurrence paren matches; a complete lowercase set and a complete uppercase set keep their prior branches, and out-of-order lowercase labels still lose to a complete uppercase set | `parseQuestion keeps an opposite-case selected-letter repeat for every selected letter` (A/B/C/D 16/16 each); the D-91 spacing/repeat controls, refusal, PASSAGE, and 68 runner fixtures stay green |
+| `BLOCK-10` 4 | Failing-first core/exported-helper/real-Load regressions; full baseline; token and manifest refresh | the new B/C/D vectors failed before the change and pass after; production bytes changed, so the pins rotate | failing-first output and baseline below |
+
+Failing-first, with `src/parser/core.js` still at `2.5.3`: the B vector
+`1. Which is correct? (A) Alpha (b) Bravo (B) notation stays in option B (C) Charlie (D) Delta`
+returned A `Alpha (b) Bravo`, B `notation stays in option B` on core, exported
+helper, and real Load; the all-letter matrix was A 16/16, B 15/16, C 15/16,
+D 15/16.
+
+After the change, core, exported helper, and real Load return Question `Which is
+correct?`, A `Alpha`, B `Bravo (B) notation stays in option B`, C `Charlie`,
+D `Delta`, with no flags, and the all-letter matrix is A/B/C/D 16/16. Because
+`src/parser/core.js` and `ocr_helper.js` bytes changed, the tokens rotate: core
+`?v=2.5.3 → 2.5.4` (`PARSER_VERSION` `2.5.4`) and helper `?v=2.4.4 → 2.4.5`
+(`EXPECTED_CORE_VERSION` `2.5.4`), with the admin wiring and manifest hashes
+refreshed (INV-141, EC-140).
+
+Acceptance (PHP 8.3.32 CLI, Node v26.13.0):
+
+```text
+node tests/runner.js              68 fixtures: 68 PASS / 0 FAIL / 0 PENDING
+node tests/unit.js                173 PASS / 0 FAIL
+node tests/ocr-helper.js          36 PASS
+node tests/underline-toolbar.js   10 PASS
+node tests/question-preview.js    7 PASS
+node tests/math-tool.js           26 PASS
+node tests/render-markup.js       69 PASS
+php tests/php-render.php          33 PASS
+php tests/admin-question-store.php 8 PASS
+php tests/cbt-question-order.php  14 PASS / 0 FAIL
+php -l deployed/*.php             7/7 PASS
+node tools/extract-bank.js --check 7 hashes OK
+node --check core/helper/renderer PASS
+```
+
 ### Per-production-file handoff (base `455ea54` → this worktree)
 
 | File | Add / delete | Final lines / bytes | SHA-256 | Responsibility | Deployment inclusion | Direct production-path test |
 |---|---:|---:|---|---|---|---|
-| `src/parser/core.js` | +332 / −28 | 1736 / 60902 | `8b91ebe580b63379783812d0d7a4c69d00241e344a6d50fdeb139d9db3a5bae7` | canonical pure parser, version `2.5.3`: region stages A–D, D-91 grammar, inline-stem structural binding, scoped complete-ordered parenthesized `(a)`-`(d)` sets with first-occurrence selection and mixed case, structural-option flag, comprehension/cloze engines | site root `src/`, loaded before the helper as `?v=2.5.3` | `tests/runner.js` (68 fixtures), `tests/unit.js` (171), Load vectors |
-| `ocr_helper.js` | +40 / −73 | 127 / 4917 | `dfa541361a5931a4d96cefb891b9f0d50f7db666c9689bd138ec281626f57b34` | thin adapter; holds the core to `2.5.3`; queue panel, `fillForm`, `parseAll` | site root, `?v=2.4.4` | `tests/ocr-helper.js` (34 checks incl. real Load) |
-| `deployed/admin_questions.php` | +4 / −3 | 1057 / 62877 | `cae9d0850df23e7fa53ace99f4703d81ff5b7a799927caa7eae119d38cc0ae55` | native admin page; core `?v=2.5.3`, helper `?v=2.4.4`, renderer `?v=2.3.4`, preview CSS `?v=1.1.3` | site root | wiring assertions in `tests/math-tool.js`, helper Load stub |
+| `src/parser/core.js` | +329 / −28 | 1733 / 60722 | `c9ac52b3a715a1d1e082cc0f5f73090e17bd4375ca1635ee017ff118dc19a3ae` | canonical pure parser, version `2.5.4`: region stages A–D, D-91 grammar, inline-stem structural binding, scoped complete-ordered parenthesized `(a)`-`(d)` sets where the first occurrence of every letter is the boundary and later repeats stay text, structural-option flag, comprehension/cloze engines | site root `src/`, loaded before the helper as `?v=2.5.4` | `tests/runner.js` (68 fixtures), `tests/unit.js` (173), Load vectors |
+| `ocr_helper.js` | +40 / −73 | 127 / 4917 | `b83835b798c3d650dfe590892adc0a6058180eb3ec86c7dcc76765de0d49b6f7` | thin adapter; holds the core to `2.5.4`; queue panel, `fillForm`, `parseAll` | site root, `?v=2.4.5` | `tests/ocr-helper.js` (36 checks incl. real Load) |
+| `deployed/admin_questions.php` | +4 / −3 | 1057 / 62877 | `0b9eb5b2673b72ffed7c03b9737f4c60fbc42118f63225251bdaada3d731ae3b` | native admin page; core `?v=2.5.4`, helper `?v=2.4.5`, renderer `?v=2.3.4`, preview CSS `?v=1.1.3` | site root | wiring assertions in `tests/math-tool.js`, helper Load stub |
 | `deployed/cbt.php` | +2 / −2 | 1085 / 47093 | `29d734ba18e0737d19a4326e9c0fa2f63b047291935b0a8426f9aff55bde0c96` | exam delivery; full-width fraction rule; renderer `?v=2.3.4` | site root | three-surface CSS parity, marker vectors |
 | `deployed/answer_details.php` | +1 / −1 | 268 / 13672 | `f8b812f278c2f1982b04a18d150ea50a2fd779d8be818338641d4e67f075e6ea` | details delivery; full-width fraction rule | site root | three-surface CSS parity |
 | `deployed/render.php` | +64 / −1 | 311 / 10208 | `3deed214787b76038158e29d0c97ad1dfd406da4e7b4f22cc8658697c64e8e82` | PHP marker renderer with the crossing guard | site root | `php tests/php-render.php` (33 vectors) |
@@ -294,10 +342,10 @@ Live-origin caps (unchanged by this session, all within 100 additions):
 
 | File | Add / delete | Purpose |
 |---|---:|---|
-| `tests/ocr-helper.js` | +353 / −10 | real `helper.parseAll`, real Load/DOM vectors including the inline structural layout, lowercase repeated-`(a)`, the mixed-case parenthesized set, and the opposite-case selected-A repeat (34 checks) |
+| `tests/ocr-helper.js` | +391 / −10 | real `helper.parseAll`, real Load/DOM vectors including the inline structural layout, lowercase repeated-`(a)`, the mixed-case parenthesized set, and the opposite-case selected repeats for A, B, C, and D (36 checks) |
 | `tests/question-preview.js` | +70 / −0 | three-surface full-width fraction contract (7 vectors) |
 | `tests/fixtures/render-markup.json` | +6 / −0 | crossed-marker shared vector (33 cases) |
-| `tests/unit.js` | +123 / −1 | parser version `2.5.3`; structural-option flag, inline/vertical structural matrix, lowercase repeated-`(a)`, the exact plus 16-combination mixed-case parenthesized vectors, and the opposite-case selected-A repeat (171 checks) |
+| `tests/unit.js` | +164 / −1 | parser version `2.5.4`; structural-option flag, inline/vertical structural matrix, lowercase repeated-`(a)`, the exact plus 16-combination mixed-case parenthesized vectors, and the opposite-case selected-repeat matrix for every selected letter (173 checks) |
 | `tests/math-tool.js` | +6 / −8 | refreshed asset tokens, stale-token rejection |
 | `fixtures/expected/sample-comprehension-ambiguous.json` | restored | pre-RM CONFIRMED expectation |
 | `fixtures/expected/sample-comprehension-incomplete.json` | restored | pre-RM CONFIRMED expectation |
@@ -384,10 +432,10 @@ profile/output files, the local PHP 8.3.9 CLI under `$HOME/php83`, the static PH
 
 ## Continuation checklist
 
-1. The second `BLOCK-10` fix session against the frozen criteria in the
+1. The third `BLOCK-10` fix session against the frozen criteria in the
    [second re-review](../reviews/math-editor-2026-11-main-release-re-review-2.md)
-   and the failing selected-repeat evidence in the
-   [third round](../reviews/math-editor-2026-11-main-release-re-review-3.md) is
+   and the selected B/C/D repeat evidence in the
+   [fourth round](../reviews/math-editor-2026-11-main-release-re-review-4.md) is
    complete and green locally. Independently re-review that closure; it remains
    open until accepted. `BLOCK-4`/`BLOCK-5`/`BLOCK-6` are already closed.
 2. `BLOCK-1` has no owner disposition: the owner must still create the

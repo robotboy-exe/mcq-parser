@@ -45,15 +45,15 @@ Constant Text/question weights to 800/700; static, disposable HTTP, and
 desktop/390px browser checks pass locally. Temporary pre-migration compatibility
 work was reverted after the owner reported migration `01` successful on
 2026-11-19. The 2026-11-22 RM01 fix session (`BLOCK-4`/`5`/`6`/`7`/`8` of the
-main-release review) and the second re-review's `BLOCK-10` mixed-case
-parenthesized fix are implemented and green locally. The closure re-review kept
-`BLOCK-10` open on a selected opposite-case repeat that still moved the intended
-Option A prefix into the question (15/16); the owner's further `fix` session now
-guards the uppercase-only branch so a lowercase `A` before the uppercase set
-keeps the first selected boundary, making the exact vector and the opposite-case
-repeat matrix 16/16 through core, exported helper, and real Load at core
-`?v=2.5.3` / helper `?v=2.4.4`. Independent re-review of the closure is
-required. `BLOCK-1` (a main-integrable target) remains an owner release action.
+main-release review) and the `BLOCK-10` mixed-case parenthesized fix are
+implemented and green locally. Two later re-reviews kept `BLOCK-10` open on an
+opposite-case repeat of a selected label, first A and then B/C/D (15/16 each);
+the 2026-11-23 session replaces the per-letter guard with the general
+first-occurrence rule, so the first occurrence of every letter is the boundary
+and later repeats stay text, making the exact vector and the opposite-case
+selected-repeat matrix A/B/C/D 16/16 each through core, exported helper, and
+real Load at core `?v=2.5.4` / helper `?v=2.4.5`. Independent re-review of the
+closure is required. `BLOCK-1` (a main-integrable target) remains an owner release action.
 No new phase was opened.
 
 ## Starting a new cycle

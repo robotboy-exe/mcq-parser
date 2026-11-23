@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.5.3
+// Version: 2.5.4
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.5.3";
+const PARSER_VERSION = "2.5.4";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -838,22 +838,19 @@ function parseQuestion(chunk) {
   const lowerParenSet = firstParenSet(parenMatches.filter(match => match.parenLower));
   const upperParenSet = firstParenSet(parenMatches.filter(match => !match.parenLower));
   const allParenSet = firstParenSet(parenMatches);
-  const firstParenA = parenMatches.find(match => match.letter === 'A');
   if (lowerParenSet.length && orderedABCD(lowerParenSet)) {
     // D-91: a later label-like repeat of an already selected lowercase label
     // stays inside that option's text instead of resplitting the set.
     matches = matches.filter(match => !match.parenLower || lowerParenSet.includes(match));
-  } else if (upperParenSet.length && orderedABCD(upperParenSet)
-      && (!firstParenA || !firstParenA.parenLower)) {
-    // A complete uppercase set keeps its own boundaries when a lowercase (a)
-    // appears elsewhere (EC-97/INV-102). A lowercase A before the uppercase A
-    // is the first selected boundary, so the mixed first-occurrence set decides
-    // instead (BLOCK-10).
-    matches = matches.filter(match => !match.parenLower);
   } else if (lowerParenSet.length && orderedABCD(allParenSet)) {
     // BLOCK-10: one complete ordered parenthesized A-D set may mix case; the
-    // first occurrence of each letter wins and a later repeat stays in text.
-    matches = matches.filter(match => !match.parenLower || allParenSet.includes(match));
+    // first occurrence of each letter wins and every later repeat, whatever its
+    // case or letter, stays inside that option's text.
+    matches = matches.filter(match => match.parenLower === undefined || allParenSet.includes(match));
+  } else if (upperParenSet.length && orderedABCD(upperParenSet)) {
+    // A complete uppercase set keeps its own boundaries when an out-of-order
+    // lowercase label appears elsewhere (EC-97/INV-102).
+    matches = matches.filter(match => !match.parenLower);
   } else if (lowerParenSet.length) {
     // EC-97/INV-102: lowercase (a)-(d) labels are options only as one complete ordered set.
     matches = matches.filter(match => !match.parenLower);

@@ -126,11 +126,15 @@ recorded: `BLOCK-7`/`BLOCK-8` are closed; the owner's `fix` disposition for
 `BLOCK-4`/`BLOCK-5`/`BLOCK-6` is implemented and closed by re-review 2.
 `BLOCK-10` was then assigned and fixed, but re-review 3 kept it open because a
 complete mixed-case parenthesized set with an opposite-case repeat of the
-selected A label still moves the intended Option A prefix into the question
-(the opposite-case repeat matrix passes 15/16). The owner chose `fix` for one
-further session against the frozen contract, so `BLOCK-10` is not yet closed.
-`BLOCK-1` (current-`main` ancestry) remains undisposed, so `main` is not ready
-to advance.
+selected A label still moved the intended Option A prefix into the question.
+Re-review 4 showed the follow-up guard covered only A and that selected B/C/D
+repeats still failed 15/16. The 2026-11-23 session replaces the per-letter guard
+with the general first-occurrence rule, so the first occurrence of every letter
+is the boundary and every later repeat stays text; the opposite-case
+selected-repeat matrix is A/B/C/D 16/16 through core, exported helper, and real
+Load at core `?v=2.5.4` / helper `?v=2.4.5`. Independent re-review must accept
+the closure before `BLOCK-10` is closed. `BLOCK-1` (current-`main` ancestry)
+remains undisposed, so `main` is not ready to advance.
 
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The
