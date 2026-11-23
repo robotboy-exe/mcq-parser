@@ -1,7 +1,7 @@
 # Current Phase Map
 
 Current cycle: `math-editor-2026-11`
-Updated: 2026-11-19
+Updated: 2026-11-23
 
 `phase N` means phase N of this cycle. Status lives in
 `docs/plan/README.md`; this file only maps phase numbers to packages.
@@ -53,7 +53,14 @@ first-occurrence rule, so the first occurrence of every letter is the boundary
 and later repeats stay text, making the exact vector and the opposite-case
 selected-repeat matrix A/B/C/D 16/16 each through core, exported helper, and
 real Load at core `?v=2.5.4` / helper `?v=2.4.5`. Independent re-review of the
-closure is required. `BLOCK-1` (a main-integrable target) remains an owner release action.
+closure is required and was accepted by re-review 5 on 2026-11-23, closing
+`BLOCK-10`. `BLOCK-1` (a main-integrable target) carries the owner's `fix`
+disposition of 2026-11-23: `owner-tool-integration` stays the mature,
+authoritative release line, and the authorized fix merges current `origin/main`
+(`4d68b28`) into it with a `--no-ff` merge commit that keeps every commit on
+both sides. That merge is now `ea872d0`; `origin/main` is an ancestor, the
+merged tree is byte-identical to the reviewed candidate, and the full baseline
+passes, so `BLOCK-1` awaits only its independent re-review.
 No new phase was opened.
 
 ## Starting a new cycle

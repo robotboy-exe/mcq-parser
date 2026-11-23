@@ -49,6 +49,29 @@ Last updated: 2026-11-23.
   question stem remains weight 700. Local static, disposable HTTP, and
   desktop/390px browser checks pass; deployment and the owner's live check remain
   external.
+- Main-release finding disposition (2026-11-23): the owner chose **`fix`** for
+  `BLOCK-1` and directed that `owner-tool-integration` is the mature branch and
+  stays the authoritative release line, with no work lost or regressed. Current
+  `origin/main` (`4d68b28`) is not an ancestor of that line, so the authorized
+  fix is one frozen-contract session: merge current `origin/main` into
+  `owner-tool-integration` with a `--no-ff` merge commit — every commit on both
+  sides is kept, and nothing is rewritten, force-pushed, or deleted — then
+  re-run the full Node/PHP baseline on the merged tip and submit that exact
+  target to an independent re-review. The `fix` choice closes no finding:
+  `BLOCK-1` stays open until its frozen criteria 1–4 pass re-review, so commit
+  readiness and `main`-release readiness remain blocked, and deployment, the
+  owner's browser re-paste, and every live save remain external and
+  unauthorized. `BLOCK-10` is closed as of the fifth re-review (2026-11-23);
+  `NOTE-14`'s stale test counts in root `AGENTS.md` are corrected in this
+  documentation-only session.
+- `BLOCK-1` fix implemented (2026-11-23): merge commit `ea872d0` merges current
+  `origin/main` (`4d68b28`) into the release line whose parent is the re-review 5
+  candidate `3608229`. Both histories are kept; `git merge-base --is-ancestor
+  origin/main HEAD` now exits 0 and the merged tree is byte-identical to the
+  reviewed candidate, so no release file, cache token, manifest row, or line
+  counter changes. The finding stays open until an independent re-review
+  accepts that exact commit; the release boundary commit, a push, the `main`
+  advance, deployment, and live checks remain unauthorized.
 - The owner reported on 2026-11-19 that the production Constant Text migration
   completed successfully. The temporary pre-migration compatibility work was
   reverted before deployment; the application again uses the migrated column
@@ -162,6 +185,7 @@ Last updated: 2026-11-23.
 | RM01 main-release re-review 3 and `BLOCK-10` owner disposition (2026-11-22, reviewed `60f585d`) | independent closure re-review: exact vector on prior and current targets, 16 no-repeat case matrix, opposite-case selected-repeat matrix, full Node/PHP 8.3.32 baseline, token and 20-row manifest checks, restored fixture blobs, and RM01 input hashes | Verdict BLOCK: the exact vector, 16/16 no-repeat cases, full baseline, tokens, and manifest pass, but a complete mixed-case parenthesized set with an opposite-case repeat of the selected A label still moves the intended Option A prefix into the question on core, exported helper, and real Load; the repeat matrix is 15/16, failing lowercase A with uppercase B/C/D; the owner chose `fix` for one further session against the frozen `BLOCK-10` contract, so the finding stays open pending a fix and independent re-review; `BLOCK-1` remains undisposed and still blocks release readiness; no commit, deploy, live, or browser action |
 | RM01 main-release re-review 3 `BLOCK-10` fix (2026-11-22; owner `go` for the frozen `BLOCK-10` closure contract) | failing-first exact opposite-case vector, 16-combination opposite-case selected-A repeat matrix, exported `helper.parseAll`, and real Load/DOM vector; full Node/PHP 8.3.32 baseline, `extract-bank --check`, `node --check`, `git diff --check`, and manifest re-hash | before the fix the exact vector moved the intended Option A prefix into the question and the opposite-case repeat matrix was 15/16 (failing lowercase A with uppercase B/C/D); after it core, exported helper, and real Load return question `Which is correct?`, A `Alpha (A) notation stays in option A`, B `Bravo`, C `Charlie`, D `Delta`, no flags, and the matrix is 16/16; the uppercase-only branch now applies only when the first parenthesized A is uppercase, so an uppercase-first set and the other D-91 controls are unchanged; 68 runner, 171 unit, 34 helper, 10 underline, 7 preview, 26 math-tool, 69 JS marker, 33 PHP renderer, 8 store, 14 ordering, and 7/7 lint PASS; core 1736 / 60902 at `?v=2.5.3`, helper 127 / 4917 at `?v=2.4.4`, admin 1057 / 62877; `BLOCK-1` remains undisposed and still blocks release readiness; independent re-review of the `BLOCK-10` closure is required; no commit, deploy, or live action |
 | RM01 main-release re-review 4 `BLOCK-10` fix (2026-11-23; owner `fix` for the frozen `BLOCK-10` contract, general rule rather than another per-letter guard) | failing-first exact B/C/D vectors plus the 4-letter × 16-mask opposite-case selected-repeat matrix on core, exported `helper.parseAll`, and real Load/DOM; full Node/PHP 8.3.32 baseline, `extract-bank --check`, `node --check`, `git diff --check`, and manifest re-hash | before the fix a complete mixed-case parenthesized set with an opposite-case repeat of the selected B, C, or D moved the intended prefix into the previous option (B/C/D 15/16 each; real Load silently rewrote the native form); after it `parseQuestion` gives one complete ordered first-occurrence paren set precedence, so the first occurrence of every letter is the boundary and every later repeat stays text whatever its case or letter; core, exported helper, and real Load return the five expected values with no flags, and the matrix is A/B/C/D 16/16 each; the complete uppercase set, incomplete lowercase `(a)`-`(c)` refusal, unlinked `PASSAGE`, D-91 spacing/repeat, and both restored CONFIRMED fixtures are unchanged; 68 runner, 173 unit, 36 helper, 10 underline, 7 preview, 26 math-tool, 69 JS marker, 33 PHP renderer, 8 store, 14 ordering, and 7/7 lint PASS; core 1733 / 60722 at `?v=2.5.4`, helper 127 / 4917 at `?v=2.4.5`, admin 1057 / 62877; `BLOCK-1` remains undisposed and still blocks release readiness; independent re-review of the `BLOCK-10` closure is required; no commit, deploy, or live action |
+| RM01 main-release `BLOCK-1` fix (2026-11-23; owner `fix` disposition, merge only) | `git merge --no-ff 4d68b28` on the re-review 5 candidate, then `git rev-parse`, `git rev-list --parents -n1 HEAD`, `git diff --stat 3608229 HEAD`, `git merge-base --is-ancestor origin/main HEAD`, `git ls-tree` check for unrelated artifacts, `git diff --check`, and the full Node/PHP baseline on the merged tip on static PHP 8.3.32 provisioned outside the workspace | merge commit `ea872d0` has parents `3608229` and `4d68b28`; `origin/main` is now an ancestor (exit 0, previously exit 1); the tree delta against `3608229` is empty, so all eight production hashes and both cache tokens are unchanged and `deployed/cbt_practice.php` stays absent; no `session-ses_*` artifact; 68 runner, 173 unit, 36 helper, 10 underline, 7 preview, 26 math-tool, 69 JS + 33 PHP marker, 8 store, 14 ordering, and 7/7 lint PASS; `BLOCK-1` stays open pending its independent re-review; no push, release boundary commit, deploy, or live action |
 | dirty experiments worktree after `d5a62f0` | read-only review | BLOCK; P20-P22 must remain uncommitted and excluded |
 
 The dirty experiments review found parser data loss and image-plan/Auto-Save

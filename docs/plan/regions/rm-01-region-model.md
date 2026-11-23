@@ -1,7 +1,7 @@
 # RM01 — Durable Region Model and One Shipped Parser
 
-- **Status:** owner `fix` dispositions for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` and `BLOCK-10` (2026-11-22); the third `BLOCK-10` fix (general first-occurrence rule for every selected letter) is implemented and green locally, with the opposite-case selected-repeat matrix at 16/16 for A, B, C, and D; independent re-review of the closure is required; `BLOCK-1` remains open and undisposed
-- **Commit:** deferred for this `BLOCK-10` first-occurrence fix; the earlier 2026-11-22 work was committed and pushed to `owner-tool-integration` on the owner's explicit request for the 2nd-machine re-review; no deploy and no live action
+- **Status:** owner `fix` dispositions for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` and `BLOCK-10` (2026-11-22); the third `BLOCK-10` fix (general first-occurrence rule for every selected letter) is implemented and green locally, with the opposite-case selected-repeat matrix at 16/16 for A, B, C, and D, and `BLOCK-10` was closed by the fifth main-release re-review on 2026-11-23; the owner then chose `fix` for `BLOCK-1` (2026-11-23), and that fix is implemented as merge commit `ea872d0` (parents `3608229` and current `origin/main` `4d68b28`), which makes `main` an ancestor while leaving every release byte unchanged; the finding stays open until an independent re-review accepts the closure, so the release boundary commit, a push, the `main` advance, deployment, and live checks remain unauthorized
+- **Commit:** `BLOCK-1` merge commit `ea872d0` created on the release line on the owner's `fix` authorization; the `BLOCK-10` first-occurrence work remains committed through checkpoints `323c9df`/`552ee5c`/`3608229` and pushed to `owner-tool-integration`; no push of the merge, no release boundary commit, no deploy, and no live action
 - **Original base:** `455ea5450c50f660ee2cf5f992677a1823a76603`
 - **Depends on:** the `owner-tool-integration` line (D-106/D-108 preserved)
 - **Blocks:** nothing; supersedes the narrow-patch alternative for EC-20/-21/-23
@@ -420,6 +420,119 @@ never deployed), `deployed/sql/base-schema.working.sql`, generated
 profile/output files, the local PHP 8.3.9 CLI under `$HOME/php83`, the static PHP
 8.3.32 CLI under `$HOME/tmp/php`, and every file under `$HOME/tmp`.
 
+### Owner disposition — 2026-11-23 (`BLOCK-1`)
+
+The fifth main-release re-review
+([`../reviews/math-editor-2026-11-main-release-re-review-5.md`](../reviews/math-editor-2026-11-main-release-re-review-5.md))
+closed `BLOCK-10` and left `BLOCK-1` open, recording that it had already
+survived two review rounds. The owner then chose **`fix`** for `BLOCK-1` and
+stated the governing position directly: `owner-tool-integration` is the mature
+branch and stays the authoritative release line, and no work may be lost or
+regressed.
+
+The scope is the frozen `BLOCK-1` closure contract from
+[`../reviews/math-editor-2026-11-main-release-review.md`](../reviews/math-editor-2026-11-main-release-review.md)
+§8, unchanged:
+
+1. Establish an owner-authorized release target containing current `main`, all
+   accepted product fixes, and the integration history without force-push,
+   rebase, or history rewriting.
+2. Make `git merge-base --is-ancestor main <target>` return true.
+3. Ensure `session-ses_e35a.md` and every other unrelated artifact are absent
+   from that exact target.
+4. Re-run the release review against the exact final target, not `ff3896d` plus
+   an inferred future merge.
+
+Authorized implementation, and nothing more: merge current `origin/main`
+(`4d68b28`, not the older `002483b` used by the failed 2026-11-22 attempt) into
+`owner-tool-integration` with a `--no-ff` merge commit. A merge keeps every
+commit on both sides and adds no rewrite, no force-push, and no deletion, so the
+integration branch's content remains the release content and `main`'s recorded
+history is contained rather than discarded. Then re-run the full Node/PHP
+baseline on the merged tip and submit that exact target to an independent
+re-review.
+
+Required evidence: exact refs, merge-base/ancestor output, target status, target
+tree diff, and the re-review record.
+
+Preserved residual risk, verbatim: current `origin/main` (`4d68b28`) is not an
+ancestor of the release line, so the reviewed fast-forward-only release rule
+cannot be followed. Commit readiness and `main`-release readiness stay **not
+ready**. Deployment, the owner's post-deployment browser re-paste, and every
+live save remain external and unauthorized.
+
+This `fix` choice closes no finding and is not evidence that the review was
+wrong. `BLOCK-1` remains open until every frozen criterion passes independent
+re-review. `BLOCK-10` is closed as of re-review 5; `NOTE-14` (stale root
+`AGENTS.md` test counts) is non-blocking and is corrected in this session's
+current-facing documentation update.
+
+### Fix note — 2026-11-23 (`BLOCK-1`)
+
+Authorized by the `fix` disposition above and implemented against the frozen
+closure contract only. The change is one `--no-ff` merge commit; no product,
+test, fixture, tool, or deployment byte changed.
+
+```text
+target (merge commit)  ea872d0fa7653cee72c40fce08b82ad7d2ce67d6
+first parent           36082298c161a61d2eec0656025f79f4420835da  (re-review 5 candidate)
+second parent          4d68b2813d309a9d22f1c21c5bef21984d2170b3  (current origin/main)
+merge base before      002483b0dd73a53e541c00b4796e08ff9f957ea4
+left/right before      2 123
+merge-base --is-ancestor origin/main HEAD   exit 0 (exit 1 before)
+git diff --stat 3608229 ea872d0               empty
+session-ses_e35a.md in the target tree        absent
+```
+
+| Criterion | Implementation | Evidence |
+|---|---|---|
+| 1. Owner-authorized target containing current `main`, all accepted fixes, and the integration history, without force-push, rebase, or rewriting | `git merge --no-ff 4d68b28` on the `3608229` line, so the first parent is the reviewed candidate | merge parents above; `git log --oneline` shows `ea872d0`, `3608229`, …; no reset, rebase, squash, or force |
+| 2. `merge-base --is-ancestor main <target>` true | the same merge | exit 0; `origin/main` refreshed to `4d68b28` by fetch (`git ls-remote` agrees) |
+| 3. Unrelated artifacts absent from the exact target | `main`'s two commits are net-zero at the tree level, so the merge imports no file | `git diff --stat 002483b 4d68b28` empty; `git ls-tree -r HEAD \| grep session-ses` → none |
+| 4. Release review re-run against the exact final target | this merge commit is the exact target | independent re-review required; the terminal command names it |
+
+**No-regression measurement.** `git diff --stat 3608229 ea872d0` is empty, and
+all eight production files keep their re-review 5 hashes: core
+`c9ac52b3…` 1733/60722 at `?v=2.5.4`, helper `b83835b7…` 127/4917 at
+`?v=2.4.5`, admin `0b9eb5b2…` 1057/62877, CBT `29d734ba…` 1085/47093, details
+`f8b812f2…` 268/13672, renderer `3deed214…` 311/10208, `render.js`
+`d930aab3…` 449/15377, preview CSS `dbc136ea…` 117/2070.
+`deployed/cbt_practice.php` stays absent. No cache token, manifest row, or line
+counter rotates, and the cumulative line counters do not move.
+
+Baseline on the merged tip (Node v26.13.1; static PHP 8.3.32 CLI provisioned
+outside the workspace at `$HOME/tmp/php83-fix/php`):
+
+```text
+node tests/runner.js              68 fixtures: 68 PASS / 0 FAIL / 0 PENDING
+node tests/unit.js                173 PASS / 0 FAIL
+node tests/ocr-helper.js          36 PASS
+node tests/underline-toolbar.js   10 PASS
+node tests/question-preview.js    7 PASS
+node tests/math-tool.js           26 PASS
+node tests/render-markup.js       69 PASS
+node tools/extract-bank.js --check 7 hashes OK
+node --check core/helper/renderer PASS
+php tests/php-render.php          33 PASS
+php tests/admin-question-store.php 8 PASS
+php tests/cbt-question-order.php  14 PASS / 0 FAIL
+php -l deployed/*.php             7/7 PASS
+git diff --check                  clean
+```
+
+Excluded artifacts are unchanged: `archive/*`, the root supplied
+`admin_questions.php`/`answer_details.php`/`cbt.php`/`cbt_practice.php` (evidence
+only, never deployed), the supplied SQL snapshots, generated
+`src/bookmarklet.js`, untracked `src/bookmarklet.min.js`, and the temporary PHP
+CLI outside the workspace.
+
+The release boundary commit, the push to `origin/owner-tool-integration`, the
+`main` advance, deployment, and every live action remain unauthorized.
+`BLOCK-1` stays open until an independent re-review accepts this exact merge
+commit.
+
+NEXT COMMAND: @docs/plan/prompts/review-session.md re-review math-editor-2026-11 main release BLOCK-1 from docs/plan/reviews/math-editor-2026-11-main-release-re-review-5.md
+
 ## Non-goals
 
 - No change to the PHP server contract, storage keys, or `fillForm`.
@@ -438,9 +551,11 @@ profile/output files, the local PHP 8.3.9 CLI under `$HOME/php83`, the static PH
    [fourth round](../reviews/math-editor-2026-11-main-release-re-review-4.md) is
    complete and green locally. Independently re-review that closure; it remains
    open until accepted. `BLOCK-4`/`BLOCK-5`/`BLOCK-6` are already closed.
-2. `BLOCK-1` has no owner disposition: the owner must still create the
-   main-integrable release target (current `origin/main` ancestry, carrying the
-   root supplied copies per option a) before any commit or `main` advance.
+2. `BLOCK-1` has the owner's `fix` disposition (2026-11-23): run one fix
+   session against the frozen closure contract, merging current `origin/main`
+   (`4d68b28`) into `owner-tool-integration` with a `--no-ff` merge commit that
+   keeps every commit on both sides, then submit that exact target to an
+   independent re-review before any commit or `main` advance.
 3. Deployment, the owner's browser re-paste, and every live save remain external
    and unauthorized until the owner acts.
 

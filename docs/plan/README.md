@@ -116,6 +116,27 @@ Last updated: 2026-11-23.
   PHP 8.3.32. The finding stays open until an independent re-review accepts the
   closure. `BLOCK-1` remains open and undisposed, so commit and `main`-release
   readiness stay blocked; deployment and live checks remain unauthorized.
+- Main-release finding disposition (2026-11-23): the owner chose **`fix`** for
+  `BLOCK-1` (current `origin/main` is not an ancestor of the release line) and
+  directed that `owner-tool-integration` is the mature branch and stays the
+  authoritative release line, with no work lost or regressed. The authorized fix
+  is one frozen-contract session: merge current `origin/main` (`4d68b28`) into
+  `owner-tool-integration` with a `--no-ff` merge commit, which keeps every
+  commit on both sides and rewrites or deletes nothing, re-run the full Node/PHP
+  baseline on the merged tip, and submit that exact target to an independent
+  re-review. The `fix` choice closes no finding: `BLOCK-1` stays open until
+  criteria 1–4 pass re-review, and commit, `main` advance, deployment, and live
+  checks remain unauthorized.
+- `BLOCK-1` fix implemented (2026-11-23): merge commit `ea872d0` has parents
+  `3608229` (the re-review 5 candidate) and current `origin/main` (`4d68b28`).
+  Every commit on both sides is kept; `git merge-base --is-ancestor origin/main
+  HEAD` now exits 0, `git diff --stat 3608229 ea872d0` is empty, no unrelated
+  artifact is present, and the full Node/PHP baseline passes on the merged tip
+  (68 runner, 173 unit, 36 helper, 10 underline, 7 preview, 26 math-tool, 69 JS
+  + 33 PHP marker, 8 store, 14 ordering, 7/7 lint) on static PHP 8.3.32.
+  `BLOCK-1` remains open pending an independent re-review of that exact merge
+  commit; the release boundary commit, a push, the `main` advance, deployment,
+  and live checks remain unauthorized.
 - The temporary D-107 pre-migration compatibility work was reverted on
   2026-11-19 after the owner reported production migration `01` successful. The
   application again requires the migrated column directly; operation `03` was
@@ -276,7 +297,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 | — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
 | — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
-| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and four review rounds recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-1` open and undisposed; the owner's `fix` disposition for `BLOCK-4`/`5`/`6` is implemented and closed by re-review 2; `BLOCK-10`'s mixed-case fix passes the exact vector and 16/16 no-repeat cases but re-review 3 kept it open on a selected opposite-case repeat, and re-review 4 showed selected B/C/D repeats still failed 15/16; the 2026-11-23 session replaces the per-letter guard with the general first-occurrence rule, so the first occurrence of every letter is the boundary and later repeats stay text, making the opposite-case selected-repeat matrix A/B/C/D 16/16 each through core, exported helper, and real Load; 68 runner, 173 unit, 36 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.4`, helper `?v=2.4.5`; independent re-review of the closure required | `BLOCK-1` is undisposed and remains an owner release action (current `origin/main` is not an ancestor); deployment and the owner's browser re-paste remain external; no live write by the agent |
+| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and five review rounds recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-10` closed by re-review 5, `BLOCK-1` open with an owner `fix` disposition (2026-11-23) that is authorized but not yet run; the owner's `fix` disposition for `BLOCK-4`/`5`/`6` is implemented and closed by re-review 2; `BLOCK-10`'s mixed-case fix passes the exact vector and 16/16 no-repeat cases but re-review 3 kept it open on a selected opposite-case repeat, and re-review 4 showed selected B/C/D repeats still failed 15/16; the 2026-11-23 session replaces the per-letter guard with the general first-occurrence rule, so the first occurrence of every letter is the boundary and later repeats stay text, making the opposite-case selected-repeat matrix A/B/C/D 16/16 each through core, exported helper, and real Load; 68 runner, 173 unit, 36 helper, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.4`, helper `?v=2.4.5`; independent re-review of the closure required | `BLOCK-1`'s owner `fix` disposition (2026-11-23) is implemented as merge `ea872d0` (parents `3608229` + current `origin/main` `4d68b28`), which keeps both histories, leaves every release byte unchanged, and makes `main` an ancestor; the finding stays open until an independent re-review accepts it, so commit/`main`-release readiness stay blocked; deployment and the owner's browser re-paste remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.

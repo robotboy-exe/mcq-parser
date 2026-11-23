@@ -132,9 +132,22 @@ repeats still failed 15/16. The 2026-11-23 session replaces the per-letter guard
 with the general first-occurrence rule, so the first occurrence of every letter
 is the boundary and every later repeat stays text; the opposite-case
 selected-repeat matrix is A/B/C/D 16/16 through core, exported helper, and real
-Load at core `?v=2.5.4` / helper `?v=2.4.5`. Independent re-review must accept
-the closure before `BLOCK-10` is closed. `BLOCK-1` (current-`main` ancestry)
-remains undisposed, so `main` is not ready to advance.
+Load at core `?v=2.5.4` / helper `?v=2.4.5`. That closure was accepted by the
+fifth re-review on 2026-11-23, so `BLOCK-10` is closed; its one non-blocking
+note, stale test counts in root `AGENTS.md`, is corrected.
+
+For `BLOCK-1` (current-`main` ancestry) the owner chose `fix` on 2026-11-23 and
+directed that `owner-tool-integration` is the mature branch and stays the
+authoritative release line, with no work lost or regressed. The authorized fix
+merges current `origin/main` (`4d68b28`) into `owner-tool-integration` with a
+`--no-ff` merge commit, so every commit on both sides is kept and nothing is
+rewritten or deleted, then reruns the full baseline on the merged tip.
+That merge is now `ea872d0`: its first parent is the reviewed candidate and its
+second is current `main`, so `main` is an ancestor, the merged tree is
+byte-identical to the reviewed candidate, and the full baseline passes.
+`BLOCK-1` remains open until an independent re-review accepts that exact commit,
+so `main` is not yet ready to advance, and a push, the release commit,
+deployment and live checks stay unauthorized.
 
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The
