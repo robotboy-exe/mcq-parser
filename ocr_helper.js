@@ -114,8 +114,11 @@
   const save = () => store.set('ocrQueue', queue);
   let auto = null;
   let autoTimer = null;
-  // Incremented whenever a run ends or is replaced, so a late POST result from
-  // an older run is ignored instead of advancing this queue.
+  // A stopped run may leave a save unanswered; keep it so a restart attaches to
+  // that request instead of posting the same question again.
+  let pendingSave = null;
+  // Incremented whenever a run is replaced, so a late POST result from an older
+  // run is ignored instead of advancing this queue.
   let autoRun = 0;
 
   const savedPaste = paste.get();
@@ -171,23 +174,31 @@
       return;
     }
     auto.running = false;
-    // Stop is immediate even when the in-flight POST never answers: abort the
-    // request when the browser can and ignore whatever it eventually returns.
-    if (auto.inFlight) {
+    // The POST may already have been committed on the server, so stopping does
+    // not abort it: its answer is the only evidence of whether the question
+    // saved. Stop is still immediate; the answer only settles the queue entry.
+    const waiting = auto.inFlight;
+    if (waiting) {
+      pendingSave = { index: queue.i, request: auto.request };
       auto.inFlight = false;
-      if (auto.controller && typeof auto.controller.abort === 'function') auto.controller.abort();
-      auto.controller = null;
-      autoRun++;
+      auto.request = null;
     }
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
     render();
-    if (message) $('ocr_status').innerHTML = message;
+    if (message) $('ocr_status').innerHTML = message + (waiting ? ' Checking whether that save went through.' : '');
   }
 
   function saveError(html) {
     const match = String(html || '').match(/<([a-z]+)[^>]*class="[^"]*admin-error[^"]*"[^>]*>([\s\S]*?)<\/\1>/i);
     return match ? match[2].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+  }
+
+  function postSave() {
+    return fetch(location.href, { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
+      .then((response) => response.text())
+      .then((html) => ({ html, saved: /Question saved successfully \(Question ID: \d+\)/.test(html) }))
+      .catch(() => ({ failed: true }));
   }
 
   function autoStep() {
@@ -202,40 +213,50 @@
       return stopAuto('Autosave needs a browser with fetch; save this question by hand.');
     }
     const run = autoRun;
-    const controller = typeof AbortController === 'function' ? new AbortController() : null;
-    const options = { method: 'POST', body: new FormData(form), credentials: 'same-origin' };
-    if (controller) options.signal = controller.signal;
+    // Reuse an unanswered save for this same question from a stopped run.
+    const request = pendingSave && pendingSave.index === queue.i ? pendingSave.request : postSave();
+    pendingSave = null;
     auto.inFlight = true;
-    auto.controller = controller;
+    auto.request = request;
     renderProgress();
-    fetch(location.href, options)
-      .then((response) => response.text())
-      .then((html) => {
-        if (!auto || run !== autoRun) return;
-        auto.inFlight = false;
-        auto.controller = null;
-        if (!/Question saved successfully \(Question ID: \d+\)/.test(html)) {
-          return stopAuto('Autosave stopped at question ' + (queue.i + 1) + ': '
-            + (saveError(html) || 'the server did not confirm the save (logged out?)')
-            + '. Fix it, then start again.');
-        }
+    request.then((result) => {
+      if (!auto || run !== autoRun) return;
+      auto.inFlight = false;
+      auto.request = null;
+      const number = queue.i + 1;
+      if (result.saved) {
         queue.i++;
         save();
-        if (queue.i >= queue.items.length) {
-          auto.running = false;
-          show();
-          $('ocr_status').innerHTML = 'Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.';
-          return;
-        }
-        renderProgress();
-        autoTimer = setTimeout(autoStep, 600);
-      })
-      .catch(() => {
-        if (!auto || run !== autoRun) return;
-        auto.inFlight = false;
-        auto.controller = null;
-        stopAuto('Autosave stopped at question ' + (queue.i + 1) + ': network problem. Check the question and start again.');
-      });
+      }
+      if (!auto.running) {
+        render();
+        // The stopped message replaces the generic line, not follows it, so the
+        // late answer reads as the stop result rather than a stray sentence.
+        $('ocr_status').innerHTML = result.failed
+          ? 'Autosave stopped at question ' + number + ': the save did not confirm. It stays queued.'
+          : result.saved
+            ? 'Autosave stopped at question ' + number + ': it had already saved, so it is marked done and will not be sent again.'
+            : 'Autosave stopped at question ' + number + ': '
+              + (saveError(result.html) || 'the server did not confirm the save') + '. It stays queued.';
+        return;
+      }
+      if (result.failed) {
+        return stopAuto('Autosave stopped at question ' + number + ': network problem. Check the question and start again.');
+      }
+      if (!result.saved) {
+        return stopAuto('Autosave stopped at question ' + number + ': '
+          + (saveError(result.html) || 'the server did not confirm the save (logged out?)')
+          + '. Fix it, then start again.');
+      }
+      if (queue.i >= queue.items.length) {
+        auto.running = false;
+        show();
+        $('ocr_status').innerHTML = 'Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.';
+        return;
+      }
+      renderProgress();
+      autoTimer = setTimeout(autoStep, 600);
+    });
   }
 
   function fillForm(q) {

@@ -577,13 +577,61 @@ test('stop autosave works while the save request is still hanging', async () => 
   result.field('ocr_auto').onclick();
   assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave', 'stop is immediate');
   assert(/Autosave stopped at question 1/.test(result.field('ocr_status').innerHTML));
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'question stays queued');
+  assert(/Checking whether that save went through/.test(result.field('ocr_status').innerHTML));
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'nothing marked saved before the answer arrives');
 
   resolveFetch(savedResponse());
   await flush();
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'late response does not advance the queue');
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'a committed save counts even after the stop');
+  assert(/it had already saved/.test(result.field('ocr_status').innerHTML));
+  assert(/will not be sent again/.test(result.field('ocr_status').innerHTML));
+  assert(!/Question 2 of 2|All 2 questions done/.test(result.field('ocr_status').innerHTML), 'the stop message replaces the generic line');
   assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
-  assert(/Autosave stopped at question 1/.test(result.field('ocr_status').innerHTML), 'status unchanged');
+});
+
+test('stop autosave leaves the question queued when the stopped save fails', async () => {
+  let resolveFetch = null;
+  const result = ready(browserHelperWithCore({
+    fetch: () => new Promise((resolve) => { resolveFetch = resolve; })
+  }));
+  loadPaste(result, AUTO_PASTE);
+  result.field('ocr_auto').onclick();
+  result.field('ocr_auto').onclick();
+
+  resolveFetch(failedResponse('Duplicate question.'));
+  await flush();
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'question stays queued');
+  assert(/Autosave stopped at question 1: Duplicate question/.test(result.field('ocr_status').innerHTML));
+  assert(/stays queued/.test(result.field('ocr_status').innerHTML));
+  assert(!/Question 1 of 2/.test(result.field('ocr_status').innerHTML), 'the stop message replaces the generic line');
+  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
+});
+
+test('restarting after a stop reuses the unanswered save instead of posting it twice', async () => {
+  let calls = 0;
+  let resolveFetch = null;
+  const result = ready(browserHelperWithCore({
+    fetch: () => { calls++; return new Promise((resolve) => { resolveFetch = resolve; }); }
+  }));
+  loadPaste(result, AUTO_PASTE);
+  result.field('ocr_auto').onclick();
+  result.field('ocr_auto').onclick();
+  result.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'no second POST for the same question');
+  assert.strictEqual(result.field('ocr_auto').textContent, 'Stop autosave');
+
+  resolveFetch(savedResponse());
+  await flush();
+  assert.strictEqual(calls, 1);
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'the reused save advances the queue once');
+
+  result.runTimers();
+  await flush();
+  assert.strictEqual(calls, 2, 'the next question posts normally');
+  resolveFetch(savedResponse());
+  await flush();
+  assert(/2 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
+  assert(/Autosave complete: 2 of 2 saved/.test(result.field('ocr_status').innerHTML));
 });
 
 (async () => {
