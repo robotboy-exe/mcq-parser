@@ -2,7 +2,8 @@
 
 Recorded: 2026-11-14; amended through 2026-11-19 for D-91–D-108. This is the
 human-developer handoff for ST01, the math editor, and EL01 in the
-`math-editor-2026-11` cycle. It covers the production architecture, source of
+archived `math-editor-2026-11` cycle and remains the shipped-baseline guide for
+the active parser-convergence work. It covers the production architecture, source of
 truth, stored state, parser extension rules, Constant Text lifecycle, the math
 palette and byte counter, English Lexis ordering, the security renderer,
 testing commands, and known limitations. Deployment steps are in

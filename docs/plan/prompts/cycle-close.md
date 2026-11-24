@@ -1,7 +1,8 @@
-# Cycle Close — owner-tool-2026-11
+# Cycle Close — Active Cycle
 
-Cycle close runs only after OT10 is done and its rigorous review is settled. It
-executes no package and does not archive the cycle automatically.
+Cycle close runs only after the active cycle's final package and rigorous
+cycle-wide review are settled. It executes no package and does not archive the
+cycle automatically.
 
 Apply the coordinator's externalize-first and response contracts. Every
 cycle-close Gate 1, early-stop, and final response must end with the exact
@@ -10,9 +11,10 @@ terminal `NEXT COMMAND:` line, with nothing after it.
 ## Gate 1 — read-only
 
 1. Read the coordinator, active map, every package/handoff, every review and
-   re-review record, and every recorded owner disposition, including OT10.
-2. Require OT10 status `done` and a settled `PASS` or findings with explicit
-   recorded lifecycle dispositions.
+   re-review record, and every recorded owner disposition.
+2. Require every mapped package status `done`, the cycle-wide review settled,
+   and every required finding closed or carrying an explicit recorded lifecycle
+   disposition.
 3. Verify the handoff, baseline, deployment manifest, migration/rollback
    evidence, local PHP results, and required browser/staging checks.
 4. Verify that every package and fix has settled externalize-first measurements,

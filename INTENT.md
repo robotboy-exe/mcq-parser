@@ -1,13 +1,14 @@
-# Constant Text Reset Intent
+# Parser Convergence Intent
 
 Approved: 2026-11-14; owner-amended 2026-11-15 (D-91), 2026-11-17
 (EL01, D-103, D-104), 2026-11-18 (D-105, D-106), and 2026-11-19
-(D-108). Supersedes the
-`owner-tool-2026-11` product intent.
+(D-108), and 2026-11-24 (three product surfaces, one parser source, scratch-only
+cycle workflow). Supersedes the `owner-tool-2026-11` product intent while
+preserving every review-settled shipped behavior below.
 
-This file is the behavior tie-breaker for the `math-editor-2026-11` cycle. The
-package files own implementation detail. If a package conflicts with this file,
-stop and ask instead of silently changing the product direction.
+This file is the behavior tie-breaker for the `parser-convergence-2026-11`
+cycle. The package files own implementation detail. If a package conflicts with
+this file, stop and ask instead of silently changing the product direction.
 
 ## Product intent
 
@@ -30,7 +31,21 @@ stop and ask instead of silently changing the product direction.
 - In the `cbt.php` exam view, keep both Constant Text and the question stem bold:
   Constant Text uses weight 800 and the question stem keeps weight 700, while
   their existing sizes preserve the question hierarchy.
-- Keep `practice_title` and the legacy bookmarklet out of scope.
+- Keep `practice_title` out of scope.
+
+## Product surface intent
+
+- Keep three products, not one configurable product: the deployed manual helper,
+  the key/autosave bookmarklet, and the stimulus/image bookmarklet.
+- Root `ocr_helper.js` remains the deployed manual helper. It must not acquire
+  answer-key loading, dry run, autosave, batch history, or image-plan behavior.
+- Keep the two bookmarklets separate in this cycle. They may have different UI,
+  storage policy, save policy, and release cadence because their users and needs
+  differ.
+- Product-specific behavior belongs in focused surface modules and entry points.
+  Do not fork the parser to obtain product differences.
+- A generated bookmarklet may inline the canonical parser; generated copies are
+  artifacts, never editable parser sources.
 
 ## Formatting intent
 
@@ -69,8 +84,17 @@ stop and ask instead of silently changing the product direction.
   option text. For example, `Which is correct? A) The notation A ) stays in option A B) Two C) Three D) Four`
   keeps `The notation A ) stays in option A` as Option A and raises no
   duplicate-letter warning solely for the internal `A )`.
-- Keep `src/parser/core.js` as non-shipping history unless a future package
-  explicitly targets it.
+- `src/parser/core.js` is the only parser implementation and the exact parser
+  used by all three products. No adapter, helper, entry point, or bookmarklet
+  source may carry a second implementation of its regexes or split logic.
+- Shared text-boundary correctness and parser metadata belong in the canonical
+  core. What a product does with metadata (manual review, key fill, image pause,
+  autosave, or display) belongs outside the core.
+- Parser changes require failing-first, manually transcribed evidence and parity
+  through the deployed helper and both real bookmarklet build paths.
+- P20-P23 are not accepted by preservation alone. The old stimulus worktree is
+  evidence of problems and attempted solutions; each active package must
+  revalidate its raw samples and address the prior review findings independently.
 
 ## English Lexis exam intent
 
@@ -92,6 +116,17 @@ stop and ask instead of silently changing the product direction.
 
 - One `docs/plan/` package per session unless the user explicitly asks to
   continue. Stop after the package handoff.
+- Product implementation runs on the owner's VM on a short-lived
+  `scratch/pcNN-*` branch from the reviewed `scratch/parser-convergence-cycle`
+  tip. The VM pushes an exact candidate ref; a separate session in this
+  environment reviews that ref without product edits.
+- Only a review-settled phase may be merged into the scratch cycle branch. No
+  cycle work modifies `main`, `owner-tool-integration`, `experiments`, or
+  `experiments-alt` before the final cycle-wide review and a separate explicit
+  owner authorization.
+- `scratch/stimulus-followups` preserves the old uncommitted work as evidence.
+  The pre-package `scratch/single-core-port` diff and its external backup are
+  quarantined exploration, not acceptance evidence and not a cherry-pick source.
 - This cycle is externalize-first. For each live-origin production file, the
   cumulative additions from its archived live snapshot must not exceed 100 by
   `git diff --numstat`, or the owner must approve the excess. New production
@@ -100,6 +135,7 @@ stop and ask instead of silently changing the product direction.
 - Acceptance evidence must execute the real production modules and paths.
 - Do not commit unless the user explicitly asks.
 - Do not edit archived source snapshots.
-- New decisions begin at D-83; D-73–D-82 describe the superseded context cycle.
+- New parser-convergence decisions begin at D-110. D-73–D-82 describe the
+  superseded context cycle; D-83–D-109 remain the shipped baseline/history.
 - Product PHP verification begins on the user's local PHP machine. Production
   cleanup and destructive live tests are owner-only.

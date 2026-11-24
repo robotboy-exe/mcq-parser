@@ -9,8 +9,8 @@
 > its ordinary-question fallback and review flags (D-89).
 
 - **Status:** deferred pending representative OCR samples
-- **Target:** owner tool on the active `owner-tool-integration` line
-  (published baseline: `main`)
+- **Target:** deferred outside `parser-convergence-2026-11`; any future package
+  starts from the then-reviewed release line, not an archived context branch
 - **Reason:** parsing rules cannot be defined safely without real source layouts
 
 ## Need

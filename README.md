@@ -109,8 +109,16 @@ Full details: `docs/SPEC.md`. Rationale and risks: `docs/DECISIONS.md`.
 
 Current test counts and live-test state are in [`docs/STATUS.md`](docs/STATUS.md).
 Current work state, package gates, and branch strategy are in
-[`docs/plan/README.md`](docs/plan/README.md). All five phases of the active
-`math-editor-2026-11` cycle are done and review-settled. MS01's D-103/D-104
+[`docs/plan/README.md`](docs/plan/README.md). The active cycle is
+`parser-convergence-2026-11`: three separate products share one canonical parser
+source, implementations run on the owner's VM on short-lived scratch branches,
+and this environment reviews exact pushed candidates. Real branches remain
+read-only until the final cycle review and a separate owner authorization.
+
+### Archived math-editor release history
+
+All five phases of the archived `math-editor-2026-11` cycle are done and
+review-settled. MS01's D-103/D-104
 visual corrections passed focused review and the owner desktop/Brave recheck and
 are committed at `120a5db`. The owner's later request to restore the palette's
 non-shape content is D-105: a `More symbols` drawer brings back the Greek, set
@@ -145,12 +153,13 @@ rewritten or deleted, then reruns the full baseline on the merged tip.
 That merge is now `ea872d0`: its first parent is the reviewed candidate and its
 second is current `main`, so `main` is an ancestor, the merged tree is
 byte-identical to the reviewed candidate, and the full baseline passes.
-`BLOCK-1` remains open until an independent re-review accepts that exact commit,
-so `main` is not yet ready to advance, and a push, the release commit,
-deployment and live checks stay unauthorized.
+The sixth re-review accepted that exact merge and closed `BLOCK-1`; the reviewed
+release boundary was committed and `main` was fast-forwarded locally. Deployment
+and live checks remain separate and unauthorized.
 
-Active work happens on `owner-tool-integration`. `main` is the published
-baseline and the remote default; do not start new implementation there. The
+Active work happens only on `scratch/parser-convergence-cycle` and short-lived
+`scratch/pcNN-*` branches. `main`, `owner-tool-integration`, `experiments`, and
+`experiments-alt` are read-only for the cycle. The
 fixture runner is the regression gate. After changing the helper, press Reset
 and re-paste rather than trusting old `ocrQueue` state. Live deletes and cleanup
 are owner-only; see [`docs/LIVE-SAFETY.md`](docs/LIVE-SAFETY.md).

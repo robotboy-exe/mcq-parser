@@ -1,7 +1,7 @@
 # Plan Session Protocols
 
 The active cycle is defined in [`phase-map.md`](phase-map.md); the current one
-is `math-editor-2026-11`. Archived maps live under
+is `parser-convergence-2026-11`. Archived maps live under
 [`cycles/`](cycles/README.md). Package state,
 external gates, review checkpoints, and the next action are maintained in
 [`../README.md`](../README.md).
@@ -43,9 +43,9 @@ force a pass or hide unresolved risk.
 
 ## Cycle close
 
-Use [`cycle-close.md`](cycle-close.md) only after OT10 is done and its rigorous
-review is settled. Cycle close may commit only with explicit user approval and
-does not archive the cycle automatically.
+Use [`cycle-close.md`](cycle-close.md) only after the active cycle's final
+package and rigorous cycle-wide review are settled. Cycle close may commit only
+with explicit user approval and does not archive the cycle automatically.
 
 ## Response terminator
 

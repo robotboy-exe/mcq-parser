@@ -1,71 +1,19 @@
 # Current Phase Map
 
-Current cycle: `math-editor-2026-11`
-Updated: 2026-11-23
+Current cycle: `parser-convergence-2026-11`
+Updated: 2026-11-24
 
 `phase N` means phase N of this cycle. Status lives in
 `docs/plan/README.md`; this file only maps phase numbers to packages.
 
 | Phase | Package |
 |---|---|
-| 1 | `ST01` — `owner-tool/st-01-constant-text-reset.md` |
-| 2 | `ME01` — `math-editor/me-01-math-palette.md` |
-| 3 | `ME02` — `math-editor/me-02-release-and-handoff.md` |
-| 4 | `EL01` — `el-01-english-lexis-grouping.md` |
-| 5 | `MS01` — `math-editor/ms-01-visual-math-shapes.md` |
-
-Current gate: phase 4 implementation and all acceptance evidence are recorded,
-including the real 8-check operation/rollback run on isolated Oracle MySQL
-Community Server 8.0.41 ARM64. ME02 is done after the owner's 2026-11-17
-Brave/Android acceptance. EL01 is done and phase-4 review-settled 2026-11-17
-with `PASS WITH ACCEPTED FINDINGS`; `NOTE-1`–`NOTE-4` are corrected. Cycle close
-completed 2026-11-17 at `0410ecb`. The owner reopened the cycle on 2026-11-17
-for phase 5 (`MS01`, visual math shapes); its original review and `FIX-1`
-closure re-review passed, and boundary `c6a81fb` was committed/pushed. The
-owner's visual gate then requested D-103: remove the duplicate bare-root
-operator and join the radical vinculum, followed by D-104: keep the Constant
-Text preview at 150px and scroll long passages. Both follow-ups are implemented
-and uncommitted; their focused review passed with no `BLOCK`/`FIX`, its two notes
-are corrected, and the owner accepted the desktop/Brave recheck on 2026-11-17.
-MS01 is done and review-settled; the cycle was never archived. The owner then
-asked for the palette's non-shape content back, which is implemented as D-105
-(restored Greek, set theory and logic, and geometry and vectors grids; exponents,
-subscripts, fractions, and square root stay with the visual editors) and
-committed at `23a406c` and reviewed by the cycle-wide record
-[`reviews/math-editor-2026-11-cycle-review.md`](../reviews/math-editor-2026-11-cycle-review.md)
-(`PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`, `NOTE-9`–`NOTE-12`), with the
-owner's desktop/Brave drawer check accepted on 2026-11-18. Status lives in the
-coordinator. The owner's direct D-106 follow-up exposes exact escaped PDO save
-errors only to logged-in administrators; it is implemented locally outside a
-numbered phase, with no deployment or live save. Direct D-108 then aliases only
-the exact stored `English (Lexis & Structure)` subject to
-`English (Comprehension Pages / Lexis & Structure)` on `admin_questions.php` and
-`cbt.php` without SQL, ID, grouping, or CBT Practice changes, and sets CBT
-Constant Text/question weights to 800/700; static, disposable HTTP, and
-desktop/390px browser checks pass locally. Temporary pre-migration compatibility
-work was reverted after the owner reported migration `01` successful on
-2026-11-19. The 2026-11-22 RM01 fix session (`BLOCK-4`/`5`/`6`/`7`/`8` of the
-main-release review) and the `BLOCK-10` mixed-case parenthesized fix are
-implemented and green locally. Two later re-reviews kept `BLOCK-10` open on an
-opposite-case repeat of a selected label, first A and then B/C/D (15/16 each);
-the 2026-11-23 session replaces the per-letter guard with the general
-first-occurrence rule, so the first occurrence of every letter is the boundary
-and later repeats stay text, making the exact vector and the opposite-case
-selected-repeat matrix A/B/C/D 16/16 each through core, exported helper, and
-real Load at core `?v=2.5.4` / helper `?v=2.4.5`. Independent re-review of the
-closure is required and was accepted by re-review 5 on 2026-11-23, closing
-`BLOCK-10`. `BLOCK-1` (a main-integrable target) carries the owner's `fix`
-disposition of 2026-11-23: `owner-tool-integration` stays the mature,
-authoritative release line, and the authorized fix merges current `origin/main`
-(`4d68b28`) into it with a `--no-ff` merge commit that keeps every commit on
-both sides. That merge is now `ea872d0`; `origin/main` is an ancestor, the
-merged tree is byte-identical to the reviewed candidate, and the full baseline
-passes. The sixth main-release re-review (2026-11-23) closed `BLOCK-1` with
-`PASS WITH ACCEPTED FINDINGS`, so every main-release blocker is closed or
-withdrawn and no further review round is required. The reviewed release boundary
-is committed and `main` is fast-forwarded to it; deployment and live checks
-remain external.
-No new phase was opened.
+| 1 | `PC01` — `parser-convergence/pc-01-product-separation.md` |
+| 2 | `PC02` — `parser-convergence/pc-02-single-parser-source.md` |
+| 3 | `PC03` — `parser-convergence/pc-03-spaced-initialisms.md` |
+| 4 | `PC04` — `parser-convergence/pc-04-marker-range.md` |
+| 5 | `PC05` — `parser-convergence/pc-05-stimulus-boundaries.md` |
+| 6 | `PC06` — `parser-convergence/pc-06-bookmarklet-policy-release.md` |
 
 ## Starting a new cycle
 

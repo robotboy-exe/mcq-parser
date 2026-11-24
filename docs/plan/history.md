@@ -4,6 +4,22 @@ Current package state is in [`README.md`](README.md) and current project state
 is in [`../STATUS.md`](../STATUS.md). This file preserves completed and shelved
 cycle history.
 
+## Math Editor Cycle — archived 2026-11-24
+
+The owner explicitly authorized archiving `math-editor-2026-11` after its
+phase/cycle reviews and the RM01 main-release re-reviews settled. Its immutable
+map is [`prompts/cycles/math-editor-2026-11.md`](prompts/cycles/math-editor-2026-11.md).
+The reviewed release boundary remains the published baseline; deployment and
+live actions remain separate.
+
+## Parser Convergence Cycle — opened 2026-11-24
+
+The owner opened `parser-convergence-2026-11` from scratch base `793cb8f` for
+three separate products sharing one parser source. Implementations run on the
+owner's VM on short-lived scratch branches, then this environment independently
+reviews the exact pushed refs. Real branches remain read-only until the final
+cycle-wide review and a separate owner authorization.
+
 ## Parser Evidence Cycle — P01-P09
 
 Completed on 2026-10-24 and documented through 2026-10-30.

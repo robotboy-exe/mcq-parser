@@ -4,17 +4,32 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-23.
+Last updated: 2026-11-24.
 
 ## Current state
 
-- Active cycle: `math-editor-2026-11` (created 2026-11-14). The owner reset the
-  cycle on 2026-11-14: ST01 returns the shipped workflow to the root
-  `ocr_helper.js`, removes the shared-text/context subsystem, and adds one
-  optional Constant Text passage per question. ME01 adds the math editor, ME02
-  records release evidence, EL01 adds English Lexis grouped delivery, and MS01
-  adds visual math shapes.
-- Packages: ST01, ME01, ME02, EL01, then MS01. ST01 is done and review-settled: its third re-review closed
+- Active cycle: `parser-convergence-2026-11` (created 2026-11-24 after explicit
+  owner approval to archive `math-editor-2026-11`). Its six packages separate
+  the three products, remove the second parser source, revalidate P23/P20/P21/P22
+  in narrow packages, and prepare a reviewed scratch release.
+- Frozen cycle base: `793cb8f`. Long-lived scratch integration line:
+  `scratch/parser-convergence-cycle`. Each package is implemented on the owner's
+  VM on a short-lived `scratch/pcNN-*` branch and pushed for an independent
+  review in this environment.
+- Real branches are read-only cycle-wide: `main`, `owner-tool-integration`,
+  `experiments`, and `experiments-alt`. A settled package may merge only into
+  the scratch cycle line. Real-branch integration needs a final cycle-wide review
+  and a separate owner authorization.
+- Preserved evidence: `scratch/stimulus-followups` at `f3f5957`; the old clean
+  stimulus baseline `d5a62f0`; and the key/main scratch merge at `793cb8f`.
+  The pre-package `scratch/single-core-port` diff and its external backup are
+  quarantined exploration, not package evidence or a cherry-pick source.
+- Current package: PC01, `not started`. No product file has been changed under
+  the new cycle protocol and Gate 1 has not run.
+
+### Archived `math-editor-2026-11` evidence
+
+- The cycle's packages were ST01, ME01, ME02, EL01, then MS01. ST01 is done and review-settled: its third re-review closed
   D-91 `FIX-1`, `FIX-2` remains closed, and all 11 helper checks pass. ME01 is
   done and review-settled: the phase-2 re-review passed, closing `FIX-1` and
   both notes, with 17 module vectors. ME02 has a recorded handoff (2026-11-16):
@@ -166,8 +181,9 @@ Last updated: 2026-11-23.
 - Previous cycle: `owner-tool-2026-11` is archived (2026-11-14); its final
   summary is in [`history.md`](history.md) and its map in
   [`prompts/cycles/owner-tool-2026-11.md`](prompts/cycles/owner-tool-2026-11.md).
-- Working branch: `owner-tool-integration`; `main` is the published baseline.
-  See [Branch strategy](#branch-strategy).
+- The archived math-editor cycle's working branch was
+  `owner-tool-integration`; `main` is the published baseline. Current scratch
+  workflow is in [Branch strategy](#branch-strategy).
 - Current status summary: [`../STATUS.md`](../STATUS.md).
 - Completed handoffs: ST01's
   [package record](owner-tool/st-01-constant-text-reset.md) and ME01's
@@ -180,6 +196,25 @@ Last updated: 2026-11-23.
   history and must not be repurposed.
 
 ## Product direction
+
+- Keep three distinct products: the manually saved deployed helper, the
+  key/autosave bookmarklet, and the stimulus/image bookmarklet. Do not merge the
+  bookmarklets in this cycle.
+- All three consume the exact canonical `src/parser/core.js`; only generated
+  bookmarklet artifacts may inline it. Product UI, storage policy, and save
+  policy remain outside the core and may differ.
+- The new cycle does not reopen the review-settled RM01 structural-heading and
+  instruction fixes. PC04/PC05 extend coverage only for separately reproduced
+  marker-adjacent and anchored shared-stimulus tails.
+- Old P20-P23 source is evidence, not accepted implementation. Prior review found
+  unsafe text deletion, range false positives, image-pause bypass, stale bulk
+  files, and provenance gaps; each package must reproduce and close its own
+  finite scope.
+- Implementation happens on the owner's VM and review happens here against the
+  exact pushed scratch ref. No real branch, deployment, or live record changes
+  during this cycle.
+
+### Preserved shipped behavior
 
 - ST01 restores the legacy manual OCR helper and the native PRG question form.
   The owner pastes once, loads a queue, fills each question manually, and saves.
@@ -300,23 +335,21 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | ST01 | [Constant Text Reset](owner-tool/st-01-constant-text-reset.md) | archived cycle close | done; third re-review PASS; `FIX-1`/`FIX-2` closed | none; disposable database only |
-| 2 | ME01 | [Math Symbol Palette and Byte Counter](math-editor/me-01-math-palette.md) | ST01 review | done; phase-2 re-review PASS, `FIX-1` and both notes closed (17 vectors) | `admin_questions.php` re-measured PASS (+89); Brave/Android and desktop checks deferred to ME02 |
-| 3 | ME02 | [Release, Evidence, and Handoff](math-editor/me-02-release-and-handoff.md) | ME01 review | done; rigorous review recorded and owner phone recheck accepted 2026-11-17 | satisfied; deployment-time live artifacts remain deferred |
-| 4 | EL01 | [English Lexis Subject and Constant-Text Grouping](el-01-english-lexis-grouping.md) | current branch/worktree baseline; preserve unrelated changes | done; phase-4 review PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected | satisfied; disposable MySQL 8.0.41 operation/rollback PASS 2026-11-17 |
-| 5 | MS01 | [Visual Math Shapes and Palette Cleanup](math-editor/ms-01-visual-math-shapes.md) | EL01 review-settled; cycle reopened 2026-11-17 | done; original review and `FIX-1` closure re-review passed; boundary `c6a81fb` committed/pushed; D-103/D-104 focused review passed with no `BLOCK`/`FIX`, notes corrected, owner desktop/Brave recheck accepted 2026-11-17; corrections committed at `120a5db` | satisfied; live-origin caps remain admin +89, cbt +74, answer_details +21, cbt_practice +20 |
-| — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
-| — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
-| — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
-| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and six re-review rounds recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-4`/`BLOCK-5`/`BLOCK-6` closed by re-review 2, `BLOCK-10` closed by re-review 5, and `BLOCK-1` closed by re-review 6 on 2026-11-23 against exact target `ea872d0` with every frozen criterion passing; `NOTE-15` (stale current-facing workflow and remote-state text) is corrected in the closure session; 68 runner, 173 unit, 36 helper, 10 underline, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.4`, helper `?v=2.4.5`; no further review round required | the reviewed release boundary is committed on `owner-tool-integration` and `main` is fast-forwarded to it; no `main` push; deployment and the owner's browser re-paste remain external; no live write by the agent |
+| 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | not started | disposable browser; no deploy/live |
+| 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | not started | desktop and Brave bookmarklet installability |
+| 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | not started | none; parser and real-surface evidence |
+| 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
+| 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | not started | none; prior BLOCK controls mandatory |
+| 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | not started | desktop + Brave/Android for both bookmarklets; owner choice for key `needsImage` policy |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
 
-The archived cycle `owner-tool-2026-11` (OT00-OT11, all `done`, review-settled
-2026-11-14) is summarized in [`history.md`](history.md); its map and final
-status prose are preserved at
-[`prompts/cycles/owner-tool-2026-11.md`](prompts/cycles/owner-tool-2026-11.md).
+The archived cycles are summarized in [`history.md`](history.md). Their maps are
+preserved at
+[`prompts/cycles/owner-tool-2026-11.md`](prompts/cycles/owner-tool-2026-11.md)
+and
+[`prompts/cycles/math-editor-2026-11.md`](prompts/cycles/math-editor-2026-11.md).
 
 ## External artifacts
 
@@ -351,51 +384,68 @@ verifies the detail path with the rest of Release A.
 
 ## Branch strategy
 
-- `owner-tool-integration` is the authoritative work and release branch. It
-  contains the review-settled phase-1 through phase-5 history, the
-  D-103/D-104/D-105 corrections, D-106/D-108, and the RM01 main-release fixes.
-  Its current tip is the reviewed release-boundary commit; the authenticated
-  `origin/owner-tool-integration` ref is at that commit's parent `140b021` (the
-  docs child of `ea872d0`), because this session does not push.
-- RM01 `BLOCK-1` merge (2026-11-23): `ea872d0` merges current `origin/main`
-  (`4d68b28`) into the release line with `--no-ff`, so current `main` is now an
-  ancestor. The earlier 2026-11-22 `df82512` merge covered only the older
-  `002483b`, so it did not make the later `main` commits reachable. The reviewed
-  release boundary is committed on top of `ea872d0`, and `main` is
-  fast-forwarded to it. The merge adds no product byte; `main`'s tree-net-zero
-  commits are evidence/history only.
-- `main` is the published baseline and the remote default. It is not the current
-  work branch. Advance it only at a reviewed release boundary or cycle close, by
-  fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite
-  its history.
-- Do not create a long-lived branch per phase. If a risky experiment needs
-  isolation, use a short-lived topic branch off `owner-tool-integration` and merge
-  or delete it in the same package.
-- `ot12-shared-text-isolation` was the short-lived OT12 topic branch. It is
-  merged into `owner-tool-integration` at `e64513f`; ST01 supersedes its
-  architecture. Do not base new work on the topic branch.
-- `ot04-fix` and `ot04-review` are merged into `owner-tool-integration` and
-  retired. Their commits remain reachable through history; do not base new work
-  on them.
-- Reviews are read-only sessions against `owner-tool-integration`. A review
-  session may write only its record under [`reviews/`](reviews/README.md); it
-  never commits or moves branches.
-- Implementation changes land on `owner-tool-integration`. The rigorous review at
-  a release boundary verifies that tip; only then may `main` be advanced.
+- `scratch/parser-convergence-cycle` is the only integration line for this
+  cycle. It starts at exact base `793cb8f`; that base contains the user's
+  experiments-alt/main scratch merge and is not a real release branch.
+- The owner's VM implements one package on a short-lived `scratch/pcNN-*` branch
+  from the exact reviewed scratch-cycle tip and pushes that candidate to GitHub.
+- This environment reviews the exact pushed candidate in a clean dedicated
+  worktree. Review sessions may write only their record under
+  [`reviews/`](reviews/README.md) and never edit product files.
+- A review session never commits. Afterward, a separate explicit owner request
+  may commit/push only that immutable review record onto the package branch so
+  the VM can pull it before a fix or merge.
+- After a rigorous review settles, the VM may merge that package into the
+  scratch cycle line on a separate explicit owner request. Delete the phase
+  branch only after the merge is verified and reachable.
+- `main`, `owner-tool-integration`, `experiments`, and `experiments-alt` remain
+  read-only until PC06 and the cycle-wide review settle. Any real-branch
+  integration is a later owner-authorized operation with its own preflight and
+  rollback plan.
+- `scratch/stimulus-followups` (`f3f5957`) is preserved evidence. The dirty
+  `scratch/single-core-port` worktree and its external patch/archive are
+  quarantined pre-package exploration. Neither is merged or cherry-picked.
+- The deleted OT12 branch remains retired; its reachable history is already in
+  the reviewed baseline and its superseded architecture must not return.
 
 ## Review checkpoints
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | ST01 reset, Constant Text, helper fix, underline | light at ME01 Gate 1 | settled by third re-review; PASS, both fixes closed |
-| phase 2 | ME01 palette, byte counter, and integration | light at ME02 Gate 1 | review-settled 2026-11-15: PASS, `FIX-1` and both notes closed |
-| phase 3 close | ME02 release, evidence, and handoff | rigorous | done; PASS WITH ACCEPTED FINDINGS and owner phone acceptance recorded |
-| phase 4 | EL01 subject operation and grouped exam ordering | rigorous | settled 2026-11-17: PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected |
-| phase 5 | MS01 visual math shapes, palette cleanup, and horizontal bars | rigorous | settled 2026-11-17: original review and `FIX-1` re-review passed; D-103/D-104 focused review passed with accepted notes corrected; owner desktop/Brave recheck accepted |
-| cycle | phases 1–5 and D-105 at the `596fb31` tip | rigorous | settled 2026-11-18: `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; `NOTE-9`–`NOTE-12`, `NOTE-10`/`NOTE-11` corrected, owner drawer check accepted |
-| RM01 main release | 2026-11-21 review and re-reviews 1–6 | rigorous | settled 2026-11-23: re-review 6 closed `BLOCK-1` on exact target `ea872d0`; every blocker is closed or withdrawn, `NOTE-15` corrected, no further round required |
+| phase 1 | PC01 product separation | rigorous | not started |
+| phase 2 | PC02 one parser source and build parity | rigorous | blocked by PC01 review |
+| phase 3 | PC03 spaced initialisms | rigorous | blocked by PC02 review |
+| phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
+| phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | blocked by PC04 review |
+| phase 6 | PC06 bookmarklet policy and scratch release | rigorous | blocked by PC05 review and owner key-image policy choice |
+| cycle | phases 1–6 on `scratch/parser-convergence-cycle` | rigorous cycle-wide | blocked until every package review settles |
 
-## Remaining path to cycle close
+## Current path to cycle close
+
+1. **PC01** — separate deployed manual helper and key bookmarklet products on
+   the VM; push exact candidate; rigorous review here; settle before merge into
+   the scratch cycle line.
+2. **PC02** — remove the inlined parser source without parser/product behavior
+   change; prove both real bookmarklet builds use the exact core; rigorous
+   review and browser install checks.
+3. **PC03** — independently reproduce and narrowly fix spaced initialisms in the
+   canonical core; rigorous review of every dangerous option-boundary control.
+4. **PC04** — independently revalidate and implement only marker-adjacent range
+   extraction; rigorous review including unrelated-number adversarial probes.
+5. **PC05** — independently revalidate anchored shared-stimulus tails and
+   missing-text classification while closing every prior deletion/range control;
+   rigorous review.
+6. **PC06** — implement bookmarklet-only image/missing policy, run both real
+   browser products, prepare integration/rollback evidence, and complete package
+   plus cycle-wide rigorous reviews.
+7. **Owner decision after review** — only after every finding settles, decide
+   whether and how to integrate the reviewed scratch cycle into real branches.
+
+Current workflow stop: cycle setup only. PC01 is `not started`; its VM Gate 1
+must be read-only, record the cycle-setup commit as package base, and verify its
+product tree is identical to `793cb8f`.
+
+## Archived `math-editor-2026-11` close path
 
 1. **ST01** — done and review-settled: reset, Constant Text, underline,
    CBT/detail display, archive, D-91 replacement, docs, and handoff. The third
@@ -475,10 +525,6 @@ a history rewrite. Deployment, the owner's browser re-paste, and every live save
 remain external and unauthorized. D-106 and D-108 are direct owner requests
 carried by this line; deploying them remains a separate explicit owner action.
 
-```text
-NEXT COMMAND: Owner decision — authorize deployment of the reviewed release boundary and the browser re-paste on `admin_questions.php`; no further review round is required
-```
-
 ## Session protocol
 
 1. Execute one package per session using
@@ -534,26 +580,17 @@ Every package must satisfy all applicable items:
 
 ## Baseline commands
 
-Before OT00, run the commands available on each source line and report them
-separately. After OT00, its handoff defines the authoritative merged baseline.
-
-Current main:
-
 ```sh
 node tests/runner.js
-node tools/extract-bank.js --check
-```
-
-Post-ST01 integration line adds:
-
-```sh
 node tests/unit.js
 node tests/ocr-helper.js
 node tests/underline-toolbar.js
 node tests/question-preview.js
 node tests/math-tool.js
-php tests/admin-question-store.php
+node tests/render-markup.js
+node tools/extract-bank.js --check
 php tests/php-render.php
+php tests/admin-question-store.php
 php tests/cbt-question-order.php
 ```
 
@@ -563,12 +600,14 @@ database and the root `ocr_helper.js`.
 
 ## Branch and worktree safety
 
-- Work in the current worktree and keep it on `owner-tool-integration`. For a
-  read-only baseline check of another line, use a detached temporary worktree;
-  do not switch the working tree to `main` to implement or to refresh a status
-  count.
-- The old dirty experiments worktree is not present in this clone. Do not
-  recreate it or import its uncommitted P20-P22 files.
+- VM implementation uses the current package's short-lived `scratch/pcNN-*`
+  branch from the exact reviewed scratch-cycle tip. Do not implement directly on
+  `scratch/parser-convergence-cycle` or any real branch.
+- Review uses a separate clean worktree at the exact pushed package ref. It may
+  write only the review record and must not repair findings.
+- Preserve `scratch/stimulus-followups` and the quarantined
+  `scratch/single-core-port` worktree. Do not merge, cherry-pick, reset, or clean
+  either; revalidate raw evidence in the active package instead.
 - Never reset, clean, stash, switch, or rewrite a worktree with unexpected user
   changes. Preserve them unless they directly block the package; then stop and
   ask.
@@ -583,7 +622,7 @@ summary and final counts live in [`history.md`](history.md).
 
 ## Cycle close
 
-After OT10 and its rigorous review settle, use
+After PC06 and the rigorous cycle-wide review settle, use
 [`prompts/cycle-close.md`](prompts/cycle-close.md). Cycle close executes no
 package, commits only with explicit authorization, and leaves the cycle active
 until the owner separately confirms archival.

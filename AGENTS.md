@@ -11,10 +11,11 @@
 ## Session scope
 
 - Execute one `docs/plan/` package per session unless the user explicitly asks to continue. Stop after the package handoff.
-- Active work happens on `owner-tool-integration`; `main` is the published baseline and the remote default. The `owner-tool-2026-11` cycle is archived (map: `docs/plan/prompts/cycles/owner-tool-2026-11.md`). The active cycle is `math-editor-2026-11`: phase 1 is ST01, phase 2 is ME01, phase 3 is ME02, phase 4 is EL01 (English Lexis subject and post-selection Constant Text grouping), and phase 5 is MS01 (reopened 2026-11-17: five freeform visual editors that emit exact `<frac>`, `<sup>`, `<sub>`, `<sqrt>`, and `<matrix>` markers, with horizontal fraction and radical bars). ST01 returns the production path to root `ocr_helper.js`, retires the shared-text/context subsystem, adds optional `questions.constant_text`, and adds exact lowercase `<u>` underlining to Constant Text, question text, and options.
+- Active work happens only on the scratch cycle line `scratch/parser-convergence-cycle`; `main`, `owner-tool-integration`, `experiments`, and `experiments-alt` are read-only until the final cycle-wide review and a separate owner authorization. The `owner-tool-2026-11` and `math-editor-2026-11` cycles are archived under `docs/plan/prompts/cycles/`. The active cycle is `parser-convergence-2026-11`: PC01 separates the deployed helper and key bookmarklet products; PC02 removes the second parser source; PC03 handles spaced initialisms; PC04 handles marker-adjacent ranges; PC05 handles anchored inter-question stimulus boundaries; PC06 applies bookmarklet-only policy and prepares a reviewed scratch release.
+- Implementation is performed on the owner's VM on one short-lived `scratch/pcNN-*` branch per package. This environment reviews the exact pushed ref in a separate session and does not implement product fixes during review. Merge a package into the scratch cycle line only after its rigorous review settles.
 - Do not archive the active phase map when the last phase stops; archive only when the user confirms the cycle is complete or asks to shelve it.
 - Commit only at a phase boundary: at the start of a new phase, after the previous phase's review settles. Do not commit current-phase work; commit the final phase before archiving the cycle.
-- Rigorous reviews are separate sessions using `docs/plan/prompts/review-session.md`; they may write only `docs/plan/reviews/` and never commit.
+- Rigorous reviews are separate sessions using `docs/plan/prompts/review-session.md`; they may write only `docs/plan/reviews/`, never edit product files, and never alter a real branch.
 
 ## Live site safety
 

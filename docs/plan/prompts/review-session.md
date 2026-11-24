@@ -6,6 +6,10 @@ Review completed work independently. Do not fix findings, edit product files,
 update package status, or commit. The only file this session may write is its
 review record under `docs/plan/reviews/`.
 
+For the VM workflow, the review record remains uncommitted at session end. A
+later explicit owner request may publish only that record to the package branch;
+the review command itself never commits or pushes.
+
 Apply the coordinator's externalize-first and response contracts. Every review
 or early-stop response must end with the exact terminal `NEXT COMMAND:` line,
 with nothing after it.
@@ -14,8 +18,10 @@ with nothing after it.
 
 - Resolve `review phase N`, a package ID, or an explicitly approved phase range
   through the active map.
-- Review the read-only `owner-tool-integration` worktree. Do not create, switch,
-  merge, or move branches in a review session.
+- Review a clean dedicated worktree at the exact pushed `scratch/pcNN-*`
+  candidate ref named by the package handoff. Do not create, switch, merge,
+  pull, or move branches in a review session. Never review an unpushed VM
+  working tree by description.
 - Read the intent, coordinator, package, handoff, implementation, tests, and
   prior review records.
 - Stop if the package is not done or the target record already exists without
@@ -78,7 +84,7 @@ with nothing after it.
 - `NOTE-N`: documentation issue or residual risk that does not invalidate the
   package.
 
-Write `docs/plan/reviews/owner-tool-2026-11-phase-N.md`. The first re-review uses
+Write `docs/plan/reviews/parser-convergence-2026-11-phase-N.md`. The first re-review uses
 `-re-review.md`; later records use `-re-review-2.md`, `-re-review-3.md`, and so
 on. A re-review explicitly disposes every requested prior finding and never
 overwrites an earlier record.

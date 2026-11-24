@@ -26,6 +26,8 @@ title.
 ## Gate 1
 
 1. Read the review record, package, handoff, intent, coordinator, and active map.
+   Confirm the VM is on the same `scratch/pcNN-*` package branch and exact
+   reviewed candidate history, with the published review record pulled.
 2. Require stable finding IDs and extract each frozen closure contract. Stop if
    an ID, criterion, precondition, or deferred boundary is ambiguous.
 3. Confirm the fix authority: the accepted review record's recommended fix for a
@@ -76,3 +78,6 @@ NEXT COMMAND: go
    expand the accepted IDs.
 8. End the fix handoff with the exact re-review command, or the exact safe next
    command dictated by the review record, as the terminal `NEXT COMMAND:` line.
+9. A fix commit/push requires a separate explicit owner request and targets only
+   the same package branch. Never merge it into the scratch cycle line before
+   re-review settles.

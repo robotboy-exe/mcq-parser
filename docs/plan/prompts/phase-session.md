@@ -24,11 +24,13 @@ line, with nothing after it.
    resolution, the package and coordinator name its exact ID, disposition,
    rationale, and any deferred destination; never infer acceptance from `go` or
    silence.
-7. Inspect the worktrees and identify unrelated changes. Never modify or clean
-   the retired dirty experiments worktree.
-8. Confirm the worktree is on `owner-tool-integration`, the authoritative work
-   branch. Do not create a branch unless the package explicitly requires
-   isolation; `main` is only for reviewed releases.
+7. Inspect the worktrees and identify unrelated changes. Treat
+   `scratch/stimulus-followups` and `scratch/single-core-port` as read-only
+   evidence/quarantine; never clean, merge, or cherry-pick them during a phase.
+8. Confirm the VM worktree is on the package's short-lived `scratch/pcNN-*`
+   implementation branch, created from the exact reviewed
+   `scratch/parser-convergence-cycle` tip. `main`, `owner-tool-integration`,
+   `experiments`, and `experiments-alt` are read-only for the whole cycle.
 9. Run the package's baseline commands. Before OT00 establishes the integration
    baseline, run only commands that exist on the current line and report both
    lines separately.
@@ -79,6 +81,9 @@ offering `go`.
     responsibility, deployment inclusion, and production-path test evidence;
     list excluded artifacts separately.
 11. Do not commit unless the user explicitly requests a commit.
+12. When the owner separately authorizes the candidate commit/push, push only
+    the package branch. Do not merge it into the scratch cycle line; an
+    independent review of that exact pushed ref comes first.
 
 End with `STOPPED`, name the next action without starting it, and make the final
 line its exact copy-paste command under the response contract.

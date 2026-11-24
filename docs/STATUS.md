@@ -1,8 +1,29 @@
 # Current Status
 
-Last updated: 2026-11-23.
+Last updated: 2026-11-24.
 
 ## Active cycle
+
+- Cycle: `parser-convergence-2026-11`; active map:
+  [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
+- Frozen base: `793cb8f`; scratch integration line:
+  `scratch/parser-convergence-cycle`; current package PC01 is `not started`.
+- Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
+  branches and is pushed to GitHub. This environment performs independent
+  reviews of the exact pushed refs before any package joins the scratch cycle
+  line.
+- Products stay separate: deployed manual helper, key/autosave bookmarklet, and
+  stimulus/image bookmarklet. All must consume one canonical parser source.
+- `main`, `owner-tool-integration`, `experiments`, and `experiments-alt` are
+  read-only until PC06 and the cycle-wide review settle and the owner separately
+  authorizes integration.
+- Preserved evidence: `scratch/stimulus-followups` at `f3f5957`. Quarantined,
+  non-evidence exploration: dirty `scratch/single-core-port` plus its external
+  patch/archive. Neither is a cherry-pick source.
+- No deploy, live write/delete, database operation, or production cleanup is
+  authorized.
+
+## Archived `math-editor-2026-11` state
 
 - Cycle: `math-editor-2026-11` (created 2026-11-14). Phase 1 is ST01, the
   Constant Text reset: return production to root `ocr_helper.js`, archive the

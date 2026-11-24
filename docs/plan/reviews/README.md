@@ -3,10 +3,12 @@
 Independent reviews write one record per reviewed package:
 
 ```text
-docs/plan/reviews/owner-tool-2026-11-phase-N.md
+docs/plan/reviews/<active-cycle-id>-phase-N.md
 ```
 
-The first re-review writes `owner-tool-2026-11-phase-N-re-review.md`. Later
+For the active cycle this is
+`parser-convergence-2026-11-phase-N.md`. The first re-review appends
+`-re-review.md`. Later
 records append a sequence (`-re-review-2.md`, `-re-review-3.md`, and so on).
 No review record overwrites an earlier record.
 
