@@ -26,8 +26,8 @@ Last updated: 2026-11-24.
   quarantined exploration, not package evidence or a cherry-pick source.
 - Current package: PC01, `in progress`. Gate 1 ran on `bb78c57`; the
   implementation is complete on `scratch/pc01-product-separation` with the full
-  Node baseline green. The PHP baseline and the disposable browser smoke are
-  outstanding, so the package is not `done`. Independent rigorous review pending.
+  Node and PHP baselines green. The disposable browser smoke is outstanding, so
+  the package is not `done`. Independent rigorous review pending.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -448,10 +448,10 @@ Current workflow stop: PC01 implementation is complete on
 verified identical to `793cb8f`). The deployed helper is byte-identical to the
 published baseline, the key bookmarklet lives at `src/bookmarklets/key/`, and the
 Node baseline passes (68 runner, 173 unit, 38 helper, 22 key-bookmarklet, 10
-underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes). PHP and the
-disposable browser smoke could not run in this environment and are recorded gaps,
-so PC01 stays `in progress` pending independent rigorous review. `Commit:
-deferred`.
+underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes) and the PHP
+baseline passes on PHP 8.3.9 (33 renderer vectors, 8 store checks, 14 ordering
+checks, 7/7 `php -l`). The disposable browser smoke is still an unrun gap, so PC01
+stays `in progress` pending independent rigorous review. `Commit: deferred`.
 
 ## Archived `math-editor-2026-11` close path
 

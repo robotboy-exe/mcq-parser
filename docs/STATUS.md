@@ -22,8 +22,11 @@ Last updated: 2026-11-24.
   `src/parser/core.js`, `src/parser/parser.js`, `src/ui/ui.js`, and
   `src/bookmarklet.js` are byte-identical to the package base. Node baseline:
   68 runner, 173 unit, 38 helper, 22 key-bookmarklet, 10 underline, 7 preview,
-  26 math-tool, 69 render-markup, 7 bank hashes. PHP and the disposable browser
-  smoke are unrun gaps; rigorous review pending; `Commit: deferred`.
+  26 math-tool, 69 render-markup, 7 bank hashes. PHP baseline on PHP 8.3.9
+  (`$HOME/toolchain/php`, static CLI build): 33 renderer vectors, 8 store checks,
+  14 ordering checks, 7/7 `php -l` on `deployed/*.php`; `php tests/cbt-staging.php`
+  needs a disposable staging database and URL and did not run. The disposable
+  browser smoke is still an unrun gap; rigorous review pending; `Commit: deferred`.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

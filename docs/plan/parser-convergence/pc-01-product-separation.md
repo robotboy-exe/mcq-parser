@@ -1,7 +1,7 @@
 # PC01 — Product Surface Separation
 
-- **Status:** in progress — implementation complete, Node evidence green,
-  PHP baseline and disposable browser smoke outstanding
+- **Status:** in progress — implementation complete, Node and PHP evidence
+  green, disposable browser smoke outstanding
 - **Product baseline:** `793cb8f`
 - **Package base:** record the docs-only cycle-setup commit on
   `scratch/parser-convergence-cycle` at Gate 1; verify its product tree equals
@@ -66,7 +66,8 @@ starts before those measurements and the exact extraction boundary are approved.
 
 ## Handoff
 
-Date: 2026-11-24. Result: **implementation complete, partially evidenced.**
+Date: 2026-11-24. Result: **implementation complete; Node and PHP evidence green,
+disposable browser smoke outstanding.**
 Package base `bb78c57` on `scratch/pc01-product-separation` (created from the
 reviewed `scratch/parser-convergence-cycle` tip). No deploy, live write,
 schema operation, or real-branch change. `Commit: deferred`.
@@ -114,9 +115,18 @@ exception.
 - `node src/bookmarklets/key/build.js` → one line, deterministic, `new Function`
   parses, no percent escape
 - `node src/build/build.js` → stimulus artifact byte-identical
-- **Not run:** every PHP suite (`php` is not installed in this environment) and
-  the disposable browser smoke (no browser). No PHP file changed, so the PHP
-  baseline is unaffected but unverified here.
+- `php tests/php-render.php` → 33 vectors PASS
+- `php tests/admin-question-store.php` → 8 store checks PASS
+- `php tests/cbt-question-order.php` → 14 PASS / 0 FAIL
+- `php -l deployed/*.php` → 7/7 pass
+- **Not run:** the disposable browser smoke (no browser in this environment) and
+  `php tests/cbt-staging.php` (it needs a disposable staging database and URL,
+  which PC01 did not authorize). No PHP file changed, so the PHP baseline is
+  unaffected by this package.
+
+PHP runtime: the environment has no root, so the suites ran on the static-php.dev
+PHP 8.3.9 CLI build (NTS, `pdo_sqlite`, `pdo_mysql`, `mbstring`, `json`) installed
+at `$HOME/toolchain/php`, which matches the PHP 8.3 application target.
 
 ### Acceptance mapping
 
@@ -129,7 +139,7 @@ exception.
 | Stimulus artifact | sha256 equality for `src/bookmarklet.js` and its sources; build reproduces the hash |
 | Parser | sha256 equality for `src/parser/core.js`, `src/parser/parser.js` |
 | Build | one line, deterministic sha256, `new Function` parses, no percent escape |
-| Baseline | Node green as listed; **PHP and disposable browser smoke outstanding** |
+| Baseline | Node and PHP green as listed; **disposable browser smoke outstanding** |
 | Safety | No deploy, live save, deletion, schema operation, or real-branch change |
 
 ### Open questions
