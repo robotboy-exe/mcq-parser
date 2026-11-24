@@ -216,6 +216,19 @@ test('has no Constant Text field integration', () => {
   assert.strictEqual(source.includes('constant_text'), false);
 });
 
+function browserHelperWithCore(options) {
+  const result = loadHelperInBrowser(Object.assign({ parser: require('../src/parser/core.js') }, options || {}));
+  assert.strictEqual(result.thrown, null);
+  return result;
+}
+
+function persisted(result) {
+  return {
+    storage: Object.fromEntries(result.storage),
+    session: Object.fromEntries(result.session)
+  };
+}
+
 function loadHelperInBrowser(options) {
   const inserted = [];
   const radios = [0, 1, 2, 3].map((index) => ({ value: String(index), checked: true }));
@@ -346,345 +359,44 @@ test('renders the paste panel when the core is present in the browser', () => {
   assert(result.inserted[0].innerHTML.includes('ocr_load'));
 });
 
-function browserHelperWithCore(options) {
-  const result = loadHelperInBrowser(Object.assign({ parser: require('../src/parser/core.js') }, options || {}));
-  assert.strictEqual(result.thrown, null);
-  return result;
-}
+test('deployed helper has no key, dry-run, autosave, or bookmarklet path', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../ocr_helper.js'), 'utf8');
+  for (const forbidden of ['ansKey', 'ocrAuto', 'autosave', 'dryRunProblems', 'saveInPlace',
+    'parsePaste', 'needsImage', 'ocrBatchHistory', '__ocrBookmarklet', 'fetch(']) {
+    assert.strictEqual(source.includes(forbidden), false, 'deployed helper must not contain ' + forbidden);
+  }
 
-function persisted(result) {
-  return {
-    storage: Object.fromEntries(result.storage),
-    session: Object.fromEntries(result.session)
-  };
-}
+  const result = browserHelperWithCore();
+  const panel = result.inserted[0].innerHTML;
+  assert.strictEqual(panel.includes('ocr_auto'), false, 'no Start autosave button');
+  assert.strictEqual(panel.includes('ocr_progress'), false, 'no autosave progress bar');
+  assert.strictEqual(panel.includes('ocr_title'), false, 'no bookmarklet title');
 
-function loadPaste(result, text) {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
   result.field('ocr_text').value = text;
   result.field('ocr_load').onclick();
-}
-
-function checkedRadios(result) {
-  return result.radios.filter((radio) => radio.checked).map((radio) => radio.value);
-}
-
-test('loads the whole civic paper with its answer key and ticks the option', () => {
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
-  const result = browserHelperWithCore();
-  loadPaste(result, text);
-  assert(result.field('question_text').value.startsWith('By upholding values like honesty'), 'first stem');
-  assert.strictEqual(result.field('option_d').value, 'secure and stable environment.');
-  assert.deepStrictEqual(checkedRadios(result), ['2'], 'question 1 key C');
-  assert(/Question 1 of 50/.test(result.field('ocr_status').innerHTML));
-  assert(/Answer key: 50 entries \(header\)/.test(result.field('ocr_status').innerHTML));
-  assert(/key C/.test(result.field('ocr_status').innerHTML), 'key shown beside the question');
-
-  result.field('ocr_skip').onclick();
-  assert(result.field('question_text').value.startsWith('National consciousness'), 'second stem');
-  assert.deepStrictEqual(checkedRadios(result), ['1'], 'question 2 key B');
-
-  for (let index = 2; index < 50; index++) result.field('ocr_skip').onclick();
-  assert(/Question 50 of 50/.test(result.field('ocr_status').innerHTML));
-  assert.deepStrictEqual(checkedRadios(result), ['2'], 'question 50 key C');
-  assert.strictEqual(result.field('option_d').value, 'will only be enjoyed when the citizens are patient.');
+  assert(result.field('ocr_status').innerHTML.includes('Question 1 of 50'), 'the queue loads');
+  assert.strictEqual(result.field('ocr_status').innerHTML.includes('key'), false, 'no answer key is loaded');
+  assert.deepStrictEqual(result.radios.map((radio) => radio.checked), [false, false, false, false]);
+  assert.strictEqual(result.storage.has('ansKey'), false, 'no answer-key storage is written');
+  assert.strictEqual(result.session.size, 0, 'no paste session state is written');
 });
 
-test('leaves every radio unticked when the paste has no answer key', () => {
+test('deployed helper keeps the reviewed manual submit marker only', () => {
   const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026.txt'), 'utf8');
-  const result = browserHelperWithCore();
-  loadPaste(result, text);
-  assert.deepStrictEqual(checkedRadios(result), []);
-  assert(/No answer-key section found/.test(result.field('ocr_status').innerHTML));
-  assert(/no key/.test(result.field('ocr_status').innerHTML));
-
-  result.field('ocr_clear').onclick();
-  assert.strictEqual(result.field('ocr_status').innerHTML, '');
-});
-
-test('attaches a key-only paste to the queue that is already loaded', () => {
-  const questions = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026.txt'), 'utf8');
-  const result = browserHelperWithCore();
-  loadPaste(result, questions);
-  assert.deepStrictEqual(checkedRadios(result), []);
-
-  loadPaste(result, 'ANSWER KEY\n1. D\n2. A\n');
-  assert.deepStrictEqual(checkedRadios(result), ['3'], 'question 1 key D from the key-only paste');
-  assert(/Answer key updated \(2 entries\)/.test(result.field('ocr_status').innerHTML));
-  assert(result.field('question_text').value.startsWith('By upholding values'), 'form keeps its question');
-
-  result.field('ocr_skip').onclick();
-  assert.deepStrictEqual(checkedRadios(result), ['0'], 'question 2 key A');
-});
-
-test('restores the paste and the current question after a reload', () => {
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
   const first = browserHelperWithCore();
-  loadPaste(first, text);
-  first.field('ocr_skip').onclick();
-  assert(/Question 2 of 50/.test(first.field('ocr_status').innerHTML));
-
-  const second = browserHelperWithCore(persisted(first));
-  assert.strictEqual(second.field('ocr_text').value, text, 'paste restored');
-  assert(second.field('question_text').value.startsWith('National consciousness'), 'question 2 restored');
-  assert.deepStrictEqual(checkedRadios(second), ['1'], 'question 2 key B ticked without pasting again');
-  assert(/key B/.test(second.field('ocr_status').innerHTML), 'stored key shown');
-  assert(/50 answers/.test(second.field('ocr_status').innerHTML), 'stored key count shown');
-});
-
-test('advances past a saved question after the submit reload and keeps ticking', () => {
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
-  const first = browserHelperWithCore();
-  loadPaste(first, text);
+  first.field('ocr_text').value = text;
+  first.field('ocr_load').onclick();
+  assert(/Question 1 of 50/.test(first.field('ocr_status').innerHTML));
   first.form.submit();
+  assert.deepStrictEqual(Object.keys(Object.fromEntries(first.storage.keys ? first.storage : [])).sort(),
+    ['ocrMeta', 'ocrQueue', 'ocrSubmitted']);
 
   const second = browserHelperWithCore(persisted(first));
-  assert(second.field('question_text').value.startsWith('National consciousness'), 'advanced to question 2');
-  assert.deepStrictEqual(checkedRadios(second), ['1'], 'question 2 key B');
-  assert.strictEqual(second.storage.has('ocrSubmitted'), false, 'submit flag consumed');
-  assert.strictEqual(second.field('ocr_text').value, text, 'paste still there');
-});
-
-test('clears the stored paste and key with the list', () => {
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
-  const result = browserHelperWithCore();
-  loadPaste(result, text);
-  assert(result.session.has('ocrPaste'), 'paste stored on load');
-  assert(result.storage.has('ansKey'), 'key stored on load');
-  result.field('ocr_clear').onclick();
-  assert.strictEqual(result.session.has('ocrPaste'), false, 'paste cleared');
-  assert.strictEqual(result.storage.has('ansKey'), false, 'key cleared');
-  assert.strictEqual(result.field('ocr_text').value, '');
-});
-
-test('keeps the answer key in ansKey when the queue is replaced without one', () => {
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
-  const first = browserHelperWithCore();
-  loadPaste(first, text);
-  const stored = JSON.parse(first.storage.get('ansKey'));
-  assert.strictEqual(stored['1'], 'C');
-  assert.strictEqual(stored['50'], 'C');
-
-  const queue = JSON.parse(first.storage.get('ocrQueue'));
-  first.storage.set('ocrQueue', JSON.stringify({ items: queue.items, i: 1 }));
-  const second = browserHelperWithCore(persisted(first));
-  assert.deepStrictEqual(checkedRadios(second), ['1'], 'question 2 key B from ansKey');
-  assert(/key B/.test(second.field('ocr_status').innerHTML));
-  assert(/50 answers/.test(second.field('ocr_status').innerHTML));
-});
-
-const AUTO_PASTE = '1. First autosave question? A) One B) Two C) Three D) Four\n' +
-  '2. Second autosave question? A) One B) Two C) Three D) Four\n' +
-  'ANSWER KEY\n1. A\n2. B\n';
-
-function ready(result) {
-  result.field('subject_id').value = '1';
-  result.field('exam_category_id').value = '2';
-  result.field('exam_year').value = '2026';
-  return result;
-}
-
-test('load questions runs a dry run and saves nothing', () => {
-  const result = ready(browserHelperWithCore());
-  loadPaste(result, AUTO_PASTE);
-  assert(/Dry run OK/.test(result.field('ocr_status').innerHTML));
-  assert(/0 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
-  assert(/dry run OK/.test(result.field('ocr_progress_label').innerHTML));
-  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'no save on load');
-});
-
-test('dry run blocks a paste with no answer key', () => {
-  const result = ready(browserHelperWithCore());
-  loadPaste(result, '1. First question here? A) One B) Two C) Three D) Four\n2. Second question here? A) One B) Two C) Three D) Four');
-  assert(/2 question\(s\) without an answer key/.test(result.field('ocr_status').innerHTML));
-  assert(/Autosave is blocked/.test(result.field('ocr_status').innerHTML));
-  assert(/dry run incomplete/.test(result.field('ocr_progress_label').innerHTML));
-  result.field('ocr_auto').onclick();
-  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'blocked start saves nothing');
-});
-
-function savedResponse() {
-  return { text: () => Promise.resolve('<div class="admin-alert">Question saved successfully (Question ID: 7).</div>') };
-}
-
-function failedResponse(message) {
-  return { text: () => Promise.resolve('<div class="admin-alert admin-error">' + message + '</div>') };
-}
-
-function flush() {
-  return new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-test('bookmarklet saves in place and keeps the key for the next question', async () => {
-  let calls = 0;
-  const result = ready(browserHelperWithCore({
-    bookmarklet: true,
-    pageHelperSubmit: true,
-    fetch: () => { calls++; return Promise.resolve(savedResponse()); }
-  }));
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
-  loadPaste(result, text);
-  assert.deepStrictEqual(checkedRadios(result), ['2'], 'question 1 key C');
-
-  const event = result.form.submit();
-  assert(event.defaultPrevented, 'the bookmarklet must not submit the native form');
-  assert(event.immediateStopped, 'the page helper submit handler must be suppressed');
-  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'the page helper reload marker was cleared');
-  await flush();
-
-  assert.strictEqual(calls, 1, 'one POST for the saved question');
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'the queue advanced in place');
-  assert(/National consciousness/.test(result.field('question_text').value), 'question 2 is filled');
-  assert.deepStrictEqual(checkedRadios(result), ['1'], 'question 2 key B ticked without a reload');
-  assert(/Saved question 1 of 50/.test(result.field('ocr_status').innerHTML));
-  assert(/dry run OK/.test(result.field('ocr_progress_label').innerHTML), 'the dry run state survives the save');
-  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'no reload marker is written');
-});
-
-test('bookmarklet keeps the question queued when the in-place save is rejected', async () => {
-  const result = ready(browserHelperWithCore({
-    bookmarklet: true,
-    fetch: () => Promise.resolve(failedResponse('Duplicate question.'))
-  }));
-  loadPaste(result, AUTO_PASTE);
-  result.form.submit();
-  await flush();
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'the queue does not advance');
-  assert(/Question 1 was not saved: Duplicate question/.test(result.field('ocr_status').innerHTML));
-  assert(/First autosave question/.test(result.field('question_text').value), 'the same question stays in the form');
-});
-
-test('autosave posts each question and completes without a reload', async () => {
-  let calls = 0;
-  const result = ready(browserHelperWithCore({ fetch: () => { calls++; return Promise.resolve(savedResponse()); } }));
-  loadPaste(result, AUTO_PASTE);
-  result.field('ocr_auto').onclick();
-  assert(/saving question 1/.test(result.field('ocr_progress_label').innerHTML));
-  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'autosave does not use the reload marker');
-
-  await flush();
-  assert.strictEqual(calls, 1, 'one POST for the first question');
-  assert(/1 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
-  assert(/First autosave question/.test(result.field('question_text').value), 'next question is not filled until the delay');
-
-  result.runTimers();
-  await flush();
-  assert.strictEqual(calls, 2, 'one POST for the second question');
-  assert(/2 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
-  assert(/autosave complete/.test(result.field('ocr_progress_label').innerHTML));
-  assert(/Autosave complete: 2 of 2 saved/.test(result.field('ocr_status').innerHTML));
-  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
-  assert.strictEqual(result.storage.has('ocrAuto'), false, 'no new localStorage key');
-});
-
-test('autosave stops on a save error and leaves the question queued', async () => {
-  let calls = 0;
-  const result = ready(browserHelperWithCore({ fetch: () => { calls++; return Promise.resolve(failedResponse('Duplicate question.')); } }));
-  loadPaste(result, AUTO_PASTE);
-  result.field('ocr_auto').onclick();
-  await flush();
-  assert.strictEqual(calls, 1);
-  assert(/Autosave stopped at question 1: Duplicate question/.test(result.field('ocr_status').innerHTML));
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'question stays queued');
-  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
-});
-
-test('keeps the answer key only in ansKey and drops a leftover queue copy', () => {
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
-  const first = browserHelperWithCore();
-  loadPaste(first, text);
-  const queue = JSON.parse(first.storage.get('ocrQueue'));
-  assert.strictEqual('key' in queue, false, 'no key copy in the queue');
-
-  queue.key = { 1: 'D', 2: 'A' };
-  first.storage.set('ocrQueue', JSON.stringify(queue));
-  first.storage.set('ansKey', JSON.stringify({ 1: 'C', 2: 'B', 50: 'C' }));
-
-  const second = browserHelperWithCore(persisted(first));
-  assert.deepStrictEqual(checkedRadios(second), ['2'], 'question 1 key C from ansKey');
-  assert(/key C/.test(second.field('ocr_status').innerHTML));
-  assert(/3 answers/.test(second.field('ocr_status').innerHTML), 'ansKey count used');
-  assert.strictEqual('key' in JSON.parse(second.storage.get('ocrQueue')), false, 'leftover queue copy dropped');
-});
-
-test('clearing ansKey in another tool leaves no key for the helper', () => {
-  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
-  const first = browserHelperWithCore();
-  loadPaste(first, text);
-  first.storage.delete('ansKey');
-
-  const second = browserHelperWithCore(persisted(first));
-  assert.deepStrictEqual(checkedRadios(second), [], 'nothing ticked');
-  assert(/no key/.test(second.field('ocr_status').innerHTML));
-});
-
-test('stop autosave works while the save request is still hanging', async () => {
-  let resolveFetch = null;
-  const result = ready(browserHelperWithCore({
-    fetch: () => new Promise((resolve) => { resolveFetch = resolve; })
-  }));
-  loadPaste(result, AUTO_PASTE);
-  result.field('ocr_auto').onclick();
-  assert.strictEqual(result.field('ocr_auto').textContent, 'Stop autosave');
-  assert(/saving question 1/.test(result.field('ocr_progress_label').innerHTML));
-
-  result.field('ocr_auto').onclick();
-  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave', 'stop is immediate');
-  assert(/Autosave stopped at question 1/.test(result.field('ocr_status').innerHTML));
-  assert(/Checking whether that save went through/.test(result.field('ocr_status').innerHTML));
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'nothing marked saved before the answer arrives');
-
-  resolveFetch(savedResponse());
-  await flush();
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'a committed save counts even after the stop');
-  assert(/it had already saved/.test(result.field('ocr_status').innerHTML));
-  assert(/will not be sent again/.test(result.field('ocr_status').innerHTML));
-  assert(!/Question 2 of 2|All 2 questions done/.test(result.field('ocr_status').innerHTML), 'the stop message replaces the generic line');
-  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
-});
-
-test('stop autosave leaves the question queued when the stopped save fails', async () => {
-  let resolveFetch = null;
-  const result = ready(browserHelperWithCore({
-    fetch: () => new Promise((resolve) => { resolveFetch = resolve; })
-  }));
-  loadPaste(result, AUTO_PASTE);
-  result.field('ocr_auto').onclick();
-  result.field('ocr_auto').onclick();
-
-  resolveFetch(failedResponse('Duplicate question.'));
-  await flush();
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'question stays queued');
-  assert(/Autosave stopped at question 1: Duplicate question/.test(result.field('ocr_status').innerHTML));
-  assert(/stays queued/.test(result.field('ocr_status').innerHTML));
-  assert(!/Question 1 of 2/.test(result.field('ocr_status').innerHTML), 'the stop message replaces the generic line');
-  assert.strictEqual(result.field('ocr_auto').textContent, 'Start autosave');
-});
-
-test('restarting after a stop reuses the unanswered save instead of posting it twice', async () => {
-  let calls = 0;
-  let resolveFetch = null;
-  const result = ready(browserHelperWithCore({
-    fetch: () => { calls++; return new Promise((resolve) => { resolveFetch = resolve; }); }
-  }));
-  loadPaste(result, AUTO_PASTE);
-  result.field('ocr_auto').onclick();
-  result.field('ocr_auto').onclick();
-  result.field('ocr_auto').onclick();
-  assert.strictEqual(calls, 1, 'no second POST for the same question');
-  assert.strictEqual(result.field('ocr_auto').textContent, 'Stop autosave');
-
-  resolveFetch(savedResponse());
-  await flush();
-  assert.strictEqual(calls, 1);
-  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'the reused save advances the queue once');
-
-  result.runTimers();
-  await flush();
-  assert.strictEqual(calls, 2, 'the next question posts normally');
-  resolveFetch(savedResponse());
-  await flush();
-  assert(/2 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
-  assert(/Autosave complete: 2 of 2 saved/.test(result.field('ocr_status').innerHTML));
+  assert(/Question 2 of 50/.test(second.field('ocr_status').innerHTML), 'reload advances the queue');
+  assert.strictEqual(second.storage.has('ocrSubmitted'), false, 'submit marker consumed');
+  assert(second.field('question_text').value.startsWith('National consciousness'), 'question 2 filled');
+  assert.deepStrictEqual(second.radios.map((radio) => radio.checked), [false, false, false, false]);
 });
 
 test('keeps a complete mixed-case parenthesized A-D set inside the option boundaries', () => {

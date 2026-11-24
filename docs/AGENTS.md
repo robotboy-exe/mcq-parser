@@ -34,6 +34,14 @@ Root `ocr_helper.js` is a thin adapter: Node resolves the core through
 `FIXES` normalization, `parseAll`, the queue panel, and `fillForm`. Do not add
 parser logic back to it.
 
+The deployed helper and the key/autosave bookmarklet are separate products.
+`ocr_helper.js` is the deployed manual product and is byte-aligned with the
+reviewed published baseline; it must never regain answer-key load, dry run,
+autosave, in-place save, image plan, batch history, or a bookmarklet title. That
+behavior lives only in `src/bookmarklets/key/entry.js`, which the dedicated
+build inlines with the canonical core and `boot.js` into
+`src/bookmarklets/key/bookmarklet.js`.
+
 ### Region model (RM01)
 
 `splitRegions(text)` classifies every line once as `blank`, `divider`, `key`,
@@ -59,10 +67,22 @@ an already selected letter kept inside that option's text.
 
 ## Production path
 
-Root `ocr_helper.js` is the shipping OCR helper loaded by
-`admin_questions.php`. It parses pasted OCR text into the native question form;
-queue and metadata use `ocrQueue` and `ocrMeta`. Do not change those key names or
-shapes.
+Root `ocr_helper.js` is the shipping OCR helper loaded by `admin_questions.php`. It parses pasted OCR text into the native question form;
+queue and metadata use `ocrQueue` and `ocrMeta`, and the legacy `ocrSubmitted`
+marker is written on submit and deleted on the next load. Do not change those key
+names or shapes. The deployed helper holds no answer key, no autosave, no dry
+run, no `fetch`, and no session paste state.
+
+`src/bookmarklets/key/` is the key/autosave product: `boot.js` removes the
+deployed page's panel and error banner, `entry.js` owns key load/fill, dry run,
+autosave, Stop settlement, and in-place save, and `build.js` generates the
+bookmarklet. `entry.js` replaces its capture submit listener on a second click so
+a second bookmarklet click does not stack handlers. It uses `ansKey`, the shared
+`ocrQueue`/`ocrMeta` shapes, and `ocrPaste` in `sessionStorage`; it never writes
+`constant_text` and never touches the deployed helper. It deletes the deployed
+helper's stale `ocrSubmitted` marker before and after an in-place save so the
+next page load cannot advance the queue twice; it never writes that key, and no
+other new module may read or write it.
 
 `src/underline-toolbar.js` adds the runtime Underline button for Constant Text,
 question text, and options A–D. `src/owner-tool/render.js` remains the browser
@@ -157,10 +177,12 @@ deliverable.
    items may add `stimuli`/`needsImage` (D-59/D-60). Additions are allowed,
    existing shapes must stay compatible (D-30, D-32, D-36, D-57). Reset Queue
    keeps `ocrBatchHistory`; it is display-only and must never block a save.
-5. **Edit modules, not the build output.** `src/bookmarklet.js` is generated.
-   Change `src/parser/parser.js` or `src/ui/ui.js`, then rebuild
-   `src/bookmarklet.js`. `src/bookmarklet.min.js` is an untracked local
-   artifact; do not edit, rely on, or rebuild it.
+5. **Edit modules, not the build output.** `src/bookmarklet.js` and
+   `src/bookmarklets/key/bookmarklet.js` are generated. Change
+   `src/parser/parser.js` + `src/ui/ui.js`, or
+   `src/bookmarklets/key/boot.js` + `entry.js`, then rebuild the matching
+   artifact. `src/bookmarklet.min.js` is an untracked local artifact; do not
+   edit, rely on, or rebuild it.
 6. **The bookmarklet is a single line with no comments and no `%`.** Full-line
    `//` comments are allowed in the modules and stripped by `build.js`; inline
    `//` comments remain forbidden (INV-05). The build fails if the output
@@ -298,6 +320,7 @@ Commands:
 node tests/runner.js
 node tests/unit.js
 node tests/ocr-helper.js
+node tests/key-bookmarklet.js
 node tests/underline-toolbar.js
 node tests/question-preview.js
 node tests/math-tool.js
@@ -309,7 +332,8 @@ php tests/cbt-question-order.php
 
 The fixture harness is parser-only; it does not execute DOM, storage,
 `fillForm`, `tick`, or save behavior. `tests/unit.js` covers the legacy pure
-auto-save helpers. `tests/ocr-helper.js` covers the root production helper;
+auto-save helpers. `tests/ocr-helper.js` covers the deployed root helper;
+`tests/key-bookmarklet.js` runs the real generated key bookmarklet artifact;
 `tests/underline-toolbar.js` covers the pure wrap/unwrap logic;
 `tests/question-preview.js` covers read-only preview mounting and refresh;
 `tests/math-tool.js` covers the palette helpers, mount contracts, and byte
@@ -356,12 +380,17 @@ node -e "const p=require('./src/parser/parser.js'); console.log(p.splitQuestions
 
 ```sh
 node src/build/build.js
+node src/bookmarklets/key/build.js
 ```
 
-This reads `src/parser/parser.js` and `src/ui/ui.js`, wraps the flattened body
-in a single `javascript:` IIFE, and writes `src/bookmarklet.js`, the only tracked
-build output. Do not add `--min`; `src/bookmarklet.min.js` is an untracked local
-artifact outside the workspace contract. See `docs/BUILD.md`.
+The first reads `src/parser/parser.js` and `src/ui/ui.js` and writes
+`src/bookmarklet.js`, the stimulus bookmarklet. The second reads
+`src/parser/core.js`, `src/bookmarklets/key/boot.js`, and
+`src/bookmarklets/key/entry.js` and writes
+`src/bookmarklets/key/bookmarklet.js`, the key/autosave bookmarklet. Both wrap
+the flattened body in a single `javascript:` IIFE. Do not add `--min`;
+`src/bookmarklet.min.js` is an untracked local artifact outside the workspace
+contract. See `docs/BUILD.md`.
 
 Verification used during development: strip the leading `javascript:` and run
 `node --check` on the remainder. The bookmarklet must stay on one line.

@@ -1,6 +1,7 @@
 # PC01 — Product Surface Separation
 
-- **Status:** not started
+- **Status:** in progress — implementation complete, Node evidence green,
+  PHP baseline and disposable browser smoke outstanding
 - **Product baseline:** `793cb8f`
 - **Package base:** record the docs-only cycle-setup commit on
   `scratch/parser-convergence-cycle` at Gate 1; verify its product tree equals
@@ -65,6 +66,89 @@ starts before those measurements and the exact extraction boundary are approved.
 
 ## Handoff
 
-Not started. Record exact files, per-file measurements, hashes, commands,
-acceptance mapping, browser evidence, exclusions, review target, and
-`Commit: deferred`.
+Date: 2026-11-24. Result: **implementation complete, partially evidenced.**
+Package base `bb78c57` on `scratch/pc01-product-separation` (created from the
+reviewed `scratch/parser-convergence-cycle` tip). No deploy, live write,
+schema operation, or real-branch change. `Commit: deferred`.
+
+### Files (measured from package base `bb78c57`)
+
+| File | Diff | Final | Responsibility | Deployment | Production-path test |
+|---|---|---|---|---|---|
+| `ocr_helper.js` | +16/−316 | 127 L / 4,917 B, sha256 `b83835b7…` | deployed manual helper: one paste box, native fill, manual PRG save, `ocrQueue`/`ocrMeta`/`ocrSubmitted` | loaded by `deployed/admin_questions.php` after `src/parser/core.js` | `node tests/ocr-helper.js` (38 vectors; `require` + real browser `vm` path) |
+| `src/bookmarklets/key/entry.js` | new | 398 L / 16,539 B | key load, answer fill, dry run, autosave, Stop settlement, in-place save, duplicate-listener guard | never a page asset; inlined into the key bookmarklet | `node tests/key-bookmarklet.js` runs the generated artifact |
+| `src/bookmarklets/key/boot.js` | new (moved) | 12 L / 589 B | sets `__ocrBookmarklet`, removes the deployed panel and error banner | key bundle only | same suite |
+| `src/bookmarklets/key/build.js` | new (moved) | 44 L / 1,364 B | core + boot + entry → one-line key artifact | repo tool | determinism/syntax test in the same suite |
+| `tests/ocr-helper.js` | +40/−328 | 658 L / 30,476 B | deployed-helper and parser assertions only | — | `node tests/ocr-helper.js` |
+| `tests/key-bookmarklet.js` | new | 540 L / 24,672 B | key/autosave assertions on the real artifact | — | `node tests/key-bookmarklet.js` |
+
+`ocr_helper.js` is now byte-identical to the reviewed published baseline
+`94a7593:ocr_helper.js` (same sha256), so its live-origin additions are +51
+against every archived snapshot (`ocr_helper-2026-11-01.js` +51/−47,
+`ocr_helper.js` and `ocr_helper_deployed.js` +51/−45) — under the 100 cap with no
+exception.
+
+### Excluded / generated artifacts
+
+- `src/bookmarklets/key/bookmarklet.js` — generated, 1 line / 66,711 B, sha256
+  `f65f58ad…`; excluded from line limits and reported here separately.
+- `src/bookmarklet.js` — untouched. sha256 `bf5837e4…` equals the package base,
+  and re-running `node src/build/build.js` reproduces the same hash.
+- `src/parser/core.js` `c9ac52b3…`, `src/parser/parser.js` `0a9bff5f…`,
+  `src/ui/ui.js` `1e1f8007…` — byte-identical to the package base.
+- `src/bookmarklet.min.js` — absent/untracked, untouched.
+- Deleted `experiments/key-bookmarklet/{boot.js,build.js,bookmarklet.js}`
+  because their generator inlined the root helper and would silently drop key
+  and autosave behavior once the deployed helper was restored.
+
+### Commands and results
+
+- `node tests/runner.js` → 68 PASS / 0 FAIL / 0 PENDING
+- `node tests/unit.js` → 173 PASS / 0 FAIL
+- `node tests/ocr-helper.js` → 38 vectors PASS
+- `node tests/key-bookmarklet.js` → 22 vectors PASS
+- `node tests/underline-toolbar.js` → 10 PASS; `node tests/question-preview.js`
+  → 7 PASS; `node tests/math-tool.js` → 26 PASS; `node tests/render-markup.js`
+  → 69 PASS
+- `node tools/extract-bank.js --check` → 7 output hashes match
+- `node src/bookmarklets/key/build.js` → one line, deterministic, `new Function`
+  parses, no percent escape
+- `node src/build/build.js` → stimulus artifact byte-identical
+- **Not run:** every PHP suite (`php` is not installed in this environment) and
+  the disposable browser smoke (no browser). No PHP file changed, so the PHP
+  baseline is unaffected but unverified here.
+
+### Acceptance mapping
+
+| Check | Evidence |
+|---|---|
+| Deployed helper | `ocr_helper.js` is byte-identical to `94a7593`; new test `deployed helper has no key, dry-run, autosave, or bookmarklet path` scans the source and the real rendered panel |
+| Manual workflow | `deployed helper keeps the reviewed manual submit marker only`: Load → submit → reload advances the queue, consumes `ocrSubmitted`, ticks nothing |
+| Key bookmarklet | 18 ported key/autosave vectors plus 4 isolation/artifact vectors run the generated artifact |
+| Product isolation | `installs over the deployed page and removes only its stale panel` and `clicking the bookmarklet twice … does not stack listeners` |
+| Stimulus artifact | sha256 equality for `src/bookmarklet.js` and its sources; build reproduces the hash |
+| Parser | sha256 equality for `src/parser/core.js`, `src/parser/parser.js` |
+| Build | one line, deterministic sha256, `new Function` parses, no percent escape |
+| Baseline | Node green as listed; **PHP and disposable browser smoke outstanding** |
+| Safety | No deploy, live save, deletion, schema operation, or real-branch change |
+
+### Open questions
+
+- `AGENTS.md` forbids adding `ocrSubmitted` to new modules. `entry.js` inherits
+  one deliberate exception from `793cb8f`: it deletes the deployed helper's
+  stale `ocrSubmitted` marker before and after an in-place save so the next page
+  load cannot advance the queue twice. It never writes that key; the behavior and
+  its two ported vectors are preserved rather than changed. Reviewers should
+  confirm this is still the intended reading of the rule.
+- `deployed/admin_questions.php` still asks for `ocr_helper.js?v=2.4.7`. The
+  helper bytes changed back to the published baseline, so the cache token is
+  stale by policy; PC01 forbids a deployment-token change, so this is deferred to
+  PC06's release work.
+- Only the key surface's panel/listener isolation was exercised. The stimulus
+  bookmarklet is byte-identical, so its isolation behavior is unchanged rather
+  than re-tested.
+
+### Review status
+
+Independent rigorous review pending. Review target: the pushed
+`scratch/pc01-product-separation` tip. No review record exists yet.

@@ -7,7 +7,23 @@ Last updated: 2026-11-24.
 - Cycle: `parser-convergence-2026-11`; active map:
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
 - Frozen base: `793cb8f`; scratch integration line:
-  `scratch/parser-convergence-cycle`; current package PC01 is `not started`.
+  `scratch/parser-convergence-cycle`; current package PC01 is `in progress`.
+- PC01 implementation (2026-11-24, package base `bb78c57`, branch
+  `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
+  byte-identically to the reviewed published baseline (`94a7593`, 127 L /
+  4,917 B, `b83835b7…`), so it carries no key load, dry run, autosave, fetch
+  loop, image plan, batch history, or bookmarklet title. The key/autosave panel
+  moved to `src/bookmarklets/key/` (`entry.js` 398 L, `boot.js` 12 L,
+  `build.js` 44 L) with its own generated artifact
+  `src/bookmarklets/key/bookmarklet.js` (1 line, 66,711 B, `f65f58ad…`); the
+  superseded `experiments/key-bookmarklet/` generator is removed. Tests split
+  into `tests/ocr-helper.js` (38 deployed/parser vectors) and
+  `tests/key-bookmarklet.js` (22 vectors on the real artifact).
+  `src/parser/core.js`, `src/parser/parser.js`, `src/ui/ui.js`, and
+  `src/bookmarklet.js` are byte-identical to the package base. Node baseline:
+  68 runner, 173 unit, 38 helper, 22 key-bookmarklet, 10 underline, 7 preview,
+  26 math-tool, 69 render-markup, 7 bank hashes. PHP and the disposable browser
+  smoke are unrun gaps; rigorous review pending; `Commit: deferred`.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

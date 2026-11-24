@@ -1,10 +1,19 @@
 # Build
 
-The tracked build output is `src/bookmarklet.js`, a single self-contained
-`javascript:` URL (bookmarklet). It is generated from the two modules and
-committed. `src/bookmarklet.min.js` is not tracked; it may exist locally from an
-older build and is outside the workspace contract. There is no package.json,
-bundler, transpiler, or external dependency in this workspace.
+There are two tracked builds, one per bookmarklet product.
+
+- `src/build/build.js` generates `src/bookmarklet.js`, the stimulus/image
+  bookmarklet, from `src/parser/parser.js` and `src/ui/ui.js`.
+- `src/bookmarklets/key/build.js` generates
+  `src/bookmarklets/key/bookmarklet.js`, the key/autosave bookmarklet, from
+  `src/parser/core.js`, `src/bookmarklets/key/boot.js`, and
+  `src/bookmarklets/key/entry.js`.
+
+Both outputs are single self-contained `javascript:` URLs and are committed.
+The deployed manual helper (`ocr_helper.js`) is not a build product and is never
+inlined into either bookmarklet. `src/bookmarklet.min.js` is not tracked; it may
+exist locally from an older build and is outside the workspace contract. There is
+no package.json, bundler, transpiler, or external dependency in this workspace.
 
 ## Requirements
 
@@ -49,6 +58,42 @@ The script still accepts `--min` for local experiments, but the minified output
 is untracked and is not part of the workspace contract. Do not use it for
 releases, do not commit it, and do not rely on an existing local copy. The
 current sources exceed the script's 65536-byte mobile guard when minified.
+
+## Key/autosave bookmarklet build
+
+Run from the project root:
+
+```sh
+node src/bookmarklets/key/build.js
+```
+
+It applies the same line-comment stripping, line flattening, `new Function`
+syntax check, and one-line wrapper as `src/build/build.js`, but concatenates
+`src/parser/core.js`, then `src/bookmarklets/key/boot.js`, then
+`src/bookmarklets/key/entry.js`, and writes
+`src/bookmarklets/key/bookmarklet.js`. It refuses output containing a
+percent-escape (`%` followed by two hex digits), which a bookmark manager may
+decode. It is deterministic: rebuilding an unchanged source tree reproduces the
+same bytes.
+
+`src/bookmarklets/key/boot.js` runs first and removes the deployed page
+helper's panel and error banner so the injected panel owns every element id.
+`src/bookmarklets/key/entry.js` owns the key load, answer fill, dry run,
+autosave, Stop settlement, and in-place save. The entry replaces its submit
+listener on a second click, so clicking the bookmarklet twice does not stack
+handlers.
+
+The generated artifact is never deployed as a page asset; only its contents are
+installed as a bookmark. Do not edit it by hand.
+
+Verify:
+
+```sh
+wc -l src/bookmarklets/key/bookmarklet.js
+node tests/key-bookmarklet.js
+```
+
+The first must print `1`; the second runs the real generated artifact.
 
 ## Why the line rewriting exists
 
@@ -95,7 +140,13 @@ sets it for `.admin-field textarea`.
 - `src/parser/parser.js` — pure parsing functions and regexes.
 - `src/ui/ui.js` — DOM, form fill, queue, storage, submit.
 - `src/build/build.js` — assembler and legacy local minifier.
-- `src/bookmarklet.js` — generated build; do not edit by hand.
+- `src/bookmarklet.js` — generated stimulus build; do not edit by hand.
+- `src/parser/core.js` — canonical parser inlined into the key bookmarklet.
+- `src/bookmarklets/key/boot.js` — panel handover for the key bookmarklet.
+- `src/bookmarklets/key/entry.js` — key/autosave panel source.
+- `src/bookmarklets/key/build.js` — key bookmarklet assembler.
+- `src/bookmarklets/key/bookmarklet.js` — generated key build; do not edit by
+  hand.
 - `src/bookmarklet.min.js` — untracked local artifact; do not edit, rely on, or
   rebuild it.
 

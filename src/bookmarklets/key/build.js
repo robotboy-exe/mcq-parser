@@ -2,11 +2,11 @@ const fs = require('fs');
 const path = require('path');
 
 const here = __dirname;
-const root = path.join(here, '..', '..');
+const root = path.join(here, '..', '..', '..');
 const sources = [
   path.join(root, 'src', 'parser', 'core.js'),
   path.join(here, 'boot.js'),
-  path.join(root, 'ocr_helper.js')
+  path.join(here, 'entry.js')
 ];
 const outPath = path.join(here, 'bookmarklet.js');
 
@@ -23,9 +23,9 @@ function flatten(text) {
     .join(' ');
 }
 
-// The bookmarklet is the live OCR panel plus canonical key parsing: it drops
-// the page's older panel, then installs the current ocr_helper.js, so Load,
-// Skip this question and Clear list behave exactly as on a deployed page.
+// The key bookmarklet is the canonical parser core, a boot step that removes the
+// page's deployed panel, and the key entry. It is never deployed as a page
+// asset; only this generated file is installed as a bookmark.
 const body = sources
   .map(file => flatten(stripLineComments(fs.readFileSync(file, 'utf8'))))
   .join(' ');

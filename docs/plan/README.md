@@ -24,8 +24,10 @@ Last updated: 2026-11-24.
   stimulus baseline `d5a62f0`; and the key/main scratch merge at `793cb8f`.
   The pre-package `scratch/single-core-port` diff and its external backup are
   quarantined exploration, not package evidence or a cherry-pick source.
-- Current package: PC01, `not started`. No product file has been changed under
-  the new cycle protocol and Gate 1 has not run.
+- Current package: PC01, `in progress`. Gate 1 ran on `bb78c57`; the
+  implementation is complete on `scratch/pc01-product-separation` with the full
+  Node baseline green. The PHP baseline and the disposable browser smoke are
+  outstanding, so the package is not `done`. Independent rigorous review pending.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -335,7 +337,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | not started | disposable browser; no deploy/live |
+| 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | in progress | disposable browser; no deploy/live |
 | 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | not started | desktop and Brave bookmarklet installability |
 | 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | not started | none; parser and real-surface evidence |
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
@@ -412,7 +414,7 @@ verifies the detail path with the rest of Release A.
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | PC01 product separation | rigorous | not started |
+| phase 1 | PC01 product separation | rigorous | in progress; implementation complete, Node evidence green, PHP/browser gap |
 | phase 2 | PC02 one parser source and build parity | rigorous | blocked by PC01 review |
 | phase 3 | PC03 spaced initialisms | rigorous | blocked by PC02 review |
 | phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
@@ -441,9 +443,15 @@ verifies the detail path with the rest of Release A.
 7. **Owner decision after review** — only after every finding settles, decide
    whether and how to integrate the reviewed scratch cycle into real branches.
 
-Current workflow stop: cycle setup only. PC01 is `not started`; its VM Gate 1
-must be read-only, record the cycle-setup commit as package base, and verify its
-product tree is identical to `793cb8f`.
+Current workflow stop: PC01 implementation is complete on
+`scratch/pc01-product-separation` at package base `bb78c57` (product tree
+verified identical to `793cb8f`). The deployed helper is byte-identical to the
+published baseline, the key bookmarklet lives at `src/bookmarklets/key/`, and the
+Node baseline passes (68 runner, 173 unit, 38 helper, 22 key-bookmarklet, 10
+underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes). PHP and the
+disposable browser smoke could not run in this environment and are recorded gaps,
+so PC01 stays `in progress` pending independent rigorous review. `Commit:
+deferred`.
 
 ## Archived `math-editor-2026-11` close path
 
