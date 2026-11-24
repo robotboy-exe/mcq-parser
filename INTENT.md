@@ -26,13 +26,11 @@ stop and ask instead of silently changing the product direction.
   save, prefills the next new question in the same browser session, and clears
   on login/logout. It never crosses browser sessions.
 - Show Constant Text above the question in the `cbt.php` exam view and in
-  `answer_details.php`; do not show it in the result sheet or
-  `cbt_practice.php`.
+  `answer_details.php`; do not show it in the result sheet.
 - In the `cbt.php` exam view, keep both Constant Text and the question stem bold:
   Constant Text uses weight 800 and the question stem keeps weight 700, while
   their existing sizes preserve the question hierarchy.
-- Keep `cbt_practice.php`, `practice_title`, and the legacy bookmarklet out of
-  scope.
+- Keep `practice_title` and the legacy bookmarklet out of scope.
 
 ## Formatting intent
 
@@ -80,16 +78,15 @@ stop and ask instead of silently changing the product direction.
   fixed database ID. It follows the existing default limit of 50 questions.
 - Display that exact row as `English (Comprehension Pages / Lexis & Structure)`
   throughout `admin_questions.php` and `cbt.php`. Keep the stored name and
-  subject ID unchanged, require no SQL operation, and leave `cbt_practice.php`
-  untouched.
+  subject ID unchanged and require no SQL operation.
 - Keep the existing active/category/year filters and random limited row
   selection. For this subject only, reorder the selected rows so equal,
   non-empty exact Constant Text values stay contiguous and shuffle at that
   group level. Empty or `NULL` Constant Text questions remain independent.
 - Preserve the selected question set and each group's internal order. Every
   grouped question still renders its own Constant Text block.
-- Do not change other subjects, `cbt_practice.php`, attempt storage, parser
-  inference, or the Constant Text rendering boundary.
+- Do not change other subjects, attempt storage, parser inference, or the
+  Constant Text rendering boundary.
 
 ## Process intent
 

@@ -14,18 +14,13 @@ function test(name, fn) {
   tests.push([name, fn]);
 }
 
-function parseAll(text) {
-  const fixed = helper.FIXES.reduce((value, [pattern, replacement]) => value.replace(pattern, replacement), text);
-  return helper.splitQuestions(fixed).map(helper.parseQuestion);
-}
-
 function missingOptionFlags(question) {
   return question.flags.filter((flag) => /^option [A-D] missing$/.test(flag));
 }
 
 test('civic paper parses as 50 four-option questions with no flags', () => {
   const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026.txt'), 'utf8');
-  const questions = parseAll(text);
+  const questions = helper.parseAll(text);
   assert.strictEqual(questions.length, 50);
   for (const question of questions) {
     assert.deepStrictEqual(question.flags, [], 'question ' + question.num + ' flags');
@@ -37,7 +32,7 @@ test('civic paper parses as 50 four-option questions with no flags', () => {
 
 test('accepts all six lowercase and uppercase label forms', () => {
   const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-option-labels.txt'), 'utf8');
-  const questions = parseAll(text);
+  const questions = helper.parseAll(text);
   assert.strictEqual(questions.length, 6);
   for (const question of questions) {
     assert.deepStrictEqual(question.flags, [], 'question ' + question.num + ' flags');
@@ -50,7 +45,7 @@ test('accepts all six lowercase and uppercase label forms', () => {
 
 test('bank-2021 still yields 40 questions with no missing options', () => {
   const text = fs.readFileSync(path.join(__dirname, '../fixtures/inputs/bank-2021.txt'), 'utf8');
-  const questions = parseAll(text);
+  const questions = helper.parseAll(text);
   assert.strictEqual(questions.length, 40);
   for (const question of questions) {
     assert.deepStrictEqual(missingOptionFlags(question), [], 'question ' + question.num);
@@ -72,7 +67,7 @@ test('accepts whitespace between an option letter and its period', () => {
   assert.strictEqual(lowercase.c, 'Three');
   assert.strictEqual(lowercase.d, 'Four');
 
-  const questions = parseAll('1. Which option is correct? A . One B . Two C . Three D . Four');
+  const questions = helper.parseAll('1. Which option is correct? A . One B . Two C . Three D . Four');
   assert.strictEqual(questions.length, 1);
   assert.deepStrictEqual(questions[0].flags, []);
 });
@@ -172,7 +167,7 @@ test('keeps blank-line paragraphs and folds single wraps', () => {
 });
 
 test('does not recognize a no-stem cloze row as a numbered question', () => {
-  const questions = parseAll('1. (a) One (b) Two (c) Three (d) Four');
+  const questions = helper.parseAll('1. (a) One (b) Two (c) Three (d) Four');
   assert.strictEqual(questions.length, 1);
   assert.strictEqual(questions[0].num, null);
   assert(questions[0].flags.includes('question number missing'));
@@ -181,7 +176,7 @@ test('does not recognize a no-stem cloze row as a numbered question', () => {
 
 test('adapter splits lowercase oral stems and keeps each rubric out of the options', () => {
   const text = fs.readFileSync(path.join(__dirname, '../fixtures/inputs/region-lowercase-stems.txt'), 'utf8');
-  const questions = parseAll(text);
+  const questions = helper.parseAll(text);
   assert.deepStrictEqual(questions.map(q => q.num), [1, 2, 3, 4, 5]);
   assert.strictEqual(questions[2].d, 'baked');
   assert.strictEqual(questions[3].a, 'plump');
@@ -193,7 +188,7 @@ test('adapter splits lowercase oral stems and keeps each rubric out of the optio
 
 test('adapter reports a trailing structural run instead of folding it into option D', () => {
   const text = fs.readFileSync(path.join(__dirname, '../fixtures/inputs/region-footer-instruction.txt'), 'utf8');
-  const questions = parseAll(text);
+  const questions = helper.parseAll(text);
   assert.strictEqual(questions[1].d, 'patients');
   const regions = helper.splitRegions(text).regions;
   assert.strictEqual(regions[regions.length - 1].text, 'END OF SECTION 1');
@@ -202,7 +197,7 @@ test('adapter reports a trailing structural run instead of folding it into optio
 
 test('adapter keeps an unnumbered option block as its own question', () => {
   const text = fs.readFileSync(path.join(__dirname, '../fixtures/inputs/region-orphan-number.txt'), 'utf8');
-  const questions = parseAll(text);
+  const questions = helper.parseAll(text);
   assert.deepStrictEqual(questions.map(q => q.num), [null, 25, 26]);
   assert.strictEqual(questions[0].question, 'lump');
   assert.strictEqual(questions[1].d, 'signal');
@@ -223,7 +218,7 @@ test('has no Constant Text field integration', () => {
 
 function loadHelperInBrowser(options) {
   const inserted = [];
-  const radios = [0, 1, 2, 3].map((index) => ({ value: String(index), checked: false }));
+  const radios = [0, 1, 2, 3].map((index) => ({ value: String(index), checked: true }));
   const submitHandlers = [];
   const timers = [];
   const form = {
@@ -284,7 +279,7 @@ function loadHelperInBrowser(options) {
     thrown = error;
   }
   return {
-    thrown, inserted, errors, fields, radios, form, storage, session,
+    thrown, inserted, errors, fields, radios, form, storage, session, document,
     field: (id) => document.getElementById(id),
     runTimers() { timers.splice(0).forEach((fn) => { if (fn) fn(); }); }
   };
@@ -308,7 +303,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.4\.0/.test(result.thrown.message));
+  assert(/2\.5\.4/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -632,6 +627,252 @@ test('restarting after a stop reuses the unanswered save instead of posting it t
   await flush();
   assert(/2 of 2 saved/.test(result.field('ocr_progress_label').innerHTML));
   assert(/Autosave complete: 2 of 2 saved/.test(result.field('ocr_status').innerHTML));
+});
+
+test('keeps a complete mixed-case parenthesized A-D set inside the option boundaries', () => {
+  const question = helper.parseQuestion({
+    num: 4,
+    text: 'Which is correct? (a) Alpha (a) notation stays in option A (B) Bravo (c) Charlie (D) Delta'
+  });
+  assert.strictEqual(question.question, 'Which is correct?');
+  assert.deepStrictEqual([question.a, question.b, question.c, question.d],
+    ['Alpha (a) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  assert.deepStrictEqual(question.flags, []);
+});
+
+test('exported parseAll keeps a complete mixed-case parenthesized A-D set', () => {
+  const questions = helper.parseAll(
+    '1. Which is correct? (a) Alpha (a) notation stays in option A (B) Bravo (c) Charlie (D) Delta');
+  assert.strictEqual(questions.length, 1);
+  assert.strictEqual(questions[0].question, 'Which is correct?');
+  assert.deepStrictEqual([questions[0].a, questions[0].b, questions[0].c, questions[0].d],
+    ['Alpha (a) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  assert.deepStrictEqual(questions[0].flags, []);
+});
+
+test('keeps an opposite-case selected A repeat inside option A', () => {
+  const question = helper.parseQuestion({
+    num: 5,
+    text: 'Which is correct? (a) Alpha (A) notation stays in option A (B) Bravo (C) Charlie (D) Delta'
+  });
+  assert.strictEqual(question.question, 'Which is correct?');
+  assert.deepStrictEqual([question.a, question.b, question.c, question.d],
+    ['Alpha (A) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  assert.deepStrictEqual(question.flags, []);
+});
+
+test('exported parseAll keeps an opposite-case selected A repeat inside option A', () => {
+  const questions = helper.parseAll(
+    '1. Which is correct? (a) Alpha (A) notation stays in option A (B) Bravo (C) Charlie (D) Delta');
+  assert.strictEqual(questions.length, 1);
+  assert.strictEqual(questions[0].question, 'Which is correct?');
+  assert.deepStrictEqual([questions[0].a, questions[0].b, questions[0].c, questions[0].d],
+    ['Alpha (A) notation stays in option A', 'Bravo', 'Charlie', 'Delta']);
+  assert.deepStrictEqual(questions[0].flags, []);
+});
+
+test('exported parseAll keeps an opposite-case selected B/C/D repeat inside its option', () => {
+  const vectors = [
+    ['(A) Alpha (b) Bravo (B) notation stays in option B (C) Charlie (D) Delta',
+      'Alpha', 'Bravo (B) notation stays in option B', 'Charlie', 'Delta'],
+    ['(A) Alpha (B) Bravo (c) Charlie (C) notation stays in option C (D) Delta',
+      'Alpha', 'Bravo', 'Charlie (C) notation stays in option C', 'Delta'],
+    ['(A) Alpha (B) Bravo (C) Charlie (d) Delta (D) notation stays in option D',
+      'Alpha', 'Bravo', 'Charlie', 'Delta (D) notation stays in option D']
+  ];
+  for (const vector of vectors) {
+    const questions = helper.parseAll('1. Which is correct? ' + vector[0]);
+    assert.strictEqual(questions.length, 1);
+    assert.strictEqual(questions[0].question, 'Which is correct?');
+    assert.deepStrictEqual([questions[0].a, questions[0].b, questions[0].c, questions[0].d],
+      vector.slice(1), vector[0]);
+    assert.deepStrictEqual(questions[0].flags, [], vector[0] + ' flags');
+  }
+});
+
+// Real Load path: the browser helper source is executed, the Load button is
+// clicked, and the native form/storage/status are read back.
+function loadThroughForm(text) {
+  const result = loadHelperInBrowser({ parser: require('../src/parser/core.js') });
+  assert.strictEqual(result.thrown, null);
+  result.document.getElementById('ocr_text').value = text;
+  result.document.getElementById('ocr_load').onclick();
+  return result;
+}
+
+function formState(result) {
+  const value = (id) => result.document.getElementById(id).value;
+  return {
+    question: value('question_text'),
+    a: value('option_a'),
+    b: value('option_b'),
+    c: value('option_c'),
+    d: value('option_d'),
+    status: result.document.getElementById('ocr_status').innerHTML,
+    queue: JSON.parse(result.storage.get('ocrQueue'))
+  };
+}
+
+function readFixtureInput(name) {
+  return fs.readFileSync(path.join(__dirname, '../fixtures/inputs', name + '.txt'), 'utf8');
+}
+
+test('Load fills the native form for every supplied region fixture', () => {
+  const vectors = [
+    { name: 'region-lowercase-stems', count: 5, question: 'lout', d: 'crowd' },
+    { name: 'region-orphan-number', count: 3, question: 'lump', d: 'limber' },
+    { name: 'region-preamble-paragraphs', count: 2, question: 'Why did nobody notice the teacher?', d: 'She left early.' },
+    { name: 'region-footer-instruction', count: 2, question: 'The teacher spoke ______.', d: 'louder' }
+  ];
+  for (const vector of vectors) {
+    const state = formState(loadThroughForm(readFixtureInput(vector.name)));
+    assert.strictEqual(state.queue.items.length, vector.count, vector.name + ' queue');
+    assert.strictEqual(state.queue.i, 0, vector.name + ' index');
+    assert.strictEqual(state.question, vector.question, vector.name + ' question');
+    assert.strictEqual(state.d, vector.d, vector.name + ' option D');
+    assert(/Question 1 of \d+/.test(state.status), vector.name + ' status');
+  }
+});
+
+test('Load walks the queue with Skip and fills every item', () => {
+  const result = loadThroughForm(readFixtureInput('region-preamble-paragraphs'));
+  assert.strictEqual(formState(result).question, 'Why did nobody notice the teacher?');
+  result.document.getElementById('ocr_skip').onclick();
+  const second = formState(result);
+  assert.strictEqual(second.queue.i, 1);
+  assert.strictEqual(second.question, 'Where did she place the books?');
+  assert.strictEqual(second.d, 'In the bag');
+  assert(/Question 2 of 2/.test(second.status));
+});
+
+test('Load keeps a mid-stream unnumbered block out of the previous option D', () => {
+  const state = formState(loadThroughForm(readFixtureInput('region-midstream-orphan')));
+  assert.strictEqual(state.queue.items.length, 3);
+  assert.deepStrictEqual(state.queue.items.map((item) => item.num), [24, null, 25]);
+  assert.strictEqual(state.question, 'first question here');
+  assert.strictEqual(state.d, 'old-d');
+  assert(!state.d.includes('lump'), 'option D must not take the orphan block');
+});
+
+test('Load removes a mid-stream section heading from the previous option D', () => {
+  const text = readFixtureInput('region-midstream-heading');
+  const state = formState(loadThroughForm(text));
+  assert.strictEqual(state.queue.items.length, 2);
+  assert.strictEqual(state.question, 'Which is correct?');
+  assert.strictEqual(state.d, 'Four');
+  assert(!/SECTION 2|According to Matthew/.test(state.d), 'option D must stay clean');
+  assert(!/SECTION 2|According to Matthew/.test(state.question), 'stem must stay clean');
+});
+
+test('Load keeps an inline option block clean when a heading and instruction follow', () => {
+  const text = [
+    '1. Which is correct? A) One B) Two C) Three D) Four',
+    'SECTION 2:',
+    'According to Matthew, choose the correct answer.',
+    '2. Next question here',
+    'A. aaa', 'B. bbb', 'C. ccc', 'D. ddd'
+  ].join('\n');
+  const state = formState(loadThroughForm(text));
+  assert.strictEqual(state.queue.items.length, 2);
+  assert.strictEqual(state.question, 'Which is correct?');
+  assert.strictEqual(state.a, 'One');
+  assert.strictEqual(state.d, 'Four');
+  assert(!/SECTION 2|According to Matthew/.test(state.question + '\n' + state.d),
+    'structural text must stay out of the native fields');
+  assert(/SECTION 2:/.test(state.queue.items[1].sectionInstruction), 'heading owns the next stem');
+  assert(/According to Matthew/.test(state.queue.items[1].sectionInstruction), 'instruction owns the next stem');
+  assert.deepStrictEqual(state.queue.items[0].flags, [], 'clean inline layout needs no advisory flag');
+});
+
+test('Load keeps a complete mixed-case parenthesized A-D set in the native form', () => {
+  const state = formState(loadThroughForm(
+    '1. Which is correct? (a) Alpha (a) notation stays in option A (B) Bravo (c) Charlie (D) Delta'));
+  assert.strictEqual(state.queue.items.length, 1);
+  assert.strictEqual(state.question, 'Which is correct?');
+  assert.strictEqual(state.a, 'Alpha (a) notation stays in option A');
+  assert.strictEqual(state.b, 'Bravo');
+  assert.strictEqual(state.c, 'Charlie');
+  assert.strictEqual(state.d, 'Delta');
+  assert(!/missing/.test(state.status), 'status must not report a missing option');
+  assert.deepStrictEqual(state.queue.items[0].flags, []);
+});
+
+test('Load keeps an opposite-case selected A repeat inside option A', () => {
+  const state = formState(loadThroughForm(
+    '1. Which is correct? (a) Alpha (A) notation stays in option A (B) Bravo (C) Charlie (D) Delta'));
+  assert.strictEqual(state.queue.items.length, 1);
+  assert.strictEqual(state.question, 'Which is correct?');
+  assert.strictEqual(state.a, 'Alpha (A) notation stays in option A');
+  assert.strictEqual(state.b, 'Bravo');
+  assert.strictEqual(state.c, 'Charlie');
+  assert.strictEqual(state.d, 'Delta');
+  assert(!/missing/.test(state.status), 'status must not report a missing option');
+  assert.deepStrictEqual(state.queue.items[0].flags, []);
+});
+
+test('Load keeps an opposite-case selected B/C/D repeat inside its option', () => {
+  const vectors = [
+    ['(A) Alpha (b) Bravo (B) notation stays in option B (C) Charlie (D) Delta',
+      'Alpha', 'Bravo (B) notation stays in option B', 'Charlie', 'Delta'],
+    ['(A) Alpha (B) Bravo (c) Charlie (C) notation stays in option C (D) Delta',
+      'Alpha', 'Bravo', 'Charlie (C) notation stays in option C', 'Delta'],
+    ['(A) Alpha (B) Bravo (C) Charlie (d) Delta (D) notation stays in option D',
+      'Alpha', 'Bravo', 'Charlie', 'Delta (D) notation stays in option D']
+  ];
+  for (const vector of vectors) {
+    const state = formState(loadThroughForm('1. Which is correct? ' + vector[0]));
+    assert.strictEqual(state.queue.items.length, 1);
+    assert.strictEqual(state.question, 'Which is correct?');
+    assert.deepStrictEqual([state.a, state.b, state.c, state.d], vector.slice(1), vector[0]);
+    assert(!/missing/.test(state.status), 'status must not report a missing option');
+    assert.deepStrictEqual(state.queue.items[0].flags, [], vector[0] + ' flags');
+  }
+});
+
+test('Load keeps shared stimulus text out of every saveable field', () => {
+  const text = [
+    '1. Which option is right?',
+    'A. One', 'B. Two', 'C. Three', 'D. Four',
+    'Use the information below to answer questions 2 and 3',
+    'Total: 5',
+    'Balance: 3',
+    '2. Which option comes next?',
+    'A. Five', 'B. Six', 'C. Seven', 'D. Eight'
+  ].join('\n');
+  const result = loadThroughForm(text);
+  const state = formState(result);
+  assert.strictEqual(state.question, 'Which option is right?');
+  assert.strictEqual(state.d, 'Four');
+  const fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
+    .map((id) => result.document.getElementById(id).value).join('\n');
+  assert(!/Total: 5|Balance: 3|Use the information/.test(fields), 'stimulus lines must not reach the form');
+});
+
+test('Load leaves E/F text out of the native four-option form', () => {
+  const result = loadThroughForm('1. Which option is right? A. One B. Two C. Three D. Four E. Five F. Six');
+  const state = formState(result);
+  assert.strictEqual(state.question, 'Which option is right?');
+  assert.strictEqual(state.d, 'Four');
+  const fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
+    .map((id) => result.document.getElementById(id).value).join('\n');
+  assert(!/Five|Six/.test(fields), 'E/F text must not reach the form');
+  assert(state.queue.items[0].flags.includes('E/F options present'), 'E/F stays advisory');
+});
+
+test('Load does not preselect a correct-answer radio without a key', () => {
+  const result = loadThroughForm(readFixtureInput('region-lowercase-stems'));
+  assert.strictEqual(result.document.getElementById('question_text').value, 'lout');
+  assert.strictEqual(result.document.getElementById('option_a').value, 'cow');
+  assert.deepStrictEqual(result.radios.map((radio) => radio.checked), [false, false, false, false]);
+});
+
+test('helper suite executes the real exported parseAll', () => {
+  assert.strictEqual(typeof helper.parseAll, 'function');
+  const source = fs.readFileSync(path.join(__dirname, 'ocr-helper.js'), 'utf8');
+  assert(!/function parseAll\s*\(/.test(source), 'no copied parseAll orchestration');
+  const text = readFixtureInput('region-midstream-orphan');
+  assert.deepStrictEqual(helper.parseAll(text).map((item) => item.num), [24, null, 25]);
+  assert.deepStrictEqual(helper.parseAll(text), require('../src/parser/core.js').parsePaste(text).items);
 });
 
 (async () => {

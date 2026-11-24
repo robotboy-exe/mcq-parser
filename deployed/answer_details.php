@@ -165,7 +165,7 @@ if (is_file(__DIR__ . '/header.php')) {
 @media(max-width:600px){.answer-page{padding:20px 10px 35px}.answer-card{padding:18px}.answer-question{font-size:18px}}
 @media print{header,footer,.answer-actions{display:none!important}.answer-page{padding:0;background:#fff}.answer-card,.answer-hero{box-shadow:none;break-inside:avoid}}
 /* Exact-marker math shapes. Keep in parity with src/question-preview.css and deployed/cbt.php. */
-.cbt-frac{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;vertical-align:middle;line-height:1.05;margin:0 .12em}
+.cbt-frac{display:inline-flex;flex-direction:column;align-items:stretch;justify-content:center;vertical-align:middle;line-height:1.05;margin:0 .12em}
 .cbt-frac-num,.cbt-frac-den{display:block;padding:0 .22em;text-align:center}
 .cbt-frac-den{border-top:1px solid currentColor}
 .cbt-frac-single{display:inline}

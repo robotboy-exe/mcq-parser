@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-19.
+Last updated: 2026-11-23.
 
 ## Current state
 
@@ -58,11 +58,96 @@ Last updated: 2026-11-19.
   that core: `admin_questions.php` loads `src/parser/core.js` before the thin
   `ocr_helper.js` adapter. Four hand-transcribed fixtures cover lowercase stems,
   a lost question number, a prose preamble, and a trailing section heading.
-  64 runner, 163 unit, and 19 helper checks pass; deployment and the owner's
-  browser re-paste remain external. The 2026-11-20 adapter guard holds the
-  core to version `2.4.0` and renders a visible `#ocr_error` banner plus an
-  uncaught error when `window.OCRParser` is missing, verified on disposable
-  HTTP staging in a desktop browser.
+  The 2026-11-20 adapter guard holds the core to its module version and renders
+  a visible `#ocr_error` banner plus an uncaught error when `window.OCRParser`
+  is missing, verified on disposable HTTP staging in a desktop browser.
+- RM01 fix session (2026-11-22, review `BLOCK-1`, `BLOCK-4`, `BLOCK-5`,
+  `BLOCK-6`, `BLOCK-7`, `BLOCK-8`): the mid-stream unnumbered block and the
+  trailing `SECTION`/instruction lines no longer reach option D, the two pre-RM
+  comprehension expectations are restored (lowercase `(a)`-`(d)` counts only as
+  one complete ordered set, and an unlinked `PASSAGE` wall stays text), the
+  helper suite runs the real `helper.parseAll` plus real Load/DOM vectors, the
+  fraction bar spans the wider term on all three paint surfaces, and crossed
+  markers stay literal in both renderers. 68 runner, 164 unit, 27 helper, 7
+  preview, 26 math-tool, 69 JS marker, and 33 PHP marker checks pass on PHP
+  8.3.9; deployment and the owner's browser re-paste remain external.
+  `BLOCK-1` stays open as an owner release action: `origin/main` is still not an
+  ancestor of the release line.
+- Main-release re-review (2026-11-22) closed `BLOCK-7`/`BLOCK-8` and kept
+  `BLOCK-1`, `BLOCK-4`, `BLOCK-5`, and `BLOCK-6` open after two review rounds.
+  The owner chose `fix` for `BLOCK-4`/`BLOCK-5`/`BLOCK-6` only; `BLOCK-1` has no
+  disposition and remains open. The closure session binds a mid-stream heading
+  or instruction that follows a complete inline A–D set, keeps a repeated
+  lowercase `(a)` inside its option text without weakening D-91, adds the
+  missing real inline Load vector, and completes the ninth production-file
+  handoff row. Core bytes changed, so `src/parser/core.js` is `?v=2.5.1`
+  (version `2.5.1`) and `ocr_helper.js` is `?v=2.4.2` (`EXPECTED_CORE_VERSION`
+  `2.5.1`); 68 runner, 166 unit, 28 helper, 69 JS + 33 PHP marker, 8 store, and
+  14 ordering checks plus 7/7 lint pass on PHP 8.3.9. Re-review is required;
+  commit, deploy, and live checks remain unauthorized.
+- Main-release re-review 2 (2026-11-22) assigned `BLOCK-10`: one complete
+  mixed-case parenthesized A–D set lost Options A and C on the production Load
+  path, and only 2 of 16 case combinations parsed. The fix derives the paren
+  set from every parenthesized label, so one complete ordered set keeps its
+  boundaries while an incomplete lowercase `(a)`-`(c)` set, a complete
+  uppercase set, and the spacing/repeat grammar stay unchanged. Failing-first
+  core, exported-helper, and real Load regressions now pass; core is `?v=2.5.2`
+  (version `2.5.2`) and the helper is `?v=2.4.3` (`EXPECTED_CORE_VERSION`
+  `2.5.2`); 68 runner, 169 unit, 31 helper, 69 JS + 33 PHP marker, 8 store, and
+  14 ordering checks plus 7/7 lint pass on PHP 8.3.32. Re-review is required;
+  commit, deploy, and live checks remain unauthorized.
+- Main-release re-review 3 (2026-11-22, target `60f585d`) kept `BLOCK-10`
+  **open** on an opposite-case repeated selected A. The owner chose **`fix`**,
+  and the fourth-round session guarded the uppercase-only branch so a lowercase
+  `A` before the uppercase set kept the first boundary; that made the A vector
+  and the A repeat matrix 16/16. Main-release re-review 4 (2026-11-23) then
+  showed the guard covered only A: with selected B, C, or D repeated in the
+  opposite case, the same branch still moved the intended prefix into the
+  previous option (B/C/D 15/16 each on core and exported helper, and real Load
+  silently rewrote the native form). The owner asked for the general rule
+  instead of another per-letter guard. `parseQuestion` now gives the complete
+  ordered first-occurrence paren set precedence, so the first occurrence of
+  every letter is the boundary and every later repeat stays text whatever its
+  case or letter. Core, exported helper, and real Load return the five exact
+  values with no flags, and the opposite-case selected-repeat matrix is 16/16
+  for A, B, C, and D; core is `?v=2.5.4` (version `2.5.4`) and the helper is
+  `?v=2.4.5` (`EXPECTED_CORE_VERSION` `2.5.4`); 68 runner, 173 unit, 36 helper,
+  69 JS + 33 PHP marker, 8 store, and 14 ordering checks plus 7/7 lint pass on
+  PHP 8.3.32. The finding stays open until an independent re-review accepts the
+  closure. `BLOCK-1` remains open and undisposed, so commit and `main`-release
+  readiness stay blocked; deployment and live checks remain unauthorized.
+- Main-release finding disposition (2026-11-23): the owner chose **`fix`** for
+  `BLOCK-1` (current `origin/main` is not an ancestor of the release line) and
+  directed that `owner-tool-integration` is the mature branch and stays the
+  authoritative release line, with no work lost or regressed. The authorized fix
+  is one frozen-contract session: merge current `origin/main` (`4d68b28`) into
+  `owner-tool-integration` with a `--no-ff` merge commit, which keeps every
+  commit on both sides and rewrites or deletes nothing, re-run the full Node/PHP
+  baseline on the merged tip, and submit that exact target to an independent
+  re-review. The `fix` choice closes no finding: `BLOCK-1` stays open until
+  criteria 1–4 pass re-review, and commit, `main` advance, deployment, and live
+  checks remain unauthorized.
+- `BLOCK-1` fix implemented (2026-11-23): merge commit `ea872d0` has parents
+  `3608229` (the re-review 5 candidate) and current `origin/main` (`4d68b28`).
+  Every commit on both sides is kept; `git merge-base --is-ancestor origin/main
+  HEAD` now exits 0, `git diff --stat 3608229 ea872d0` is empty, no unrelated
+  artifact is present, and the full Node/PHP baseline passes on the merged tip
+  (68 runner, 173 unit, 36 helper, 10 underline, 7 preview, 26 math-tool, 69 JS
+  + 33 PHP marker, 8 store, 14 ordering, 7/7 lint) on static PHP 8.3.32.
+  `BLOCK-1` remains open pending an independent re-review of that exact merge
+  commit; the release boundary commit, a push, the `main` advance, deployment,
+  and live checks remain unauthorized.
+- `BLOCK-1` closed (2026-11-23): the sixth main-release re-review
+  ([`reviews/math-editor-2026-11-main-release-re-review-6.md`](reviews/math-editor-2026-11-main-release-re-review-6.md))
+  re-reviewed exact target `ea872d0` and returned `PASS WITH ACCEPTED FINDINGS`.
+  All four frozen criteria pass: the authorized two-parent merge keeps both
+  histories, current `main` (`4d68b28`) is an ancestor, the target tree equals the
+  reviewed candidate with no merge-added artifact, and the full Node/PHP baseline
+  passes. Its only finding is non-blocking `NOTE-15` (stale current-facing
+  workflow and remote-state text), corrected in this closure session. Every
+  main-release blocker is now closed or withdrawn; the reviewed release boundary
+  is committed and `main` is fast-forwarded to it. No `main` push, deployment, or
+  live action is performed.
 - The temporary D-107 pre-migration compatibility work was reverted on
   2026-11-19 after the owner reported production migration `01` successful. The
   application again requires the migrated column directly; operation `03` was
@@ -223,7 +308,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | — | D-105 | Owner palette restoration, no package file | MS01 committed | done; implements the 2026-11-18 owner request, committed at `23a406c`, cycle-reviewed `PASS WITH ACCEPTED FINDINGS` at `596fb31` (`NOTE-9`–`NOTE-12`; `NOTE-10`/`NOTE-11` corrected), and the owner accepted the desktop/Brave drawer check on 2026-11-18 | satisfied; owner drawer check 2026-11-18; no live, deploy, MySQL, or staging check |
 | — | D-106 | Authenticated save diagnostics, no package file | D-105 committed | done locally; exact PDO save/update messages are escaped for logged-in administrators; full Node/PHP baseline and PHP lint pass | deployment and one owner-observed failed-save message remain external; no live action by the agent |
 | — | D-108 | English Lexis display alias and CBT weight hierarchy, no package file | D-106 local | done locally; exact-name alias on all admin subject selects/rows and CBT setup/exam output, with Constant Text/question weights 800/700; no SQL, ID, grouping, or CBT Practice change; static, disposable HTTP, and desktop/390px browser checks pass | deployment and the owner's live check remain external; no live write by the agent |
-| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | done locally; four hand-transcribed fixtures, region stages A–D in the canonical core, and `ocr_helper.js` reduced to a thin adapter over `src/parser/core.js`; 64 runner, 163 unit, 19 helper checks pass; the adapter's missing/mismatched-core guard is browser-verified on disposable staging | deployment and the owner's browser re-paste remain external; no live write by the agent |
+| — | RM01 | [Durable Region Model and One Shipped Parser](regions/rm-01-region-model.md) | D-108 local | in progress; main-release review and six re-review rounds recorded — `BLOCK-7`/`BLOCK-8` closed, `BLOCK-4`/`BLOCK-5`/`BLOCK-6` closed by re-review 2, `BLOCK-10` closed by re-review 5, and `BLOCK-1` closed by re-review 6 on 2026-11-23 against exact target `ea872d0` with every frozen criterion passing; `NOTE-15` (stale current-facing workflow and remote-state text) is corrected in the closure session; 68 runner, 173 unit, 36 helper, 10 underline, 7 preview, 26 math-tool, 69 JS + 33 PHP marker checks and 7/7 lint pass on PHP 8.3.32; core `?v=2.5.4`, helper `?v=2.4.5`; no further review round required | the reviewed release boundary is committed on `owner-tool-integration` and `main` is fast-forwarded to it; no `main` push; deployment and the owner's browser re-paste remain external; no live write by the agent |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -266,10 +351,19 @@ verifies the detail path with the rest of Release A.
 
 ## Branch strategy
 
-- `owner-tool-integration` is the authoritative work branch. It contains the
-  review-settled phase-1 through phase-5 history at `c6a81fb`, which is also on
-  `origin/owner-tool-integration`. The reviewed and owner-accepted D-103/D-104
-  corrections are the current uncommitted work.
+- `owner-tool-integration` is the authoritative work and release branch. It
+  contains the review-settled phase-1 through phase-5 history, the
+  D-103/D-104/D-105 corrections, D-106/D-108, and the RM01 main-release fixes.
+  Its current tip is the reviewed release-boundary commit; the authenticated
+  `origin/owner-tool-integration` ref is at that commit's parent `140b021` (the
+  docs child of `ea872d0`), because this session does not push.
+- RM01 `BLOCK-1` merge (2026-11-23): `ea872d0` merges current `origin/main`
+  (`4d68b28`) into the release line with `--no-ff`, so current `main` is now an
+  ancestor. The earlier 2026-11-22 `df82512` merge covered only the older
+  `002483b`, so it did not make the later `main` commits reachable. The reviewed
+  release boundary is committed on top of `ea872d0`, and `main` is
+  fast-forwarded to it. The merge adds no product byte; `main`'s tree-net-zero
+  commits are evidence/history only.
 - `main` is the published baseline and the remote default. It is not the current
   work branch. Advance it only at a reviewed release boundary or cycle close, by
   fast-forwarding it to the reviewed `owner-tool-integration` tip. Never rewrite
@@ -299,6 +393,7 @@ verifies the detail path with the rest of Release A.
 | phase 4 | EL01 subject operation and grouped exam ordering | rigorous | settled 2026-11-17: PASS WITH ACCEPTED FINDINGS; `NOTE-1`–`NOTE-4` corrected |
 | phase 5 | MS01 visual math shapes, palette cleanup, and horizontal bars | rigorous | settled 2026-11-17: original review and `FIX-1` re-review passed; D-103/D-104 focused review passed with accepted notes corrected; owner desktop/Brave recheck accepted |
 | cycle | phases 1–5 and D-105 at the `596fb31` tip | rigorous | settled 2026-11-18: `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`; `NOTE-9`–`NOTE-12`, `NOTE-10`/`NOTE-11` corrected, owner drawer check accepted |
+| RM01 main release | 2026-11-21 review and re-reviews 1–6 | rigorous | settled 2026-11-23: re-review 6 closed `BLOCK-1` on exact target `ea872d0`; every blocker is closed or withdrawn, `NOTE-15` corrected, no further round required |
 
 ## Remaining path to cycle close
 
@@ -344,26 +439,44 @@ verifies the detail path with the rest of Release A.
     key to `1.1.2`, and adds a failing-first CSS regression. The focused review's
     regression-strength note is corrected, and the owner accepted the visual
     recheck with D-103.
+12. **Main-release boundary (RM01)** — closed 2026-11-23. The 2026-11-21
+    review and the 2026-11-22 re-reviews recorded blockers; the owner chose
+    `fix` for `BLOCK-4`/`BLOCK-5`/`BLOCK-6`, `BLOCK-10`, and then `BLOCK-1`, and
+    each fix is implemented and closed by re-review (re-review 2, re-review 5,
+    and re-review 6 respectively). Re-review 6 reviewed exact merge target
+    `ea872d0` — the `--no-ff` merge of current `origin/main` (`4d68b28`) into the
+    re-review 5 candidate `3608229` — and returned `PASS WITH ACCEPTED FINDINGS`
+    with no blocker. The reviewed release boundary is committed on
+    `owner-tool-integration` and `main` is fast-forwarded to it; no further
+    review round is required.
 
-Current workflow stop: MS01 is done and review-settled. Its D-103/D-104
+Current workflow stop: the cycle work is done and review-settled. Its D-103/D-104
 corrections are committed at `120a5db`, the owner's palette request is
 implemented as the D-105 restoration and committed at `23a406c`, and the docs
-reconciliation is `596fb31`; all are pushed, and the authenticated remote tip
-`owner-tool-integration` equals `596fb31`. The cycle-wide rigorous review is
-recorded at
+reconciliation is `596fb31`. The cycle-wide rigorous review is recorded at
 [`reviews/math-editor-2026-11-cycle-review.md`](reviews/math-editor-2026-11-cycle-review.md):
 `PASS WITH ACCEPTED FINDINGS`, no `BLOCK`/`FIX`, `NOTE-9`–`NOTE-12`, of which
-`NOTE-10` and `NOTE-11` are corrected here. The owner accepted the desktop and
+`NOTE-10` and `NOTE-11` are corrected. The owner accepted the desktop and
 Brave/Android check for the D-105 drawer on 2026-11-18, so every cycle
 acceptance row and external gate is satisfied. Only accepted residual risk
 remains: `NOTE-9` (root `ocr_helper.js` is untokened, so the D-91 grammar depends
 on the documented deploy-time cache purge) and `NOTE-12`'s optional labelling of
-the drawer region. Archiving the cycle and advancing `main` to `596fb31` are
-separate explicit owner decisions. D-106 is an uncommitted direct owner request;
-deploying it remains a separate explicit owner action.
+the drawer region.
+
+The RM01 main release is now review-settled: re-review 5 closed `BLOCK-10`,
+re-review 6 closed `BLOCK-1` on exact target `ea872d0`, and all earlier blockers
+are closed or withdrawn. `NOTE-15` (stale current-facing workflow and
+remote-state text) is non-blocking and corrected in this closure session. The
+authenticated remote `owner-tool-integration` ref is `140b021`, the one docs-only
+child of `ea872d0`; this session does not infer separate authorization for that
+earlier remote update and does not push. The reviewed release boundary is
+committed on `owner-tool-integration` and `main` is fast-forwarded to it without
+a history rewrite. Deployment, the owner's browser re-paste, and every live save
+remain external and unauthorized. D-106 and D-108 are direct owner requests
+carried by this line; deploying them remains a separate explicit owner action.
 
 ```text
-NEXT COMMAND: NONE - D-106 is implemented locally; deploying it needs an explicit owner instruction
+NEXT COMMAND: Owner decision — authorize deployment of the reviewed release boundary and the browser re-paste on `admin_questions.php`; no further review round is required
 ```
 
 ## Session protocol

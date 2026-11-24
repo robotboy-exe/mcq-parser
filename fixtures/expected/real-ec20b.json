@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "input_origin": "user_sample",
+  "id": "real-ec20b",
+  "source": [
+    "user-supplied continuation OCR document (ec20b)"
+  ],
+  "provenance": "Transcribed from the user-supplied ec20b OCR document: question 24 lost its number, then questions 25-27 follow.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/real-ec20b.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 4,
+    "nums": [null, 25, 26, 27],
+    "questions": [
+      {
+        "index": 0,
+        "question": "lump",
+        "a": "prank",
+        "b": "dongle",
+        "c": "nibble",
+        "d": "fumble"
+      },
+      {
+        "num": 25,
+        "question": "assign",
+        "d": "monk"
+      },
+      {
+        "num": 26,
+        "question": "wall",
+        "d": "could"
+      },
+      {
+        "num": 27,
+        "question": "weather",
+        "d": "cloth"
+      }
+    ]
+  },
+  "must_not": [
+    "The unnumbered first block merged into question 25"
+  ],
+  "notes": [
+    "Real user continuation: the orphan stays num:null and does not merge."
+  ],
+  "discrepancies": []
+}

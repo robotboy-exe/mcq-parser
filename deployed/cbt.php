@@ -519,7 +519,7 @@ include __DIR__ . '/header.php';
 
 /* Exact-marker math shapes. Keep in parity with src/question-preview.css and
    deployed/answer_details.php. */
-.cbt-frac { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; vertical-align: middle; line-height: 1.05; margin: 0 .12em; }
+.cbt-frac { display: inline-flex; flex-direction: column; align-items: stretch; justify-content: center; vertical-align: middle; line-height: 1.05; margin: 0 .12em; }
 .cbt-frac-num, .cbt-frac-den { display: block; padding: 0 .22em; text-align: center; }
 .cbt-frac-den { border-top: 1px solid currentColor; }
 .cbt-frac-single { display: inline; }
@@ -800,7 +800,7 @@ include __DIR__ . '/header.php';
 </main>
 
 <?php if ($examStarted): ?>
-<script src="src/owner-tool/render.js?v=2.3.3"></script>
+<script src="src/owner-tool/render.js?v=2.3.4"></script>
 <script>
 // Questions are randomly selected from MySQL for the chosen subject/category.\n// Subject 6 (English Language) allows 100; subject 12 (Oral English) allows 60; others allow 50.
 // JSON_HEX_* prevents question text from breaking the script context.

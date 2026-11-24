@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "region-midstream-orphan",
+  "source": [
+    "synthetic mid-stream orphan built from the user-supplied ec20b pattern"
+  ],
+  "provenance": "Hand-written from the owner's ec20b continuation: an unnumbered A-D block between numbered questions must stay a separate num:null item and must never merge into the preceding Option D.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/region-midstream-orphan.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 3,
+    "nums": [24, null, 25],
+    "questions": [
+      {
+        "num": 24,
+        "question": "first question here",
+        "d": "old-d"
+      },
+      {
+        "index": 1,
+        "question": "lump text",
+        "a": "plump",
+        "b": "lamp",
+        "c": "jump",
+        "d": "limber"
+      },
+      {
+        "num": 25,
+        "question": "next question here",
+        "d": "e4"
+      }
+    ],
+    "forbidden_flags": [
+      "option D over 500 characters"
+    ]
+  },
+  "must_not": [
+    "The unnumbered block merged into question 24 option D"
+  ],
+  "notes": [
+    "BLOCK-4 failing-first fixture: the current parser returns [24,25] and merges the block into Option D."
+  ],
+  "discrepancies": []
+}

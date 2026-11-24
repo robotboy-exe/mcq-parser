@@ -192,6 +192,12 @@
       "input": "<fr ac>3/7</fr ac>",
       "format": "&lt;fr ac&gt;3/7&lt;/fr ac&gt;",
       "strip": "<fr ac>3/7</fr ac>"
+    },
+    {
+      "name": "crossed marker pairs stay literal",
+      "input": "<u><sup>x</u></sup>",
+      "format": "&lt;u&gt;&lt;sup&gt;x&lt;/u&gt;&lt;/sup&gt;",
+      "strip": "<u><sup>x</u></sup>"
     }
   ]
 }

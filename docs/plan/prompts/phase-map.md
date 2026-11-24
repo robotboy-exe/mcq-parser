@@ -1,7 +1,7 @@
 # Current Phase Map
 
 Current cycle: `math-editor-2026-11`
-Updated: 2026-11-19
+Updated: 2026-11-23
 
 `phase N` means phase N of this cycle. Status lives in
 `docs/plan/README.md`; this file only maps phase numbers to packages.
@@ -44,7 +44,28 @@ the exact stored `English (Lexis & Structure)` subject to
 Constant Text/question weights to 800/700; static, disposable HTTP, and
 desktop/390px browser checks pass locally. Temporary pre-migration compatibility
 work was reverted after the owner reported migration `01` successful on
-2026-11-19.
+2026-11-19. The 2026-11-22 RM01 fix session (`BLOCK-4`/`5`/`6`/`7`/`8` of the
+main-release review) and the `BLOCK-10` mixed-case parenthesized fix are
+implemented and green locally. Two later re-reviews kept `BLOCK-10` open on an
+opposite-case repeat of a selected label, first A and then B/C/D (15/16 each);
+the 2026-11-23 session replaces the per-letter guard with the general
+first-occurrence rule, so the first occurrence of every letter is the boundary
+and later repeats stay text, making the exact vector and the opposite-case
+selected-repeat matrix A/B/C/D 16/16 each through core, exported helper, and
+real Load at core `?v=2.5.4` / helper `?v=2.4.5`. Independent re-review of the
+closure is required and was accepted by re-review 5 on 2026-11-23, closing
+`BLOCK-10`. `BLOCK-1` (a main-integrable target) carries the owner's `fix`
+disposition of 2026-11-23: `owner-tool-integration` stays the mature,
+authoritative release line, and the authorized fix merges current `origin/main`
+(`4d68b28`) into it with a `--no-ff` merge commit that keeps every commit on
+both sides. That merge is now `ea872d0`; `origin/main` is an ancestor, the
+merged tree is byte-identical to the reviewed candidate, and the full baseline
+passes. The sixth main-release re-review (2026-11-23) closed `BLOCK-1` with
+`PASS WITH ACCEPTED FINDINGS`, so every main-release blocker is closed or
+withdrawn and no further review round is required. The reviewed release boundary
+is committed and `main` is fast-forwarded to it; deployment and live checks
+remain external.
+No new phase was opened.
 
 ## Starting a new cycle
 

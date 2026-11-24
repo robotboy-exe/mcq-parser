@@ -1,10 +1,11 @@
 # Parser Specification
 
-Evidence base: root `ocr_helper.js`, `deployed/admin_questions.php`,
-`deployed/cbt.php`, `deployed/answer_details.php`, and the archived migration
-docs (`archive/migration-docs/`). This describes the current production path;
-the legacy bookmarklet and `src/parser/core.js` sections below are retained for
-historical parser tests.
+Evidence base: root `ocr_helper.js`, `src/parser/core.js`,
+`deployed/admin_questions.php`, `deployed/cbt.php`,
+`deployed/answer_details.php`, and the archived migration docs
+(`archive/migration-docs/`). This describes the current production path;
+`src/parser/core.js` is the shipped canonical parser (RM01), and only the legacy
+bookmarklet sections below stay historical.
 
 ## 1. Scope
 
@@ -58,6 +59,13 @@ must produce Question `Which is correct?`, Option A `The notation A ) stays in
 option A`, and Options B-D `Two`, `Three`, and `Four`, with no duplicate-letter
 warning solely for the internal `A )`.
 
+The parenthesized lowercase `(a)`-`(d)` form is options only as one complete
+ordered set (EC-97, INV-102), and a `PASSAGE`/`COMPREHENSION`/`EXTRACT` heading
+that does not link a comprehension context keeps its parenthesized labels in the
+stem with the missing-option flags (EC-98). Both were restored on 2026-11-22 after
+RM01 temporarily parsed them globally; the complete-set spacing matrix above is
+unchanged.
+
 The pre-fix `84be892` state resplit the sample above through both Node and the
 production browser path. The review-settled phase-1 implementation passes 11
 helper checks, including the complete spacing grammar and selected-boundary
@@ -69,7 +77,7 @@ below are unchanged.
 The active database subject name is exactly `English (Lexis & Structure)` and
 its ID is database-generated. On `admin_questions.php` and `cbt.php`, only that
 exact name is displayed as `English (Comprehension Pages / Lexis & Structure)`;
-`cbt_practice.php`, the stored row, and subject IDs are unchanged. `cbt.php`
+the stored row and subject IDs are unchanged. `cbt.php`
 trusts the original name loaded from the active `subjects` row for grouping, not
 a posted or displayed label or a fixed numeric ID. It keeps the existing
 active/category/year filters, `ORDER BY RAND()`, and subject-based limit; this
@@ -82,7 +90,7 @@ question order (ascending `id`), independent of the random row selection.
 `NULL` and `''` each remain one-question groups. Case, whitespace, line breaks,
 and exact underline markers are significant. Flattening preserves the selected
 ID multiset and every row value, and each grouped member continues to render its
-own Constant Text block. Other subjects and `cbt_practice.php` keep their
+own Constant Text block. Other subjects keep their
 existing order and behavior (D-95, D-96).
 
 ## 2. Input format
@@ -200,6 +208,36 @@ is the legacy bookmarklet contract.
 - Auto-Save additions (see §7): `ansKeyBatch`, `ansKeyConflicts`, `ocrSaving`,
   `ocrSavedLog`, and `autoLock`. The existing key names and the `ansKey` shape
   stay compatible (INV-36).
+
+### 3.5 Field contract
+
+This table is the single source of truth for what may enter each native form
+field. The parser may classify other lines internally, but it must not place
+them in a field below.
+
+| Field | Accepts | Never accepts |
+|---|---|---|
+| `question_text` | The question stem only | Option text, section headings, instruction lines, dividers, shared stimulus/table, answer key, question numbers |
+| `option_a`–`option_d` | That option's own text only | Headings, instructions, the next question's options, E/F text, answer key |
+| `subject_id`, `exam_category_id`, `exam_year` | Saved/selected metadata only | Pasted headings or arbitrary text |
+| `constant_text` | Manual entry only (the root helper never writes it) | Any parser output |
+| `correct_option` | Manual selection only | Any parser tick |
+
+Hard rules:
+
+1. One source line belongs to at most one field.
+2. A line whose real home is out of scope is dropped; it is never reassigned to
+   the nearest question or option.
+3. A section heading or instruction line is never `question_text` and never
+   `option_*` text. In this release it is discarded because Constant Text is
+   manual.
+4. When assignment is uncertain, emit an advisory flag; do not merge.
+5. Every rule above is enforced by a fixture or a real-helper form test.
+
+Consequently, the exact `SECTION 2:` / `According to Matthew, choose the correct
+answer.` probe leaves question 1 option D as `Four` and places no heading or
+instruction text in any field. `sectionInstruction` and `regions` are internal
+metadata and are never surfaced by the root helper.
 
 ## 4. Parsing stages
 
@@ -604,7 +642,7 @@ fail even though the bookmarklet and PHP agree.
   last-value. Same-session tabs share the value; separate sessions are isolated.
 - Display: `cbt.php` renders the passage above the question in the exam view,
   and `answer_details.php` renders it above the question. It is not shown on the
-  result sheet or `cbt_practice.php`.
+  result sheet.
 - CBT weight hierarchy: the exam-view Constant Text block is bold at weight 800;
   the larger question stem remains bold at weight 700.
 - Formatting: Constant Text, question text, and options all accept exact

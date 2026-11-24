@@ -227,7 +227,6 @@ el_check(
 
 $cbtPath = __DIR__ . '/../deployed/cbt.php';
 $cbtSource = file_get_contents($cbtPath);
-$practiceSource = file_get_contents(__DIR__ . '/../deployed/cbt_practice.php');
 $includeNeedle = "require_once __DIR__ . '/cbt_question_order.php';";
 $callNeedle = 'cbt_order_selected_questions(';
 $fetchPosition = strpos($cbtSource, '$dbQuestions = $stmt->fetchAll();');
@@ -257,10 +256,8 @@ el_check(
 
 el_check(
     str_contains($cbtSource, '\'constant\' => isset($row[\'constant_text\'])')
-        && str_contains($cbtSource, 'renderQuestionText(questionArea.querySelector(\'.constant-text\'), q.constant)')
-        && !str_contains($practiceSource, 'cbt_question_order.php')
-        && !str_contains($practiceSource, $callNeedle),
-    'every selected row keeps its Constant Text renderer and cbt_practice.php stays isolated'
+        && str_contains($cbtSource, 'renderQuestionText(questionArea.querySelector(\'.constant-text\'), q.constant)'),
+    'every selected row keeps its Constant Text renderer'
 );
 
 el_check(
@@ -283,11 +280,8 @@ el_check(
         && substr_count($adminSource, $adminSelectNeedle) === 3
         && substr_count($adminSource, $adminTableNeedle) === 1
         && substr_count($cbtSource, $cbtSelectNeedle) === 1
-        && substr_count($cbtSource, $cbtSelectedNeedle) === 1
-        && !str_contains($practiceSource, $displayIncludeNeedle)
-        && !str_contains($practiceSource, 'cbt_subject_display_name')
-        && !str_contains($practiceSource, CBT_ENGLISH_LEXIS_DISPLAY_NAME),
-    'uses the display label throughout admin and CBT while keeping CBT Practice unchanged'
+        && substr_count($cbtSource, $cbtSelectedNeedle) === 1,
+    'uses the display label throughout admin and CBT'
 );
 
 $constantWeight = null;

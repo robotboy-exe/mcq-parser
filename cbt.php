@@ -5,7 +5,6 @@ require_once __DIR__ . '/cbt_db.php';
 $subjects = [];
 $examCategories = [];
 $examYears = [];
-$practiceTitles = [];
 $dbQuestions = [];
 $questionsForBrowser = [];
 $examStarted = false;
@@ -13,38 +12,105 @@ $setupError = '';
 $selectedSubjectId = 0;
 $selectedCategoryId = 0;
 $selectedExamYear = 0;
-$selectedPracticeTitle = '';
 $selectedSubjectName = '';
 $selectedCategoryName = '';
 $candidateName = '';
 $candidatePhone = '';
 $candidateEmail = '';
-$practice_title = '';
 $attemptId = 0;
 
+// AJAX endpoint: return only categories and years with active questions for a subject.
+if (isset($_GET['action']) && $_GET['action'] === 'subject_options') {
+    header('Content-Type: application/json; charset=utf-8');
+    try {
+        $subjectValue = filter_var($_GET['subject_id'] ?? '', FILTER_VALIDATE_INT);
+        $subjectId = ($subjectValue !== false && $subjectValue !== null) ? (int) $subjectValue : 0;
+
+        if ($subjectId < 1) {
+            echo json_encode(['categories' => [], 'years' => []]);
+            exit;
+        }
+
+        $categoryStmt = $pdo->prepare(
+            "SELECT DISTINCT ec.id, ec.category_name
+             FROM questions q
+             INNER JOIN exam_category ec ON ec.id = q.exam_category_id
+             WHERE q.is_active = 1
+               AND q.subject_id = :subject_id
+               AND ec.is_active = 1
+               AND ec.id <= 10
+             ORDER BY ec.category_name"
+        );
+        $categoryStmt->execute([':subject_id' => $subjectId]);
+
+        $categoryValue = filter_var($_GET['category_id'] ?? '', FILTER_VALIDATE_INT);
+        $categoryId = ($categoryValue !== false && $categoryValue !== null) ? (int) $categoryValue : 0;
+
+        // Years are filtered by subject and, when selected, by exam category too.
+        if ($categoryId > 0) {
+            $yearStmt = $pdo->prepare(
+                "SELECT DISTINCT q.exam_year
+                 FROM questions q
+                 INNER JOIN exam_category ec ON ec.id = q.exam_category_id
+                 WHERE q.is_active = 1 AND q.subject_id = :subject_id
+                   AND q.exam_category_id = :category_id
+                   AND ec.is_active = 1 AND ec.id <= 10
+                 ORDER BY q.exam_year DESC"
+            );
+            $yearStmt->execute([':subject_id' => $subjectId, ':category_id' => $categoryId]);
+        } else {
+            $yearStmt = $pdo->prepare(
+                "SELECT DISTINCT exam_year FROM questions
+                 WHERE is_active = 1 AND subject_id = :subject_id
+                 ORDER BY exam_year DESC"
+            );
+            $yearStmt->execute([':subject_id' => $subjectId]);
+        }
+
+        echo json_encode([
+            'categories' => $categoryStmt->fetchAll(PDO::FETCH_ASSOC),
+            'years' => array_map('intval', $yearStmt->fetchAll(PDO::FETCH_COLUMN)),
+        ]);
+    } catch (Throwable $e) {
+        error_log('CBT subject options lookup failed: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Unable to load exam options. Please try again.']);
+    }
+    exit;
+}
+
+// Preserve the subject selection when the form is posted and re-rendered after validation.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $postedSubject = filter_var($_POST['subject_id'] ?? '', FILTER_VALIDATE_INT);
+    $selectedSubjectId = ($postedSubject !== false && $postedSubject !== null) ? (int) $postedSubject : 0;
+}
+
 try {
-    // Load active subjects and exam categories for the setup form.
+    // Load active subjects and only the categories/years that have active questions for the selected subject.
     $subjects = $pdo->query(
         "SELECT id, subject_name FROM subjects WHERE is_active = 1 ORDER BY subject_name"
     )->fetchAll();
-    $examCategories = $pdo->query(
-        "SELECT id, category_name FROM exam_category WHERE is_active = 1 and id >= 11 ORDER BY category_name"
-    )->fetchAll();
-    // Only offer years that currently have active questions.
-    $examYears = array_map('intval', $pdo->query(
-        "SELECT DISTINCT exam_year FROM questions WHERE is_active = 1 ORDER BY exam_year DESC"
-    )->fetchAll(PDO::FETCH_COLUMN));
 
-    // Load available practice titles from active questions.
-    $practiceTitles = $pdo->query(
-        "SELECT DISTINCT practice_title
-         FROM questions
-         WHERE is_active = 1
-           AND practice_title IS NOT NULL
-           AND TRIM(practice_title) <> ''
-         ORDER BY practice_title"
-    )->fetchAll(PDO::FETCH_COLUMN);
-    $practiceTitles = array_map('strval', $practiceTitles);
+    if ($selectedSubjectId > 0) {
+        $categoryStmt = $pdo->prepare(
+            "SELECT DISTINCT ec.id, ec.category_name
+             FROM questions q
+             INNER JOIN exam_category ec ON ec.id = q.exam_category_id
+             WHERE q.is_active = 1 AND q.subject_id = :subject_id
+               AND ec.is_active = 1 AND ec.id <= 10
+             ORDER BY ec.category_name"
+        );
+        $categoryStmt->execute([':subject_id' => $selectedSubjectId]);
+        $examCategories = $categoryStmt->fetchAll();
+
+        $yearStmt = $pdo->prepare(
+            "SELECT DISTINCT exam_year FROM questions
+             WHERE is_active = 1 AND subject_id = :subject_id
+             ORDER BY exam_year DESC"
+        );
+        $yearStmt->execute([':subject_id' => $selectedSubjectId]);
+        $examYears = array_map('intval', $yearStmt->fetchAll(PDO::FETCH_COLUMN));
+    }
 
     $subjectsById = [];
     foreach ($subjects as $subject) {
@@ -65,20 +131,40 @@ try {
         $subjectValue = filter_var($_POST['subject_id'] ?? '', FILTER_VALIDATE_INT);
         $categoryValue = filter_var($_POST['exam_category_id'] ?? '', FILTER_VALIDATE_INT);
         $yearValue = filter_var($_POST['exam_year'] ?? '', FILTER_VALIDATE_INT);
-        $selectedPracticeTitle = trim((string) ($_POST['practice_title'] ?? ''));
         $selectedSubjectId = ($subjectValue !== false && $subjectValue !== null) ? (int) $subjectValue : 0;
         $selectedCategoryId = ($categoryValue !== false && $categoryValue !== null) ? (int) $categoryValue : 0;
         $selectedExamYear = ($yearValue !== false && $yearValue !== null) ? (int) $yearValue : 0;
 
-        
-        
-       if (!isset($subjectsById[$selectedSubjectId]) || !isset($categoriesById[$selectedCategoryId])) {
+        if ($candidateName === '') {
+            $setupError = 'Please enter the candidate name.';
+        } elseif (strlen($candidateName) > 150 || strlen($candidatePhone) > 40) {
+            $setupError = 'The candidate name or phone number is too long.';
+        } elseif (!isset($subjectsById[$selectedSubjectId]) || !isset($categoriesById[$selectedCategoryId])) {
             $setupError = 'Please select a valid subject and exam category.';
-        } elseif (!in_array($selectedExamYear, $examYears, true)) {
-            $setupError = 'Please select a valid exam year that has active questions.';
-        } elseif (!in_array($selectedPracticeTitle, $practiceTitles, true)) {
-            $setupError = 'Please select a valid practice topic or title.';
         } else {
+            // Verify that this exact subject/category/year combination has active questions.
+            $validCombination = $pdo->prepare(
+                "SELECT 1 FROM questions
+                 WHERE is_active = 1 AND subject_id = :subject_id
+                   AND exam_category_id = :category_id AND exam_year = :exam_year
+                 LIMIT 1"
+            );
+            $validCombination->execute([
+                ':subject_id' => $selectedSubjectId,
+                ':category_id' => $selectedCategoryId,
+                ':exam_year' => $selectedExamYear,
+            ]);
+            if (!$validCombination->fetchColumn()) {
+                $setupError = 'Please select an exam year that has active questions for the chosen subject and category.';
+            }
+        }
+
+        if ($setupError === '') {
+            // Set the question count by subject: English Language = 100,
+            // Oral English = 60, and all other subjects = 50.
+            $questionLimit = ($selectedSubjectId === 6) ? 100
+                : (($selectedSubjectId === 12) ? 60 : 50);
+
             $stmt = $pdo->prepare(
                 "SELECT id, question_text, question_image_path, option_a, option_b, option_c, option_d, correct_option
                  FROM questions
@@ -86,15 +172,13 @@ try {
                    AND subject_id = :subject_id
                    AND exam_category_id = :exam_category_id
                    AND exam_year = :exam_year
-                    AND practice_title = :practice_title
                  ORDER BY RAND()
-                 LIMIT 50"
+                 LIMIT " . (int) $questionLimit
             );
             $stmt->execute([
                 ':subject_id' => $selectedSubjectId,
                 ':exam_category_id' => $selectedCategoryId,
                 ':exam_year' => $selectedExamYear,
-                ':practice_title' => $selectedPracticeTitle,
             ]);
             $dbQuestions = $stmt->fetchAll();
 
@@ -237,12 +321,6 @@ include __DIR__ . '/header.php';
     line-height: 1.55;
     font-weight: 700;
     margin: 0 0 22px;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
-.result-question-text {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
 }
 .question-diagram-wrap {
     margin: 0 0 22px;
@@ -423,36 +501,45 @@ include __DIR__ . '/header.php';
 <div class="cbt-container">
 
     <section class="cbt-intro">
-        <h1><font color = "white">CBT Exam Practice</font></h1>
-        <p>Enter your details, then choose the subject, practice topic/title, practice category, and exam year. Up to 50 matching active questions will be selected randomly.</p>
+        <h1><font color = "white">Computer Based Test</font></h1>
+        <p>Enter your details, then choose the subject, exam category, and exam year. The number of questions depends on the selected subject: English Language has 100, Oral English has 60, and all other subjects have 50. Questions are selected randomly.</p>
     </section>
 
     <?php if (!$examStarted): ?>
         <section class="cbt-card cbt-selection">
             <h2>Choose Your Examination</h2>
-            <p>Select the subject and exam category you want to practise. Up to 50 matching questions will be loaded for your test.</p>
+            <p>Select the subject and exam category you want to practise. Questions loaded: English Language (100), Oral English (60), and all other subjects (50), subject to the number of available questions.</p>
 
             <?php if ($setupError !== ''): ?>
                 <div class="cbt-alert" role="alert"><?php echo htmlspecialchars($setupError, ENT_QUOTES, 'UTF-8'); ?></div>
             <?php endif; ?>
 
-            <?php if (!$subjects || !$examCategories || !$examYears): ?>
+            <?php if (!$subjects): ?>
                 <div class="cbt-alert" role="alert">
-                    No active subjects, exam categories, or exam years with active questions were found. Please ask the administrator to add and activate the required data first.
+                    No active subjects were found. Please ask the administrator to add and activate subjects first.
                 </div>
             <?php endif; ?>
 
             <form method="post">
                 <div class="cbt-form-grid">
-                   
-                    
-                    
-                    <input type="hidden" id="candidate_name" name="candidate_name"
-                               value="practice"
-                               maxlength="150" autocomplete="name" >
-                   
-                    
-                    
+                    <div class="cbt-field">
+                        <label for="candidate_name">Candidate Name</label>
+                        <input type="text" id="candidate_name" name="candidate_name"
+                               value="<?php echo htmlspecialchars($candidateName, ENT_QUOTES, 'UTF-8'); ?>"
+                               maxlength="150" autocomplete="name" required>
+                    </div>
+                    <div class="cbt-field">
+                        <label for="candidate_phone">Phone Number</label>
+                        <input type="tel" id="candidate_phone" name="candidate_phone"
+                               value="<?php echo htmlspecialchars($candidatePhone, ENT_QUOTES, 'UTF-8'); ?>"
+                               maxlength="40" autocomplete="tel">
+                    </div>
+                    <div class="cbt-field">
+                        <label for="candidate_email">Email Address</label>
+                        <input type="email" id="candidate_email" name="candidate_email"
+                               value="<?php echo htmlspecialchars($candidateEmail, ENT_QUOTES, 'UTF-8'); ?>"
+                               maxlength="254" autocomplete="email">
+                    </div>
                     <div class="cbt-field">
                         <label for="subject_id">Subject</label>
                         <select id="subject_id" name="subject_id" required>
@@ -464,24 +551,9 @@ include __DIR__ . '/header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    
-                    
-                   
                     <div class="cbt-field">
-                        <label for="practice_title">Practice Topic / Title</label>
-                        <select id="practice_title" name="practice_title" required>
-                            <option value="">-- Select Practice Topic / Title --</option>
-                            <?php foreach ($practiceTitles as $title): ?>
-                                <option value="<?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($title === $selectedPracticeTitle) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="cbt-field">
-                        <label for="exam_category_id">Practice Category</label>
-                        <select id="exam_category_id" name="exam_category_id" required>
+                        <label for="exam_category_id">Exam Category</label>
+                        <select id="exam_category_id" name="exam_category_id" required <?php echo !$examCategories ? 'disabled' : ''; ?>>
                             <option value="">-- Select Exam Category --</option>
                             <?php foreach ($examCategories as $category): ?>
                                 <option value="<?php echo (int) $category['id']; ?>" <?php echo ((int) $category['id'] === $selectedCategoryId) ? 'selected' : ''; ?>>
@@ -490,10 +562,9 @@ include __DIR__ . '/header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
-
-                     <div class="cbt-field">
+                    <div class="cbt-field">
                         <label for="exam_year">Exam Year</label>
-                        <select id="exam_year" name="exam_year" required>
+                        <select id="exam_year" name="exam_year" required <?php echo !$examYears ? 'disabled' : ''; ?>>
                             <option value="">-- Select Exam Year --</option>
                             <?php foreach ($examYears as $year): ?>
                                 <option value="<?php echo (int) $year; ?>" <?php echo ((int) $year === $selectedExamYear) ? 'selected' : ''; ?>>
@@ -502,13 +573,113 @@ include __DIR__ . '/header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    
-                    
-                    
                 </div>
-                <button type="submit" name="start_exam" value="1" class="cbt-btn cbt-start" <?php echo (!$subjects || !$examCategories || !$examYears) ? 'disabled' : ''; ?>>Start Examination</button>
+                <button type="submit" name="start_exam" value="1" class="cbt-btn cbt-start" <?php echo !$subjects ? 'disabled' : ''; ?>>Start Examination</button>
             </form>
         </section>
+        <script>
+        (function () {
+            const subjectSelect = document.getElementById('subject_id');
+            const categorySelect = document.getElementById('exam_category_id');
+            const yearSelect = document.getElementById('exam_year');
+            const initialCategory = <?php echo json_encode((string) $selectedCategoryId); ?>;
+            const initialYear = <?php echo json_encode((string) $selectedExamYear); ?>;
+
+            function resetSelect(select, placeholder) {
+                select.innerHTML = '';
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = placeholder;
+                select.appendChild(option);
+                select.disabled = true;
+            }
+
+            async function loadSubjectOptions(subjectId, preserveSelections) {
+                resetSelect(categorySelect, 'Loading categories...');
+                resetSelect(yearSelect, 'Loading years...');
+                if (!subjectId) {
+                    categorySelect.options[0].textContent = '-- Select Exam Category --';
+                    yearSelect.options[0].textContent = '-- Select Exam Year --';
+                    return;
+                }
+
+                try {
+                    const url = new URL(window.location.href);
+                    url.search = '';
+                    url.searchParams.set('action', 'subject_options');
+                    url.searchParams.set('subject_id', subjectId);
+                    const response = await fetch(url.toString(), {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!response.ok) throw new Error('Request failed');
+                    const data = await response.json();
+
+                    resetSelect(categorySelect, '-- Select Exam Category --');
+                    (data.categories || []).forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = String(category.id);
+                        option.textContent = category.category_name;
+                        if (preserveSelections && option.value === initialCategory) option.selected = true;
+                        categorySelect.appendChild(option);
+                    });
+                    categorySelect.disabled = !(data.categories || []).length;
+
+                    // After categories load, populate years for the selected category.
+                    const desiredCategory = preserveSelections ? initialCategory : '';
+                    if (desiredCategory && (data.categories || []).some(c => String(c.id) === desiredCategory)) {
+                        categorySelect.value = desiredCategory;
+                    }
+                    await loadYears(subjectId, categorySelect.value, preserveSelections ? initialYear : '');
+                } catch (error) {
+                    resetSelect(categorySelect, 'Could not load categories');
+                    resetSelect(yearSelect, 'Could not load years');
+                }
+            }
+
+            async function loadYears(subjectId, categoryId, selectedYear) {
+                resetSelect(yearSelect, 'Loading years...');
+                if (!subjectId || !categoryId) {
+                    yearSelect.options[0].textContent = '-- Select Exam Year --';
+                    return;
+                }
+                try {
+                    const url = new URL(window.location.href);
+                    url.search = '';
+                    url.searchParams.set('action', 'subject_options');
+                    url.searchParams.set('subject_id', subjectId);
+                    url.searchParams.set('category_id', categoryId);
+                    const response = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
+                    if (!response.ok) throw new Error('Request failed');
+                    const data = await response.json();
+                    resetSelect(yearSelect, '-- Select Exam Year --');
+                    (data.years || []).forEach(year => {
+                        const option = document.createElement('option');
+                        option.value = String(year);
+                        option.textContent = String(year);
+                        if (selectedYear && option.value === selectedYear) option.selected = true;
+                        yearSelect.appendChild(option);
+                    });
+                    yearSelect.disabled = !(data.years || []).length;
+                } catch (error) {
+                    resetSelect(yearSelect, 'Could not load years');
+                }
+            }
+
+            subjectSelect.addEventListener('change', function () {
+                loadSubjectOptions(this.value, false);
+            });
+            categorySelect.addEventListener('change', function () {
+                loadYears(subjectSelect.value, this.value, '');
+            });
+
+            if (subjectSelect.value) {
+                loadSubjectOptions(subjectSelect.value, true);
+            } else {
+                resetSelect(categorySelect, '-- Select Exam Category --');
+                resetSelect(yearSelect, '-- Select Exam Year --');
+            }
+        })();
+        </script>
     <?php else: ?>
         <div class="cbt-exam-meta">
             Attempt Reference: #<?php echo (int) $attemptId; ?><br>
@@ -518,8 +689,6 @@ include __DIR__ . '/header.php';
             <span aria-hidden="true"> | </span>
             Email: <?php echo htmlspecialchars($candidateEmail, ENT_QUOTES, 'UTF-8'); ?><br>
             Subject: <?php echo htmlspecialchars($selectedSubjectName, ENT_QUOTES, 'UTF-8'); ?>
-            <span aria-hidden="true"> | </span>
-            Practice Topic / Title: <?php echo htmlspecialchars($selectedPracticeTitle, ENT_QUOTES, 'UTF-8'); ?>
             <span aria-hidden="true"> | </span>
             Exam Category: <?php echo htmlspecialchars($selectedCategoryName, ENT_QUOTES, 'UTF-8'); ?>
             <span aria-hidden="true"> | </span>
@@ -531,7 +700,7 @@ include __DIR__ . '/header.php';
         <div class="cbt-topbar">
             <div class="cbt-progress-wrap">
                 <div class="cbt-progress-text">
-                    Question <span id="currentNo">1</span> of <span id="totalNo">50</span>
+                    Question <span id="currentNo">1</span> of <span id="totalNo"><?php echo (int) (($selectedSubjectId === 6) ? 100 : (($selectedSubjectId === 12) ? 60 : 50)); ?></span>
                 </div>
                 <div class="cbt-progress">
                     <div class="cbt-progress-bar" id="progressBar"></div>
@@ -613,13 +782,13 @@ include __DIR__ . '/header.php';
 </main>
 
 <?php if ($examStarted): ?>
-<script src="src/owner-tool/render.js?v=2.3.3"></script>
 <script>
-// Questions are randomly selected from MySQL for the chosen subject/category.
+// Questions are randomly selected from MySQL for the chosen subject/category.\n// Subject 6 (English Language) allows 100; subject 12 (Oral English) allows 60; others allow 50.
 // JSON_HEX_* prevents question text from breaking the script context.
 const questions = <?php echo json_encode($questionsForBrowser, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 
-const MAX_QUESTIONS = 50;
+const SUBJECT_ID = <?php echo (int) $selectedSubjectId; ?>;
+const MAX_QUESTIONS = SUBJECT_ID === 6 ? 100 : (SUBJECT_ID === 12 ? 60 : 50);
 const MINUTES_PER_QUESTION = 0.8; // 0.8 minutes = 48 seconds per question
 const total = Math.min(questions.length, MAX_QUESTIONS);
 const EXAM_DURATION_SECONDS = Math.ceil(total * MINUTES_PER_QUESTION * 60);
@@ -654,7 +823,7 @@ function renderQuestion() {
 
     let html = `
         <div class="question-number">Question ${current + 1}</div>
-        <p class="question-text"></p>
+        <p class="question-text">${escapeHtml(q.question)}</p>
     `;
 
     // The diagram is optional, so questions without one remain unchanged.
@@ -683,7 +852,6 @@ function renderQuestion() {
 
     html += "</div>";
     questionArea.innerHTML = html;
-    renderQuestionText(questionArea.querySelector('.question-text'), q.question);
 
     document.querySelectorAll('input[name="answer"]').forEach(input => {
         input.addEventListener("change", function() {
@@ -782,8 +950,7 @@ function submitTest(forceSubmit = false) {
 
         const questionCell = document.createElement("td");
         const questionLabel = document.createElement("div");
-        questionLabel.className = "result-question-text";
-        renderQuestionText(questionLabel, q.question);
+        questionLabel.textContent = q.question;
         questionCell.appendChild(questionLabel);
         if (q.image) {
             const questionImage = document.createElement("img");
@@ -866,15 +1033,6 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
-
-// Only the exact <u> markers are formatting; everything else stays text.
-const renderQuestionText = (element, value) => {
-    if (window.CBTText) {
-        window.CBTText.render(element, value);
-        return;
-    }
-    element.textContent = String(value);
-};
 
 renderQuestion();
 renderQuestionNumbers();

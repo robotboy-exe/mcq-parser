@@ -13,6 +13,14 @@ A deploy needs a separate explicit owner instruction. See
 [`plan/owner-tool/st-01-constant-text-reset.md`](plan/owner-tool/st-01-constant-text-reset.md)
 for the package contract.
 
+**Supplied sources at the repository root are evidence only.** The release
+line carries `admin_questions.php`, `answer_details.php`, `cbt.php`, and
+`cbt_practice.php` at the repository root because `main` supplied them as the
+byte-exact live snapshots; they are identical to
+`archive/live-sources/*-2026-10-31.php`. They are not release files, are not in
+the table below, and must not be uploaded. `deployed/` remains the deployment
+set, and `cbt_practice.php` is still not part of this release.
+
 ## 1. Before you start
 
 1. Confirm the target runtime: PHP 8.3.x, MySQL 8.0.41, InnoDB,
@@ -50,21 +58,21 @@ paths. Deploy the SQL ops files to the ops directory, not the public web root.
 
 | File | Lines / LF bytes | SHA-256 (LF) | Deploy to | Notes |
 |---|---:|---|---|---|
-| `deployed/admin_questions.php` | 1057 / 62877 | `41e3ce7e01e111ca4515ae5ce83afdb383c3bb1b3b08256830b7a1936c91e5d6` | site root | native form, Constant Text, session prefill, authenticated exact PDO save diagnostics, and the D-108 subject display alias; the helper token is bumped whenever the helper bytes change (`2.4.1` carries the missing-core guard); loads `src/parser/core.js?v=2.4.0` before the thin `ocr_helper.js?v=2.4.1` adapter, underline, the renderer as `?v=2.3.3`, the read-only preview as `question-preview.css?v=1.1.2`, `math-tool.js?v=1.1.2`, and `math-tool.css?v=1.1.1`; context code removed |
+| `deployed/admin_questions.php` | 1057 / 62877 | `0b9eb5b2673b72ffed7c03b9737f4c60fbc42118f63225251bdaada3d731ae3b` | site root | native form, Constant Text, session prefill, authenticated exact PDO save diagnostics, and the D-108 subject display alias; the helper token is bumped whenever the helper bytes change (`2.4.5` carries the missing-core guard and the `2.5.4` core pin); loads `src/parser/core.js?v=2.5.4` before the thin `ocr_helper.js?v=2.4.5` adapter, underline, the renderer as `?v=2.3.4`, the read-only preview as `question-preview.css?v=1.1.3`, `math-tool.js?v=1.1.2`, and `math-tool.css?v=1.1.1`; context code removed |
 | `deployed/admin_question_store.php` | 113 / 4918 | `ff93f0c924159662f843ec83ed9e78c3815dc1549805a8c79a631f702577dc1b` | site root | extracted save/delete transaction; explicit columns; `constant_text` |
-| `deployed/cbt.php` | 1085 / 47092 | `01e3f90ac4618a634c8440aad5562de605b1df763d3f530fd89f72192e7ca806` | site root | standalone delivery; existing limited selection plus EL01 post-fetch ordering; aliased subject displays; Constant Text weight 800 and question weight 700; marker options; inline fraction/connected-root/matrix rules; loads `src/owner-tool/render.js?v=2.3.3` |
+| `deployed/cbt.php` | 1085 / 47093 | `29d734ba18e0737d19a4326e9c0fa2f63b047291935b0a8426f9aff55bde0c96` | site root | standalone delivery; existing limited selection plus EL01 post-fetch ordering; aliased subject displays; Constant Text weight 800 and question weight 700; marker options; inline full-width fraction/connected-root/matrix rules; loads `src/owner-tool/render.js?v=2.3.4` |
 | `deployed/cbt_question_order.php` | 56 / 1444 | `5c0a9b8c125b4a1d72737b3e9a532d6e386c50b7455ba8e1f1df39c122547fb7` | site root beside `cbt.php` | exact trusted-subject grouped display ordering only; members restored to ascending original `id`, shuffled groups, blank singletons |
 | `deployed/subject_display.php` | 12 / 386 | `3f8ce0e86787a66d90b8d87fcd0295ac3c7629f899202443068dfd019b044537` | site root beside `admin_questions.php` and `cbt.php` | exact persisted-name to frontend-label mapping only; no database access or mutation |
-| `deployed/answer_details.php` | 268 / 13671 | `9b50d23da36512cb62e0377bc4072b518ac0856439323573bf88c58cd3d8e915` | site root | Constant Text block; `cbt_format_text` options; inline fraction/connected-root/matrix rules |
-| `deployed/render.php` | 248 / 8161 | `f1152c545bd8f1983995b800cb0b3635439fe5ab3d162ba9d2b588173ecea41f` | site root | server marker renderer for the six exact pairs; consumed by the shared parity vectors |
-| `ocr_helper.js` | 127 / 4917 | `856b77685b49f20edd5c2726f80676ac3ca1a2eeda20a1e5b97d6192e5fb0993` | site root | thin adapter over `src/parser/core.js`; exports the core's `FIXES`, `OPTION`, `splitQuestions`, `splitRegions`, and `parseQuestion` and owns only `parseAll`, the queue panel, and `fillForm`; requires core version `2.4.0` and renders a visible `#ocr_error` banner plus an uncaught error when `window.OCRParser` is missing or mismatched; no parser implementation and no Constant Text integration |
-| `src/parser/core.js` | 1656 / 57118 | `49a465ecfe0ab1f8da8272bf2f9dbcf669c786f7748001efed133dff80b93868` | site root `src/` | canonical pure parser, version 2.4.0: four-stage region model, D-91 option grammar, comprehension and cloze engines; no DOM, storage, network, or Constant Text write |
+| `deployed/answer_details.php` | 268 / 13672 | `f8b812f278c2f1982b04a18d150ea50a2fd779d8be818338641d4e67f075e6ea` | site root | Constant Text block; `cbt_format_text` options; inline full-width fraction/connected-root/matrix rules |
+| `deployed/render.php` | 311 / 10208 | `3deed214787b76038158e29d0c97ad1dfd406da4e7b4f22cc8658697c64e8e82` | site root | server marker renderer for the six exact pairs, including the crossed-marker literal guard; consumed by the shared parity vectors |
+| `ocr_helper.js` | 127 / 4917 | `b83835b798c3d650dfe590892adc0a6058180eb3ec86c7dcc76765de0d49b6f7` | site root | thin adapter over `src/parser/core.js`; exports the core's `FIXES`, `OPTION`, `splitQuestions`, `splitRegions`, and `parseQuestion` and owns only `parseAll`, the queue panel, and `fillForm`; requires core version `2.5.4` and renders a visible `#ocr_error` banner plus an uncaught error when `window.OCRParser` is missing or mismatched; no parser implementation and no Constant Text integration |
+| `src/parser/core.js` | 1733 / 60722 | `c9ac52b3a715a1d1e082cc0f5f73090e17bd4375ca1635ee017ff118dc19a3ae` | site root `src/` | canonical pure parser, version 2.5.4: four-stage region model, D-91 option grammar, scoped complete-ordered `(a)`-`(d)` sets where one mixed-case parenthesized A-D set selects the first occurrence of every letter, structural-option flag, comprehension and cloze engines; no DOM, storage, network, or Constant Text write |
 | `src/underline-toolbar.js` | 136 / 4288 | `55f3d7f4953e44aac7d911e902b6deb413897e56b35d8669d607e6bab4a47315` | site root `src/` | runtime Underline button for Constant Text, question, and options; sits at the far right of the Question label row |
 | `src/question-preview.js` | 104 / 3759 | `472c69fedda6353f5ee1f527b8f5b0591774cd7fd8c837bad1c910268020bec9` | site root `src/` | read-only Constant Text/Question preview; uses `window.CBTText` |
-| `src/question-preview.css` | 117 / 2069 | `2baa333125836885616f2845000b62cec8d74f2556cc98f6eddbabeee9c213fc` | site root `src/` | preview layout, fixed-height scrollable Constant Text box, `white-space: pre-wrap`, horizontal fraction bar, joined radical, and 2×2 matrix grid; loaded as `?v=1.1.2` |
+| `src/question-preview.css` | 117 / 2070 | `dbc136ea6bd26be1363b9ca7f5374e2ae75b68639a1a6bb02107ee672c155ee5` | site root `src/` | preview layout, fixed-height scrollable Constant Text box, `white-space: pre-wrap`, full-width fraction bar, joined radical, and 2×2 matrix grid; loaded as `?v=1.1.3` |
 | `src/math-tool.js` | 660 / 21427 | `1cd92542ee44c9736ea06773478032faf3ab0df50f8263e366869dee1ff24719` | site root `src/` | seven basic operators, five freeform shape editors emitting exact markers, a `More symbols` drawer with only the Greek, set theory and logic, and geometry and vectors grids, and advisory byte counter for `#question_text`; the visual Root editor is the only square-root control; no storage, network, submit, underline-marker, or `constant_text` behavior |
 | `src/math-tool.css` | 255 / 4118 | `fb87dbd9b0654140c3673c338b035a7ea8470274a6485374de8267f54129780f` | site root `src/` | operator row, symbol drawer, shape panels, 2×2 matrix input grid, preview, hint, counter, focus, and mobile-target styles; the toggle rule follows the shared button rule so its size and colour win |
-| `src/owner-tool/render.js` | 408 / 13764 | `216ebb513ef48ee82c71e6d0af4e8657e6a0579ac674b2e0e5a6c6d55ad87933` | site root `src/owner-tool/` | browser renderer for the six exact marker pairs, including fraction/root/matrix nodes; unchanged path |
+| `src/owner-tool/render.js` | 449 / 15377 | `d930aab35a4f6b3e14e4329af280a1f46ef487f44d40bd2f475f65ecc386fb51` | site root `src/owner-tool/` | browser renderer for the six exact marker pairs, including fraction/root/matrix nodes and the crossed-marker literal guard; unchanged path, loaded as `?v=2.3.4` |
 | `deployed/sql/01-constant-text.sql` (ops) | 49 / 1719 | `7c3666af857f976f444013055e94b2599b85fabf1e050ae08ebda153c5d0cba4` | ops directory | guarded, rerunnable `constant_text` migration |
 | `deployed/sql/02-constant-text-rollback.sql` (ops) | 38 / 1169 | `09b4293d88f8a4436839ccef740d70e00bbc085c8f49ec60fcc184bfca861d45` | ops directory | rollback; refuses non-empty data |
 | `deployed/sql/03-english-lexis-structure.sql` (ops) | 82 / 2728 | `b7653537170f6e631c8d5715cf9db18052483ea2515d4386bf86c5dd56ce981f` | ops directory | guarded exact-name insert/reactivation; generated ID |
@@ -86,17 +94,17 @@ support. Do not deploy any file under `archive/`.
    `admin_question_store.php`, `subject_display.php`, `admin_questions.php`,
    `cbt_question_order.php`, `cbt.php`, `answer_details.php`. The helper must be
    present before the new `cbt.php` is served.
-4. Change only the renderer tag in `cbt_practice.php`: `render.js?v=2.3.2c` →
-   `?v=2.3.3`. Its markup, filters, and selection stay out of scope (D-102).
-5. Cache handling: `admin_questions.php` loads `src/parser/core.js?v=2.4.0`
-   and `ocr_helper.js?v=2.4.1`, loads `src/underline-toolbar.js` without a
+4. `cbt_practice.php` is not part of this release and is no longer tracked in
+   the repository; leave the live file untouched.
+5. Cache handling: `admin_questions.php` loads `src/parser/core.js?v=2.5.4`
+   and `ocr_helper.js?v=2.4.5`, loads `src/underline-toolbar.js` without a
    query token, and loads
-    `src/question-preview.css?v=1.1.2`, `src/math-tool.css?v=1.1.1`,
-    `src/owner-tool/render.js?v=2.3.3`, and `src/math-tool.js?v=1.1.2` (D-94,
+    `src/question-preview.css?v=1.1.3`, `src/math-tool.css?v=1.1.1`,
+    `src/owner-tool/render.js?v=2.3.4`, and `src/math-tool.js?v=1.1.2` (D-94,
     D-102, D-103, D-104, D-105). A standalone deployment must purge server/CDN caches, clear the
    site's browser cache, and verify the live helper and palette hashes.
-   `cbt.php` and `cbt_practice.php` both load
-   `src/owner-tool/render.js?v=2.3.3`; no page may keep `?v=2.3.2c`.
+   `cbt.php` loads `src/owner-tool/render.js?v=2.3.4`; no page may keep
+   `?v=2.3.2c`, `?v=2.3.3`, `?v=2.4.0`, or `?v=1.1.2` for these assets.
 6. Run the Constant Text migration:
    - `php -l` every changed PHP file;
    - `mysql --default-character-set=utf8mb4 <database> < deployed/sql/01-constant-text.sql`;
@@ -178,7 +186,7 @@ D-108 is display-only. It adds no SQL operation and does not rename the exact
 | Palette keyboard | Tab to a palette button and press Enter or Space | the focused symbol inserts; every control has an accessible name |
 | Byte counter | paste or type multi-byte symbols and watch the counter | neutral below 57,000 bytes, amber at 57,000–59,999, red at 60,000+ with visible warning copy; nothing truncates and Save stays enabled |
 | Byte counter refresh | click `Load questions`/`Skip` or reset the form | the counter matches the field's new UTF-8 byte count after the page's own fill, including red at 60,000+ |
-| Tokens | view source of the admin page, `cbt.php`, and `cbt_practice.php` | exactly one `src/math-tool.css?v=1.1.1` link and one `src/math-tool.js?v=1.1.2` script on the admin page, script after the preview script; one `src/question-preview.css?v=1.1.2` link and one `src/owner-tool/render.js?v=2.3.3` script there too; `cbt.php` and `cbt_practice.php` each load `src/owner-tool/render.js?v=2.3.3` exactly once, and stale preview `?v=1.1.1` plus renderer `?v=2.3.2c` appear nowhere |
+| Tokens | view source of the admin page and `cbt.php` | exactly one `src/math-tool.css?v=1.1.1` link and one `src/math-tool.js?v=1.1.2` script on the admin page, script after the preview script; one `src/question-preview.css?v=1.1.3` link and one `src/owner-tool/render.js?v=2.3.4` script there too, plus `src/parser/core.js?v=2.5.4` before `ocr_helper.js?v=2.4.5`; `cbt.php` loads `src/owner-tool/render.js?v=2.3.4` exactly once, and stale preview `?v=1.1.1`/`?v=1.1.2`, renderer `?v=2.3.2c`/`?v=2.3.3`, and core `?v=2.4.0`/`?v=2.5.0`/`?v=2.5.1`/`?v=2.5.2`/`?v=2.5.3` appear nowhere |
 | CBT | open delivered questions with preserved constant text | passage renders above the question; `<u>` is real underline; Constant Text is bold at weight 800 and the larger question stem remains bold at weight 700 |
 | English Lexis subject | inspect the active subject list after `03` and after a rerun | exactly one byte-exact active row; generated ID and existing description/timestamp remain unchanged |
 | English Lexis ordering | start a 50-question exam containing repeated exact non-empty passages plus blank passages | selected IDs and filters are unchanged; repeated passages are contiguous; blank rows stay independent; every member renders its passage |
@@ -231,9 +239,10 @@ Stop and do not continue on the first mismatch:
   editor, or the rendered radical has a visible gap before its vinculum;
 - the byte counter disagrees with the field's UTF-8 byte count after typing,
   OCR Load/Skip, or a reset, or it truncates text or disables Save;
-- `math-tool.js` is served without `?v=1.1.1`, `question-preview.css` without
-  `?v=1.1.2`, the unchanged `math-tool.css` loses `?v=1.1.0`, or any of those
-  assets returns 404;
+- `math-tool.js` is served without `?v=1.1.2`, `math-tool.css` without
+  `?v=1.1.1`, `question-preview.css` without `?v=1.1.3`,
+  `src/owner-tool/render.js` without `?v=2.3.4`, `src/parser/core.js` without
+  `?v=2.5.4`, or any of those assets returns 404;
 - constant-text data exists when a rollback is attempted;
 - the exact English Lexis operation sees a collation-equivalent byte-different
   row, lacks the auto-increment/unique-name contract, changes an existing field
@@ -260,8 +269,8 @@ Stop and do not continue on the first mismatch:
   alone is not sufficient on MySQL 8.0.41.
 - `header.php`, `footer.php`, and `cbt_exam_attempts` are live-site artifacts,
   not supplied. Do not deploy inferred local shims.
-- `cbt_practice.php` does not render Constant Text in ST01; its only change in
-  this package is the `render.js?v=2.3.3` cache key (D-102, phase-5 `FIX-1`).
+- `cbt_practice.php` is not part of this release and is no longer tracked in the
+  repository; leave the live file untouched.
 - ST01 did not execute the schema migration in its implementation phase. The
   owner reported production operation `01` successful on 2026-11-19; no agent
   database action or independent production verification was performed.

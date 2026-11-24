@@ -43,7 +43,6 @@ deployed/
   admin_question_store.php  standalone save/delete transaction
   cbt.php                CBT exam delivery and result sheet
   answer_details.php     answer explanation and media page
-  cbt_practice.php       practice page (out of ST01 scope)
   render.php             server exact-<u> renderer
   sql/                   Constant Text schema and rollback
 src/
@@ -93,7 +92,7 @@ tests/
   stored as nullable `questions.constant_text`, prefills the next new question
   from the browser session after a successful save, and clears on login/logout.
 - Constant Text appears above the question in the `cbt.php` exam view and in
-  `answer_details.php`, not in the result sheet or `cbt_practice.php`.
+  `answer_details.php`, not in the result sheet.
 - The Underline button wraps or unwraps the last-focused Constant Text, question,
   or option field with exact lowercase tags and refuses partial marker overlap.
 - A read-only admin preview renders Constant Text and Question with the same safe
@@ -121,6 +120,34 @@ fractions, and square root stay with the visual editors. It is committed at
 ([record](docs/plan/reviews/math-editor-2026-11-cycle-review.md)) passed with
 accepted findings; the owner accepted its desktop/Brave drawer check on
 2026-11-18.
+
+The 2026-11-21 main-release review and its 2026-11-22 re-review rounds are
+recorded: `BLOCK-7`/`BLOCK-8` are closed; the owner's `fix` disposition for
+`BLOCK-4`/`BLOCK-5`/`BLOCK-6` is implemented and closed by re-review 2.
+`BLOCK-10` was then assigned and fixed, but re-review 3 kept it open because a
+complete mixed-case parenthesized set with an opposite-case repeat of the
+selected A label still moved the intended Option A prefix into the question.
+Re-review 4 showed the follow-up guard covered only A and that selected B/C/D
+repeats still failed 15/16. The 2026-11-23 session replaces the per-letter guard
+with the general first-occurrence rule, so the first occurrence of every letter
+is the boundary and every later repeat stays text; the opposite-case
+selected-repeat matrix is A/B/C/D 16/16 through core, exported helper, and real
+Load at core `?v=2.5.4` / helper `?v=2.4.5`. That closure was accepted by the
+fifth re-review on 2026-11-23, so `BLOCK-10` is closed; its one non-blocking
+note, stale test counts in root `AGENTS.md`, is corrected.
+
+For `BLOCK-1` (current-`main` ancestry) the owner chose `fix` on 2026-11-23 and
+directed that `owner-tool-integration` is the mature branch and stays the
+authoritative release line, with no work lost or regressed. The authorized fix
+merges current `origin/main` (`4d68b28`) into `owner-tool-integration` with a
+`--no-ff` merge commit, so every commit on both sides is kept and nothing is
+rewritten or deleted, then reruns the full baseline on the merged tip.
+That merge is now `ea872d0`: its first parent is the reviewed candidate and its
+second is current `main`, so `main` is an ancestor, the merged tree is
+byte-identical to the reviewed candidate, and the full baseline passes.
+`BLOCK-1` remains open until an independent re-review accepts that exact commit,
+so `main` is not yet ready to advance, and a push, the release commit,
+deployment and live checks stay unauthorized.
 
 Active work happens on `owner-tool-integration`. `main` is the published
 baseline and the remote default; do not start new implementation there. The
