@@ -259,6 +259,53 @@
     });
   }
 
+  let savingInPlace = false;
+
+  function saveInPlace(event) {
+    if (event) {
+      if (event.preventDefault) event.preventDefault();
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+    }
+    if (savingInPlace) return;
+    if (auto && auto.running) {
+      $('ocr_status').innerHTML = 'Autosave is running. Stop it before saving by hand.';
+      return;
+    }
+    if (!queue.items.length) return;
+    if (queue.i >= queue.items.length) {
+      $('ocr_status').innerHTML = 'Every question in this list is already saved.';
+      return;
+    }
+    if (typeof fetch !== 'function' || typeof FormData !== 'function') {
+      $('ocr_status').innerHTML = 'This browser cannot save without a page reload; save the question by hand.';
+      return;
+    }
+    saveMeta();
+    savingInPlace = true;
+    // The page helper may have already handled this submit before us, so drop
+    // its reload marker; the queue advances here and must not advance again on
+    // the next page load.
+    store.del('ocrSubmitted');
+    const total = queue.items.length;
+    const number = queue.i + 1;
+    $('ocr_status').innerHTML = 'Saving question ' + number + ' of ' + total + '...';
+    postSave().then((result) => {
+      savingInPlace = false;
+      store.del('ocrSubmitted');
+      if (result.saved) {
+        queue.i++;
+        save();
+        show();
+        $('ocr_status').innerHTML = 'Saved question ' + number + ' of ' + total + ' using its answer key.';
+        return;
+      }
+      render();
+      $('ocr_status').innerHTML = 'Question ' + number + ' was not saved: '
+        + (result.failed ? 'network problem' : (saveError(result.html) || 'the server did not confirm the save'))
+        + '. It stays queued.';
+    });
+  }
+
   function fillForm(q) {
     Object.entries(store.get('ocrMeta') || {}).forEach(([id, v]) => ($(id).value = v));
     $('question_text').value = q.question;
@@ -357,11 +404,19 @@
     render();
   };
 
-  form.addEventListener('submit', () => {
-    if (!queue.items.length) return;
-    saveMeta();
-    store.set('ocrSubmitted', true);
-  });
+  if (bundled) {
+    // A bookmarklet does not survive a page reload, so saving through the
+    // native form would hand the next question to the page's own (older)
+    // helper, which drops the key and the dry-run state. Save in place instead
+    // and keep the injected helper, its answer key and its queue alive.
+    form.addEventListener('submit', saveInPlace, true);
+  } else {
+    form.addEventListener('submit', () => {
+      if (!queue.items.length) return;
+      saveMeta();
+      store.set('ocrSubmitted', true);
+    });
+  }
 
   const failed = document.querySelector('.admin-error');
   if (store.get('ocrSubmitted')) {

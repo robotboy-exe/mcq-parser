@@ -223,11 +223,26 @@ function loadHelperInBrowser(options) {
   const timers = [];
   const form = {
     before(node) { inserted.push(node); },
-    addEventListener(type, handler) { if (type === 'submit') submitHandlers.push(handler); },
+    addEventListener(type, handler, capture) {
+      if (type === 'submit') submitHandlers.push({ handler, capture: Boolean(capture) });
+    },
     querySelectorAll(selector) {
       return selector === '[name=correct_option]' ? radios : [];
     },
-    submit() { submitHandlers.forEach((handler) => handler()); }
+    submit(event) {
+      const e = event || {
+        defaultPrevented: false,
+        immediateStopped: false,
+        preventDefault() { this.defaultPrevented = true; },
+        stopImmediatePropagation() { this.immediateStopped = true; }
+      };
+      // At the target, capture and bubble listeners run in registration order.
+      for (const item of submitHandlers) {
+        if (e.immediateStopped) break;
+        item.handler(e);
+      }
+      return e;
+    }
   };
   const anchor = options.withForm === false ? null : { form };
   const fields = new Map();
@@ -249,7 +264,7 @@ function loadHelperInBrowser(options) {
     }
   };
   const sandbox = {
-    window: { OCRParser: options.parser || null },
+    window: { OCRParser: options.parser || null, __ocrBookmarklet: options.bookmarklet === true },
     document,
     location: { search: options.search || '' },
     localStorage: {
@@ -270,6 +285,10 @@ function loadHelperInBrowser(options) {
     console: { error(message) { errors.push(String(message)); } }
   };
   sandbox.window.window = sandbox.window;
+  if (options.pageHelperSubmit) {
+    // The live page's own helper listens first and writes the reload marker.
+    submitHandlers.push({ handler: () => storage.set('ocrSubmitted', 'true'), capture: false });
+  }
   vm.createContext(sandbox);
   const source = fs.readFileSync(path.join(__dirname, '../ocr_helper.js'), 'utf8');
   let thrown = null;
@@ -494,6 +513,45 @@ function failedResponse(message) {
 function flush() {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
+
+test('bookmarklet saves in place and keeps the key for the next question', async () => {
+  let calls = 0;
+  const result = ready(browserHelperWithCore({
+    bookmarklet: true,
+    pageHelperSubmit: true,
+    fetch: () => { calls++; return Promise.resolve(savedResponse()); }
+  }));
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-civic-2026-key.txt'), 'utf8');
+  loadPaste(result, text);
+  assert.deepStrictEqual(checkedRadios(result), ['2'], 'question 1 key C');
+
+  const event = result.form.submit();
+  assert(event.defaultPrevented, 'the bookmarklet must not submit the native form');
+  assert(event.immediateStopped, 'the page helper submit handler must be suppressed');
+  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'the page helper reload marker was cleared');
+  await flush();
+
+  assert.strictEqual(calls, 1, 'one POST for the saved question');
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'the queue advanced in place');
+  assert(/National consciousness/.test(result.field('question_text').value), 'question 2 is filled');
+  assert.deepStrictEqual(checkedRadios(result), ['1'], 'question 2 key B ticked without a reload');
+  assert(/Saved question 1 of 50/.test(result.field('ocr_status').innerHTML));
+  assert(/dry run OK/.test(result.field('ocr_progress_label').innerHTML), 'the dry run state survives the save');
+  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'no reload marker is written');
+});
+
+test('bookmarklet keeps the question queued when the in-place save is rejected', async () => {
+  const result = ready(browserHelperWithCore({
+    bookmarklet: true,
+    fetch: () => Promise.resolve(failedResponse('Duplicate question.'))
+  }));
+  loadPaste(result, AUTO_PASTE);
+  result.form.submit();
+  await flush();
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'the queue does not advance');
+  assert(/Question 1 was not saved: Duplicate question/.test(result.field('ocr_status').innerHTML));
+  assert(/First autosave question/.test(result.field('question_text').value), 'the same question stays in the form');
+});
 
 test('autosave posts each question and completes without a reload', async () => {
   let calls = 0;
