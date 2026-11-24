@@ -26,8 +26,8 @@ Last updated: 2026-11-24.
   quarantined exploration, not package evidence or a cherry-pick source.
 - Current package: PC01, `in progress`. Gate 1 ran on `bb78c57`; the
   implementation is complete on `scratch/pc01-product-separation` with the full
-  Node and PHP baselines green. The disposable browser smoke is outstanding, so
-  the package is not `done`. Independent rigorous review pending.
+  Node and PHP baselines green and a passing disposable staging browser smoke.
+  The package is not `done` until its independent rigorous review settles.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -414,7 +414,7 @@ verifies the detail path with the rest of Release A.
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | PC01 product separation | rigorous | in progress; implementation complete, Node evidence green, PHP/browser gap |
+| phase 1 | PC01 product separation | rigorous | in progress; implementation and every acceptance check complete, review pending |
 | phase 2 | PC02 one parser source and build parity | rigorous | blocked by PC01 review |
 | phase 3 | PC03 spaced initialisms | rigorous | blocked by PC02 review |
 | phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
@@ -450,8 +450,10 @@ published baseline, the key bookmarklet lives at `src/bookmarklets/key/`, and th
 Node baseline passes (68 runner, 173 unit, 38 helper, 22 key-bookmarklet, 10
 underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes) and the PHP
 baseline passes on PHP 8.3.9 (33 renderer vectors, 8 store checks, 14 ordering
-checks, 7/7 `php -l`). The disposable browser smoke is still an unrun gap, so PC01
-stays `in progress` pending independent rigorous review. `Commit: deferred`.
+checks, 7/7 `php -l`). The disposable staging browser smoke also passed on the
+real files and was cleaned up, so every acceptance row now has evidence; PC01
+stays `in progress` only until its independent rigorous review settles.
+`Commit: deferred`.
 
 ## Archived `math-editor-2026-11` close path
 

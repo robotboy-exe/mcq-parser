@@ -25,8 +25,12 @@ Last updated: 2026-11-24.
   26 math-tool, 69 render-markup, 7 bank hashes. PHP baseline on PHP 8.3.9
   (`$HOME/toolchain/php`, static CLI build): 33 renderer vectors, 8 store checks,
   14 ordering checks, 7/7 `php -l` on `deployed/*.php`; `php tests/cbt-staging.php`
-  needs a disposable staging database and URL and did not run. The disposable
-  browser smoke is still an unrun gap; rigorous review pending; `Commit: deferred`.
+  needs a disposable staging database and URL and did not run. A disposable
+  staging browser smoke then passed on the real files (deployed manual load,
+  submit/PRG advance, skip, clear; key install over that page, double-inject,
+  key fill, dry run, and a two-question autosave run with two keyed rows), and
+  the staging server and its disposable database were removed afterwards.
+  Rigorous review pending; `Commit: deferred`.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle
