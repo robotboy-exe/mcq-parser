@@ -22,7 +22,19 @@ with nothing after it.
    awaiting owner disposition after re-review escalation.
 4. Confirm the finding has gone through two review rounds without resolution. If
    it has not, owner disposition is premature: record no choice and name
-   `fix-session.md` with the exact finding ID as the next action.
+   `fix-session.md` with the exact finding ID as the next action. Exception: a
+   finding the latest fix handoff reports as `NOT REPRODUCED` is eligible for
+   disposition in its first round.
+4a. For a `NOT REPRODUCED` finding, set out side by side: the review's
+   reproduction steps, preconditions and environment; the fix session's exact
+   attempt and output; and every difference between them. Do not attempt a new
+   reproduction in this session. Guide the choice without making it:
+   - `fix` authorizes one more reproduce-first attempt in a fix session, under
+     the same frozen closure contract, with any reproduction detail the owner
+     supplies (for example the reviewer's exact probe);
+   - `reject` requires a rationale grounded in the failed reproduction, for
+     example a precondition the review assumed that is not supported;
+   - the other choices apply as usual.
 5. If the owner has not explicitly selected a disposition, present exactly these
    choices and stop without editing:
    - `fix`: authorize only the frozen closure criteria;
@@ -69,6 +81,13 @@ destination:
    through a package/fix session and independent review.
 8. Do not run tests for documentation-only disposition edits. Do not commit.
 
-End with the exact next command dictated by the recorded disposition. Never
-offer a dependent package when another unresolved blocker or external gate
-remains.
+9. For a `NOT REPRODUCED` finding, also record in the package which review
+   record and reviewer raised it, so reviewer accuracy can be tracked across
+   phases.
+
+End with the exact next command dictated by the recorded disposition. When the
+disposition was for `NOT REPRODUCED` findings and the fix handoff names a
+pending re-review for other fixed findings, end with that re-review command
+unless a `fix` disposition requires another fix session first; then end with
+that fix-session command, and the re-review follows it. Never offer a dependent
+package when another unresolved blocker or external gate remains.

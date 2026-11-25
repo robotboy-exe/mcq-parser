@@ -58,7 +58,18 @@ NEXT COMMAND: go
 
 1. Fix only the accepted findings and their frozen closure criteria. Stop before
    changing adjacent behavior that has no separately accepted finding ID.
-2. Add or strengthen evidence before changing behavior.
+2. Reproduce before fixing. For every finding, first add or strengthen its
+   regression evidence and run it against the unfixed code. Record the exact
+   failing output in the fix handoff, per finding ID. The attempt must follow
+   the review record's own reproduction steps and named vectors, not a weaker
+   substitute. If a finding's evidence still cannot be made to fail on the
+   unfixed code, do not fix that finding: stop work on it, report it as
+   `NOT REPRODUCED` and continue only with the reproduced findings. For each
+   `NOT REPRODUCED` finding, the handoff records the review's reproduction
+   steps, the exact commands and vectors attempted, the observed output, and
+   any difference in environment or preconditions from the review. The fix
+   session never closes or rejects such a finding itself; it goes to owner
+   disposition.
 3. Keep cohesive behavior in focused production modules/includes and stay
    within the approved cumulative file limits.
 4. Rerun package acceptance and the current baseline. Executable evidence must
@@ -78,6 +89,9 @@ NEXT COMMAND: go
    expand the accepted IDs.
 8. End the fix handoff with the exact re-review command, or the exact safe next
    command dictated by the review record, as the terminal `NEXT COMMAND:` line.
+   If any finding is `NOT REPRODUCED`, the terminal line is instead
+   `finding-disposition.md` with the phase and every `NOT REPRODUCED` ID; state
+   the pending re-review command for the fixed findings in the handoff body.
 9. A fix commit/push requires a separate explicit owner request and targets only
    the same package branch. Never merge it into the scratch cycle line before
    re-review settles.

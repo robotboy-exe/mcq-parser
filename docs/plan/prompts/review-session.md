@@ -68,6 +68,27 @@ with nothing after it.
 10. Execute or inspect the direct production-path tests. Copied SQL, control
     flow, or reimplemented behavior does not prove the production path. Identify
     excluded supplied snapshots, archives, and generated artifacts separately.
+11. Any claim of completeness ("all ported", "none dropped", "every vector
+    covered", "no other consumer") must include its enumeration in the record:
+    the list or command output and the item-by-item mapping it rests on. A
+    completeness claim without its enumeration is reported as unverified, not
+    as PASS. This applies to the reviewer's own claims as well as the
+    handoff's.
+
+## Independent Adversarial Investigation
+
+Before reaching a verdict, reconstruct the relevant production behavior across component boundaries.
+
+1. Identify the important state variables, their sources of truth, initialization paths, mutation points, persistence boundaries, and consumers.
+2. Trace complete supported workflows across entry points, modules, browser state, asynchronous operations, and server interactions. Do not treat individual functions as isolated units.
+3. Identify operations that can overlap, repeat, fail, be interrupted, or execute against stale state. Examine their ordering and resulting state.
+4. Construct adversarial scenarios from interactions between independently implemented behaviors. Prioritize scenarios where two individually valid operations can produce an invalid combined result.
+5. Build a scenario matrix from the package itself and record it. List the user actions the package supports, including repeated or re-entered activation, and the states each can occur in: idle, mid-operation (a request, save, or other asynchronous step still pending), after a failure, and with state left behind by another component, product, or earlier session. Exercise each action in every state where the combination is reachable on a supported path, or record why it is unreachable. For shared or persisted state, test values that are well-formed and plausible but belong to a different context (an earlier batch, another product, another user flow), not only malformed or obviously invalid values. Mark each cell executed, inspected only, or unverified. In a re-review, limit the matrix to the actions and states touched by the frozen closure criteria and the fix.
+6. Where browser behavior is relevant and browser tooling is available, exercise the real production path in a disposable environment. Observe actual state, DOM changes, network requests, and resulting server effects. A mocked or reimplemented path is not equivalent evidence.
+7. Compare observed behavior against the package contract, not merely against existing tests or implementation intent.
+8. Before issuing PASS, explicitly identify the highest-risk supported interactions examined, the scenarios actually executed, and material scenarios that remain unverified.
+
+Do not manufacture findings to demonstrate effort. Distinguish reproducible defects from plausible risks and missing evidence. Do not claim a scenario was tested unless it was actually executed or directly verified.
 
 ## Findings
 
@@ -83,6 +104,14 @@ with nothing after it.
   round and escalates to owner disposition only under the two-round rule below.
 - `NOTE-N`: documentation issue or residual risk that does not invalidate the
   package.
+
+Severity justification: every `FIX` and `NOTE` must quote the exact package,
+intent, or guardrail text it touches (file and line) and state in one or two
+sentences why it does not meet the `BLOCK` definition above. A finding that
+contradicts an explicit acceptance row, scope requirement, or guardrail on a
+supported path is a `BLOCK`; if the reviewer cannot point to the precondition
+or exception that lowers it, it stays a `BLOCK`. Every `BLOCK` quotes the text
+it violates in the same way.
 
 Write `docs/plan/reviews/parser-convergence-2026-11-phase-N.md`. The first re-review uses
 `-re-review.md`; later records use `-re-review-2.md`, `-re-review-3.md`, and so
@@ -115,6 +144,11 @@ production-path test evidence, approvals, and excluded-artifact list.
 - A first-round finding never escalates. Whether the original review or a
   re-review recorded it, the exact next action is `fix-session.md` with its exact
   ID and frozen closure contract.
+- Exception: a finding the fix session reported as `NOT REPRODUCED` goes to
+  owner disposition in its first round. A re-review does not treat it as fixed
+  or open; it follows the recorded owner disposition. If no disposition is
+  recorded yet, the re-review stops and names `finding-disposition.md` with the
+  exact `NOT REPRODUCED` IDs.
 - Owner disposition never edits immutable review evidence. It is recorded in
   the package and coordinator before dependent work or commit readiness changes.
 - These rules do not force a pass. A genuinely unresolved blocker remains
