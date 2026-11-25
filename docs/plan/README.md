@@ -4,7 +4,7 @@ This is the operational source of truth for the active owner-tool cycle. Read
 this file, [`../../INTENT.md`](../../INTENT.md), the active
 [`phase-map.md`](prompts/phase-map.md), and the one package being executed.
 
-Last updated: 2026-11-24.
+Last updated: 2026-11-25.
 
 ## Current state
 
@@ -27,7 +27,11 @@ Last updated: 2026-11-24.
 - Current package: PC01, `in progress`. Gate 1 ran on `bb78c57`; the
   implementation is complete on `scratch/pc01-product-separation` with the full
   Node and PHP baselines green and a passing disposable staging browser smoke.
-  The package is not `done` until its independent rigorous review settles.
+  The 2026-11-25 first-round fix session addressed the review's `BLOCK-1`,
+  `BLOCK-2`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, and `FIX-2` on the same history,
+  reproduced each one failing-first, and re-ran the Node/PHP baselines and the
+  disposable-browser probes. The package is not `done` until an independent
+  re-review settles that fix round.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -337,7 +341,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | in progress | disposable browser; no deploy/live |
+| 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | in progress; first fix round applied, re-review pending | disposable browser; no deploy/live |
 | 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | not started | desktop and Brave bookmarklet installability |
 | 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | not started | none; parser and real-surface evidence |
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
@@ -414,7 +418,7 @@ verifies the detail path with the rest of Release A.
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | PC01 product separation | rigorous | in progress; implementation and every acceptance check complete, review pending |
+| phase 1 | PC01 product separation | rigorous | in progress; `BLOCK-1`–`BLOCK-4`, `FIX-1`, `FIX-2` fixed on 2026-11-25 in the first round, awaiting re-review |
 | phase 2 | PC02 one parser source and build parity | rigorous | blocked by PC01 review |
 | phase 3 | PC03 spaced initialisms | rigorous | blocked by PC02 review |
 | phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
@@ -443,17 +447,18 @@ verifies the detail path with the rest of Release A.
 7. **Owner decision after review** — only after every finding settles, decide
    whether and how to integrate the reviewed scratch cycle into real branches.
 
-Current workflow stop: PC01 implementation is complete on
+Current workflow stop: the PC01 first-round fix session is complete on
 `scratch/pc01-product-separation` at package base `bb78c57` (product tree
-verified identical to `793cb8f`). The deployed helper is byte-identical to the
-published baseline, the key bookmarklet lives at `src/bookmarklets/key/`, and the
-Node baseline passes (68 runner, 173 unit, 38 helper, 22 key-bookmarklet, 10
+verified identical to `793cb8f`). The deployed helper is still byte-identical to
+the published baseline, the key bookmarklet lives at `src/bookmarklets/key/`, and
+the Node baseline passes (68 runner, 173 unit, 38 helper, 33 key-bookmarklet, 10
 underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes) and the PHP
-baseline passes on PHP 8.3.9 (33 renderer vectors, 8 store checks, 14 ordering
-checks, 7/7 `php -l`). The disposable staging browser smoke also passed on the
-real files and was cleaned up, so every acceptance row now has evidence; PC01
-stays `in progress` only until its independent rigorous review settles.
-`Commit: deferred`.
+baseline passes on static PHP 8.3.32 (33 renderer vectors, 8 store checks, 14
+ordering checks, 7/7 `php -l`). Every accepted finding was reproduced
+failing-first before it was fixed, and the disposable staging browser probes ran
+on the real reviewed and fixed artifacts (21/21 checks) and were cleaned up. PC01
+stays `in progress` until the fix round's independent re-review settles. The fix
+round is committed and pushed to `scratch/pc01-product-separation` only; no merge.
 
 ## Archived `math-editor-2026-11` close path
 

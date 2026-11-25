@@ -43,8 +43,24 @@
   const LETTERS = 'ABCD';
 
   const $ = (id) => document.getElementById(id);
+  const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+  // Shared storage may be stale, foreign, or corrupt. A malformed value reads as
+  // undefined (so startup never throws) while an absent value stays null.
   const store = {
-    get: (k) => JSON.parse(localStorage.getItem(k) || 'null'),
+    get: (k) => {
+      let raw = null;
+      try {
+        raw = localStorage.getItem(k);
+      } catch (e) {
+        return undefined;
+      }
+      if (raw === null) return null;
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        return undefined;
+      }
+    },
     set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
     del: (k) => localStorage.removeItem(k),
   };
@@ -78,30 +94,95 @@
   form.before(panel);
   if (bundled) $('ocr_title').textContent = 'Bookmarklet paste';
 
-  let queue = store.get('ocrQueue') || { items: [], i: 0 };
-  // ansKey is the only place the answer key lives, so any tool that clears it
-  // clears the key. An older build kept a second copy inside the queue; drop
-  // that leftover so a stale copy cannot outlive ansKey.
-  if (Object.prototype.hasOwnProperty.call(queue, 'key')) {
-    delete queue.key;
-    store.set('ocrQueue', queue);
+  // ocrQueue keeps its documented shape {items, i}. The key product adds the
+  // optional how marker on Load, so a queue carrying how belongs to this product
+  // while a queue the deployed helper wrote has no provenance. Anything else is
+  // normalized rather than trusted.
+  function normalizeQueue(raw) {
+    if (!isPlainObject(raw)) return { queue: { items: [], i: 0 }, repaired: true };
+    let repaired = false;
+    const items = [];
+    if (Array.isArray(raw.items)) {
+      for (const item of raw.items) {
+        if (!isPlainObject(item)) {
+          repaired = true;
+          continue;
+        }
+        if (Array.isArray(item.flags)) {
+          items.push(item);
+        } else {
+          items.push(Object.assign({}, item, { flags: [] }));
+          repaired = true;
+        }
+      }
+    } else {
+      repaired = true;
+    }
+    let i = 0;
+    if (Number.isInteger(raw.i) && raw.i >= 0) i = raw.i;
+    else repaired = true;
+    const queue = Object.assign({}, raw, { items, i });
+    // ansKey is the only place the answer key lives, so any leftover queue copy
+    // is dropped rather than allowed to outlive it.
+    if (Object.prototype.hasOwnProperty.call(queue, 'key')) {
+      delete queue.key;
+      repaired = true;
+    }
+    return { queue, repaired };
   }
-  let key = store.get('ansKey');
-  if (!key || typeof key !== 'object') key = {};
+
+  function normalizeKey(raw) {
+    if (!isPlainObject(raw)) return {};
+    return Object.fromEntries(Object.entries(raw).filter((entry) => typeof entry[1] === 'string'));
+  }
+
+  const storedQueue = store.get('ocrQueue');
+  const normalizedQueue = normalizeQueue(storedQueue === undefined ? null : storedQueue);
+  let queue = normalizedQueue.queue;
+  const storedKey = store.get('ansKey');
+  let key = normalizeKey(storedKey);
   const save = () => store.set('ocrQueue', queue);
+  if (storedQueue === undefined || (normalizedQueue.repaired && storedQueue !== null)) save();
+  if (storedKey !== null && storedKey !== undefined && !isPlainObject(storedKey)) store.del('ansKey');
+
+  // Run ownership lives on the form, not in this closure, so a second activation
+  // adopts the request that is still in flight instead of starting a competing
+  // run over shared storage. Each activation retires the previous continuation.
+  const owner = form.__ocrKeyOwner || (form.__ocrKeyOwner = { gen: 0, inFlight: null });
+  owner.gen += 1;
+  const myGen = owner.gen;
+  const retired = () => owner.gen !== myGen;
+  const inherited = owner.inFlight;
+  owner.inFlight = null;
+  // A stopped run may leave a save unanswered; keep it so a restart attaches to
+  // that request instead of posting the same question again. A reinvented panel
+  // inherits the same request for the same reason.
+  let pendingSave = inherited ? { index: inherited.index, request: inherited.request } : null;
   let auto = null;
   let autoTimer = null;
-  // A stopped run may leave a save unanswered; keep it so a restart attaches to
-  // that request instead of posting the same question again.
-  let pendingSave = null;
   // Incremented whenever a run is replaced, so a late POST result from an older
   // run is ignored instead of advancing this queue.
   let autoRun = 0;
+  let savingInPlace = false;
 
   const savedPaste = paste.get();
   if (typeof savedPaste === 'string') $('ocr_text').value = savedPaste;
 
+  function abandonInFlight() {
+    pendingSave = null;
+    owner.inFlight = null;
+  }
+
+  function keyApplies() {
+    return typeof queue.how === 'string';
+  }
+
+  function keyCount() {
+    return Object.keys(key).length;
+  }
+
   function keyOf(q) {
+    if (!keyApplies()) return '';
     if (!q || q.num == null) return '';
     const letter = key[q.num];
     return typeof letter === 'string' ? letter.toUpperCase() : '';
@@ -112,6 +193,9 @@
     if (!queue.items.length) return ['no questions loaded'];
     const missingMeta = FIELDS.filter((id) => !String($(id).value || '').trim());
     if (missingMeta.length) problems.push('choose ' + missingMeta.join(', '));
+    if (!keyApplies() && keyCount()) {
+      problems.push('the stored answer key was not loaded with this list; paste it again and press Load questions');
+    }
     let blank = 0;
     let noKey = 0;
     let badKey = 0;
@@ -179,6 +263,8 @@
   }
 
   function autoStep() {
+    // A retired instance must never continue its timer chain after a reinjection.
+    if (retired()) return;
     if (!auto || !auto.running) return;
     if (queue.i >= queue.items.length) {
       stopAuto('Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.');
@@ -190,14 +276,17 @@
       return stopAuto('Autosave needs a browser with fetch; save this question by hand.');
     }
     const run = autoRun;
-    // Reuse an unanswered save for this same question from a stopped run.
+    // Reuse an unanswered save for this same question from a stopped or replaced
+    // run instead of posting it again.
     const request = pendingSave && pendingSave.index === queue.i ? pendingSave.request : postSave();
     pendingSave = null;
     auto.inFlight = true;
     auto.request = request;
+    owner.inFlight = { index: queue.i, request };
     renderProgress();
     request.then((result) => {
-      if (!auto || run !== autoRun) return;
+      if (owner.inFlight && owner.inFlight.request === request) owner.inFlight = null;
+      if (retired() || !auto || run !== autoRun) return;
       auto.inFlight = false;
       auto.request = null;
       const number = queue.i + 1;
@@ -236,8 +325,6 @@
     });
   }
 
-  let savingInPlace = false;
-
   function saveInPlace(event) {
     if (event) {
       if (event.preventDefault) event.preventDefault();
@@ -265,9 +352,16 @@
     store.del('ocrSubmitted');
     const total = queue.items.length;
     const number = queue.i + 1;
+    const run = autoRun;
     $('ocr_status').innerHTML = 'Saving question ' + number + ' of ' + total + '...';
-    postSave().then((result) => {
+    const request = postSave();
+    owner.inFlight = { index: queue.i, request };
+    request.then((result) => {
+      if (owner.inFlight && owner.inFlight.request === request) owner.inFlight = null;
       savingInPlace = false;
+      // A queue that was cleared, replaced, or skipped while this request was in
+      // flight must not be advanced or have its status overwritten by it.
+      if (retired() || run !== autoRun) return;
       store.del('ocrSubmitted');
       if (result.saved) {
         queue.i++;
@@ -284,7 +378,13 @@
   }
 
   function fillForm(q) {
-    Object.entries(store.get('ocrMeta') || {}).forEach(([id, v]) => ($(id).value = v));
+    const meta = store.get('ocrMeta');
+    if (isPlainObject(meta)) {
+      for (const id of FIELDS) {
+        const el = $(id);
+        if (el && typeof meta[id] !== 'undefined') el.value = meta[id];
+      }
+    }
     $('question_text').value = q.question;
     for (const l of 'abcd') $('option_' + l).value = q[l];
     const letter = keyOf(q);
@@ -295,14 +395,16 @@
   function render() {
     const q = queue.items[queue.i];
     const active = queue.items.length > 0;
-    const keyCount = Object.keys(key).length;
+    const answers = keyCount();
+    let keyText = ' &middot; no key';
+    if (answers && keyApplies()) keyText = ` &middot; key ${keyOf(q) || 'missing'} &middot; ${answers} answers`;
+    else if (answers) keyText = ` &middot; stored key (${answers} answers) not used: paste the key for this list and press Load questions`;
     $('ocr_input').hidden = q !== undefined;
     $('ocr_skip').hidden = !q;
     $('ocr_clear').hidden = !active;
     $('ocr_status').innerHTML = !active ? '' : !q ? `All ${queue.items.length} questions done.`
-      : `Question ${queue.i + 1} of ${queue.items.length} (book number ${q.num ?? '?'})` +
-        (keyCount ? ` &middot; key ${keyOf(q) || 'missing'} &middot; ${keyCount} answers` : ' &middot; no key') +
-        (q.flags.length ? `<div class="admin-alert admin-error">Check this one: ${q.flags.join(', ')}</div>` : '');
+      : `Question ${queue.i + 1} of ${queue.items.length} (book number ${q.num ?? '?'})` + keyText
+        + (Array.isArray(q.flags) && q.flags.length ? `<div class="admin-alert admin-error">Check this one: ${q.flags.join(', ')}</div>` : '');
     renderProgress();
   }
 
@@ -317,18 +419,21 @@
     const parsed = core.parsePaste(raw);
     const items = parsed.items || [];
     const parsedKey = parsed.key || {};
-    const keyCount = Object.keys(parsedKey).length;
+    const parsedKeyCount = Object.keys(parsedKey).length;
     if (!items.length) {
-      if (keyCount && queue.items.length) {
+      if (parsedKeyCount && queue.items.length) {
         key = parsedKey;
         store.set('ansKey', key);
+        // A deliberate key-only paste confirms this list, so record that the key
+        // belongs to the loaded queue in its existing how field.
+        if (!keyApplies()) queue.how = 'key-paste';
         save();
         show();
-        $('ocr_status').innerHTML += ` Answer key updated (${keyCount} entries).`;
+        $('ocr_status').innerHTML += ` Answer key updated (${parsedKeyCount} entries).`;
         return;
       }
-      if (keyCount) {
-        return alert('That paste has an answer key (' + keyCount + ' entries) but no questions. Paste the questions too, then load again.');
+      if (parsedKeyCount) {
+        return alert('That paste has an answer key (' + parsedKeyCount + ' entries) but no questions. Paste the questions too, then load again.');
       }
       return alert('No questions found in that text.');
     }
@@ -336,9 +441,11 @@
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
     autoRun++;
+    abandonInFlight();
+    savingInPlace = false;
     key = parsedKey;
     queue = { items, i: 0, how: parsed.sectionEvidence ? parsed.sectionEvidence.how : 'none' };
-    if (keyCount) store.set('ansKey', key);
+    if (parsedKeyCount) store.set('ansKey', key);
     else store.del('ansKey');
     auto = { ready: false, running: false, total: items.length };
     save();
@@ -346,14 +453,30 @@
     const problems = dryRunProblems();
     auto.ready = !problems.length;
     renderProgress();
-    $('ocr_status').innerHTML += keyCount
-      ? ` Answer key: ${keyCount} entries (${queue.how}).`
+    $('ocr_status').innerHTML += parsedKeyCount
+      ? ` Answer key: ${parsedKeyCount} entries (${queue.how}).`
       : ' No answer-key section found.';
     $('ocr_status').innerHTML += problems.length
       ? ` Dry run: ${problems.join('; ')}. Autosave is blocked.`
       : ` Dry run OK: ready to autosave ${items.length} questions.`;
   };
-  $('ocr_skip').onclick = () => { queue.i++; save(); show(); };
+  $('ocr_skip').onclick = () => {
+    // Skipping invalidates this run: a hanging save must not advance the queue a
+    // second time, so its continuation is dropped before the index moves.
+    autoRun++;
+    abandonInFlight();
+    savingInPlace = false;
+    if (auto) {
+      auto.running = false;
+      auto.inFlight = false;
+      auto.request = null;
+    }
+    if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
+    autoTimer = null;
+    queue.i++;
+    save();
+    show();
+  };
   $('ocr_auto').onclick = () => {
     if (!queue.items.length) return alert('Load questions first.');
     if (auto && auto.running) return stopAuto('Autosave stopped at question ' + Math.min(queue.i + 1, queue.items.length) + '.');
@@ -372,6 +495,8 @@
     key = {};
     auto = null;
     autoRun++;
+    abandonInFlight();
+    savingInPlace = false;
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
     paste.del();
@@ -389,10 +514,12 @@
   form.__ocrKeySubmit = saveInPlace;
   form.addEventListener('submit', form.__ocrKeySubmit, true);
 
+  // The deployed helper's legacy ocrSubmitted marker is never read here: only its
+  // own submit may advance its queue. The before/after deletes in saveInPlace stay
+  // so an intercepted native submit cannot advance that queue twice.
   const failed = document.querySelector('.admin-error');
-  if (store.get('ocrSubmitted')) {
-    store.del('ocrSubmitted');
-    if (!failed) { queue.i++; save(); }
-  }
   failed ? render() : show();
+  if (inherited) {
+    $('ocr_status').innerHTML += ' A save was already in progress; Start autosave attaches to it instead of posting again.';
+  }
 })();

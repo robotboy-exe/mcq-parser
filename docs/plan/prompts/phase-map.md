@@ -1,7 +1,7 @@
 # Current Phase Map
 
 Current cycle: `parser-convergence-2026-11`
-Updated: 2026-11-24
+Updated: 2026-11-25
 
 `phase N` means phase N of this cycle. Status lives in
 `docs/plan/README.md`; this file only maps phase numbers to packages.

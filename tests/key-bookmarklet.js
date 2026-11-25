@@ -38,8 +38,12 @@ function loadKeyBookmarklet(options) {
   const errors = [];
   const removals = [];
   const fields = new Map();
-  const storage = new Map(Object.entries(settings.storage || {}));
-  const session = new Map(Object.entries(settings.session || {}));
+  // A shared form also shares storage, matching one browser localStorage across
+  // a bookmarklet reinjection on the same page.
+  const storage = shared && shared.storage ? shared.storage : new Map(Object.entries(settings.storage || {}));
+  const session = shared && shared.session ? shared.session : new Map(Object.entries(settings.session || {}));
+  if (shared && !shared.storage) shared.storage = storage;
+  if (shared && !shared.session) shared.session = session;
   // A shared form lets one test click the bookmarklet twice on the same page.
   const form = shared && shared.form ? shared.form : {
     before(node) { inserted.push(node); },
@@ -295,7 +299,11 @@ test('clears the stored paste and key with the list', () => {
   assert.strictEqual(result.field('ocr_text').value, '');
 });
 
-test('keeps the answer key in ansKey when the queue is replaced without one', () => {
+// BLOCK-1 (owner-approved change to the reviewed base vector): a queue written
+// by the deployed helper carries no key-product provenance, so a retained ansKey
+// must not be applied to it merely because the printed numbers match.
+test('keeps ansKey but does not apply it to a queue the page helper replaced', () => {
+  let calls = 0;
   const first = keyBookmarklet();
   loadPaste(first, civicKeyText());
   const stored = JSON.parse(first.storage.get('ansKey'));
@@ -304,10 +312,39 @@ test('keeps the answer key in ansKey when the queue is replaced without one', ()
 
   const queue = JSON.parse(first.storage.get('ocrQueue'));
   first.storage.set('ocrQueue', JSON.stringify({ items: queue.items, i: 1 }));
+  const second = ready(keyBookmarklet(Object.assign(persisted(first), {
+    fetch: () => { calls++; return Promise.resolve(savedResponse()); }
+  })));
+  assert.deepStrictEqual(checkedRadios(second), [], 'no radio is ticked from the retained key');
+  assert(!/key B/.test(second.field('ocr_status').innerHTML), 'the retained key is not shown as active');
+  assert(/stored key \(50 answers\) not used/.test(second.field('ocr_status').innerHTML),
+    'the status says the stored key belongs to another list');
+  assert.strictEqual(second.storage.has('ansKey'), true, 'ansKey itself is not destroyed');
+
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 0, 'Start must not POST with an unconfirmed key');
+  assert(second.alerts.some((message) => /stored answer key/.test(message)),
+    'Start explains that the key must be pasted again');
+});
+
+// BLOCK-1 criterion 2: the panel's existing key-only paste is the clear path to
+// confirm a key for a list the deployed helper loaded.
+test('a key-only paste confirms the retained key for the page helper list', () => {
+  const first = keyBookmarklet();
+  loadPaste(first, civicKeyText());
+  const queue = JSON.parse(first.storage.get('ocrQueue'));
+  first.storage.set('ocrQueue', JSON.stringify({ items: queue.items, i: 1 }));
+
   const second = keyBookmarklet(persisted(first));
-  assert.deepStrictEqual(checkedRadios(second), ['1'], 'question 2 key B from ansKey');
-  assert(/key B/.test(second.field('ocr_status').innerHTML));
-  assert(/50 answers/.test(second.field('ocr_status').innerHTML));
+  assert.deepStrictEqual(checkedRadios(second), [], 'still inert before the confirming paste');
+  loadPaste(second, 'ANSWER KEY\n1. D\n2. A\n');
+  assert.deepStrictEqual(checkedRadios(second), ['0'], 'question 2 key A after the confirming paste');
+  assert(/Answer key updated \(2 entries\)/.test(second.field('ocr_status').innerHTML));
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).how, 'key-paste',
+    'the queue records the confirmation in its existing how field');
+
+  const third = keyBookmarklet(persisted(second));
+  assert.deepStrictEqual(checkedRadios(third), ['0'], 'the confirmed key survives a reload');
 });
 
 const AUTO_PASTE = '1. First autosave question? A) One B) Two C) Three D) Four\n' +
@@ -520,11 +557,256 @@ test('restarting after a stop reuses the unanswered save instead of posting it t
   assert(/Autosave complete: 2 of 2 saved/.test(result.field('ocr_status').innerHTML));
 });
 
+// BLOCK-2: a second injection must adopt, not duplicate, the in-flight save.
+test('reinjecting during an in-flight save posts the question exactly once', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'the first instance posts question 1');
+
+  const second = ready(keyBookmarklet({ shared, fetch }));
+  assert.strictEqual(shared.inserted.length, 2, 'each injection installs its own panel');
+  assert.strictEqual(second.listeners().length, 1, 'still one submit listener');
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'the replacement panel must not post a second time');
+
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(calls, 1, 'the shared request settles once');
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 1, 'the queue advances exactly once');
+
+  second.runTimers();
+  await flush();
+  assert.strictEqual(calls, 2, 'the next item posts normally, once');
+});
+
+test('reinjection settles a failed in-flight save exactly once', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.field('ocr_auto').onclick();
+
+  const second = ready(keyBookmarklet({ shared, fetch }));
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'no duplicate POST from the replacement panel');
+
+  pending[0](failedResponse('Duplicate question.'));
+  await flush();
+  assert.strictEqual(calls, 1);
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 0, 'the item stays queued once');
+  assert(/Autosave stopped at question 1: Duplicate question/.test(second.field('ocr_status').innerHTML));
+});
+
+// BLOCK-3: the startup consumer of the deployed helper's legacy marker is gone.
+test('ignores a legacy reload marker written after the page helper started', () => {
+  const first = keyBookmarklet();
+  loadPaste(first, AUTO_PASTE);
+  const stored = persisted(first);
+  stored.storage.ocrSubmitted = 'true';
+
+  const second = keyBookmarklet(stored);
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 0, 'the queue index does not advance');
+  assert(/First autosave question/.test(second.field('question_text').value), 'the unsaved question stays filled');
+  assert(/Question 1 of 2/.test(second.field('ocr_status').innerHTML), 'the panel still points at question 1');
+  assert.strictEqual(second.storage.get('ocrSubmitted'), 'true', 'the marker is left to the deployed helper');
+});
+
+// BLOCK-4 criterion 5(a): a discarded batch must not satisfy a new batch.
+test('does not reuse a discarded batch request after Stop, Clear, and a new Load', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const result = ready(keyBookmarklet({ fetch }));
+  loadPaste(result, AUTO_PASTE);
+  result.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1);
+  result.field('ocr_auto').onclick();
+  result.field('ocr_clear').onclick();
+  loadPaste(result, '1. Batch 2 different question? A) One B) Two C) Three D) Four\nANSWER KEY\n1. C\n');
+  result.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 2, 'Batch 2 is posted instead of reusing the discarded request');
+
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'the old result does not settle the new batch');
+  pending[1](savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'Batch 2 settles once');
+});
+
+// BLOCK-4 criterion 5(b): an in-place save must not continue into a cleared list.
+test('an in-place save continues nothing after Clear list', async () => {
+  let resolveFetch = null;
+  let calls = 0;
+  const result = ready(keyBookmarklet({
+    fetch: () => { calls++; return new Promise((resolve) => { resolveFetch = resolve; }); }
+  }));
+  loadPaste(result, AUTO_PASTE);
+  result.form.submit();
+  assert.strictEqual(calls, 1);
+  result.field('ocr_clear').onclick();
+  resolveFetch(savedResponse());
+  await flush();
+  const stored = JSON.parse(result.storage.get('ocrQueue'));
+  assert.strictEqual(stored.i, 0, 'the cleared queue is not advanced');
+  assert.strictEqual(stored.items.length, 0, 'the cleared queue stays empty');
+  assert(!/Saved question/.test(result.field('ocr_status').innerHTML), 'the status is not overwritten');
+});
+
+test('an in-place save continues nothing into a replaced list', async () => {
+  let resolveFetch = null;
+  const result = ready(keyBookmarklet({
+    fetch: () => new Promise((resolve) => { resolveFetch = resolve; })
+  }));
+  loadPaste(result, AUTO_PASTE);
+  result.form.submit();
+  result.field('ocr_clear').onclick();
+  loadPaste(result, '1. Batch 2 different question? A) One B) Two C) Three D) Four\nANSWER KEY\n1. C\n');
+  resolveFetch(savedResponse());
+  await flush();
+  const stored = JSON.parse(result.storage.get('ocrQueue'));
+  assert.strictEqual(stored.i, 0, 'the replacement queue is not advanced');
+  assert.strictEqual(stored.items.length, 1, 'the replacement queue is intact');
+  assert(!/Saved question 1 of 1 using its answer key/.test(result.field('ocr_status').innerHTML));
+});
+
+// BLOCK-4 criterion 5(c): Skip must invalidate the in-flight autosave.
+test('Skip during an in-flight autosave does not advance twice', async () => {
+  let resolveFetch = null;
+  const result = ready(keyBookmarklet({
+    fetch: () => new Promise((resolve) => { resolveFetch = resolve; })
+  }));
+  loadPaste(result, AUTO_PASTE);
+  result.field('ocr_auto').onclick();
+  result.field('ocr_skip').onclick();
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'Skip advances once');
+  resolveFetch(savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'the hanging save cannot advance again');
+});
+
+// FIX-1: stale or foreign storage must not break startup.
+test('mounts a working panel over malformed storage instead of crashing', () => {
+  for (const key of ['ocrQueue', 'ansKey', 'ocrMeta']) {
+    const result = keyBookmarklet({ storage: { [key]: '{bad json' } });
+    assert.strictEqual(result.inserted.length, 1, key + ': one panel is installed');
+    loadPaste(result, civicText());
+    assert(result.field('question_text').value.startsWith('By upholding values'), key + ': Load still works');
+  }
+});
+
+test('normalizes incompatible queue and key shapes', () => {
+  const cases = [
+    '{}',
+    '[]',
+    '{"items":null,"i":0}',
+    '{"items":[],"i":-1}',
+    '{"items":[],"i":"0"}',
+    '{"items":[{"question":"x","flags":null}],"i":0}'
+  ];
+  for (const value of cases) {
+    const result = keyBookmarklet({ storage: { ocrQueue: value } });
+    const stored = JSON.parse(result.storage.get('ocrQueue'));
+    assert(Array.isArray(stored.items), value + ': items is an array');
+    assert.strictEqual(Number.isInteger(stored.i) && stored.i >= 0, true, value + ': i is a valid index');
+    assert.strictEqual(result.inserted.length, 1);
+  }
+
+  const arrayKey = keyBookmarklet({ storage: { ansKey: '["A"]' } });
+  assert.strictEqual(arrayKey.storage.has('ansKey'), false, 'an array ansKey is dropped');
+  assert.deepStrictEqual(checkedRadios(arrayKey), []);
+});
+
+test('ignores unknown ocrMeta fields and fills only the known three', () => {
+  const result = keyBookmarklet({
+    storage: {
+      ocrQueue: JSON.stringify({
+        items: [{ num: 1, question: 'Stem?', a: 'One', b: 'Two', c: 'Three', d: 'Four', flags: [] }],
+        i: 0,
+        how: 'none'
+      }),
+      ocrMeta: JSON.stringify({ subject_id: '7', bogus: 'x', exam_year: '2026' })
+    }
+  });
+  assert.strictEqual(result.field('subject_id').value, '7');
+  assert.strictEqual(result.field('exam_year').value, '2026');
+  assert.strictEqual(result.fields.has('bogus'), false, 'an unknown meta field is never written');
+});
+
+function runKeyEntry(coreValue) {
+  const inserted = [];
+  const errors = [];
+  const form = { before(node) { inserted.push(node); } };
+  const fields = new Map();
+  const sandbox = {
+    window: coreValue === undefined ? {} : { OCRParser: coreValue },
+    document: {
+      querySelector(selector) {
+        if (selector === 'input[name=action][value=save_question]') return { form };
+        return null;
+      },
+      getElementById(id) {
+        if (!fields.has(id)) {
+          fields.set(id, { value: '', hidden: false, innerHTML: '', className: '', textContent: '' });
+        }
+        return fields.get(id);
+      },
+      createElement() {
+        return { className: '', id: '', textContent: '', innerHTML: '' };
+      }
+    },
+    location: { href: 'https://admin.example/questions', search: '' },
+    localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+    sessionStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+    console: { error(message) { errors.push(String(message)); } }
+  };
+  vm.createContext(sandbox);
+  let thrown = null;
+  try {
+    vm.runInContext(
+      fs.readFileSync(path.join(__dirname, '../src/bookmarklets/key/entry.js'), 'utf8'),
+      sandbox,
+      { filename: 'entry.js' }
+    );
+  } catch (error) {
+    thrown = error;
+  }
+  return { thrown, inserted, errors };
+}
+
+// FIX-2: execute the refusal path instead of matching source strings.
 test('refuses to run without the canonical core and never touches Constant Text', () => {
   const entry = fs.readFileSync(path.join(__dirname, '../src/bookmarklets/key/entry.js'), 'utf8');
   assert.strictEqual(entry.includes('constant_text'), false);
   assert.strictEqual(entry.includes('node'), false, 'no Node branch in the bookmarklet entry');
   assert.strictEqual(entry.includes('parsePaste'), true, 'key splitting comes from the core');
+
+  const cases = [
+    ['missing window.OCRParser', undefined, /window\.OCRParser is missing/],
+    ['version mismatch', { version: '2.3.0', parsePaste() {} }, /reports version 2\.3\.0/],
+    ['missing parsePaste', { version: '2.5.4' }, /no parsePaste export/]
+  ];
+  for (const [label, core, pattern] of cases) {
+    const run = runKeyEntry(core);
+    assert(run.thrown, label + ': the entry must throw');
+    assert(/^Key bookmarklet disabled: /.test(run.thrown.message), label + ': refusal message');
+    assert(pattern.test(run.thrown.message), label + ': names the problem');
+    assert.strictEqual(run.errors.length, 1, label + ': one console.error');
+    assert.strictEqual(run.errors[0], run.thrown.message, label + ': console.error matches the throw');
+    assert.strictEqual(run.inserted.length, 1, label + ': one banner');
+    const banner = run.inserted[0];
+    assert.strictEqual(banner.id, 'ocr_error', label + ': banner id');
+    assert(/admin-error/.test(banner.className), label + ': banner class');
+    assert(/^Key bookmarklet disabled: /.test(banner.textContent), label + ': banner text');
+    assert(/Reload the page/.test(banner.textContent), label + ': banner advice');
+  }
 });
 
 (async () => {

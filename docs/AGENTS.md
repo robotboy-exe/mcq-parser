@@ -82,7 +82,12 @@ a second bookmarklet click does not stack handlers. It uses `ansKey`, the shared
 `constant_text` and never touches the deployed helper. It deletes the deployed
 helper's stale `ocrSubmitted` marker before and after an in-place save so the
 next page load cannot advance the queue twice; it never writes that key, and no
-other new module may read or write it.
+other new module may read or write it. It must never read that marker at startup:
+a marker already present when the bookmarklet is injected is not evidence that
+this product saved the current question, so it must not advance, rewrite, or
+refill the queue. A queue's key provenance is its `how` string, which only the key
+product writes; a key-only paste that confirms a page-helper list sets
+`how: 'key-paste'`. Without a `how` string a retained `ansKey` stays inert.
 
 `src/underline-toolbar.js` adds the runtime Underline button for Constant Text,
 question text, and options A–D. `src/owner-tool/render.js` remains the browser

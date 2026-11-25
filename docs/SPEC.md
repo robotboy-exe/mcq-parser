@@ -203,8 +203,11 @@ advances (live-helper parity). The helper reads or writes no other key: not
 is the legacy bookmarklet contract.
 
 - `localStorage.ansKey`: the parsed key map.
-- `localStorage.ocrSubmitted`: the legacy marker described above. The bookmarklet
-  itself no longer reads, writes, or deletes it (decision D-22).
+- `localStorage.ocrSubmitted`: the legacy marker described above. The dedicated
+  key product never reads it at startup and never writes it; it deletes it only
+  immediately before and after its own in-place save, so an intercepted native
+  submit cannot advance the deployed helper's queue twice. A marker that is
+  already present when the bookmarklet is injected is not save evidence.
 - Auto-Save additions (see §7): `ansKeyBatch`, `ansKeyConflicts`, `ocrSaving`,
   `ocrSavedLog`, and `autoLock`. The existing key names and the `ansKey` shape
   stay compatible (INV-36).

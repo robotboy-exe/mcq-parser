@@ -1,7 +1,7 @@
 # PC01 — Product Surface Separation
 
-- **Status:** in progress — implementation and every acceptance check complete
-  (Node, PHP, disposable browser smoke); independent rigorous review pending
+- **Status:** in progress — first-round fix session applied to `BLOCK-1`,
+  `BLOCK-2`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, `FIX-2`; independent re-review pending
 - **Product baseline:** `793cb8f`
 - **Package base:** record the docs-only cycle-setup commit on
   `scratch/parser-convergence-cycle` at Gate 1; verify its product tree equals
@@ -70,18 +70,19 @@ Date: 2026-11-24. Result: **implementation complete; Node, PHP, and disposable
 browser evidence green.**
 Package base `bb78c57` on `scratch/pc01-product-separation` (created from the
 reviewed `scratch/parser-convergence-cycle` tip). No deploy, live write,
-schema operation, or real-branch change. `Commit: deferred`.
+schema operation, or real-branch change. `Commit:` the dedicated fix-round commit
+on `scratch/pc01-product-separation` (that branch only; no merge).
 
 ### Files (measured from package base `bb78c57`)
 
 | File | Diff | Final | Responsibility | Deployment | Production-path test |
 |---|---|---|---|---|---|
 | `ocr_helper.js` | +16/−316 | 127 L / 4,917 B, sha256 `b83835b7…` | deployed manual helper: one paste box, native fill, manual PRG save, `ocrQueue`/`ocrMeta`/`ocrSubmitted` | loaded by `deployed/admin_questions.php` after `src/parser/core.js` | `node tests/ocr-helper.js` (38 vectors; `require` + real browser `vm` path) |
-| `src/bookmarklets/key/entry.js` | new | 398 L / 16,539 B | key load, answer fill, dry run, autosave, Stop settlement, in-place save, duplicate-listener guard | never a page asset; inlined into the key bookmarklet | `node tests/key-bookmarklet.js` runs the generated artifact |
+| `src/bookmarklets/key/entry.js` | new (+398 at review target; fix session +163/−36) | 525 L / 21,600 B, sha256 `62d1945e…` | key load, answer fill, dry run, autosave, Stop settlement, in-place save, run ownership, storage normalization | never a page asset; inlined into the key bookmarklet | `node tests/key-bookmarklet.js` (33 vectors) runs the generated artifact |
 | `src/bookmarklets/key/boot.js` | new (moved) | 12 L / 589 B | sets `__ocrBookmarklet`, removes the deployed panel and error banner | key bundle only | same suite |
 | `src/bookmarklets/key/build.js` | new (moved) | 44 L / 1,364 B | core + boot + entry → one-line key artifact | repo tool | determinism/syntax test in the same suite |
 | `tests/ocr-helper.js` | +40/−328 | 658 L / 30,476 B | deployed-helper and parser assertions only | — | `node tests/ocr-helper.js` |
-| `tests/key-bookmarklet.js` | new | 540 L / 24,672 B | key/autosave assertions on the real artifact | — | `node tests/key-bookmarklet.js` |
+| `tests/key-bookmarklet.js` | new (+540 at review target; fix session +288/−6) | 822 L / 37,840 B, sha256 `c757ff49…` | key/autosave assertions on the real artifact | — | `node tests/key-bookmarklet.js` (33 vectors) |
 
 `ocr_helper.js` is now byte-identical to the reviewed published baseline
 `94a7593:ocr_helper.js` (same sha256), so its live-origin additions are +51
@@ -107,7 +108,7 @@ exception.
 - `node tests/runner.js` → 68 PASS / 0 FAIL / 0 PENDING
 - `node tests/unit.js` → 173 PASS / 0 FAIL
 - `node tests/ocr-helper.js` → 38 vectors PASS
-- `node tests/key-bookmarklet.js` → 22 vectors PASS
+- `node tests/key-bookmarklet.js` → 33 vectors PASS (22 reviewed + 11 fix-session vectors; one base vector changed with owner approval, see the fix note)
 - `node tests/underline-toolbar.js` → 10 PASS; `node tests/question-preview.js`
   → 7 PASS; `node tests/math-tool.js` → 26 PASS; `node tests/render-markup.js`
   → 69 PASS
@@ -178,7 +179,7 @@ at `$HOME/toolchain/php`, which matches the PHP 8.3 application target.
 |---|---|
 | Deployed helper | `ocr_helper.js` is byte-identical to `94a7593`; new test `deployed helper has no key, dry-run, autosave, or bookmarklet path` scans the source and the real rendered panel |
 | Manual workflow | `deployed helper keeps the reviewed manual submit marker only`: Load → submit → reload advances the queue, consumes `ocrSubmitted`, ticks nothing |
-| Key bookmarklet | 18 ported key/autosave vectors plus 4 isolation/artifact vectors run the generated artifact |
+| Key bookmarklet | 18 ported key/autosave vectors, 4 isolation/artifact vectors, and 11 fix-session vectors (`BLOCK-1`–`BLOCK-4`, `FIX-1`, `FIX-2`) run the generated artifact |
 | Product isolation | `installs over the deployed page and removes only its stale panel` and `clicking the bookmarklet twice … does not stack listeners` |
 | Stimulus artifact | sha256 equality for `src/bookmarklet.js` and its sources; build reproduces the hash |
 | Parser | sha256 equality for `src/parser/core.js`, `src/parser/parser.js` |
@@ -202,7 +203,210 @@ at `$HOME/toolchain/php`, which matches the PHP 8.3 application target.
   bookmarklet is byte-identical, so its isolation behavior is unchanged rather
   than re-tested.
 
+### Fix session — 2026-11-25 (first review round)
+
+Authority: `docs/plan/reviews/parser-convergence-2026-11-phase-1.md`,
+`Recommended next action`. All six findings are in their first review round, so
+no contract was broadened. Base `bb78c57`, reviewed target `d98d6ad`, worktree
+`freebuff/084ae01cd215d054b0222f43` (docs-only descendants of `d98d6ad`). No
+review-record edit, no commit, no push, no deploy, and no live action during the
+session; the owner then authorized committing and pushing this branch only.
+`Commit:` the dedicated fix-round commit on `scratch/pc01-product-separation`.
+
+#### Owner-approved exception (condition 1)
+
+The reviewed acceptance row "the existing key/autosave tests from `793cb8f`" is
+excepted to change in exactly one vector, because that vector asserted the
+`BLOCK-1` defect. Recorded here as approved by the owner's `go`:
+
+- Before: `keeps the answer key in ansKey when the queue is replaced without
+  one` — installed a helper-shaped queue `{items, i: 1}` over a retained 50-answer
+  `ansKey` and asserted `checkedRadios === ['1']` plus `key B` / `50 answers`.
+- After: `keeps ansKey but does not apply it to a queue the page helper replaced`
+  — same setup, asserts no ticked radio, `stored key (50 answers) not used`, no
+  active `key B`, `ansKey` still present, and no POST with Start (alert instead).
+- Every other base vector is unchanged, including `restores the paste and the
+  current question after a reload` (a genuine key-product queue carrying `how`).
+
+#### `BLOCK-1` stored-shape statement (condition 2)
+
+No storage key is added or renamed, and no field name is new. `ocrQueue` already
+carried the optional `how` string on key-product Loads; the deployed helper's
+Load writes `{items, i}` and no `how`, so ownership is read as
+`typeof queue.how === 'string'`. A key-only paste — existing behavior, already
+covered by `attaches a key-only paste to the queue that is already loaded` — now
+also stamps the existing `how` field with `key-paste` when the list has no
+provenance, so a deliberate confirmation survives a reload. `ansKey` and
+`ocrMeta` names and shapes are untouched.
+
+#### `BLOCK-2` single settlement (condition 3)
+
+Run ownership moved from the entry closure to the form (`form.__ocrKeyOwner`:
+`gen` plus `inFlight`). Each activation increments `gen`; every continuation and
+`autoStep` timer returns early when `owner.gen !== myGen`, so the retired
+instance cannot settle, advance, or schedule. The replacement panel takes over
+the outstanding `{index, request}` as its `pendingSave`, so Start attaches to the
+same promise instead of calling `postSave()` again, and the adopting instance is
+the only writer. Proven failing-first by
+`reinjecting during an in-flight save posts the question exactly once`
+(`calls 2 !== 1` before the fix) and by
+`reinjection settles a failed in-flight save exactly once`.
+
+#### Per-finding failing-first evidence (unfixed `entry.js`, rebuilt artifact)
+
+Run before any product edit with a tolerant copy of the suite; the suite itself
+is fail-fast.
+
+```text
+[FAIL] keeps ansKey but does not apply it to a queue the page helper replaced :: no radio is ticked from the retained key
++ actual: ['1']  expected: []
+[FAIL] a key-only paste confirms the retained key for the page helper list :: still inert before the confirming paste
++ actual: ['1']  expected: []
+[FAIL] reinjecting during an in-flight save posts the question exactly once :: the replacement panel must not post a second time
+2 !== 1
+[FAIL] reinjection settles a failed in-flight save exactly once :: no duplicate POST from the replacement panel
+2 !== 1
+[FAIL] ignores a legacy reload marker written after the page helper started :: the queue index does not advance
+1 !== 0
+[FAIL] does not reuse a discarded batch request after Stop, Clear, and a new Load :: Batch 2 is posted instead of reusing the discarded request
+1 !== 2
+[FAIL] an in-place save continues nothing after Clear list :: the cleared queue is not advanced
+1 !== 0
+[FAIL] an in-place save continues nothing into a replaced list :: the replacement queue is not advanced
+1 !== 0
+[FAIL] Skip during an in-flight autosave does not advance twice :: the hanging save cannot advance again
+2 !== 1
+[FAIL] mounts a working panel over malformed storage instead of crashing :: the bookmarklet must not alert on load
++ "Bookmarklet Error: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+[FAIL] normalizes incompatible queue and key shapes :: the bookmarklet must not alert on load
++ "Bookmarklet Error: Cannot read properties of undefined (reading 'undefined')"
+[FAIL] ignores unknown ocrMeta fields and fills only the known three :: an unknown meta field is never written
+RESULT: 21 passed, 12 failed
+```
+
+`FIX-2` is a test-evidence defect, so its reproduction breaks the behavior the
+old test claimed to cover: with `throw new Error(message)` removed from
+`coreProblem()`'s branch, the reviewed suite still printed
+`[PASS] refuses to run without the canonical core and never touches Constant
+Text`, while the strengthened vector failed with `missing window.OCRParser: the
+entry must throw`. `entry.js` was restored and the artifact rebuilt before any
+fix was written.
+
+#### Mapping every frozen criterion to implementation and evidence
+
+| Finding / criterion | Implementation | Evidence |
+|---|---|---|
+| `BLOCK-1.1` no retained key merely by number | `keyApplies()` gates `keyOf()` and the dry run on `typeof queue.how === 'string'` | real-artifact vector + staging probe |
+| `BLOCK-1.2` no tick, no ready dry run, no POST, clear path | status line `stored key (N answers) not used: paste the key for this list and press Load questions`; dry-run problem blocks Start; key-only paste confirms | vector asserts `calls === 0`, empty `checkedRadios`, alert text; staging probe |
+| `BLOCK-1.3` genuine key reload unchanged | `how` preserved by `normalizeQueue`; reload vector still passes | `restores the paste and the current question after a reload`; staging re-injection ticks key D |
+| `BLOCK-1.4` names/shapes unchanged | no new key or field name; `ocrQueue`/`ansKey`/`ocrMeta` kept | shape assertions in the vectors and probe (`helper queue keeps its documented {items, i} shape`) |
+| `BLOCK-1.5` real generated artifact | rebuilt `src/bookmarklets/key/bookmarklet.js`, 1 L / 69,784 B | every vector executes the artifact; probe fetched the built file |
+| `BLOCK-2.1` no second POST | `owner.gen` retirement + inherited `pendingSave` reuse | `calls 1` after reinjection and Start; staging probe `posts: 1` |
+| `BLOCK-2.2` one settlement | retired continuations return before mutating; only the adopting instance writes | queue `i === 1` once; failure vector keeps `i === 0` and one stop message |
+| `BLOCK-2.3` show/block, no stale startable run | inherited request plus ` A save was already in progress; Start autosave attaches to it instead of posting again.` | staging probe `already in progress`, `posts` stays 1 |
+| `BLOCK-2.4` idle click unchanged | boot/handler replacement untouched | `clicking the bookmarklet twice … does not stack listeners`, `restarting after a stop …` |
+| `BLOCK-2.5` next item once | `autoStep` timer re-armed only by the live instance | `calls === 2` for question 2; probe two-save completion `2 of 2 saved` |
+| `BLOCK-3.1` no startup evidence | startup marker read/advance/deletion removed | marker vector; probe leaves index and fields |
+| `BLOCK-3.2` index/fields unchanged, no POST | same removal | vector `i === 0`, same stem, `posts === 0`; probe identical |
+| `BLOCK-3.3` suite covers the boundary | new `ignores a legacy reload marker written after the page helper started` | failing-first `1 !== 0`, passes after fix |
+| `BLOCK-3.4` docs distinguish consumer from cleanup | `docs/AGENTS.md` production-path paragraph and `docs/SPEC.md` §3.4 now name the prohibited startup consumer separately from the before/after in-place-save deletes; no claim about a ported baseline vector | this note and those two edits |
+| `BLOCK-3.5` helper PRG unchanged | `ocr_helper.js` byte-identical to `94a7593` | `git diff --exit-code` plus 38 helper vectors |
+| `BLOCK-4.1` clear `pendingSave` | `abandonInFlight()` in `ocr_load`, `ocr_clear`, `ocr_skip` | vectors 4(a) |
+| `BLOCK-4.2` `saveInPlace` cannot advance a changed queue | captured `run = autoRun` plus `retired()` check before any mutation, `savingInPlace` released in Clear/Load/Skip | both in-place vectors |
+| `BLOCK-4.3` Skip invalidates the run | `autoRun++`, `abandonInFlight()`, `auto.running/inFlight` cleared, timer cleared | Skip vector `2 !== 1` before, `1 === 1` after |
+| `BLOCK-4.4` Stop→Start reuse intact | `stopAuto` still stores `pendingSave` | `restarting after a stop reuses the unanswered save instead of posting it twice` |
+| `BLOCK-4.5` three real-artifact regressions | the three vectors named in the contract | failing-first output above |
+| `BLOCK-4.6` rebuild and baselines | one-line artifact, `node --check`, no `%XX`; full suites below | build output and baseline table |
+| `FIX-1.1` safe parse/normalize | `store.get` try/catch returning `undefined` for malformed values; `normalizeQueue`; `normalizeKey`; `fillForm` restricted to `FIELDS` and existing elements | three FIX-1 vectors, all failing on the old build |
+| `FIX-1.2` rebuilt artifact | deterministic one-line artifact | `artifact is one line, syntax-valid, percent-free, and deterministic` |
+| `FIX-1.3` executable incompatible-storage vectors | malformed JSON for each key, `{}`, `[]`, `{"items":null,"i":0}`, `i` of `-1`/`"0"`, item without `flags`, array `ansKey`, unknown `ocrMeta` | the three FIX-1 vectors |
+| `FIX-2.1` execute the refusal path | `runKeyEntry()` runs `entry.js` in `vm` for missing core, version `2.3.0`, missing `parsePaste`; asserts thrown `Key bookmarklet disabled`, `console.error`, `#ocr_error` banner | `refuses to run without the canonical core and never touches Constant Text` |
+
+#### Measurements (from package base `bb78c57`)
+
+| File | Package-base | Review target `d98d6ad` | Fix session | Final |
+|---|---|---|---|---|
+| `src/bookmarklets/key/entry.js` | absent | 398 L / 16,539 B | +163/−36 | 525 L / 21,600 B, sha256 `62d1945e…` |
+| `tests/key-bookmarklet.js` | absent | 540 L / 24,672 B | +288/−6 | 822 L / 37,840 B, sha256 `c757ff49…` |
+| `src/bookmarklets/key/bookmarklet.js` (generated) | absent | 1 L / 66,711 B | regenerated | 1 L / 69,784 B, sha256 `e62a66e7…` |
+
+Unchanged, verified: `ocr_helper.js` 127 L / 4,917 B `b83835b7…` (byte-identical
+to `94a7593:ocr_helper.js`), `boot.js` 589 B `52432cd4…`, `build.js` 1,364 B
+`74753557…`, `src/parser/core.js` `c9ac52b3…`, `src/parser/parser.js`
+`0a9bff5f…`, `src/ui/ui.js` `1e1f8007…`, `src/bookmarklet.js` `bf5837e4…`
+(rebuilt to the same hash), `tests/ocr-helper.js` 658 L / 30,476 B. New
+phase-cycle modules have no fixed line cap; `entry.js` stays one cohesive key
+product entry inlined only by its own build.
+
+#### Baselines and environment (condition 4)
+
+- Node: 68 runner, 173 unit, 38 helper, **33 key-bookmarklet**, 10
+  underline-toolbar, 7 question-preview, 26 math-tool, 69 render-markup, 7 bank
+  hashes; `node src/bookmarklets/key/build.js` → 1 line, `new Function` parses,
+  no percent escape.
+- PHP 8.3.32 (static-php.dev CLI, NTS, `pdo_sqlite`/`pdo_mysql`/`mbstring`,
+  installed at `$HOME/tmp/toolchain/php` because this workspace has no root and
+  no system PHP): 33 renderer vectors, 8 store checks, 14 ordering checks, 0
+  failures, and 7/7 `php -l` on `deployed/*.php`. No PHP file changed.
+- Chromium: Playwright `chromium_headless_shell` 141.0.7390.37, with the 41
+  Ubuntu 24.04 runtime `.deb` dependencies fetched from the archive and unpacked
+  locally (`dpkg-deb -x`) because `sudo` is unavailable (`no new privileges`);
+  `LD_LIBRARY_PATH` points at that prefix. `php tests/cbt-staging.php` still not
+  run: it needs a disposable MySQL/EL01 URL gate and no PHP file changed.
+
+#### Disposable browser probes (Cloud Chromium, real files)
+
+The repo's own `tools/start-phone-staging.sh` served the real
+`deployed/admin_questions.php` plus `src/parser/core.js?v=2.5.4` and
+`ocr_helper.js?v=2.4.7` from `0.0.0.0:3018` on the static PHP 8.3.32 CLI, with a
+throwaway SQLite database. A Cloud Chromium (141) drove the authorized workspace
+preview origin; no live host was contacted. The reviewed and fixed artifacts were
+both served from that disposable root, so each boundary was reproduced on the
+old artifact and closed on the new one in the same session. 21/21 checks passed:
+
+- `BLOCK-1`: the deployed helper loaded a 2-question manual list (`{items, i}`,
+  no `how`); with `ansKey = {1:"D",2:"C"}` the reviewed artifact ticked D and
+  reported `key D · 2 answers`, while the fixed artifact ticked nothing, said
+  `stored key (2 answers) not used: paste the key for this list and press Load
+  questions`, and Start produced 0 POSTs with the dry-run alert. A key-only
+  paste then ticked D, wrote `how: "key-paste"`, reported 2 entries, and still
+ticked D after a fresh injection.
+- `BLOCK-2`: with a delayed `fetch`, the first panel posted question 1 once; a
+  second injection left one panel, one `Bookmarklet paste` title and one
+  `form.__ocrKeySubmit`, showed `A save was already in progress`, and Start kept
+  the count at 1. Resolving the shared request advanced the queue once, question
+  2 posted normally once, and the run ended at `Autosave complete: 2 of 2
+  saved.`
+- `BLOCK-3`: with `ocrSubmitted = true` written after the page helper started,
+  the reviewed artifact deleted it and moved to index 1 with no POST; the fixed
+  artifact kept index 0, kept the first stem, made 0 POSTs, and left the marker
+  as `true` for the deployed helper.
+- Cleanup: staging stopped, the disposable root/database/log (including the
+  served old artifact) removed, and port 3018 confirmed free. No repository file
+  was created by staging.
+
+#### Preserved boundaries
+
+No changes to `ocr_helper.js`, `src/parser/core.js`, `src/parser/parser.js`,
+`src/ui/ui.js`, `src/bookmarklet.js`, `deployed/*.php`, fixtures, expected specs,
+schema, storage key names, or deployment tokens
+(`core.js?v=2.5.4`, `ocr_helper.js?v=2.4.7` stay stale until PC06). The key entry
+still never references `constant_text`.
+
+#### Open items
+
+- `BLOCK-1`–`BLOCK-4` require independent re-review of this committed fix round;
+  the findings stay open in this record. `FIX-1`/`FIX-2` also await
+  re-review confirmation that their evidence is executable.
+- `NOTE-1`, `NOTE-2`, `NOTE-4` (the broader storage-ownership lag), `NOTE-5`,
+  `NOTE-6`, and `NOTE-7` were not fixed here; `NOTE-4` is only addressed to the
+  extent `BLOCK-3` criterion 4 requires the startup-versus-cleanup distinction.
+
 ### Review status
 
-Independent rigorous review pending. Review target: the pushed
-`scratch/pc01-product-separation` tip. No review record exists yet.
+Combined original review returned `BLOCK` on `d98d6ad` with `BLOCK-1`–`BLOCK-4`,
+`FIX-1`, `FIX-2` open in their first round. The 2026-11-25 fix session above
+addresses exactly those contracts and has not been re-reviewed. The fix round is
+committed and pushed to `scratch/pc01-product-separation` only; independent
+re-review of that commit is required before any scratch-cycle merge. Nothing was
+deployed or merged.
