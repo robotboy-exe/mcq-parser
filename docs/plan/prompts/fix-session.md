@@ -45,19 +45,58 @@ title.
    offer ordinary `go`; request explicit owner approval naming the exact file,
    measured excess, and justification.
 7. State exact files, tests, behavior impact, and whether re-review is required.
-8. Do not edit or commit.
+8. Verify the evidence environment. List every tool, runtime, and service the
+   required evidence needs (test runtimes, language interpreters, browsers,
+   staging servers) and actually check each one now, by running a version
+   command or a short start-and-stop probe, and report the output. A tool
+   missing at session start is normal: provision it during Gate 1. Never assume
+   a tool is unavailable or cannot be provisioned, and never predict that
+   provisioning might fail. Report a tool as unavailable only after an actual
+   provisioning attempt has failed, quoting the exact commands and errors; Gate
+   1 has then not passed, so stop. Never plan to record required evidence as
+   "not run".
+9. List every planned change to an existing test, assertion, fixture, or
+   expected output, with the acceptance row or rule it touches and why the
+   closure criteria require it. Each one needs explicit owner approval.
+10. List every planned change beyond the literal closure criteria: a new stored
+    field or changed storage shape, a new user-facing behavior, control, or
+    message, or a changed public interface. Each one needs explicit owner
+    approval. If a closure criterion cannot be met without one, say so.
+11. Do not edit or commit.
 
-End a passed Gate 1 with exactly:
+## Owner decisions
+
+Collect every item from steps 6, 9, and 10 into a numbered `Owner decisions`
+section at the end of Gate 1, as `D1`, `D2`, and so on. Write each decision for
+a non-technical owner: one or two plain sentences on what will change, what
+happens if approved, and what happens if declined. Give your recommendation.
+Do not ask the owner to judge code.
+
+End a passed Gate 1 with no owner decisions with exactly:
 
 ```text
 WAITING FOR GO. No files changed.
 NEXT COMMAND: go
 ```
 
+End a passed Gate 1 with owner decisions with exactly (listing every decision):
+
+```text
+WAITING FOR GO AND OWNER DECISIONS. No files changed.
+NEXT COMMAND: go, approve D1 D2
+```
+
+The owner may instead reply `go, approve D1, decline D2`. A declined item is not
+implemented; if a finding cannot close without it, stop after Gate 1 and report
+that the finding needs owner disposition.
+
 ## After `go`
 
-1. Fix only the accepted findings and their frozen closure criteria. Stop before
-   changing adjacent behavior that has no separately accepted finding ID.
+1. Fix only the accepted findings and their frozen closure criteria, plus the
+   owner decisions approved with `go`. Stop before changing adjacent behavior
+   that has no separately accepted finding ID. If implementation reveals a new
+   item of the kind Gate 1 steps 9 or 10 require approval for, stop and ask for
+   it as a new numbered decision in the same plain-language form.
 2. Reproduce before fixing. For every finding, first add or strengthen its
    regression evidence and run it against the unfixed code. Record the exact
    failing output in the fix handoff, per finding ID. The attempt must follow
