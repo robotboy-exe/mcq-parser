@@ -30,8 +30,16 @@ Last updated: 2026-11-25.
   The 2026-11-25 first-round fix session addressed the review's `BLOCK-1`,
   `BLOCK-2`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, and `FIX-2` on the same history,
   reproduced each one failing-first, and re-ran the Node/PHP baselines and the
-  disposable-browser probes. The package is not `done` until an independent
-  re-review settles that fix round.
+  disposable-browser probes. The 2026-11-25 re-review
+  ([record](reviews/parser-convergence-2026-11-phase-1-re-review.md)) of
+  candidate `b7b18cd` closed `BLOCK-1`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, and
+  `FIX-2`, left `BLOCK-2` open after two review rounds, and recorded first-round
+  `FIX-3`. The owner chose **`fix`** for `BLOCK-2` on 2026-11-25, scoped to its
+  frozen closure criteria; the follow-up fix session applied `BLOCK-2` and
+  `FIX-3` on 2026-11-25 (see the package fix note) with a real-artifact
+  failing-first vector per defect, all Node/PHP baselines, and a 13/13
+  disposable-browser probe. The package is not `done` until an independent
+  re-review of that candidate settles.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -341,7 +349,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
-| 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | in progress; first fix round applied, re-review pending | disposable browser; no deploy/live |
+| 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | in progress; re-review closed `BLOCK-1`/`BLOCK-3`/`BLOCK-4`/`FIX-1`/`FIX-2`; the owner-`fix` `BLOCK-2` session and `FIX-3` were applied on 2026-11-25 and await independent re-review | disposable browser; no deploy/live |
 | 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | not started | desktop and Brave bookmarklet installability |
 | 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | not started | none; parser and real-surface evidence |
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
@@ -418,7 +426,7 @@ verifies the detail path with the rest of Release A.
 
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
-| phase 1 | PC01 product separation | rigorous | in progress; `BLOCK-1`–`BLOCK-4`, `FIX-1`, `FIX-2` fixed on 2026-11-25 in the first round, awaiting re-review |
+| phase 1 | PC01 product separation | rigorous | in progress; the 2026-11-25 re-review of `b7b18cd` closed `BLOCK-1`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, `FIX-2`; `BLOCK-2` (owner `fix`) and first-round `FIX-3` are fixed in the 2026-11-25 follow-up session and await independent re-review |
 | phase 2 | PC02 one parser source and build parity | rigorous | blocked by PC01 review |
 | phase 3 | PC03 spaced initialisms | rigorous | blocked by PC02 review |
 | phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
@@ -456,9 +464,20 @@ underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes) and the PHP
 baseline passes on static PHP 8.3.32 (33 renderer vectors, 8 store checks, 14
 ordering checks, 7/7 `php -l`). Every accepted finding was reproduced
 failing-first before it was fixed, and the disposable staging browser probes ran
-on the real reviewed and fixed artifacts (21/21 checks) and were cleaned up. PC01
-stays `in progress` until the fix round's independent re-review settles. The fix
-round is committed and pushed to `scratch/pc01-product-separation` only; no merge.
+on the real reviewed and fixed artifacts (21/21 checks) and were cleaned up. The
+2026-11-25 re-review of candidate `b7b18cd` then closed `BLOCK-1`, `BLOCK-3`,
+`BLOCK-4`, `FIX-1`, and `FIX-2`, kept `BLOCK-2` open after two review rounds
+(probes `B2-A`–`B2-D`), and recorded first-round `FIX-3`. The owner chose
+**`fix`** for `BLOCK-2` on 2026-11-25 against exactly its frozen closure
+criteria; the follow-up session then fixed `BLOCK-2` and `FIX-3` in the same
+run-ownership code. Every defect was reproduced failing-first on the previous
+real artifact (33 passed, 5 failed), the rebuilt artifact passes 38/38 vectors,
+the full Node/PHP baseline is green, and a 13/13 disposable-browser probe
+covered `B2-A`–`B2-D` plus an ordinary two-save run. `BLOCK-2` stays open until
+an independent re-review settles that candidate. PC01 stays `in progress`,
+commit and scratch-cycle merge readiness stay blocked, and PC02 stays blocked.
+The fix round is committed and pushed to `scratch/pc01-product-separation` only;
+no merge, deployment, or live action.
 
 ## Archived `math-editor-2026-11` close path
 

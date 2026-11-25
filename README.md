@@ -114,6 +114,14 @@ Current work state, package gates, and branch strategy are in
 source, implementations run on the owner's VM on short-lived scratch branches,
 and this environment reviews exact pushed candidates. Real branches remain
 read-only until the final cycle review and a separate owner authorization.
+`PC01` is `in progress`: its 2026-11-25 re-review closed `BLOCK-1`, `BLOCK-3`,
+`BLOCK-4`, `FIX-1`, and `FIX-2`, while `BLOCK-2` stayed open after two review
+rounds and received an owner `fix` disposition the same day. That fix and the
+first-round `FIX-3` are applied: the key bookmarklet keeps one shared in-flight
+save record on the form, settles it exactly once, never lets a discarded list
+settle the current one, and blocks Save Question while that question's save is
+still outstanding. `BLOCK-2` and `FIX-3` remain open until independent
+re-review, so commit, scratch-cycle merge, and the next package stay blocked.
 
 ### Archived math-editor release history
 

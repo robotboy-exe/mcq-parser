@@ -604,6 +604,125 @@ test('reinjection settles a failed in-flight save exactly once', async () => {
   assert(/Autosave stopped at question 1: Duplicate question/.test(second.field('ocr_status').innerHTML));
 });
 
+// BLOCK-2 criteria 1 and 3 (`Probe B2-A`): Save Question on the replacement
+// panel must not post while the replaced panel's autosave request is outstanding.
+test('reinjection during an in-flight autosave blocks Save Question instead of double-posting', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'the first panel posts question 1');
+
+  const second = ready(keyBookmarklet({ shared, fetch }));
+  assert.strictEqual(second.listeners().length, 1, 'still one submit listener');
+  const event = second.form.submit();
+  assert(event.defaultPrevented, 'the replacement panel still owns the submit');
+  assert.strictEqual(calls, 1, 'Save Question must not post a second time');
+  assert(/already in progress/.test(second.field('ocr_status').innerHTML),
+    'the replacement panel explains the outstanding save');
+
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(calls, 1, 'the shared request settles once');
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 1, 'the queue advances exactly once');
+});
+
+// BLOCK-2 criterion 1 (`Probe B2-B`): the same guard covers an in-place save that
+// the replaced panel started.
+test('reinjection during an in-flight in-place save blocks a second Save Question', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.form.submit();
+  assert.strictEqual(calls, 1, 'the first panel saves question 1');
+
+  const second = ready(keyBookmarklet({ shared, fetch }));
+  second.form.submit();
+  assert.strictEqual(calls, 1, 'the replacement panel must not post a second time');
+  assert(/already in progress/.test(second.field('ocr_status').innerHTML));
+
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(calls, 1, 'the in-flight save settles once');
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 1, 'the queue advances exactly once');
+  assert(/already in progress finished/.test(second.field('ocr_status').innerHTML));
+});
+
+// BLOCK-2 criterion 1 (`Probe B2-C`): a second reinjection must not lose the
+// record, so a third activation still adopts the outstanding request.
+test('a third activation does not lose the in-flight record', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.field('ocr_auto').onclick();
+  ready(keyBookmarklet({ shared, fetch }));
+  const third = ready(keyBookmarklet({ shared, fetch }));
+  third.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'the third panel adopts the outstanding request');
+
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(calls, 1, 'the request settles once');
+  assert.strictEqual(JSON.parse(third.storage.get('ocrQueue')).i, 1, 'the queue advances exactly once');
+  third.runTimers();
+  await flush();
+  assert.strictEqual(calls, 2, 'the next question posts normally, once');
+});
+
+// BLOCK-2 criterion 2/3 (`Probe B2-D`): without a Start click the replacement
+// panel still records the settled save instead of leaving it unrecorded.
+test('reinjection without a Start click settles the inherited save once', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1);
+
+  const second = ready(keyBookmarklet({ shared, fetch }));
+  assert(/already in progress/.test(second.field('ocr_status').innerHTML),
+    'the replacement panel shows the outstanding save while it waits');
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(calls, 1);
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 1, 'the inherited save is recorded once');
+  assert(/already in progress finished/.test(second.field('ocr_status').innerHTML));
+  assert(/Second autosave question/.test(second.field('question_text').value), 'the panel moves to the next question');
+});
+
+// FIX-3 (`Probe B4-A`): an abandoned in-place save must not release the lock of
+// a newer in-place save on a replacement batch.
+test('an abandoned in-place save does not unlock the replacement batch', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const result = ready(keyBookmarklet({ fetch }));
+  loadPaste(result, AUTO_PASTE);
+  result.form.submit();
+  assert.strictEqual(calls, 1, 'Batch 1 saves once');
+
+  result.field('ocr_clear').onclick();
+  loadPaste(result, '1. Batch 2 different question? A) One B) Two C) Three D) Four\nANSWER KEY\n1. C\n');
+  result.form.submit();
+  assert.strictEqual(calls, 2, 'Batch 2 saves once');
+
+  pending[0](savedResponse());
+  await flush();
+  result.form.submit();
+  assert.strictEqual(calls, 2, 'the abandoned result must not unlock another POST');
+});
+
 // BLOCK-3: the startup consumer of the deployed helper's legacy marker is gone.
 test('ignores a legacy reload marker written after the page helper started', () => {
   const first = keyBookmarklet();

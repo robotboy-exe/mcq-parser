@@ -1,7 +1,11 @@
 # PC01 — Product Surface Separation
 
-- **Status:** in progress — first-round fix session applied to `BLOCK-1`,
-  `BLOCK-2`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, `FIX-2`; independent re-review pending
+- **Status:** in progress — the 2026-11-25 re-review of candidate `b7b18cd`
+  closed `BLOCK-1`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, and `FIX-2`; `BLOCK-2`
+  stayed open after two review rounds and the owner chose `fix` on 2026-11-25
+  against its frozen closure criteria; first-round `FIX-3` is fixed in the same
+  session. The `BLOCK-2`/`FIX-3` fix session is applied on
+  `scratch/pc01-product-separation`; independent re-review pending.
 - **Product baseline:** `793cb8f`
 - **Package base:** record the docs-only cycle-setup commit on
   `scratch/parser-convergence-cycle` at Gate 1; verify its product tree equals
@@ -406,7 +410,129 @@ still never references `constant_text`.
 
 Combined original review returned `BLOCK` on `d98d6ad` with `BLOCK-1`–`BLOCK-4`,
 `FIX-1`, `FIX-2` open in their first round. The 2026-11-25 fix session above
-addresses exactly those contracts and has not been re-reviewed. The fix round is
-committed and pushed to `scratch/pc01-product-separation` only; independent
-re-review of that commit is required before any scratch-cycle merge. Nothing was
-deployed or merged.
+addresses exactly those contracts. Its candidate `b7b18cd` was then re-reviewed
+([record](../reviews/parser-convergence-2026-11-phase-1-re-review.md)): `BLOCK-1`,
+`BLOCK-3`, `BLOCK-4`, `FIX-1`, and `FIX-2` closed, `BLOCK-2` stayed open after
+two review rounds (`B2-A`–`B2-D`), and first-round `FIX-3` was recorded. The
+fix round is committed and pushed to `scratch/pc01-product-separation` only; a
+further fix session and its independent re-review are required before any
+scratch-cycle merge. Nothing was deployed or merged.
+
+### Finding disposition (2026-11-25) — `BLOCK-2`
+
+- **Finding:** `BLOCK-2` — reinjection during an in-flight key save can POST the
+  same question twice ([round-1 record](../reviews/parser-convergence-2026-11-phase-1.md)).
+- **Review history:** recorded open by the round-1 combined review on
+  `d98d6ad`, and still open after the round-2 closure re-review on `b7b18cd`
+  ([record](../reviews/parser-convergence-2026-11-phase-1-re-review.md), probes
+  `B2-A`–`B2-D`), which escalates it to owner disposition.
+- **Owner choice (explicit, 2026-11-25):** `fix`.
+- **Scope and rationale:** one further fix session against exactly the frozen
+  closure criteria 1–5 and non-goals recorded in the round-1 review. The choice
+  authorizes no broadening: criterion 3's show-or-safely-block requirement and
+  the required real-artifact plus disposable-browser evidence are the whole
+  scope. No substitute requirement is introduced.
+- **Effect:** this disposition does not close `BLOCK-2`. It stays open until the
+  fix session's handoff and an independent re-review of that exact candidate
+  pass the frozen checklist. PC01 therefore stays `in progress`; commit
+  readiness, scratch-cycle merge readiness, and PC02 all stay blocked. The
+  first-round `FIX-3` shares the same run-ownership code and is fixed in the same
+  session, without being merged into `BLOCK-2`'s contract.
+- **Destination:** none. The finding is not deferred to another package.
+
+### `BLOCK-2` / `FIX-3` fix session (2026-11-25)
+
+Scope was exactly `BLOCK-2`'s frozen criteria 1–5 (owner `fix` disposition) and
+`FIX-3`'s three criteria (first-round finding), plus the two owner decisions
+approved with `go`: D1 blocks Save Question while that question's save is
+unresolved, and D2 lets an inherited save settle on the replacement panel
+without a Start click. Nothing else changed; no storage key, field, or shape was
+added.
+
+#### Implementation (run ownership only)
+
+- The outstanding record stays on `form.__ocrKeyOwner` and is never cleared at
+  activation, so a third activation still adopts it (`B2-C`).
+- The record is shared, not copied: `{index, request, batch, kind, settled}`.
+  `batch` is an in-memory owner counter, incremented by Load, Clear, and Skip,
+  so a result from a discarded list can never settle the current one. Nothing
+  is stored.
+- `claimSave()` settles a record exactly once, and only a live instance may
+  claim: retired continuations return first. `settleSave()` then drops any
+  record whose batch is gone.
+- `saveInPlace` refuses while an unsettled record exists for the current
+  batch/index, and `savingInPlace` is now the record rather than a boolean, so
+  an abandoned request cannot release a newer save (`FIX-3`).
+- Start reuses the record only when both index and batch match; otherwise it
+  posts normally (BLOCK-4 behavior retained).
+
+#### Failing-first evidence (unfixed `entry.js`, previous artifact)
+
+```text
+[FAIL] reinjection during an in-flight autosave blocks Save Question instead of double-posting :: Save Question must not post a second time
+[FAIL] reinjection during an in-flight in-place save blocks a second Save Question :: the replacement panel must not post a second time
+[FAIL] a third activation does not lose the in-flight record :: the third panel adopts the outstanding request
+[FAIL] reinjection without a Start click settles the inherited save once :: the inherited save is recorded once
+[FAIL] an abandoned in-place save does not unlock the replacement batch :: the abandoned result must not unlock another POST
+RESULT: 33 passed, 5 failed
+```
+
+#### Criterion mapping
+
+| Finding / criterion | Implementation | Evidence |
+|---|---|---|
+| `BLOCK-2.1` no second POST | shared record retained; Start reuses it; `saveInPlace` blocks while it is unsettled | `B2-A`, `B2-B`, `B2-C` vectors and browser probes, each `1` save POST |
+| `BLOCK-2.2` one settlement | `claimSave()` once-only claim by the live instance; batch check before any mutation | success advances `i` to 1 once; existing failure vector keeps `i === 0` |
+| `BLOCK-2.3` show or safely block | panel message on injection; D1 block message; D2 settle message | `B2-A`/`B2-B` `/already in progress/`; `B2-D` `/already in progress finished/` |
+| `BLOCK-2.4` idle click unchanged | boot and listener replacement untouched | existing `clicking the bookmarklet twice…`, `restarting after a stop…`; 38/38 vectors |
+| `BLOCK-2.5` next item once | `autoStep` re-armed only by the live instance after settlement | `B2-C` vector posts question 2 once; two-question browser run |
+| `FIX-3.1` guard before release | batch check precedes any `savingInPlace` release; release only by identity | `B4-A` vector `2` POSTs |
+| `FIX-3.2` failing-first regression | new vector reproduces `saveInPlace` #1 → Clear → Load → #2 → settle → submit | failed `3 !== 2` before, passes after |
+| `FIX-3.3` rebuild and baselines | one-line artifact, `node --check`, no percent escape | build output and suites below |
+
+#### Evidence
+
+- `node tests/key-bookmarklet.js` → `PASS: 38 key-bookmarklet vectors` (33 existing,
+  5 new; every vector executes the rebuilt generated artifact).
+- Full Node baseline: `runner` 68 PASS / 0 FAIL, `unit` 173, `ocr-helper` 38,
+  `underline-toolbar` 10, `question-preview` 7, `math-tool` 26,
+  `render-markup` 69, `extract-bank --check` 7 hashes OK.
+- PHP 8.3.9 static CLI: renderer 33 PASS, store 8 PASS, ordering 14 PASS / 0 FAIL,
+  `php -l` 7/7 on `deployed/*.php`. (`php tests/cbt-staging.php` still needs the
+  EL01 MySQL URL gate and no PHP file changed.)
+- Disposable staging browser probe (real `deployed/admin_questions.php`,
+  `core.js?v=2.5.4`, `ocr_helper.js?v=2.4.7`, real generated artifact,
+  Chromium 141, throwaway SQLite): **13/13 checks pass** — `B2-A` blocked Save
+  with one POST and one settlement, `B2-D` settled without Start and moved to the
+  next question, `B2-C` third activation adopted with one POST, `B2-B` blocked a
+  second in-place POST, and an ordinary two-question run posted twice and ended
+  at `Autosave complete: 2 of 2 saved.` Staging and its database were removed
+  afterwards.
+- Environment note for reproduction: PHP `8.3.9` static CLI at
+  `$HOME/tmp/toolchain/php`; Playwright 1.56.1 with Chromium `141.0.7390.37`,
+  runtime libraries unpacked with `dpkg-deb -x` and a fontconfig file pointing at
+  an unpacked `fonts-dejavu-core` (without fonts the admin page renderer
+  crashed, which was environment-only and unrelated to this fix).
+
+#### Measurements (from package base `bb78c57`)
+
+| File | Base | Before this session | Final | This session's diff |
+|---|---|---|---|---|
+| `src/bookmarklets/key/entry.js` | absent | 525 L / 21,600 B `62d1945e…` | 586 L / 24,045 B `a6a51249…` | `+152/−91` |
+| `src/bookmarklets/key/bookmarklet.js` (generated) | absent | 1 L / 69,784 B `e62a66e7…` | 1 L / 71,179 B `fc96fdb8…` | regenerated |
+| `tests/key-bookmarklet.js` | absent | 822 L / 37,840 B `c757ff49…` | 941 L / 43,370 B `8edcdc66…` | `+119/−0` |
+
+Unchanged: `ocr_helper.js` 127 L / 4,917 B `b83835b7…` (byte-identical to
+`94a7593:ocr_helper.js`), `boot.js`, `build.js`, `src/parser/core.js`,
+`src/parser/parser.js`, `src/ui/ui.js`, `src/bookmarklet.js`, `deployed/*.php`,
+`fixtures/`. Live-origin additions remain `+51/−47` of the 100 cap; no exception
+is needed.
+
+#### Status after this session
+
+`BLOCK-2` is not closed by the fix: it needs an independent re-review of this
+candidate against the frozen criteria. `FIX-3` likewise closes only through
+re-review. PC01 stays `in progress`; commit readiness, scratch-cycle merge, and
+PC02 stay blocked until the re-review settles. This fix round was committed and
+pushed to `scratch/pc01-product-separation` on the owner's explicit request in
+the same session; no merge, deployment, or live action was performed.

@@ -1,6 +1,6 @@
 # Current Status
 
-Last updated: 2026-11-24.
+Last updated: 2026-11-25.
 
 ## Active cycle
 
@@ -30,7 +30,23 @@ Last updated: 2026-11-24.
   submit/PRG advance, skip, clear; key install over that page, double-inject,
   key fill, dry run, and a two-question autosave run with two keyed rows), and
   the staging server and its disposable database were removed afterwards.
-  Rigorous review pending; `Commit: deferred`.
+  The 2026-11-25 re-review of the first fix candidate `b7b18cd`
+  ([record](plan/reviews/parser-convergence-2026-11-phase-1-re-review.md))
+  closed `BLOCK-1`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, and `FIX-2`; `BLOCK-2`
+  stayed open after two review rounds and the owner chose `fix` for it on
+  2026-11-25 against its frozen closure criteria, and first-round `FIX-3` was
+  recorded. The follow-up session applied both in the key entry's run ownership:
+  the in-flight record stays on the form and is shared rather than copied, a
+  single live claim settles it exactly once, a stale batch can never settle the
+  current list, and Save Question is blocked while that question's save is
+  outstanding. Each defect was reproduced failing-first (33 passed, 5 failed);
+  the rebuilt artifact passes 38/38 vectors, the full Node/PHP 8.3.9 baseline is
+  green (68 runner, 173 unit, 38 helper, 10 underline, 7 preview, 26 math-tool,
+  69 render-markup, 7 bank hashes; 33 renderer, 8 store, 14 ordering, 7/7 lint),
+  and a 13/13 disposable-browser probe ran `B2-A`–`B2-D` and an ordinary
+  two-save run on real `admin_questions.php`. `BLOCK-2` and `FIX-3` stay open
+  until independent re-review settles that candidate. PC01 remains
+  `in progress`; commit, scratch-cycle merge, and PC02 stay blocked.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

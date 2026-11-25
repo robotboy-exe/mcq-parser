@@ -147,23 +147,23 @@
 
   // Run ownership lives on the form, not in this closure, so a second activation
   // adopts the request that is still in flight instead of starting a competing
-  // run over shared storage. Each activation retires the previous continuation.
-  const owner = form.__ocrKeyOwner || (form.__ocrKeyOwner = { gen: 0, inFlight: null });
+  // run over shared storage. The outstanding record itself stays on the form:
+  // activation retires the previous continuation but never hides the request, so
+  // a third activation still adopts it.
+  const owner = form.__ocrKeyOwner || (form.__ocrKeyOwner = { gen: 0, inFlight: null, batch: 0 });
   owner.gen += 1;
   const myGen = owner.gen;
   const retired = () => owner.gen !== myGen;
-  const inherited = owner.inFlight;
-  owner.inFlight = null;
-  // A stopped run may leave a save unanswered; keep it so a restart attaches to
-  // that request instead of posting the same question again. A reinvented panel
-  // inherits the same request for the same reason.
-  let pendingSave = inherited ? { index: inherited.index, request: inherited.request } : null;
+  // The record is shared rather than copied, so its settled flag is shared too.
+  let pendingSave = owner.inFlight;
   let auto = null;
   let autoTimer = null;
-  // Incremented whenever a run is replaced, so a late POST result from an older
-  // run is ignored instead of advancing this queue.
-  let autoRun = 0;
-  let savingInPlace = false;
+  // The in-place save this panel owns, or null. Identity rather than a boolean,
+  // so an abandoned request cannot release a newer save.
+  let savingInPlace = null;
+  // A request inherited from the replaced panel must settle into this one even
+  // when Start is never pressed.
+  if (pendingSave && !pendingSave.settled) watchSave(pendingSave);
 
   const savedPaste = paste.get();
   if (typeof savedPaste === 'string') $('ocr_text').value = savedPaste;
@@ -171,6 +171,9 @@
   function abandonInFlight() {
     pendingSave = null;
     owner.inFlight = null;
+    // A cleared, replaced, or skipped list gets a new batch identity, so a late
+    // result from the old list cannot settle this one.
+    owner.batch += 1;
   }
 
   function keyApplies() {
@@ -240,7 +243,10 @@
     // saved. Stop is still immediate; the answer only settles the queue entry.
     const waiting = auto.inFlight;
     if (waiting) {
-      pendingSave = { index: queue.i, request: auto.request };
+      // Keep the same record so its settled flag and batch identity stay shared.
+      pendingSave = owner.inFlight && owner.inFlight.request === auto.request
+        ? owner.inFlight
+        : { index: queue.i, request: auto.request, batch: owner.batch, kind: 'auto', settled: false };
       auto.inFlight = false;
       auto.request = null;
     }
@@ -262,6 +268,102 @@
       .catch(() => ({ failed: true }));
   }
 
+  // A save is claimed exactly once, by whichever instance is live when it
+  // settles. The batch check then drops results whose list is gone.
+  function claimSave(entry) {
+    if (!entry || entry.settled) return false;
+    entry.settled = true;
+    if (owner.inFlight === entry) owner.inFlight = null;
+    return true;
+  }
+
+  function watchSave(entry) {
+    entry.request.then((result) => settleSave(entry, result));
+  }
+
+  function settleSave(entry, result) {
+    // A retired instance must never settle: it would act on a replaced panel.
+    if (retired()) return;
+    if (!claimSave(entry)) return;
+    if (entry.batch !== owner.batch) return;
+    const number = entry.index + 1;
+    if (entry.kind === 'inplace') return settleInPlace(entry, result, number);
+    return settleAuto(entry, result, number);
+  }
+
+  function settleAuto(entry, result, number) {
+    if (auto) {
+      auto.inFlight = false;
+      auto.request = null;
+    }
+    if (result.saved && queue.i === entry.index) {
+      queue.i++;
+      save();
+    }
+    if (!auto) {
+      // The panel was replaced and this run was never restarted here: record the
+      // outstanding result once and show it instead of leaving the question on
+      // screen after the server already saved it.
+      show();
+      $('ocr_status').innerHTML = result.saved
+        ? 'The save that was already in progress finished: question ' + number + ' is saved.'
+        : 'The save that was already in progress did not confirm: question ' + number + ' stays queued.';
+      return;
+    }
+    if (!auto.running) {
+      render();
+      // The stopped message replaces the generic line, not follows it, so the
+      // late answer reads as the stop result rather than a stray sentence.
+      $('ocr_status').innerHTML = result.failed
+        ? 'Autosave stopped at question ' + number + ': the save did not confirm. It stays queued.'
+        : result.saved
+          ? 'Autosave stopped at question ' + number + ': it had already saved, so it is marked done and will not be sent again.'
+          : 'Autosave stopped at question ' + number + ': '
+            + (saveError(result.html) || 'the server did not confirm the save') + '. It stays queued.';
+      return;
+    }
+    if (result.failed) {
+      return stopAuto('Autosave stopped at question ' + number + ': network problem. Check the question and start again.');
+    }
+    if (!result.saved) {
+      return stopAuto('Autosave stopped at question ' + number + ': '
+        + (saveError(result.html) || 'the server did not confirm the save (logged out?)')
+        + '. Fix it, then start again.');
+    }
+    if (queue.i >= queue.items.length) {
+      auto.running = false;
+      show();
+      $('ocr_status').innerHTML = 'Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.';
+      return;
+    }
+    renderProgress();
+    autoTimer = setTimeout(autoStep, 600);
+  }
+
+  function settleInPlace(entry, result, number) {
+    // Release the lock only when this request is the one this panel is holding;
+    // an abandoned request must not unlock a newer in-place save.
+    const owned = savingInPlace === entry;
+    if (owned) savingInPlace = null;
+    store.del('ocrSubmitted');
+    const total = queue.items.length;
+    if (result.saved && queue.i === entry.index) {
+      queue.i++;
+      save();
+      show();
+      $('ocr_status').innerHTML = owned
+        ? 'Saved question ' + number + ' of ' + total + ' using its answer key.'
+        : 'The save that was already in progress finished: question ' + number + ' is saved.';
+      return;
+    }
+    render();
+    $('ocr_status').innerHTML = owned
+      ? 'Question ' + number + ' was not saved: '
+        + (result.failed ? 'network problem' : (saveError(result.html) || 'the server did not confirm the save'))
+        + '. It stays queued.'
+      : 'The save that was already in progress did not confirm: question ' + number + ' stays queued.';
+  }
+
   function autoStep() {
     // A retired instance must never continue its timer chain after a reinjection.
     if (retired()) return;
@@ -275,54 +377,23 @@
     if (typeof fetch !== 'function' || typeof FormData !== 'function') {
       return stopAuto('Autosave needs a browser with fetch; save this question by hand.');
     }
-    const run = autoRun;
-    // Reuse an unanswered save for this same question from a stopped or replaced
-    // run instead of posting it again.
-    const request = pendingSave && pendingSave.index === queue.i ? pendingSave.request : postSave();
+    // Reuse an unanswered save for this same question and list from a stopped or
+    // replaced run instead of posting it again.
+    const reusable = pendingSave && !pendingSave.settled
+      && pendingSave.index === queue.i && pendingSave.batch === owner.batch;
+    const entry = reusable ? pendingSave : {
+      index: queue.i,
+      request: postSave(),
+      batch: owner.batch,
+      kind: 'auto',
+      settled: false
+    };
     pendingSave = null;
     auto.inFlight = true;
-    auto.request = request;
-    owner.inFlight = { index: queue.i, request };
+    auto.request = entry.request;
+    owner.inFlight = entry;
+    watchSave(entry);
     renderProgress();
-    request.then((result) => {
-      if (owner.inFlight && owner.inFlight.request === request) owner.inFlight = null;
-      if (retired() || !auto || run !== autoRun) return;
-      auto.inFlight = false;
-      auto.request = null;
-      const number = queue.i + 1;
-      if (result.saved) {
-        queue.i++;
-        save();
-      }
-      if (!auto.running) {
-        render();
-        // The stopped message replaces the generic line, not follows it, so the
-        // late answer reads as the stop result rather than a stray sentence.
-        $('ocr_status').innerHTML = result.failed
-          ? 'Autosave stopped at question ' + number + ': the save did not confirm. It stays queued.'
-          : result.saved
-            ? 'Autosave stopped at question ' + number + ': it had already saved, so it is marked done and will not be sent again.'
-            : 'Autosave stopped at question ' + number + ': '
-              + (saveError(result.html) || 'the server did not confirm the save') + '. It stays queued.';
-        return;
-      }
-      if (result.failed) {
-        return stopAuto('Autosave stopped at question ' + number + ': network problem. Check the question and start again.');
-      }
-      if (!result.saved) {
-        return stopAuto('Autosave stopped at question ' + number + ': '
-          + (saveError(result.html) || 'the server did not confirm the save (logged out?)')
-          + '. Fix it, then start again.');
-      }
-      if (queue.i >= queue.items.length) {
-        auto.running = false;
-        show();
-        $('ocr_status').innerHTML = 'Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.';
-        return;
-      }
-      renderProgress();
-      autoTimer = setTimeout(autoStep, 600);
-    });
   }
 
   function saveInPlace(event) {
@@ -340,41 +411,35 @@
       $('ocr_status').innerHTML = 'Every question in this list is already saved.';
       return;
     }
+    // A save for this exact question is already outstanding, from this panel or
+    // from the panel a second click replaced; posting now would save it twice.
+    const outstanding = owner.inFlight;
+    if (outstanding && !outstanding.settled
+      && outstanding.batch === owner.batch && outstanding.index === queue.i) {
+      $('ocr_status').innerHTML = 'A save for this question is already in progress; it will settle on its own.';
+      return;
+    }
     if (typeof fetch !== 'function' || typeof FormData !== 'function') {
       $('ocr_status').innerHTML = 'This browser cannot save without a page reload; save the question by hand.';
       return;
     }
     saveMeta();
-    savingInPlace = true;
     // The page helper may have already handled this submit before us, so drop
     // its reload marker; the queue advances here and must not advance again on
     // the next page load.
     store.del('ocrSubmitted');
-    const total = queue.items.length;
     const number = queue.i + 1;
-    const run = autoRun;
-    $('ocr_status').innerHTML = 'Saving question ' + number + ' of ' + total + '...';
-    const request = postSave();
-    owner.inFlight = { index: queue.i, request };
-    request.then((result) => {
-      if (owner.inFlight && owner.inFlight.request === request) owner.inFlight = null;
-      savingInPlace = false;
-      // A queue that was cleared, replaced, or skipped while this request was in
-      // flight must not be advanced or have its status overwritten by it.
-      if (retired() || run !== autoRun) return;
-      store.del('ocrSubmitted');
-      if (result.saved) {
-        queue.i++;
-        save();
-        show();
-        $('ocr_status').innerHTML = 'Saved question ' + number + ' of ' + total + ' using its answer key.';
-        return;
-      }
-      render();
-      $('ocr_status').innerHTML = 'Question ' + number + ' was not saved: '
-        + (result.failed ? 'network problem' : (saveError(result.html) || 'the server did not confirm the save'))
-        + '. It stays queued.';
-    });
+    $('ocr_status').innerHTML = 'Saving question ' + number + ' of ' + queue.items.length + '...';
+    const entry = {
+      index: queue.i,
+      request: postSave(),
+      batch: owner.batch,
+      kind: 'inplace',
+      settled: false
+    };
+    savingInPlace = entry;
+    owner.inFlight = entry;
+    watchSave(entry);
   }
 
   function fillForm(q) {
@@ -440,9 +505,8 @@
     saveMeta();
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
-    autoRun++;
     abandonInFlight();
-    savingInPlace = false;
+    savingInPlace = null;
     key = parsedKey;
     queue = { items, i: 0, how: parsed.sectionEvidence ? parsed.sectionEvidence.how : 'none' };
     if (parsedKeyCount) store.set('ansKey', key);
@@ -463,9 +527,8 @@
   $('ocr_skip').onclick = () => {
     // Skipping invalidates this run: a hanging save must not advance the queue a
     // second time, so its continuation is dropped before the index moves.
-    autoRun++;
     abandonInFlight();
-    savingInPlace = false;
+    savingInPlace = null;
     if (auto) {
       auto.running = false;
       auto.inFlight = false;
@@ -486,7 +549,6 @@
     if (problems.length) return alert('Dry run found problems:\n- ' + problems.join('\n- '));
     if (queue.i >= queue.items.length) return alert('Every question in this list is already saved.');
     auto.running = true;
-    autoRun++;
     show();
     autoStep();
   };
@@ -494,9 +556,8 @@
     queue = { items: [], i: 0 };
     key = {};
     auto = null;
-    autoRun++;
     abandonInFlight();
-    savingInPlace = false;
+    savingInPlace = null;
     if (autoTimer && typeof clearTimeout === 'function') clearTimeout(autoTimer);
     autoTimer = null;
     paste.del();
@@ -519,7 +580,7 @@
   // so an intercepted native submit cannot advance that queue twice.
   const failed = document.querySelector('.admin-error');
   failed ? render() : show();
-  if (inherited) {
+  if (pendingSave && !pendingSave.settled) {
     $('ocr_status').innerHTML += ' A save was already in progress; Start autosave attaches to it instead of posting again.';
   }
 })();
