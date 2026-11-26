@@ -1822,3 +1822,24 @@ contract prevents that ambiguity from recurring.
 must never be surfaced by the root helper. Dropping a line is safe only when it
 is genuinely out of scope; ordinary continuation prose must still stay with its
 question.
+
+## D-110 — One parser source, and a `%HH` build guard
+
+**Choice.** `src/parser/core.js` is the only parser implementation. The stimulus
+bookmarklet inlines that exact core plus `src/bookmarklets/stimulus/autosave.js`
+and `src/ui/ui.js`; the key bookmarklet keeps inlining the same core; Node
+callers reach it through the thin `src/parser/parser.js` facade. Both builds
+refuse only a percent-escape (`%HH`) instead of every literal `%`, and both
+accept `--check` to fail on stale tracked output.
+
+**Why.** The canonical core contains one modulo, `out.length % 8` in
+`expandTabs`, so the old "no `%` at all" rule would have blocked building the
+stimulus product from the core and pressured a byte change to a review-settled
+parser. A bare `%` is not decoded by bookmark managers; only `%HH` is, which the
+key build already refused while shipping that same modulo. Keeping core bytes
+intact preserves the single-source evidence and the `2.5.4` parser version.
+
+**Risk.** A future source string containing a real `%HH` sequence must be escaped
+or written differently; the guard refuses it. Installability of the larger
+(now core-sized) stimulus artifact must be checked in a real browser, not
+inferred from the build passing.

@@ -24,10 +24,11 @@ the same implementation. It exports:
 - Browser & Node compatibility: Works in Node (`module.exports`) and Browser (`window.OCRParser`).
 - Zero dependencies: No DOM, storage (`localStorage`), fetch, or UI/form references.
 
-`src/parser/parser.js` re-exports the canonical parser core for backward
-compatibility with the legacy bookmarklet and auto-save test harnesses. Its
-inlined browser copy of the parser remains a legacy artifact and is not part of
-the production delivery path.
+`src/parser/parser.js` is a thin Node compatibility facade: it exports the exact
+core identities plus the named stimulus autosave helpers from
+`src/bookmarklets/stimulus/autosave.js`, and defines no parser logic. The
+stimulus bookmarklet inlines the canonical core, that autosave module, and
+`src/ui/ui.js`; the facade is never inlined into a generated product.
 
 Root `ocr_helper.js` is a thin adapter: Node resolves the core through
 `require`, the browser reads `window.OCRParser`, and the adapter owns only
@@ -184,14 +185,16 @@ deliverable.
    keeps `ocrBatchHistory`; it is display-only and must never block a save.
 5. **Edit modules, not the build output.** `src/bookmarklet.js` and
    `src/bookmarklets/key/bookmarklet.js` are generated. Change
-   `src/parser/parser.js` + `src/ui/ui.js`, or
-   `src/bookmarklets/key/boot.js` + `entry.js`, then rebuild the matching
-   artifact. `src/bookmarklet.min.js` is an untracked local artifact; do not
+   `src/parser/core.js` + `src/bookmarklets/stimulus/autosave.js` +
+   `src/ui/ui.js`, or `src/bookmarklets/key/boot.js` + `entry.js`, then rebuild
+   the matching artifact. `src/parser/parser.js` is only a Node facade and is
+   never inlined. `src/bookmarklet.min.js` is an untracked local artifact; do not
    edit, rely on, or rebuild it.
-6. **The bookmarklet is a single line with no comments and no `%`.** Full-line
+6. **The bookmarklet is a single line with no comments and no `%HH`.** Full-line
    `//` comments are allowed in the modules and stripped by `build.js`; inline
    `//` comments remain forbidden (INV-05). The build fails if the output
-   contains `%`, because a bookmark manager may decode it.
+   contains a `%HH` percent-escape, because a bookmark manager may decode it
+   (D-110; a bare `%` is allowed).
 7. **Preserve behavior even when it looks wrong.** E/F→D, the +5 numbering
    guard, flags being advisory, and the absent post-processor are deliberate.
    Fix only with a failing fixture and a documented decision.
@@ -329,6 +332,7 @@ node tests/key-bookmarklet.js
 node tests/underline-toolbar.js
 node tests/question-preview.js
 node tests/math-tool.js
+node tests/single-source.js
 node tools/extract-bank.js --check
 php tests/php-render.php
 php tests/admin-question-store.php
@@ -388,8 +392,8 @@ node src/build/build.js
 node src/bookmarklets/key/build.js
 ```
 
-The first reads `src/parser/parser.js` and `src/ui/ui.js` and writes
-`src/bookmarklet.js`, the stimulus bookmarklet. The second reads
+The first reads `src/parser/core.js`, `src/bookmarklets/stimulus/autosave.js`,
+and `src/ui/ui.js` and writes `src/bookmarklet.js`, the stimulus bookmarklet. The second reads
 `src/parser/core.js`, `src/bookmarklets/key/boot.js`, and
 `src/bookmarklets/key/entry.js` and writes
 `src/bookmarklets/key/bookmarklet.js`, the key/autosave bookmarklet. Both wrap

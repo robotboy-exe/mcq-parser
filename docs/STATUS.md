@@ -67,8 +67,28 @@ Last updated: 2026-11-26.
   is review-settled and `done`. The package was fast-forward merged into
   `scratch/parser-convergence-cycle` from `bb78c57` to `e6f34f8` (product tree
   byte-identical to the reviewed candidate `cc72e3b`), and
-  `scratch/pc02-single-parser-source` is cut from that tip. PC02 is
-  `not started`; its Gate 1 is the next step and no implementation has begun.
+  `scratch/pc02-single-parser-source` is cut from that tip.
+- PC02 implementation (2026-11-26, package base `0279e70`): `src/parser/core.js`
+  is the only parser source. `src/parser/parser.js` is a 7-line Node
+  compatibility facade over the exact core identities plus named stimulus
+  helpers; its 592-line autosave/saved-log/classification block moved verbatim
+  to `src/bookmarklets/stimulus/autosave.js` (592 L / 24,853 B). The stimulus
+  build now inlines `core.js` + that module + `src/ui/ui.js`, both builds accept
+  `--check` and exit non-zero on stale output, and the build `%` guard narrowed
+  from "no `%`" to "no `%HH`" (D-110) because `expandTabs` contains
+  `out.length % 8`. Core bytes are unchanged (1,733 L / 60,722 B,
+  `c9ac52b3…`); `src/bookmarklet.js` is 1 L / 131,268 B and the key artifact is
+  unchanged at 1 L / 71,422 B. New `tests/single-source.js` passes 15 checks:
+  static second-source scan, core/facade identity, helper ownership,
+  one-current-core artifact checks, `%HH` absence, `--check`, and real-artifact
+  `vm` parity with `core.js` on `bank-2021`. Baseline green on Node v24.22.1
+  (68 runner, 173 unit, 38 helper, 42 key, 10 underline, 7 preview, 26
+  math-tool, 69 render-markup, 7 bank hashes) and PHP 8.3.37 (33 renderer, 8
+  store, 14 ordering, 7/7 lint). A Cloud Chromium probe on the real
+  `admin_questions.php` staging page executed both generated artifacts from
+  `javascript:` links (131,202 and 71,375 chars), mounted each product panel,
+  and loaded a two-question paste into the native form. Brave installability is
+  not yet evidenced. PC02 is `in progress` until its rigorous review settles.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

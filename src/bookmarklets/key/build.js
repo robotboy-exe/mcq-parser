@@ -9,6 +9,7 @@ const sources = [
   path.join(here, 'entry.js')
 ];
 const outPath = path.join(here, 'bookmarklet.js');
+const checkOnly = process.argv.includes('--check');
 
 function stripLineComments(text) {
   return text.split(/\r?\n/)
@@ -39,6 +40,15 @@ if (/%[0-9A-Fa-f]{2}/.test(bookmarklet)) {
 
 new Function(body);
 
-fs.writeFileSync(outPath, bookmarklet + '\n');
-console.log('Wrote ' + outPath + ' (' + bookmarklet.length + ' chars, '
-  + Buffer.byteLength(bookmarklet, 'utf8') + ' bytes)');
+if (checkOnly) {
+  const current = fs.existsSync(outPath) ? fs.readFileSync(outPath, 'utf8') : '';
+  if (current !== bookmarklet + '\n') {
+    throw new Error('stale build: ' + outPath + ' does not match its sources; rebuild it');
+  }
+  console.log('Current: ' + outPath + ' matches its sources ('
+    + Buffer.byteLength(bookmarklet, 'utf8') + ' bytes)');
+} else {
+  fs.writeFileSync(outPath, bookmarklet + '\n');
+  console.log('Wrote ' + outPath + ' (' + bookmarklet.length + ' chars, '
+    + Buffer.byteLength(bookmarklet, 'utf8') + ' bytes)');
+}

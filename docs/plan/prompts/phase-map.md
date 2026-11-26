@@ -15,12 +15,12 @@ Updated: 2026-11-26
 | 5 | `PC05` — `parser-convergence/pc-05-stimulus-boundaries.md` |
 | 6 | `PC06` — `parser-convergence/pc-06-bookmarklet-policy-release.md` |
 
-Current gate: PC01 is `done`. The 2026-11-26 re-review 3 of candidate `cc72e3b`
-returned `PASS` with no new findings, closing `BLOCK-5`/`FIX-4`; every
-`BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` is closed. `scratch/pc01-product-separation`
-is merged into `scratch/parser-convergence-cycle`, and
-`scratch/pc02-single-parser-source` is cut from that tip. PC02 is `not started`:
-phase 2 Gate 1 is the next step. No deploy or live action is authorized.
+Current gate: PC01 is `done` and merged into
+`scratch/parser-convergence-cycle`. PC02 is `in progress`: its candidate is
+implemented on `scratch/pc02-single-parser-source` from base `0279e70` with one
+parser source, current generated products, 15 single-source guards, and a green
+Node/PHP baseline, and it awaits rigorous review. Brave installability is not
+yet evidenced. No deploy or live action is authorized.
 
 ## Starting a new cycle
 

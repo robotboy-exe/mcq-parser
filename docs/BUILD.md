@@ -3,7 +3,8 @@
 There are two tracked builds, one per bookmarklet product.
 
 - `src/build/build.js` generates `src/bookmarklet.js`, the stimulus/image
-  bookmarklet, from `src/parser/parser.js` and `src/ui/ui.js`.
+  bookmarklet, from `src/parser/core.js`,
+  `src/bookmarklets/stimulus/autosave.js`, and `src/ui/ui.js`.
 - `src/bookmarklets/key/build.js` generates
   `src/bookmarklets/key/bookmarklet.js`, the key/autosave bookmarklet, from
   `src/parser/core.js`, `src/bookmarklets/key/boot.js`, and
@@ -19,8 +20,9 @@ no package.json, bundler, transpiler, or external dependency in this workspace.
 
 - Node.js (any version that supports `const`, `let`, `Set`, `Buffer`, and
   `new Function`; a current LTS release is fine).
-- The two source modules present:
-  - `src/parser/parser.js`
+- The three source modules present:
+  - `src/parser/core.js`
+  - `src/bookmarklets/stimulus/autosave.js`
   - `src/ui/ui.js`
 
 ## Build process
@@ -34,11 +36,13 @@ node src/build/build.js
 `src/build/build.js`:
 
 1. Resolves the project root as the parent of `src/build/`.
-2. Reads `src/parser/parser.js` and `src/ui/ui.js` as UTF-8 strings.
+2. Reads `src/parser/core.js`, `src/bookmarklets/stimulus/autosave.js`, and
+   `src/ui/ui.js` as UTF-8 strings.
 3. Drops full-line `//` comments from each module (lines whose first
    non-whitespace characters are `//`).
 4. Concatenates, in this order:
-   - parser module,
+   - canonical core module,
+   - stimulus autosave helpers,
    - UI module,
    - the call `runOCRBookmarklet();`.
 5. Splits the result on line endings, trims each line, drops empty lines, and
@@ -50,9 +54,12 @@ node src/build/build.js
    javascript:(function(){try{<body>}catch(e){alert('Bookmarklet Error: '+e.message);}})();
    ```
 
-8. Refuses to write if the result contains `%`.
+8. Refuses to write if the result contains a percent-escape (`%` followed by two
+   hex digits), which a bookmark manager may decode. A bare `%` is allowed
+   because the canonical core's `expandTabs` contains `out.length % 8` (D-110).
 9. Writes `src/bookmarklet.js` with a trailing newline and prints its character
-   and UTF-8 byte counts.
+   and UTF-8 byte counts. With `--check` it writes nothing, compares the
+   generated string with the tracked artifact, and exits non-zero when stale.
 
 The script still accepts `--min` for local experiments, but the minified output
 is untracked and is not part of the workspace contract. Do not use it for
@@ -74,7 +81,8 @@ syntax check, and one-line wrapper as `src/build/build.js`, but concatenates
 `src/bookmarklets/key/bookmarklet.js`. It refuses output containing a
 percent-escape (`%` followed by two hex digits), which a bookmark manager may
 decode. It is deterministic: rebuilding an unchanged source tree reproduces the
-same bytes.
+same bytes, and `--check` writes nothing while exiting non-zero when the tracked
+artifact no longer matches its sources.
 
 `src/bookmarklets/key/boot.js` runs first and removes the deployed page
 helper's panel and error banner so the injected panel owns every element id.
@@ -91,6 +99,7 @@ Verify:
 ```sh
 wc -l src/bookmarklets/key/bookmarklet.js
 node tests/key-bookmarklet.js
+node tests/single-source.js
 ```
 
 The first must print `1`; the second runs the real generated artifact.
@@ -101,8 +110,8 @@ A bookmarklet runs from a `javascript:` URL and must be one line. The parser and
 UI are maintained as readable multi-line files, so the build squashes them.
 Full-line `//` comments are allowed in the sources and stripped before
 flattening; an inline `//` would still truncate the URL (INV-05). The build also
-fails if the finished bookmarklet contains `%`, which a bookmark manager may
-decode.
+fails if the finished bookmarklet contains a `%HH` percent-escape, which a
+bookmark manager may decode.
 
 Do not add multi-line string/template literals whose meaning depends on leading
 or trailing whitespace: the build trims every line. The current template
@@ -137,7 +146,11 @@ sets it for `.admin-field textarea`.
 
 ## Source of truth
 
-- `src/parser/parser.js` — pure parsing functions and regexes.
+- `src/parser/core.js` — the canonical parser used by all three products.
+- `src/bookmarklets/stimulus/autosave.js` — stimulus autosave, saved-log, and
+  save-classification helpers (product policy, not parsing).
+- `src/parser/parser.js` — thin Node compatibility facade over the core plus
+  those helpers; no parser logic of its own.
 - `src/ui/ui.js` — DOM, form fill, queue, storage, submit.
 - `src/build/build.js` — assembler and legacy local minifier.
 - `src/bookmarklet.js` — generated stimulus build; do not edit by hand.

@@ -2,11 +2,13 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const parserPath = path.join(root, 'parser', 'parser.js');
+const corePath = path.join(root, 'parser', 'core.js');
+const autosavePath = path.join(root, 'bookmarklets', 'stimulus', 'autosave.js');
 const uiPath = path.join(root, 'ui', 'ui.js');
 const outPath = path.join(root, 'bookmarklet.js');
 const minOutPath = path.join(root, 'bookmarklet.min.js');
 const buildMin = process.argv.includes('--min');
+const checkOnly = process.argv.includes('--check');
 
 const MAX_BOOKMARKLET_BYTES = 65536;
 
@@ -216,10 +218,11 @@ function minify(source) {
   return out.join('');
 }
 
-const parser = stripLineComments(fs.readFileSync(parserPath, 'utf8'));
+const core = stripLineComments(fs.readFileSync(corePath, 'utf8'));
+const autosave = stripLineComments(fs.readFileSync(autosavePath, 'utf8'));
 const ui = stripLineComments(fs.readFileSync(uiPath, 'utf8'));
 
-const body = [parser, ui, 'runOCRBookmarklet();']
+const body = [core, autosave, ui, 'runOCRBookmarklet();']
   .join('\n')
   .split(/\r?\n/)
   .map(line => line.trim())
@@ -240,12 +243,23 @@ function wrap(script) {
 
 const bookmarklet = wrap(body);
 
-if (bookmarklet.indexOf('%') !== -1) {
-  throw new Error('bookmarklet contains %, which can be decoded by a bookmark manager; remove the literal');
+// The canonical core contains one modulo operator (`out.length % 8`). Only a
+// percent-escape is decoded by a bookmark manager, so refuse `%HH` like the key
+// build does rather than refusing every literal percent.
+if (/%[0-9A-Fa-f]{2}/.test(bookmarklet)) {
+  throw new Error('bookmarklet contains a percent-escape, which a bookmark manager may decode; remove it');
 }
 
-fs.writeFileSync(outPath, bookmarklet + '\n');
-console.log('Wrote ' + outPath + ' (' + bookmarklet.length + ' chars, ' + Buffer.byteLength(bookmarklet, 'utf8') + ' bytes)');
+if (checkOnly) {
+  const current = fs.existsSync(outPath) ? fs.readFileSync(outPath, 'utf8') : '';
+  if (current !== bookmarklet + '\n') {
+    throw new Error('stale build: ' + outPath + ' does not match its sources; rebuild it');
+  }
+  console.log('Current: ' + outPath + ' matches its sources (' + Buffer.byteLength(bookmarklet, 'utf8') + ' bytes)');
+} else {
+  fs.writeFileSync(outPath, bookmarklet + '\n');
+  console.log('Wrote ' + outPath + ' (' + bookmarklet.length + ' chars, ' + Buffer.byteLength(bookmarklet, 'utf8') + ' bytes)');
+}
 
 if (buildMin) {
   const minBookmarklet = wrap(minBody);

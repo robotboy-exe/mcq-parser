@@ -24,17 +24,23 @@ Last updated: 2026-11-26.
   stimulus baseline `d5a62f0`; and the key/main scratch merge at `793cb8f`.
   The pre-package `scratch/single-core-port` diff and its external backup are
   quarantined exploration, not package evidence or a cherry-pick source.
-- Current package: PC02, `not started`. PC01 is `done` and review-settled: the
+- Current package: PC02, `in progress`. PC01 is `done` and review-settled: the
   2026-11-26 re-review 3 of candidate `cc72e3b`
   ([record](reviews/parser-convergence-2026-11-phase-1-re-review-3.md)) returned
   `PASS` with no new findings, closing `BLOCK-5` and `FIX-4`, so every
   `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` is closed. `scratch/pc01-product-separation`
   was fast-forward merged into `scratch/parser-convergence-cycle` from `bb78c57`
   to `e6f34f8`; the product tree is byte-identical to the reviewed candidate
-  `cc72e3b`, and `scratch/pc02-single-parser-source` is cut from that tip. The
-  recorded baseline is green: Node v24.22.1 (68 runner, 173 unit, 38 helper, 42
-  key vectors, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank
-  hashes) and PHP 8.3.32 (33 renderer, 8 store, 14 ordering, 7/7 `php -l`).
+  `cc72e3b`, and `scratch/pc02-single-parser-source` is cut from the reconciled
+  tip `0279e70` (package base). PC02 is implemented on that branch:
+  `src/parser/core.js` is the only parser source, `src/parser/parser.js` is a
+  7-line Node facade, the autosave/saved-log helpers moved to
+  `src/bookmarklets/stimulus/autosave.js`, the stimulus build inlines the core,
+  both builds accept `--check`, and the `%` guard narrowed to `%HH` under D-110.
+  New `tests/single-source.js` passes 15 checks and the full Node/PHP baseline
+  is green; a Cloud Chromium probe ran both generated artifacts on the real
+  staging admin page. Brave installability is still unevidenced. The package
+  stays `in progress` until its rigorous review settles.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -348,7 +354,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
 | 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings, closing `BLOCK-5`/`FIX-4`; every `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed; merged into `scratch/parser-convergence-cycle` at `e6f34f8` | disposable browser; no deploy/live |
-| 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | not started; `scratch/pc02-single-parser-source` cut from cycle tip `e6f34f8`, Gate 1 pending | desktop and Brave bookmarklet installability |
+| 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | in progress; implemented on `scratch/pc02-single-parser-source` from base `0279e70`; 15 guard checks and the full Node/PHP baseline pass; awaiting rigorous review | desktop and Brave bookmarklet installability |
 | 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | not started | none; parser and real-surface evidence |
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
 | 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | not started | none; prior BLOCK controls mandatory |
@@ -425,7 +431,7 @@ verifies the detail path with the rest of Release A.
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
 | phase 1 | PC01 product separation | rigorous | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings (`BLOCK-5`/`FIX-4` closed, all `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed); merged into the scratch cycle line at `e6f34f8` |
-| phase 2 | PC02 one parser source and build parity | rigorous | not started; Gate 1 pending on `scratch/pc02-single-parser-source` cut from cycle tip `e6f34f8` |
+| phase 2 | PC02 one parser source and build parity | rigorous | in progress; candidate on `scratch/pc02-single-parser-source` from base `0279e70`, full baseline and 15 guard checks green, Chromium staging probe passed; Brave installability unevidenced; awaiting rigorous review |
 | phase 3 | PC03 spaced initialisms | rigorous | blocked by PC02 review |
 | phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
 | phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | blocked by PC04 review |
@@ -453,20 +459,20 @@ verifies the detail path with the rest of Release A.
 7. **Owner decision after review** — only after every finding settles, decide
    whether and how to integrate the reviewed scratch cycle into real branches.
 
-Current workflow stop: PC01 is `done` and review-settled. The 2026-11-26
-re-review 3 of candidate `cc72e3b`
-([record](reviews/parser-convergence-2026-11-phase-1-re-review-3.md)) returned
-`PASS`, closing `BLOCK-5` and `FIX-4` with no new findings, so every
-`BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` is closed. `scratch/pc01-product-separation`
-was fast-forward merged into `scratch/parser-convergence-cycle` from `bb78c57` to
-`e6f34f8` (product tree byte-identical to the reviewed candidate `cc72e3b`), and
-`scratch/pc02-single-parser-source` was cut from that tip. The recorded baseline
-is green: Node v24.22.1 (68 runner, 173 unit, 38 helper, 42 key vectors, 10
-underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes) and PHP
-8.3.32 static CLI (33 renderer, 8 store, 14 ordering, 7/7 `php -l`). PC02 Gate 1
-has not started; it must measure both generated bookmarklet sizes, freeze one
-percent/`%HH` build approach, and re-run the full Node/PHP baseline before any
-implementation. No deploy or live action is authorized.
+Current workflow stop: PC02 is implemented on
+`scratch/pc02-single-parser-source` from package base `0279e70` and awaits its
+rigorous review. `src/parser/core.js` is now the only parser source; the
+stimulus build inlines it with `src/bookmarklets/stimulus/autosave.js` and
+`src/ui/ui.js`, and `src/parser/parser.js` is a 7-line Node facade over the exact
+core identities. Both builds accept `--check` for stale output, and the build
+`%` guard narrowed to `%HH` under D-110 with core bytes unchanged. Evidence:
+15 `tests/single-source.js` checks, the full Node baseline (68 runner, 173 unit,
+38 helper, 42 key, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 7
+bank hashes) and the PHP 8.3.37 baseline (33 renderer, 8 store, 14 ordering,
+7/7 lint), plus a Cloud Chromium run of both generated artifacts on the real
+staging `admin_questions.php`. Brave installability remains unevidenced, and PC02
+stays `in progress` until review settles it. No commit, merge, deploy, or live
+action is authorized beyond the requested branch push.
 
 ## Archived `math-editor-2026-11` close path
 
