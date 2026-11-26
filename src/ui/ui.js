@@ -19,6 +19,7 @@ function runOCRBookmarklet() {
   if (typeof form.__ocrStimulusCleanup === 'function') form.__ocrStimulusCleanup();
   const owner = form.__ocrStimulusOwner || (form.__ocrStimulusOwner = { gen: 0, inFlight: null });
   const myGen = owner.gen;
+  const isCurrentGen = () => myGen === owner.gen;
   const hadServerError = Boolean(document.querySelector('.admin-error'));
   const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   const $ = id => document.getElementById(id);
@@ -262,7 +263,7 @@ function runOCRBookmarklet() {
   const planRowFor = num => imagePlanCtrl.planRowFor(num);
   const questionImagePauseReason = q => imagePlanCtrl.questionImagePauseReason(q);
   const clearImagePlan = () => imagePlanCtrl.clear();
-  const renderImagePlan = () => imagePlanCtrl.render($('ocr_image_plan'));
+  const renderImagePlan = () => { if (isCurrentGen()) imagePlanCtrl.render($('ocr_image_plan')); };
   function missingTextItem() {
     const pending = queue.items.slice(Number.isInteger(queue.i) && queue.i > 0 ? queue.i : 0);
     return pending.find(item => item && Array.isArray(item.flags) && item.flags.includes(MISSING_TEXT_FLAG)) || null;
@@ -538,7 +539,7 @@ function runOCRBookmarklet() {
     renderLiveProgress();
   }
   function renderAuto() {
-    if (!$('ocr_live_status')) return;
+    if (!isCurrentGen() || !$('ocr_live_status')) return;
     const modeBox = $('ocr_active_mode');
     if (modeBox) {
       modeBox.disabled = anyRunning();
@@ -616,6 +617,7 @@ function runOCRBookmarklet() {
     liveState = 'blocked';
   }
   function setResult(text, danger, diag) {
+    if (!isCurrentGen()) return;
     const r = $('ans_res');
     if (!r) return;
     r.textContent = text;
@@ -686,6 +688,7 @@ function runOCRBookmarklet() {
     busyNotice
   });
   function renderOCR() {
+    if (!isCurrentGen()) return;
     const q = queue.items[queue.i];
     const active = queue.items.length > 0;
     $('ocr_input').hidden = q !== undefined;
@@ -699,11 +702,16 @@ function runOCRBookmarklet() {
     renderAuto();
   }
   function showOCR(auto) {
+    if (!isCurrentGen()) return;
     if (queue.items[queue.i]) fillForm(queue.items[queue.i], auto);
     renderOCR();
   }
   function copyText(text) {
-    const done = () => { if (liveState === 'idle') liveStatus = 'Saved list copied.'; renderAuto(); };
+    const done = () => {
+      if (!isCurrentGen()) return;
+      if (liveState === 'idle') liveStatus = 'Saved list copied.';
+      renderAuto();
+    };
     const fallback = () => {
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -732,6 +740,7 @@ function runOCRBookmarklet() {
     dryTotal = Math.max(0, dq.items.length - dq.i);
     renderAuto();
     while (true) {
+      if (!isCurrentGen()) { dryRunning = false; return; }
       const q = dq.items[dq.i];
       if (!q) break;
       if (dryStop) {
@@ -786,6 +795,7 @@ function runOCRBookmarklet() {
     }
     dryRunning = false;
     dryStop = false;
+    if (!isCurrentGen()) return;
     dryStamp = dryState === 'stale' ? null : JSON.stringify({
       batchId: queue.batchId || '',
       i: queue.i,
@@ -846,6 +856,7 @@ function runOCRBookmarklet() {
     } finally {
       liveRunning = false;
       releaseLock();
+      if (!isCurrentGen()) return;
       if (runToken === liveToken && (liveState === 'running' || liveState === 'stopping')) {
         liveState = 'blocked';
         liveBlocked = 'The run stopped after an unexpected error. Check the list before starting again.';
@@ -1135,9 +1146,11 @@ function runOCRBookmarklet() {
     if (b) b.disabled = true;
     setResult('Saving...', false);
     saveFlight.saveCurrentQuestion({ auto: false }).then(() => {
+      if (!isCurrentGen()) return;
       if (b && !saveFlight.isBusy()) b.disabled = false;
       renderAuto();
     }).catch(() => {
+      if (!isCurrentGen()) return;
       if (b && !saveFlight.isBusy()) b.disabled = false;
       renderAuto();
     });
@@ -1165,13 +1178,15 @@ function runOCRBookmarklet() {
   syncLiveStateFromStorage();
   hadServerError ? renderOCR() : showOCR();
   tick();
-  saveFlight.attachObserver(sb, myGen, outcome => {
+  const adopted = saveFlight.attachObserver(sb, myGen, outcome => {
+    if (!isCurrentGen()) return;
     queue = normalizeStoredQueue(store.get('ocrQueue'));
     const nextLog = store.get('ocrSavedLog');
     savedLog = Array.isArray(nextLog) ? nextLog : [];
     const nextHist = store.get('ocrBatchHistory');
     batchHistory = Array.isArray(nextHist) ? nextHist : [];
     syncLiveStateFromStorage();
+    clearConfirm();
     if (outcome && outcome.clearFields) {
       saveFlight.clearFormTransientFields();
       saveMeta();
@@ -1193,4 +1208,8 @@ function runOCRBookmarklet() {
     }
     renderAuto();
   });
+  if (adopted) {
+    clearConfirm();
+    renderAuto();
+  }
 }

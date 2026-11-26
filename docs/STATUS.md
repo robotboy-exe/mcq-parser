@@ -11,28 +11,26 @@ Last updated: 2026-11-26.
   and review-settled. Unfinished `PC04`–`PC06` are superseded by Phase 7
   (`PC07`, approved at Gate 1 on 2026-11-26); carried `PC04` findings
   `BLOCK-10` and `BLOCK-11` are **closed** by Phase 7 review (`5711f96`).
-- PC07 Phase 7 fix session (`BLOCK-12`–`BLOCK-22`, 2026-11-26, package base
-  `9afe4f8`, reconciled donor snapshot `ed96b11` SHA-256 `dcde1c25…`, branch
-  `scratch/pc07-stimulus-first`, Gate 1 `go, approve D1 D2 D3 D4 D5`): converged
-  on two supported surfaces over canonical `src/parser/core.js` (`2.5.8`,
-  `2,337 L / 86,964 B`, SHA-256 `cf55f296…`) — deployed manual helper
-  (`ocr_helper.js` `127 L / 4,917 B`, `ed3c6f29…`, `EXPECTED_CORE_VERSION =
-  '2.5.8'`, `+51/-45` live-origin) loaded by `deployed/admin_questions.php`
-  (`1,057 L / 62,878 B`, `06019285…`, `?v=2.5.8`/`?v=2.4.11`, `+96/-85`
-  live-origin), and ONE supported stimulus-first bookmarklet (`src/bookmarklet.js`,
-  `1 L / 170,678 B`, `9d42d5be…`) built from `core.js` +
-  `src/bookmarklets/stimulus/{autosave,image-plan,save-flight}.js` +
-  `src/ui/ui.js` (`1,196 L / 50,830 B`). Retained
+- PC07 Phase 7 fix session 2 (`BLOCK-15`, `BLOCK-21`, `BLOCK-23`, 2026-11-26,
+  package base `9afe4f8`, reconciled donor snapshot `ed96b11` SHA-256
+  `dcde1c25…`, branch `scratch/pc07-stimulus-first`, Gate 1 `go, approve D1 D2`,
+  `Commit: deferred`): Phase 7 re-review (`cf64cd1`) closed `BLOCK-12`–`BLOCK-14`,
+  `BLOCK-16`–`BLOCK-20`, and `BLOCK-22`; session 2 adds `built: true` partial/ordered
+  bulk regressions (`BLOCK-15`), records the owner-confirmed acceptance matrix
+  and donor/comparator outcome mapping (`BLOCK-21`), and guards retired
+  `src/ui/ui.js` (`1,215 L / 51,399 B`, `b26efcb7…`) closures with
+  `isCurrentGen()` + `clearConfirm()` on adoption (`BLOCK-23`), rebuilding
+  `src/bookmarklet.js` (`1 L / 171,163 B`, `9b42107e…`). Retained
   `src/bookmarklets/key/bookmarklet.js` (`1 L / 94,131 B`, `b482ec78…`,
   `EXPECTED_CORE_VERSION = '2.5.8'`) strictly as comparator and rollback
   reference (`9afe4f8:src/bookmarklets/key/bookmarklet.js`) pending Phase 7
   re-review, desktop + owner Brave/Android checks, and a separate reviewed
-  retirement diff. Full Node and PHP 8.3.32 / 8.5.12 suites pass (77 runner, 196
+  retirement diff. Full Node and PHP 8.3.32 / 8.5.12 suites pass (77 runner, 197
   unit, 42 helper, 43 key comparator, 15 single-source, 10 underline, 7 preview,
   26 math-tool, 69 JS + 33 PHP marker, 8 store, 14 ordering, 7/7 lint, 7 bank
-  hashes), and disposable Chromium + PHP/SQLite staging verified `BLOCK-12`–`BLOCK-20`
-  plus controls and 3-surface parity (`#102`–`#112`, 0 `pageErrors`). Awaiting
-  independent Phase 7 re-review.
+  hashes), and disposable Chromium + PHP/SQLite staging verified `BLOCK-15`,
+  `BLOCK-23`, and `BLOCK-13` controls (`#116`–`#129`, HTTP GET PNG SHA-256s, 0
+  `pageErrors`). Awaiting independent Phase 7 re-review.
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /

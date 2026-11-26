@@ -3197,6 +3197,227 @@ testAsync('Real generated stimulus bookmarklet artifact passes BLOCK-12 to BLOCK
   b18Built.setPaste('Answer Key\n1. D');
   b18Built.click('ocr_load');
   eq(b18Built.doc.radios[3].checked, true);
+
+  // BLOCK-15: real generated stimulus artifact partial bulk + ordered 2-file control
+  const b15Paste = [
+    '1. First built bulk stem?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '[image: 2]',
+    '',
+    '2. Second built bulk target?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '[image: 3]',
+    '',
+    '3. Third built bulk target?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '=== ANSWER KEY ===',
+    '1. A',
+    '2. B',
+    '3. C'
+  ].join('\n');
+  const b15Built = uiHarness.createUI({
+    built: true,
+    inactiveChecked: true,
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 720)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 721)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 722)' }
+    ]
+  });
+  b15Built.setPaste(b15Paste);
+  b15Built.click('ocr_load');
+  chooseImage(b15Built, 'ocr_img_file_1', fakeImage('pc07-stale-not-attached.png', 111));
+  b15Built.doc.getElementById('ocr_img_bulk_files').files = [fakeImage('pc07-bulk-picked.png', 222)];
+  b15Built.click('ocr_img_bulk');
+  eq(b15Built.doc.getElementById('ocr_img_status_0').textContent, 'Ready', 'built artifact: first block ready from bulk pick');
+  eq(b15Built.doc.getElementById('ocr_img_status_1').textContent, 'No image', 'built artifact: omitted second block stays No image');
+  await waitFor(() => b15Built.doc.getElementById('ocr_dry_status').textContent.indexOf('PAUSED') === 0, 'built artifact: dry pauses at Q3');
+  await b15Built.click('ocr_auto_start');
+  await waitFor(() => b15Built.doc.getElementById('ocr_live_status').textContent.indexOf('PAUSED (IMAGE)') === 0, 'built artifact: live pauses at Q3');
+  eq(b15Built.posts.length, 2, 'built artifact: 0 Q3 POSTs before explicit Attach');
+  eq(b15Built.posts[1].body.get('question_image').name, 'pc07-bulk-picked.png', 'built artifact: Q2 uses bulk-picked PNG');
+
+  b15Built.click('ocr_img_attach_1');
+  await b15Built.flush();
+  eq(b15Built.doc.getElementById('ocr_img_status_1').textContent, 'Ready', 'built artifact: explicit Attach makes block 2 Ready');
+  await b15Built.click('ocr_auto_start');
+  await waitFor(() => b15Built.doc.getElementById('ocr_live_status').textContent.indexOf('COMPLETE') === 0, 'built artifact: resumes and saves Q3');
+  eq(b15Built.posts.length, 3, 'built artifact: Q3 posted after explicit Attach');
+  eq(b15Built.posts[2].body.get('question_image').name, 'pc07-stale-not-attached.png', 'built artifact: Q3 uses explicitly attached PNG');
+
+  const b15OrderedBuilt = uiHarness.createUI({
+    built: true,
+    inactiveChecked: true,
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 730)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 731)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 732)' }
+    ]
+  });
+  b15OrderedBuilt.setPaste(b15Paste);
+  b15OrderedBuilt.click('ocr_load');
+  b15OrderedBuilt.doc.getElementById('ocr_img_bulk_files').files = [
+    fakeImage('bulk-1.png', 101),
+    fakeImage('bulk-2.png', 202)
+  ];
+  b15OrderedBuilt.click('ocr_img_bulk');
+  eq(b15OrderedBuilt.doc.getElementById('ocr_img_status_0').textContent, 'Ready', 'built artifact: ordered bulk block 0 Ready');
+  eq(b15OrderedBuilt.doc.getElementById('ocr_img_status_1').textContent, 'Ready', 'built artifact: ordered bulk block 1 Ready');
+  await waitFor(() => b15OrderedBuilt.doc.getElementById('ocr_dry_status').textContent.indexOf('COMPLETE') === 0, 'built artifact: ordered bulk dry complete');
+  await b15OrderedBuilt.click('ocr_auto_start');
+  await waitFor(() => b15OrderedBuilt.doc.getElementById('ocr_live_status').textContent.indexOf('COMPLETE') === 0, 'built artifact: ordered bulk completes');
+  eq(b15OrderedBuilt.posts.length, 3, 'built artifact: ordered bulk saves 3 rows');
+  eq(b15OrderedBuilt.posts[1].body.get('question_image').name, 'bulk-1.png', 'built artifact: ordered Q2 gets bulk-1.png');
+  eq(b15OrderedBuilt.posts[2].body.get('question_image').name, 'bulk-2.png', 'built artifact: ordered Q3 gets bulk-2.png');
+});
+
+testAsync('BLOCK-23: real generated stimulus artifact keeps settlement state consistent after held draft reinjection', async () => {
+  const mkStorage = id => ({
+    ocrQueue: {
+      items: [
+        { num: 1, question: 'PC07 RR7 draft generation first question?', a: 'one', b: 'two', c: 'three', d: 'four', flags: [] },
+        { num: 2, question: 'PC07 RR7 draft generation second question?', a: 'one', b: 'two', c: 'three', d: 'four', flags: [] }
+      ],
+      i: 0,
+      batchId: id
+    },
+    ansKey: { 1: 'A', 2: 'C' },
+    ansKeyBatch: id,
+    ansKeyConflicts: [],
+    ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' },
+    ocrSavedLog: []
+  });
+
+  let resolveQ1;
+  let calls = 0;
+  const ui = uiHarness.createUI({
+    built: true,
+    inactiveChecked: false,
+    storage: mkStorage('b23-draft-reinject'),
+    reply: () => {
+      calls++;
+      if (calls === 1) return new Promise(resolve => { resolveQ1 = resolve; });
+      return { redirected: true, text: 'Question saved successfully (Question ID: 741)' };
+    }
+  });
+  const modeBox = ui.doc.getElementById('ocr_active_mode');
+  modeBox.checked = false;
+  modeBox.onchange();
+  const draftConfirm = ui.doc.getElementById('ocr_confirm_tick');
+  draftConfirm.checked = true;
+  draftConfirm.onchange();
+  ui.click('ocr_auto_start');
+  await waitFor(() => ui.posts.length === 1, 'Q1 draft POST sent');
+  eq(ui.posts[0].body.get('is_active'), null, 'Q1 POST omits is_active');
+  eq(ui.posts[0].body.get('autosave'), '1', 'Q1 POST sends autosave=1');
+
+  ui.reinject();
+  eq(ui.doc.submitButton.disabled, true, 'Save disabled while Q1 pending');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true, 'Start disabled while Q1 pending');
+
+  resolveQ1({ redirected: true, text: 'Question saved successfully (Question ID: 740)' });
+  await ui.flush();
+
+  eq(ui.posts.length, 1, 'no automatic Q2 POST on settlement');
+  eq(ui.storage.get('ocrQueue').i, 1, 'queue advances to index 1');
+  eq(ui.storage.get('ocrSavedLog').map(e => ({ num: e.num, id: e.id, mode: e.mode, inactive: e.inactive })), [
+    { num: 1, id: 740, mode: 'draft', inactive: true }
+  ], 'Q1 logged once as draft inactive');
+  eq(ui.form.elements.question_text.value, 'PC07 RR7 draft generation second question?', 'Q2 filled on form');
+  eq(ui.doc.radios[2].checked, true, 'Q2 radio C ticked');
+  assert(ui.doc.getElementById('ocr_live_progress_text').textContent.startsWith('1/2'), 'progress shows 1/2: ' + ui.doc.getElementById('ocr_live_progress_text').textContent);
+  eq(ui.doc.getElementById('ocr_saved_box').hidden, false, 'Q1 saved box visible');
+  assert(!ui.doc.getElementById('ocr_live_status').textContent.startsWith('RUNNING'), 'no stale RUNNING banner: ' + ui.doc.getElementById('ocr_live_status').textContent);
+
+  // Reinjection initializes Active and requires explicit confirmation before an active POST.
+  eq(ui.doc.getElementById('ocr_active_mode').checked, true, 'reinjection initializes Active checkbox');
+  const confirmText = el => (el.children || []).map(c => c.textContent || '').join('\n');
+  assert(confirmText(ui.doc.getElementById('ocr_batch_confirm')).includes('Mode: ACTIVE'), 'UI visibly says Mode: ACTIVE');
+  assert(confirmText(ui.doc.getElementById('ocr_saved_list')).includes('#740'), 'Q1 saved entry #740 visible');
+  eq(ui.doc.getElementById('ocr_confirm_tick').checked, false, 'adoption clears confirmation until explicit tick');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true, 'Start disabled until confirmation ticked');
+  await ui.click('ocr_auto_start');
+  eq(ui.posts.length, 1, 'unconfirmed Start sends 0 POSTs');
+
+  // Switching back to explicit Draft and confirming saves Q2 inactive under book 2.
+  const mode2 = ui.doc.getElementById('ocr_active_mode');
+  mode2.checked = false;
+  mode2.onchange();
+  const conf2 = ui.doc.getElementById('ocr_confirm_tick');
+  conf2.checked = true;
+  conf2.onchange();
+  assert(confirmText(ui.doc.getElementById('ocr_batch_confirm')).includes('Mode: draft (inactive).'), 'explicit Draft reflected');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false, 'Start enabled once Draft confirmed');
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.storage.get('ocrQueue').i === 2, 'Q2 completes');
+  eq(ui.posts.length, 2, 'Q2 posted once');
+  eq(ui.posts[1].body.get('is_active'), null, 'Q2 Draft POST omits is_active');
+  eq(ui.posts[1].body.get('autosave'), '1', 'Q2 POST sends autosave=1');
+  eq(ui.storage.get('ocrSavedLog').map(e => ({ num: e.num, id: e.id, mode: e.mode })), [
+    { num: 1, id: 740, mode: 'draft' },
+    { num: 2, id: 741, mode: 'draft' }
+  ], 'Q2 logged under book 2 as draft');
+
+  // Explicit Active confirmation after settlement sends is_active=1.
+  let resolveActiveQ1;
+  let activeCalls = 0;
+  const activeUi = uiHarness.createUI({
+    built: true,
+    inactiveChecked: true,
+    storage: mkStorage('b23-active-confirm'),
+    reply: () => {
+      activeCalls++;
+      if (activeCalls === 1) return new Promise(resolve => { resolveActiveQ1 = resolve; });
+      return { redirected: true, text: 'Question saved successfully (Question ID: 751)' };
+    }
+  });
+  activeUi.doc.getElementById('ocr_active_mode').checked = false;
+  activeUi.doc.getElementById('ocr_active_mode').onchange();
+  activeUi.doc.getElementById('ocr_confirm_tick').checked = true;
+  activeUi.doc.getElementById('ocr_confirm_tick').onchange();
+  activeUi.click('ocr_auto_start');
+  await waitFor(() => activeUi.posts.length === 1, 'active path Q1 posted');
+  activeUi.reinject();
+  resolveActiveQ1({ redirected: true, text: 'Question saved successfully (Question ID: 750)' });
+  await activeUi.flush();
+  eq(activeUi.doc.getElementById('ocr_confirm_tick').checked, false, 'active path also requires confirmation');
+  activeUi.doc.getElementById('ocr_confirm_tick').checked = true;
+  activeUi.doc.getElementById('ocr_confirm_tick').onchange();
+  await activeUi.click('ocr_auto_start');
+  await waitFor(() => activeUi.storage.get('ocrQueue').i === 2, 'active path Q2 completes');
+  eq(activeUi.posts[1].body.get('is_active'), '1', 'explicit Active confirmation sends is_active=1');
+
+  // Control: no-reinjection draft run saves both rows as draft without is_active.
+  const ctrlUi = uiHarness.createUI({
+    built: true,
+    inactiveChecked: false,
+    storage: mkStorage('b23-draft-ctrl'),
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 760)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 761)' }
+    ]
+  });
+  ctrlUi.doc.getElementById('ocr_active_mode').checked = false;
+  ctrlUi.doc.getElementById('ocr_active_mode').onchange();
+  ctrlUi.doc.getElementById('ocr_confirm_tick').checked = true;
+  ctrlUi.doc.getElementById('ocr_confirm_tick').onchange();
+  await ctrlUi.click('ocr_auto_start');
+  await waitFor(() => ctrlUi.storage.get('ocrQueue').i === 2, 'no-reinjection draft completes');
+  eq(ctrlUi.posts.length, 2);
+  eq(ctrlUi.posts[0].body.get('is_active'), null, 'ctrl Q1 omits is_active');
+  eq(ctrlUi.posts[1].body.get('is_active'), null, 'ctrl Q2 omits is_active');
 });
 
 (async () => {
