@@ -647,7 +647,7 @@ function stimulusIntroRangeText(line) {
       end += next[0].length;
       count++;
       const afterTok = s.slice(end);
-      const validEnd = /^(?:$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively|are|refer|use|based|on|in\s+(?:the|this|that|these|those|section|part)|for|from|of|under|with|which|that)\b)/i.test(afterTok);
+      const validEnd = /^(?:$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively|are|refer|use|based|on|in\s+(?:(?:the|this|that|these|those)\s+(?:(?:above|below|following)\s+)?(?:section|part|diagram|figure|chart|table|graph|passage|extract|box|list|schedule|questions?|paper|exam|test|exercise)|section|part)|for|from|of|under|with|which|that)\b)/i.test(afterTok);
       if (!inCommaTail || /^Q/i.test(tok) || validEnd) {
         safeEnd = end;
         safeCount = count;

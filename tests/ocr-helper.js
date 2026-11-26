@@ -750,6 +750,19 @@ test('Load reproduces/guards PC04 BLOCK-1, BLOCK-2, BLOCK-3, BLOCK-4, and BLOCK-
   const v8Inline = formState(loadThroughForm(full(H + ' [[image: 21]]')));
   assert.strictEqual(v8Inline.d, 'four');
   assert.deepStrictEqual(v8Inline.queue.items[0].stimuli[0].nums, [21]);
+
+  const v9 = formState(loadThroughForm(full(H + '\n\nUse the diagram below to answer questions 20 to 22, 25 in the local currency was deposited.\n[image]')));
+  assert.strictEqual(v9.question, 'Which statement is correct?');
+  assert.strictEqual(v9.a, 'one');
+  assert.strictEqual(v9.b, 'two');
+  assert.strictEqual(v9.c, 'three');
+  assert.strictEqual(v9.d, 'four');
+  assert.deepStrictEqual(v9.queue.items[0].flags, []);
+  assert.deepStrictEqual(v9.queue.items[0].stimuli[0].nums, [20, 21, 22]);
+
+  const v9Ctrl = formState(loadThroughForm(full(H + '\n\nUse the diagram below to answer questions 20 to 22, 25 in the section below.\n[image]')));
+  assert.strictEqual(v9Ctrl.d, 'four');
+  assert.deepStrictEqual(v9Ctrl.queue.items[0].stimuli[0].nums, [20, 21, 22, 25]);
 });
 
 test('Load leaves E/F text out of the native four-option form', () => {

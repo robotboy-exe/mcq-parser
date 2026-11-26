@@ -8,9 +8,9 @@ Last updated: 2026-11-26.
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
 - Frozen base: `793cb8f`; scratch integration line:
   `scratch/parser-convergence-cycle`; PC01, PC02, and PC03 are `done` and
-  review-settled; PC04 is `in progress` (`BLOCK-1`–`BLOCK-5` closed by
-  re-review 1; `BLOCK-6`–`BLOCK-8` fixes implemented on
-  `scratch/pc04-marker-range` at base `9afe4f8`, awaiting phase-4 re-review 2).
+  review-settled; PC04 is `in progress` (`BLOCK-1`–`BLOCK-8` closed by
+  re-reviews 1 and 2; `BLOCK-9` fix implemented on
+  `scratch/pc04-marker-range` at base `9afe4f8`, awaiting phase-4 re-review 3).
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /
@@ -176,7 +176,21 @@ Last updated: 2026-11-26.
   197 unit, 43 helper, 42 key, 15 single-source, 10 underline, 7 preview, 26
   math-tool, 69 render-markup, 7 bank hashes), PHP 8.5.12 & 8.3.32 CLI
   (33/8/14, 7/7 lint), and 27 disposable staging browser Loads across all three
-  products pass. Awaiting rigorous phase-4 re-review 2; no commit, merge,
+  products pass. The round-2 rigorous re-review
+  ([record](plan/reviews/parser-convergence-2026-11-phase-4-re-review-2.md))
+  closed `BLOCK-6`–`BLOCK-8` and recorded round-1 `BLOCK-9`.
+- PC04 phase-4 fix 3 (2026-11-26, `BLOCK-9` on `scratch/pc04-marker-range`
+  from base `9afe4f8`): `stimulusIntroRangeText` narrows `validEnd`'s `in`
+  terminator to location/reference nouns so monetary/prose `in the ...` tails
+  never become question targets while `in the section below.` remains a valid
+  list terminator. Core `2.5.6` is `1,966 L / 70,519 B` (`d17dd8ae…`,
+  `+130/-19`), built artifacts are `139,117` / `79,271` B, `BLOCK-9`
+  reproduced failing-first on `19392ac`, 73 prior inputs show 0 diffs vs base,
+  and full Node (74 runner, 198 unit, 43 helper, 42 key, 15 single-source, 10
+  underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes), PHP
+  8.5.12 & 8.3.32 CLI (33/8/14, 7/7 lint), and disposable staging browser Loads
+  across all three products (`V9` and `V9-ctrl`, plus `V9` PNG Attach `Ready` at
+  `20-22`) pass. Awaiting rigorous phase-4 re-review 3; no commit, merge,
   deploy, or live action.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent

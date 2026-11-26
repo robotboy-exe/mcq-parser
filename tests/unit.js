@@ -884,6 +884,34 @@ test('PC04 BLOCK-8: bad bracket runs never fall through to inline marker matchin
   eq(pairedInline.items.filter(item => item.needsImage).map(item => item.num), [21], 'paired inline flagged item');
 });
 
+test('PC04 BLOCK-9: monetary tail beginning with in the never becomes an image target (V9)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const intro = 'Use the diagram below to answer questions 20 to 22, 25 in the local currency was deposited.';
+  const v9 = parser.parsePaste(full(H + '\n\n' + intro + '\n[image]'));
+  const q19 = v9.items[0];
+  eq(q19.question, 'Which statement is correct?', 'V9 Q19 stem');
+  eq([q19.a, q19.b, q19.c, q19.d], ['one', 'two', 'three', 'four'], 'V9 Q19 options');
+  eq(q19.flags, [], 'V9 Q19 flags');
+  eq(q19.stimuli.length, 1, 'V9 one stimulus');
+  eq(q19.stimuli[0].text, intro, 'V9 full intro preserved');
+  eq(q19.stimuli[0].nums, [20, 21, 22], 'V9 nums');
+  eq(q19.stimuli[0].missing, [], 'V9 missing');
+  eq(v9.items.filter(item => item.needsImage).map(item => item.num), [20, 21, 22], 'V9 flagged items');
+
+  const ctrlIntro = 'Use the diagram below to answer questions 20 to 22, 25 in the section below.';
+  const ctrl = parser.parsePaste(full(H + '\n\n' + ctrlIntro + '\n[image]'));
+  eq(ctrl.items[0].stimuli[0].text, ctrlIntro, 'V9-ctrl full intro preserved');
+  eq(ctrl.items[0].stimuli[0].nums, [20, 21, 22, 25], 'V9-ctrl nums');
+  eq(ctrl.items[0].stimuli[0].missing, [], 'V9-ctrl missing');
+  eq(ctrl.items.filter(item => item.needsImage).map(item => item.num), [20, 21, 22, 25], 'V9-ctrl flagged items');
+});
+
 test('splitSections removes a 19xx answer title without extending option D', () => {
   const parsed = parser.parsePaste([
     'CRS 1994 JAMB',

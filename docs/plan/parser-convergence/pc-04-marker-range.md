@@ -1,8 +1,8 @@
 # PC04 — Marker-Adjacent Range Extraction
 
-- **Status:** in progress — `BLOCK-1`–`BLOCK-5` closed by re-review 1;
-  `BLOCK-6`–`BLOCK-8` fixes implemented on `scratch/pc04-marker-range` at base
-  `9afe4f8` (core `2.5.6`, D-112), awaiting rigorous phase-4 re-review 2
+- **Status:** in progress — `BLOCK-1`–`BLOCK-8` closed by re-review 2;
+  `BLOCK-9` fix implemented on `scratch/pc04-marker-range` at base
+  `9afe4f8` (core `2.5.6`, D-112), awaiting rigorous phase-4 re-review 3
 - **Package base:** `9afe4f806e1254ecf74c93f13f5ee73d1c4fd497` (reconciled PC03
   cycle tip on `scratch/parser-convergence-cycle`)
 - **Implementation branch:** short-lived `scratch/pc04-marker-range`
@@ -245,6 +245,45 @@ Three additive regression blocks in `tests/unit.js` and the corresponding PC04 L
 - PHP CLI `8.5.12` and `8.3.32` (`$HOME/tmp/php83-review/php`): `php-render` (33), `admin-question-store` (8), `cbt-question-order` (14), `php -l` on all 7 `deployed/*.php` files PASS.
 - Disposable SQLite HTTP staging (`tools/start-phone-staging.sh`, Chromium `157.0.8103.38` via `chromium-cdp`): `coreVersion: "2.5.6"`, 0 `pageerror`, 0 unexpected POSTs across 27 real `Load` calls (`V6`, `V6-ctrl`, `V7`, `V7-r`, `S4`, `S4-unquoted`, `V8-close`, `V8-open`, `V8-inline` on manual, key, and stimulus), plus real PNG Attach on `V6` (`#ocr_img_range_0 = "20-22"`, `#ocr_img_status_0 = "Ready"`), and `#ocr_image_plan` hidden on `V7`, `V7-r`, `V8-close`, `V8-open`; staging and CDP stopped and cleaned afterwards.
 
-**Review status.** `BLOCK-6`, `BLOCK-7`, and `BLOCK-8` fixes implemented on `scratch/pc04-marker-range` (`BLOCK-1`–`BLOCK-5` closed by re-review 1); requires independent rigorous phase-4 re-review 2 (`NOTE-1` documentation drift remains deferred/non-blocking).
+**Review status.** `BLOCK-6`, `BLOCK-7`, and `BLOCK-8` fixes implemented on `scratch/pc04-marker-range` (`BLOCK-1`–`BLOCK-5` closed by re-review 1); round 2 rigorous re-review ([record](../reviews/parser-convergence-2026-11-phase-4-re-review-2.md)) closed `BLOCK-6`–`BLOCK-8` and recorded round-1 `BLOCK-9` (`NOTE-1` documentation drift remains deferred/non-blocking).
+
+**2026-11-26 — phase-4 fix 3 (`BLOCK-9`), awaiting rigorous re-review 3.**
+
+**Failing-first reproduction (against unfixed candidate `19392ac`).**
+Additive `V9` / `V9-ctrl` regressions in `tests/unit.js`, `tests/ocr-helper.js`, and `tests/single-source.js` were added and run before editing `src/parser/core.js`:
+- `BLOCK-9` (`tests/unit.js`): `V9 nums` failed: `actual [20, 21, 22, 25]` vs `expected [20, 21, 22]`. Summary: `197 PASS, 1 FAIL` (`UNIT_EXIT=1`).
+- `BLOCK-9` (`tests/ocr-helper.js`): failed on real `Load` at `tests/ocr-helper.js:761:10` (`V9 nums`): `actual [20, 21, 22, 25]` vs `expected [20, 21, 22]` (`HELPER_EXIT=1`).
+
+**Frozen closure mapping (implementation and evidence).**
+- `BLOCK-9` (`V9`: `... 25 in the local currency was deposited.` + standalone `[image]`, `V9-ctrl`: `... 25 in the section below.`, `V6`, `V6-ctrl`): `stimulusIntroRangeText` in `src/parser/core.js` (`:650`) narrows `validEnd`'s `in` terminator from `in\s+(?:the|this|that|these|those|section|part)` to `in\s+(?:(?:the|this|that|these|those)\s+(?:(?:above|below|following)\s+)?(?:section|part|diagram|figure|chart|table|graph|passage|extract|box|list|schedule|questions?|paper|exam|test|exercise)|section|part)`. Consequently, `, 25 in the local currency was deposited.` stops before `, 25` (`nums=[20,21,22]`, `missing=[]`, Q19 stem/A–D clean with `flags=[]`, complete literal intro in `stimuli[0].text`, and only Q20–Q22 flagged `needsImage`), while `V9-ctrl` (`... 25 in the section below.`) retains `[20,21,22,25]` and `Q20`–`Q22`, `Q25`, and `V6` (`[20,21,22]`) / `V6-ctrl` (`[20,22]`) stay unchanged. Verified via `tests/unit.js` (`198 PASS`), `tests/ocr-helper.js` (`43 PASS`, real `Load` for `V9` and `V9-ctrl`), `tests/single-source.js` (`15 PASS`, `V9`/`V9-ctrl` parity across both generated artifacts and `core.js`), and disposable staging Chromium (`157.0.8103.38`) real `Load` across manual, key, and stimulus for `V9` and `V9-ctrl`, plus stimulus real PNG `Attach` on `V9` (`#ocr_img_range_0 = "20-22"`, `#ocr_img_status_0 = "Ready"`).
+
+**Production files (cumulative from package base `9afe4f8` → post-fix 3).**
+
+| File | Base (`9afe4f8`) | Final | Cumulative `+/-` | Responsibility / deployment | Production-path test |
+|---|---|---|---|---|---|
+| `src/parser/core.js` | 1,855 L / 65,965 B `28172dfafcb3…` | 1,966 L / 70,519 B `d17dd8ae5851…` | `+130/-19` | canonical pure parser `2.5.6` (D-112 + `BLOCK-1`–`BLOCK-9` fixes); site-root `src/`, loaded by `admin_questions.php`, inlined by both builders | `tests/runner.js` (74), `tests/unit.js` (198), `tests/ocr-helper.js` (43), `tests/single-source.js` (15), `tests/key-bookmarklet.js` (42), 73-prior-input diff (0 diffs), staging `V9`/`V9-ctrl` Loads (6/6) |
+| `ocr_helper.js` | 127 L / 4,917 B `86497f4d0686…` | 127 L / 4,917 B `5cdba5c3b7e9…` | `+1/-1` | deployed manual adapter (`EXPECTED_CORE_VERSION` `2.5.6`); site root; live-origin `+51/-45` (cap <= 100) | `tests/ocr-helper.js` (43 checks), staging manual `Load` (`V9`/`V9-ctrl`) |
+| `src/bookmarklets/key/entry.js` | 596 L / 24,700 B `34e78c3e1e89…` | 596 L / 24,700 B `ddbd8aebd10e…` | `+1/-1` | key/autosave entry (`EXPECTED_CORE_VERSION` `2.5.6`); inlined only into key artifact | `tests/key-bookmarklet.js` (42 checks), staging key `Load` (`V9`/`V9-ctrl`) |
+| `deployed/admin_questions.php` | 1,057 L / 62,877 B `388d38532c83…` | 1,057 L / 62,877 B `1e193d34f9d3…` | `+2/-2` | `core.js?v=2.5.6` before `ocr_helper.js?v=2.4.9`; site root; live-origin `+96/-85` (cap <= 100) | `php -l` (8.5.12 & 8.3.32), staging page, `docs/DEPLOYMENT.md` manifest |
+
+**Excluded generated and archived artifacts (never hand-edited).**
+- `src/bookmarklet.js`: 1 L / 139,117 B (`139,035` B stripped, sha256 `3a815ab6168d…`, rebuilt via `node src/build/build.js`, `--check` exit 0, `node --check` pass, `%HH`-free, `tests/single-source.js` + staging stimulus `Load` `V9`/`V9-ctrl` + `V9` PNG Attach `Ready` at `20-22`).
+- `src/bookmarklets/key/bookmarklet.js`: 1 L / 79,271 B (`79,208` B stripped, sha256 `ae9a96ed1d9c…`, rebuilt via `node src/bookmarklets/key/build.js`, `--check` exit 0, `node --check` pass, `%HH`-free, `tests/key-bookmarklet.js` + `tests/single-source.js` + staging key `Load` `V9`/`V9-ctrl`).
+- `src/bookmarklet.min.js`: untracked/absent, untouched.
+- `archive/live-sources/*`, root `admin_questions.php` / `answer_details.php` / `cbt.php` / `cbt_practice.php`, and `docs/plan/reviews/parser-convergence-2026-11-phase-4*.md`: excluded evidence/review records, untouched.
+
+**Verification summary (post-fix 3).**
+- `node src/build/build.js --check` / `node src/bookmarklets/key/build.js --check`: exit 0 (`139,116` / `79,270` B reported before final LF, `139,035` / `79,208` B stripped); `wc -l`: `1` each; `node --check`: PASS.
+- `node tests/runner.js`: 74 fixtures: 74 PASS, 0 FAIL, 0 PENDING.
+- 73 prior inputs from `9afe4f8`: 0 diffs vs base `parsePaste` (ignoring `version`) and `ocr_helper.parseAll`.
+- `node tests/unit.js`: 198 PASS, 0 FAIL.
+- `node tests/ocr-helper.js`: 43 PASS.
+- `node tests/key-bookmarklet.js`: 42 PASS.
+- `node tests/single-source.js`: 15 PASS (including `V9` and `V9-ctrl` parity).
+- `node tests/underline-toolbar.js` / `question-preview.js` / `math-tool.js` / `render-markup.js`: 10 / 7 / 26 / 69 PASS; `node tools/extract-bank.js --check`: 7 hashes OK.
+- PHP CLI `8.5.12` and `8.3.32` (`$HOME/tmp/php83-review/php`): `php-render` (33), `admin-question-store` (8), `cbt-question-order` (14), `php -l` on all 7 `deployed/*.php` files PASS.
+- Disposable SQLite HTTP staging (`tools/start-phone-staging.sh`, Chromium `157.0.8103.38` via `chromium-cdp`): `coreVersion: "2.5.6"`, 0 `pageerror`, 0 unexpected POSTs across 6 real `Load` calls (`V9` and `V9-ctrl` on manual, key, and stimulus), plus real PNG Attach on `V9` (`#ocr_img_range_0 = "20-22"`, `#ocr_img_status_0 = "Ready"`) and `V9-ctrl` defaulting `#ocr_img_range_0 = "20, 21, 22, 25"`; staging and CDP stopped and cleaned afterwards.
+
+**Review status.** `BLOCK-9` fix implemented on `scratch/pc04-marker-range` (`BLOCK-1`–`BLOCK-8` closed by re-reviews 1 and 2); requires independent rigorous phase-4 re-review 3 (`NOTE-1` documentation drift remains deferred/non-blocking).
 
 `Commit: deferred`.
