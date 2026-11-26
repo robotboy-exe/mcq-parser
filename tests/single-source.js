@@ -171,7 +171,14 @@ for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {
 }
 
 const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spaced-initialism-wrapped.txt']
-  .map(name => fs.readFileSync(path.join(ROOT, 'fixtures', 'inputs', name), 'utf8'));
+  .map(name => fs.readFileSync(path.join(ROOT, 'fixtures', 'inputs', name), 'utf8'))
+  .concat([
+    // A real option line after a trailing stem initial, and a trailing spaced
+    // initialism before a real option line, must parse identically in both
+    // generated artifacts and the canonical core.
+    '1. Who is John F.\nA. Kennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe',
+    '1. Which refers to C. I. F.\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery'
+  ]);
 
 for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {
   test(label + ' artifact parses exactly like core.js', () => {

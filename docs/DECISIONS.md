@@ -1867,3 +1867,14 @@ C, byte-identical, and leaves an initialism inside option text unchanged.
 and separated only by whitespace would be read as one initialism, but only while
 no complete A–D set remains; the guard then changes nothing. An initialism run
 in an incomplete option set keeps current behavior, so no new repair is invented.
+
+**Review fix (2026-11-26, phase-3 `BLOCK-1`/`BLOCK-2`).** The span walk now stops
+before a token that both starts an option line and runs to the ordered end of the
+set (`A`→`B`→`C`→`D`), so a stem or option ending in `John F.`, `U. S.`, or
+`Vitamin C.` before `\nA.`/`\nB.` cannot absorb the real label. When discarding a
+run would still leave an incomplete set, the earliest covered label for each
+missing letter is restored, so a trailing `C. I. F.`/`A. D.`/`B. C.` (including
+a wrapped or inline run) stays text and the real `A.`–`D.` boundaries survive.
+The run walk, the boundary test, and the restore are three focused helpers plus
+the same single filter; `OPTION`, `LOOSE`, `FIXES`, and product policy are still
+untouched, and nothing changes when a complete set survives without the run.

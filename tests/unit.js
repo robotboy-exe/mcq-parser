@@ -162,6 +162,66 @@ test('parseQuestion keeps a spaced initialism inside its option', () => {
   eq(q.flags, []);
 });
 
+test('parseQuestion keeps a real option line after a trailing stem initial', () => {
+  const john = parser.parseQuestion({ num: 1, text: '1. Who is John F.\nA. Kennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe' });
+  eq(john.question, '1. Who is John F.');
+  eq([john.a, john.b, john.c, john.d], ['Kennedy', 'Adams (option A. wrong)', 'Smith', 'Doe']);
+  eq(john.flags, []);
+  const currency = parser.parseQuestion({ num: 1, text: '1. Currency of U. S.\nA. dollar\nB. pound (not A. dollar)\nC. euro\nD. yen' });
+  eq(currency.question, '1. Currency of U. S.');
+  eq([currency.a, currency.b, currency.c, currency.d], ['dollar', 'pound (not A. dollar)', 'euro', 'yen']);
+  eq(currency.flags, []);
+});
+
+test('parseQuestion keeps the next real option line after an option ending in an initialism', () => {
+  const q = parser.parseQuestion({ num: 1, text: '1. Pick one\nA. terms C. I. F.\nB. Rich in B. vitamins\nC. other\nD. none' });
+  eq([q.a, q.b, q.c, q.d], ['terms C. I. F.', 'Rich in B. vitamins', 'other', 'none']);
+  eq(q.flags, []);
+});
+
+test('parseQuestion keeps the real option label after a single trailing initial', () => {
+  // A single trailing initial such as `Vitamin C.` is not a spaced initialism
+  // run (D-111 needs two tokens), so its own label boundary is unchanged; the
+  // frozen BLOCK-1 criterion is only that the following real `B.` line is not
+  // absorbed and the `B.` inside option B stays in that option.
+  const vitamin = parser.parseQuestion({ num: 1, text: '1. Pick one\nA. Vitamin C.\nB. Rich in B. vitamins\nC. other\nD. none' });
+  eq([vitamin.b, vitamin.d], ['Rich in B. vitamins C. other', 'none']);
+  const john = parser.parseQuestion({ num: 1, text: '1. Pick one\nA. John D.\nB. keep B. inside\nC. other\nD. none' });
+  eq(vitamin.a, 'Vitamin');
+  eq(john.b, 'keep B. inside');
+  eq(john.flags, ['option D missing']);
+});
+
+test('parseQuestion keeps a trailing spaced initialism before a real option line', () => {
+  const vectors = [
+    ['1. Which refers to C. I. F.\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery',
+      '1. Which refers to C. I. F.', ['cost insurance freight', 'free on board', 'carriage paid', 'cash on delivery']],
+    ['1. This happened in A. D.\nA. 70\nB. 80\nC. 90\nD. 100',
+      '1. This happened in A. D.', ['70', '80', '90', '100']],
+    ['1. Babylon fell in 539 B. C.\nA. true\nB. false\nC. maybe\nD. unknown',
+      '1. Babylon fell in 539 B. C.', ['true', 'false', 'maybe', 'unknown']],
+    ['1. The goods were shipped C. I.\nF.\nA. one\nB. two\nC. three\nD. four',
+      '1. The goods were shipped C. I. F.', ['one', 'two', 'three', 'four']],
+    ['1. Which refers to C. I. F.\n\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery',
+      '1. Which refers to C. I. F.', ['cost insurance freight', 'free on board', 'carriage paid', 'cash on delivery']],
+    ['1. Which refers to C. I. F. A. cost insurance freight B. free on board C. carriage paid D. cash on delivery',
+      '1. Which refers to C. I. F.', ['cost insurance freight', 'free on board', 'carriage paid', 'cash on delivery']]
+  ];
+  for (const [text, question, options] of vectors) {
+    const q = parser.parseQuestion({ num: 1, text });
+    eq(q.question, question);
+    eq([q.a, q.b, q.c, q.d], options);
+    eq(q.flags, []);
+  }
+});
+
+test('parseQuestion still reads a blank-line stem initial run as text', () => {
+  const q = parser.parseQuestion({ num: 1, text: '1. The sequence is A.\n\nB. followed by\nA. one\nB. two\nC. three\nD. four' });
+  eq(q.question, '1. The sequence is A.\n\nB. followed by');
+  eq([q.a, q.b, q.c, q.d], ['one', 'two', 'three', 'four']);
+  eq(q.flags, []);
+});
+
 test('parseQuestion flags a structural line that reaches an option', () => {
   const heading = core.parseQuestion({
     num: 1,

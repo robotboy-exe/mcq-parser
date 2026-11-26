@@ -1,7 +1,8 @@
 # PC03 — Spaced Initialism Option Boundaries
 
-- **Status:** in progress — implemented 2026-11-26 on
-  `scratch/pc03-spaced-initialisms`; awaiting rigorous review
+- **Status:** in progress — the phase-3 review returned `BLOCK` (`BLOCK-1`,
+  `BLOCK-2`, `FIX-1`); the authorized fix is applied 2026-11-26 on
+  `scratch/pc03-spaced-initialisms`; awaiting re-review
 - **Package base:** `331e81f` (the reconciled PC02 boundary; product tree and
   review records match `55afe15`)
 - **Implementation branch:** short-lived `scratch/pc03-spaced-initialisms`
@@ -79,10 +80,10 @@ E/F collapse, and product policy are unchanged.
 
 | File | Base | Final | Change | Responsibility / deployment | Production-path test |
 |---|---|---|---|---|---|
-| `src/parser/core.js` | 1,733 L / 60,722 B `c9ac52b3…` | 1,769 L / 61,942 B `9597948d…` | `+38/-2` | canonical parser; site-root `src/`, loaded by the admin page and inlined by both builders | five new fixtures, `tests/unit.js`, `tests/ocr-helper.js` Load, real-artifact parity |
+| `src/parser/core.js` | 1,733 L / 60,722 B `c9ac52b3…` | 1,829 L / 64,452 B `42739697…` | `+98/-2` | canonical parser; site-root `src/`, loaded by the admin page and inlined by both builders | five new fixtures, `tests/unit.js`, `tests/ocr-helper.js` Load, real-artifact parity |
 | `ocr_helper.js` | 127 L / 4,917 B `b83835b7…` | same size `86497f4d…` | `+1/-1` | deployed adapter's `EXPECTED_CORE_VERSION` `2.5.5`; site root | `tests/ocr-helper.js` (real module) |
 | `src/bookmarklets/key/entry.js` | `2.5.4` guard | `2.5.5` guard `34e78c3e…` | `+1/-1` | key product core-version guard; inlined into the key artifact only | `tests/key-bookmarklet.js` (42 vectors, real artifact) |
-| `deployed/admin_questions.php` | 1,057 L / 62,877 B `0b9eb5b2…` | same size `d212cf84…` | `+1/-1` | core query token `?v=2.5.5`; site root | token check in `docs/DEPLOYMENT.md`; no PHP behavior change |
+| `deployed/admin_questions.php` | 1,057 L / 62,877 B `0b9eb5b2…` | same size `388d3853…` | `+2/-2` | core token `?v=2.5.5` and helper token `?v=2.4.8`; site root | token check in `docs/DEPLOYMENT.md`; `php -l`; no PHP behavior change |
 
 Live-origin caps: `deployed/admin_questions.php` moves from +94 to +95 recorded
 cumulative additions and `ocr_helper.js` from +57 to +58; both stay inside the
@@ -90,7 +91,7 @@ cumulative additions and `ocr_helper.js` from +57 to +58; both stay inside the
 
 **Excluded generated artifacts (rebuilt, never hand-edited).**
 `src/bookmarklet.js` 1 L / 132,235 B `ce8fbef5…` (base 131,268 B);
-`src/bookmarklets/key/bookmarklet.js` 1 L / 72,389 B `a7b61d24…` (base 71,422 B).
+`src/bookmarklets/key/bookmarklet.js` 1 L / 74,341 B `dbed22f1…` (base 71,422 B).
 `src/bookmarklet.min.js` stays untracked and untouched.
 
 **Tests and fixtures.** New `fixtures/inputs` + `fixtures/expected` pairs:
@@ -106,8 +107,8 @@ wrapped vectors.
 | Command | Result |
 |---|---|
 | `node tests/runner.js` | 73 fixtures: 73 PASS, 0 FAIL, 0 PENDING |
-| `node tests/unit.js` | 176 PASS, 0 FAIL |
-| `node tests/ocr-helper.js` | 39 PASS |
+| `node tests/unit.js` | 181 PASS, 0 FAIL |
+| `node tests/ocr-helper.js` | 40 PASS |
 | `node tests/key-bookmarklet.js` | 42 PASS |
 | `node tests/underline-toolbar.js` / `question-preview` / `math-tool` / `render-markup` | 10 / 7 / 26 / 69 PASS |
 | `node tests/single-source.js` | 15 PASS (parity now includes the initialism vectors) |
@@ -134,7 +135,71 @@ did not run (no PHP changed). PC02's `NOTE-2` residual is unaffected. Deployment
 tokens are rotated in the reviewed files, but no deploy or live action was
 performed.
 
-**Review status.** Product candidate committed at the owner's explicit request as
-`186d27e` on `origin/scratch/pc03-spaced-initialisms` (product tree the same as
-measured above); this handoff-only child records the pushed ref the rigorous
-review must target. Nothing is merged. `Commit: 186d27e`.
+**2026-11-26 — phase-3 review fix (`BLOCK-1`, `BLOCK-2`, `FIX-1`).** Authorized
+by the phase-3 review ([record](../reviews/parser-convergence-2026-11-phase-3.md))
+in its first review round; no closure contract was broadened.
+
+**Failing first (before the core change).** `node tests/unit.js` reported
+177 PASS / 3 FAIL on the three new boundary tests, e.g.
+`+ actual '1. Who is John F. A. Kennedy'` vs expected `'1. Who is John F.'`, and
+`node tests/ocr-helper.js` aborted at the real Load path with
+`+ actual 'Who is John F. A. Kennedy'` vs expected `'Who is John F.'`. The same
+defects were observed directly on `37ea241` (`BLOCK-1`) and on `331e81f`
+(`BLOCK-2`: `c: "I. F."`, `a: "D. A. 70"`, `b: "C."`).
+
+**Fix.** In `src/parser/core.js` only, inside the existing D-111 guard:
+`orderedOptionCompletion`, `isOptionLineStart`, and `isRealOptionBoundary` end a
+run before a token that starts an option line and is followed by the ordered
+rest of the set (`initialismTokens` shares the token scan), and the filter
+restores the earliest covered label for each letter an otherwise complete set
+still needs. `OPTION`, `LOOSE`, `FIXES`, `splitQuestions`, regions, E/F collapse,
+and product policy are unchanged; core stays `2.5.5` because that version is
+unreleased, and `ocr_helper.js` bytes and `EXPECTED_CORE_VERSION` are unchanged.
+
+**Closure mapping.**
+
+| Finding | Frozen criterion | Implementation | Evidence |
+|---|---|---|---|
+| `BLOCK-1` | a real line-start `A.`–`D.` after `[A-Z].` is never absorbed or discarded; both named stem vectors match `331e81f`; controls unchanged | `isRealOptionBoundary` ends the run; the restore keeps a needed label | `tests/unit.js` "…real option line after a trailing stem initial" (`John F.`, `U. S.`), "…after an option ending in an initialism" (`terms C. I. F.` before `B.`), "…after a single trailing initial" (`Vitamin C.`/`John D.` before `B.`); runner/unit/helper/key/single-source green |
+| `BLOCK-2` | trailing `C. I. F.`, `A. D.`, `B. C.`, wrapped `C. I.\nF.` before `\nA.` and `\n\nA.` stay in `question`; inline `C. I. F. A. …` also passes; `C. E. F. Small` and inner-option unchanged | boundary split plus covered-label restore | `tests/unit.js` six-vector boundary test (line, blank-line, wrapped, inline); `spaced-initialism-inner-option` and `new-edge-initials-q46` fixtures green |
+| `FIX-1` | helper token bumped; every DEPLOYMENT token/hash matches; package measurements and lint updated | `deployed/admin_questions.php:1051` `?v=2.4.8`; `docs/DEPLOYMENT.md` rows, upload step, smoke row, stale list, hashes | `grep` shows `core.js?v=2.5.5` before `ocr_helper.js?v=2.4.8`; `sha256sum` `388d3853…` (admin), `42739697…` (core), `86497f4d…` (helper); `php -l` 7/7 |
+
+**Final measurements (package base `331e81f`).** `src/parser/core.js`
+1,733 L / 60,722 B → 1,829 L / 64,452 B (`+98/-2`, `42739697…`);
+`ocr_helper.js` unchanged (`86497f4d…`, live-origin `+51/-45`);
+`src/bookmarklets/key/entry.js` `+1/-1` (`34e78c3e…`);
+`deployed/admin_questions.php` 1,057 L / 62,877 B (`+2/-2`, `388d3853…`,
+live-origin `+96/-85`); both live-origin files stay inside the 100-addition cap
+with no exception. Generated artifacts: `src/bookmarklet.js` 1 L / 134,187 B
+`ba4a79ae…` (base 131,268 B) and `src/bookmarklets/key/bookmarklet.js`
+1 L / 74,341 B `dbed22f1…` (base 71,422 B); both `--check` guards exit 0 and
+`src/bookmarklet.min.js` is untouched.
+
+**New regression files.** `tests/fixtures/ocr-helper-spaced-initialism-boundaries.txt`
+(two questions loaded through the real form; the deployed helper's Load path
+keeps `John F.` and `C. I. F.` out of every option field), new `tests/unit.js`
+blocks (four tests, six BLOCK-2 vectors, and the blank-line `A.\n\nB.` stem
+control), and two inline parity vectors added to `tests/single-source.js`.
+`tests/ocr-helper.js` gains one real Load test; no existing assertion was
+weakened or removed. The required 4-surface parity (core, deployed helper, both
+real generated artifacts) is green on 12 boundary vectors.
+
+**Commands and results (fix tip).**
+
+| Command | Result |
+|---|---|
+| `node tests/runner.js` | 73 fixtures: 73 PASS, 0 FAIL, 0 PENDING |
+| `node tests/unit.js` | 181 PASS, 0 FAIL |
+| `node tests/ocr-helper.js` | 40 PASS |
+| `node tests/key-bookmarklet.js` | 42 PASS |
+| `node tests/underline-toolbar.js` / `question-preview` / `math-tool` / `render-markup` | 10 / 7 / 26 / 69 PASS |
+| `node tests/single-source.js` | 15 PASS |
+| `node src/build/build.js --check` / key `--check` | exit 0 (134,122 / 74,295 B stripped) |
+| `node tools/extract-bank.js --check` | 7 hashes OK |
+| PHP 8.3.9 CLI: `php-render` / `admin-question-store` / `cbt-question-order` / `php -l` | 33 / 8 / 14 PASS, 7/7 lint |
+
+**Review status.** The phase-3 review record is at
+[`reviews/parser-convergence-2026-11-phase-3.md`](../reviews/parser-convergence-2026-11-phase-3.md)
+(`BLOCK`, review round 1). This fix is committed on
+`scratch/pc03-spaced-initialisms` at the owner's explicit request; re-review of
+that exact candidate is required. Nothing is merged. `Commit: pending`.

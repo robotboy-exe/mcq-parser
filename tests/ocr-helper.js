@@ -565,6 +565,25 @@ test('Load keeps a spaced dotted initialism in the stem', () => {
   assert.deepStrictEqual(state.queue.items[0].flags, []);
 });
 
+test('Load keeps trailing stem initials out of every option field', () => {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-spaced-initialism-boundaries.txt'), 'utf8');
+  const result = loadThroughForm(text);
+  const first = formState(result);
+  assert.strictEqual(first.queue.items.length, 2);
+  assert.strictEqual(first.question, 'Who is John F.');
+  assert.strictEqual(first.a, 'Kennedy');
+  assert.strictEqual(first.b, 'Adams (option A. wrong)');
+  assert.strictEqual(first.d, 'Doe');
+  assert.deepStrictEqual(first.queue.items[0].flags, []);
+  result.document.getElementById('ocr_skip').onclick();
+  const second = formState(result);
+  assert.strictEqual(second.question, 'Which refers to C. I. F.');
+  assert.strictEqual(second.a, 'cost insurance freight');
+  assert.strictEqual(second.b, 'free on board');
+  assert.strictEqual(second.d, 'cash on delivery');
+  assert.deepStrictEqual(second.queue.items[1].flags, []);
+});
+
 test('Load keeps a complete mixed-case parenthesized A-D set in the native form', () => {
   const state = formState(loadThroughForm(
     '1. Which is correct? (a) Alpha (a) notation stays in option A (B) Bravo (c) Charlie (D) Delta'));

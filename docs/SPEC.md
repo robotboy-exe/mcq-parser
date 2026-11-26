@@ -370,7 +370,12 @@ unsupported: numbered markers take precedence and may absorb bullet text.
     OCR line wrap included), is text. Accepted labels overlapping that run are
     discarded only while the remaining labels still contain a complete A–D set,
     so a stem `C. I. F.` or spaced `A. D.`/`B. C.` never supplies a boundary
-    while `C. E. F. Small` and inner initials keep their options (D-111).
+    while `C. E. F. Small` and inner initials keep their options (D-111). A real
+    option line that starts right after a run — a line-leading label whose own
+    letter is followed by the ordered rest of the set — ends the run instead of
+    joining it, and a covered label is restored when no other candidate carries
+    its letter, so a stem or option ending in `John F.`, `Vitamin C.`, or
+    `C. I. F.` before `A.`/`B.` keeps the real option boundaries.
 5. Select one option set from the remaining accepted labels: take the earliest
    occurrence of each required letter A, B, C, D, then accept E (and then F)
    only when it starts after the selected D. Convert the selected marks to a

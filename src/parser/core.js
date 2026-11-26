@@ -370,17 +370,59 @@ function isOptionAbbreviation(raw, match) {
   return /^[A-Z](?:\.|\s|$)/.test(raw.slice(match.index + match[0].length));
 }
 
-function spacedInitialismSpans(raw) {
+function orderedOptionCompletion(matches, index) {
+  const from = REQUIRED_OPTION_LETTERS.indexOf(matches[index].letter);
+  if (from < 0) return false;
+  const expected = REQUIRED_OPTION_LETTERS.slice(from);
+  const seen = [matches[index].letter];
+  for (let i = index + 1; i < matches.length && seen.length < expected.length; i++) {
+    if (seen.includes(matches[i].letter)) continue;
+    seen.push(matches[i].letter);
+  }
+  return seen.join('') === expected;
+}
+
+function isOptionLineStart(raw, token) {
+  const lineStart = raw.lastIndexOf('\n', token.start - 1) + 1;
+  if (!/^[^\S\n]*$/.test(raw.slice(lineStart, token.start))) return false;
+  const lineEnd = raw.indexOf('\n', token.end);
+  return /[^\s]/.test(raw.slice(token.end, lineEnd === -1 ? raw.length : lineEnd));
+}
+
+function isRealOptionBoundary(raw, token, matches) {
+  if (!isOptionLineStart(raw, token)) return false;
+  const letter = raw.charAt(token.start);
+  const index = matches.findIndex(match =>
+    match.letter === letter && match.start <= token.start && match.end >= token.end);
+  return index !== -1 && orderedOptionCompletion(matches, index);
+}
+
+function initialismTokens(raw) {
   const tokens = [];
   for (const m of raw.matchAll(/[A-Z]\./g)) {
     const start = m.index;
     if (start > 0 && /[A-Za-z0-9]/.test(raw[start - 1])) continue;
-    tokens.push({ start, end: start + 2 });
+    tokens.push({ letter: raw.charAt(start), start, end: start + 2 });
   }
+  return tokens;
+}
+
+function spacedInitialismSpans(raw, matches) {
+  // D-111: a spaced dotted run is initialism text, but a real option line that
+  // starts right after it (`John F.` or `C. I. F.` then `A.`) is a boundary and
+  // ends the run instead of being absorbed into it.
+  const list = Array.isArray(matches) ? matches : [];
+  const tokens = initialismTokens(raw);
   const spans = [];
   let runStart = -1;
   let runEnd = -1;
   for (const token of tokens) {
+    if (isRealOptionBoundary(raw, token, list)) {
+      if (runEnd - runStart > 2) spans.push([runStart, runEnd]);
+      runStart = -1;
+      runEnd = -1;
+      continue;
+    }
     if (runStart < 0) {
       runStart = token.start;
       runEnd = token.end;
@@ -887,13 +929,31 @@ function parseQuestion(chunk) {
     // EC-98: a PASSAGE heading with fewer than two linked questions is read as ordinary text.
     matches = matches.filter(match => !match.parenLower);
   }
-  const initialismSpans = spacedInitialismSpans(raw);
+  const initialismSpans = spacedInitialismSpans(raw, matches);
   if (initialismSpans.length) {
     // EC-160/EC-161: a spaced dotted initial run is text, not an option
-    // boundary, but only when the real A-D set survives without it.
-    const narrowed = matches.filter(match =>
-      !initialismSpans.some(span => match.start < span[1] && match.end > span[0]));
-    if (narrowed.length !== matches.length && hasCompleteOptionSet(narrowed)) matches = narrowed;
+    // boundary, but only when the real A-D set survives without it. A covered
+    // label is restored when no other candidate carries its letter, so a
+    // trailing initialism cannot hide a real option line.
+    const covered = match =>
+      initialismSpans.some(span => match.start < span[1] && match.end > span[0]);
+    const narrowed = matches.filter(match => !covered(match));
+    if (narrowed.length !== matches.length) {
+      const restored = [];
+      const missing = REQUIRED_OPTION_LETTERS.split('')
+        .filter(letter => !narrowed.some(match => match.letter === letter));
+      if (missing.length) {
+        const tokens = initialismTokens(raw);
+        for (const letter of missing) {
+          const keep = matches.find(match => match.letter === letter && covered(match)) ||
+            tokens.find(token => token.letter === letter && covered(token));
+          if (keep) restored.push(keep);
+        }
+      }
+      const kept = narrowed.concat(restored)
+        .sort((a, b) => a.start - b.start || b.end - a.end);
+      if (hasCompleteOptionSet(kept)) matches = kept;
+    }
   }
   if (!hasCompleteOptionSet(matches)) {
     const loose = optionInlineMatches(raw).concat(matches)
