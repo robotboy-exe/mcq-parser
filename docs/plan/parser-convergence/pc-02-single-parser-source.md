@@ -1,15 +1,17 @@
 # PC02 — Single Parser Source
 
-- **Status:** in progress — implemented 2026-11-26 on
-  `scratch/pc02-single-parser-source` from package base `0279e70`; awaiting
-  rigorous review. Brave installability is not yet evidenced.
+- **Status:** done — implemented 2026-11-26 on
+  `scratch/pc02-single-parser-source` from package base `0279e70`; rigorous
+  review settled `PASS WITH ACCEPTED FINDINGS`; owner confirmed external browser
+  installability; fast-forward merged into `scratch/parser-convergence-cycle`.
 - **Package base:** `0279e70` (the reconciled PC01 boundary; product tree
   byte-identical to the reviewed candidate `cc72e3b`)
 - **Implementation branch:** short-lived `scratch/pc02-single-parser-source`
 - **Depends on:** PC01 done and rigorous review settled
 - **Blocks:** PC03
 - **Review level:** rigorous
-- **External gate:** desktop and Brave bookmarklet installability
+- **External gate:** owner's browser bookmarklet installability (confirmed
+  2026-11-26)
 - **Intent:** [`../../../INTENT.md`](../../../INTENT.md)
 
 ## Goal
@@ -103,13 +105,52 @@ sources, `deployed/*.php`, `fixtures/`. No live-origin file approaches the
 | Tests | Full Node baseline (68/173/38/42/10/7/26/69, 7 bank hashes) and PHP 8.3.37 baseline (33/8/14, 7/7 lint); `tests/single-source.js` 15 checks |
 | Safety | No deploy, live action, database operation, or real-branch change; only the package branch was pushed |
 
-**Open questions.** Brave installability of the now 131 KB stimulus artifact is
-unevidenced; only Chromium ran it. `php tests/cbt-staging.php` remains gated on a
+**Open questions.** No Brave-specific installability run was recorded for the
+now 131 KB stimulus artifact; the owner's browser check below stands as the
+external evidence. `php tests/cbt-staging.php` remains gated on a
 disposable MySQL URL. The stimulus artifact size grew by 29,931 B because it now
 carries the whole canonical core instead of a partial copy; mobile bookmarklet
 limits are unchanged from the prior documented risk.
 
 **Review status.** Candidate committed and pushed at the owner's explicit
 request as `6592991` on `origin/scratch/pc02-single-parser-source` (product tree
-the same as measured above); awaiting independent rigorous review.
+the same as measured above). The independent rigorous review then settled
+`PASS WITH ACCEPTED FINDINGS`; see the reconciliation handoff below.
 `Commit: 6592991`.
+
+**2026-11-26 — review settled, external gate confirmed, merged and reconciled.**
+
+**Review outcome.** The rigorous review
+([record](../reviews/parser-convergence-2026-11-phase-2.md)) reviewed candidate
+`01e2c02` (docs-only child of implementation commit `6592991`) and returned
+**`PASS WITH ACCEPTED FINDINGS`** with zero `BLOCK` and zero `FIX` findings and
+non-blocking `NOTE-1`/`NOTE-2`. Review status is **settled**; no fix or
+re-review round is required.
+
+**External browser installability — confirmed.** The owner confirmed on
+2026-11-26 that both generated bookmarklets built from `01e2c02` load and run in
+the owner's browser: `src/bookmarklet.js` (1 L / 131,268 B) and
+`src/bookmarklets/key/bookmarklet.js` (1 L / 71,422 B). This clears the PC02
+external gate.
+
+**Merge.** `origin/scratch/pc02-single-parser-source` (`55afe15`) was
+fast-forward merged into `scratch/parser-convergence-cycle` from `0279e70`.
+The product tree matches the reviewed implementation commit `6592991`; the only
+paths added on top of it are this package record and the phase-2 review record.
+
+**Post-merge checks.** `node src/build/build.js --check` (131,267 B stripped),
+`node src/bookmarklets/key/build.js --check` (71,421 B stripped), and
+`node tests/single-source.js` (15 checks) all pass on the merged tip.
+
+**Reconciliation.** `NOTE-1` is corrected in root `AGENTS.md`, whose test list
+now names `node tests/single-source.js` and whose build bullet names both
+`--check` commands. `NOTE-2` remains an accepted residual (`tests/single-source.js`
+does not mount the stimulus UI, and `tests/ui-harness.js` injects
+`src/parser/parser.js`). Current-facing status is reconciled in
+[`../README.md`](../README.md), [`../../STATUS.md`](../../STATUS.md), and
+[`../prompts/phase-map.md`](../prompts/phase-map.md). No product, test,
+generated, or review-evidence file was changed.
+
+**Next package.** PC03 (spaced initialisms) is `not started` on
+`scratch/pc03-spaced-initialisms`; Gate 1 has not begun. No deploy or live
+action is authorized.

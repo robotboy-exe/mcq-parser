@@ -24,8 +24,8 @@ Last updated: 2026-11-26.
   stimulus baseline `d5a62f0`; and the key/main scratch merge at `793cb8f`.
   The pre-package `scratch/single-core-port` diff and its external backup are
   quarantined exploration, not package evidence or a cherry-pick source.
-- Current package: PC02, `in progress`. PC01 is `done` and review-settled: the
-  2026-11-26 re-review 3 of candidate `cc72e3b`
+- Current package: PC03, `not started`; PC02 is `done`. PC01 is `done` and
+  review-settled: the 2026-11-26 re-review 3 of candidate `cc72e3b`
   ([record](reviews/parser-convergence-2026-11-phase-1-re-review-3.md)) returned
   `PASS` with no new findings, closing `BLOCK-5` and `FIX-4`, so every
   `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` is closed. `scratch/pc01-product-separation`
@@ -39,8 +39,14 @@ Last updated: 2026-11-26.
   both builds accept `--check`, and the `%` guard narrowed to `%HH` under D-110.
   New `tests/single-source.js` passes 15 checks and the full Node/PHP baseline
   is green; a Cloud Chromium probe ran both generated artifacts on the real
-  staging admin page. Brave installability is still unevidenced. The package
-  stays `in progress` until its rigorous review settles.
+  staging admin page. The 2026-11-26 rigorous review of candidate `01e2c02`
+  ([record](reviews/parser-convergence-2026-11-phase-2.md)) returned
+  `PASS WITH ACCEPTED FINDINGS` with `NOTE-1`–`NOTE-2` and no `BLOCK`/`FIX`; the
+  owner confirmed the same day that both generated bookmarklets from `01e2c02`
+  load and run in the owner's browser, and `scratch/pc02-single-parser-source`
+  was fast-forward merged into the scratch cycle line from `0279e70` to
+  `55afe15` with a product tree matching `6592991`. `NOTE-1` is corrected in
+  root `AGENTS.md`; `NOTE-2` is accepted residual. PC02 is `done`.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -354,11 +360,11 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | Phase | ID | Package | Depends on | Status | External gate |
 |---|---|---|---|---|---|
 | 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings, closing `BLOCK-5`/`FIX-4`; every `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed; merged into `scratch/parser-convergence-cycle` at `e6f34f8` | disposable browser; no deploy/live |
-| 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | in progress; implemented on `scratch/pc02-single-parser-source` from base `0279e70`; 15 guard checks and the full Node/PHP baseline pass; awaiting rigorous review | desktop and Brave bookmarklet installability |
+| 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | done — 2026-11-26 rigorous review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1`–`NOTE-2`, no `BLOCK`/`FIX`); owner confirmed both generated bookmarklets load and run in the owner's browser; fast-forward merged into `scratch/parser-convergence-cycle` (`0279e70`→`55afe15`) | owner's browser bookmarklet installability (confirmed 2026-11-26) |
 | 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | not started | none; parser and real-surface evidence |
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
 | 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | not started | none; prior BLOCK controls mandatory |
-| 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | not started | desktop + Brave/Android for both bookmarklets; owner choice for key `needsImage` policy |
+| 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | not started | owner's browser for both bookmarklets; owner choice for key `needsImage` policy |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -431,8 +437,8 @@ verifies the detail path with the rest of Release A.
 | Checkpoint | Scope | Level | Status |
 |---|---|---|---|
 | phase 1 | PC01 product separation | rigorous | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings (`BLOCK-5`/`FIX-4` closed, all `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed); merged into the scratch cycle line at `e6f34f8` |
-| phase 2 | PC02 one parser source and build parity | rigorous | in progress; candidate on `scratch/pc02-single-parser-source` from base `0279e70`, full baseline and 15 guard checks green, Chromium staging probe passed; Brave installability unevidenced; awaiting rigorous review |
-| phase 3 | PC03 spaced initialisms | rigorous | blocked by PC02 review |
+| phase 2 | PC02 one parser source and build parity | rigorous | done — 2026-11-26 review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1` corrected, `NOTE-2` accepted); owner confirmed both generated bookmarklets in the owner's browser; fast-forward merged into the scratch cycle line |
+| phase 3 | PC03 spaced initialisms | rigorous | not started — PC02 settled; Gate 1 not begun |
 | phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
 | phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | blocked by PC04 review |
 | phase 6 | PC06 bookmarklet policy and scratch release | rigorous | blocked by PC05 review and owner key-image policy choice |
@@ -459,20 +465,16 @@ verifies the detail path with the rest of Release A.
 7. **Owner decision after review** — only after every finding settles, decide
    whether and how to integrate the reviewed scratch cycle into real branches.
 
-Current workflow stop: PC02 is implemented on
-`scratch/pc02-single-parser-source` from package base `0279e70` and awaits its
-rigorous review. `src/parser/core.js` is now the only parser source; the
-stimulus build inlines it with `src/bookmarklets/stimulus/autosave.js` and
-`src/ui/ui.js`, and `src/parser/parser.js` is a 7-line Node facade over the exact
-core identities. Both builds accept `--check` for stale output, and the build
-`%` guard narrowed to `%HH` under D-110 with core bytes unchanged. Evidence:
-15 `tests/single-source.js` checks, the full Node baseline (68 runner, 173 unit,
-38 helper, 42 key, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 7
-bank hashes) and the PHP 8.3.37 baseline (33 renderer, 8 store, 14 ordering,
-7/7 lint), plus a Cloud Chromium run of both generated artifacts on the real
-staging `admin_questions.php`. Brave installability remains unevidenced, and PC02
-stays `in progress` until review settles it. No commit, merge, deploy, or live
-action is authorized beyond the requested branch push.
+Current workflow stop: PC02 is `done`. Its rigorous review of `01e2c02`
+returned `PASS WITH ACCEPTED FINDINGS` with `NOTE-1`–`NOTE-2` and no
+`BLOCK`/`FIX`, the owner confirmed on 2026-11-26 that both generated
+bookmarklets from `01e2c02` load and run in the owner's browser, and the package
+was fast-forward merged into `scratch/parser-convergence-cycle` from `0279e70`
+to `55afe15` with the product tree matching `6592991`. The three post-merge
+checks (`node src/build/build.js --check`, `node src/bookmarklets/key/build.js
+--check`, `node tests/single-source.js` 15 checks) pass on the merged tip. PC03
+is `not started` on `scratch/pc03-spaced-initialisms`; Gate 1 has not begun. No
+deploy or live action is authorized.
 
 ## Archived `math-editor-2026-11` close path
 

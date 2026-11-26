@@ -7,8 +7,8 @@ Last updated: 2026-11-26.
 - Cycle: `parser-convergence-2026-11`; active map:
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
 - Frozen base: `793cb8f`; scratch integration line:
-  `scratch/parser-convergence-cycle`; PC01 is `done` and review-settled;
-  current package PC02 is `not started`.
+  `scratch/parser-convergence-cycle`; PC01 and PC02 are `done` and
+  review-settled; current package PC03 is `not started`.
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /
@@ -87,8 +87,21 @@ Last updated: 2026-11-26.
   store, 14 ordering, 7/7 lint). A Cloud Chromium probe on the real
   `admin_questions.php` staging page executed both generated artifacts from
   `javascript:` links (131,202 and 71,375 chars), mounted each product panel,
-  and loaded a two-question paste into the native form. Brave installability is
-  not yet evidenced. PC02 is `in progress` until its rigorous review settles.
+  and loaded a two-question paste into the native form. The 2026-11-26
+  rigorous review of candidate `01e2c02`
+  ([record](plan/reviews/parser-convergence-2026-11-phase-2.md)) returned
+  `PASS WITH ACCEPTED FINDINGS` with `NOTE-1`/`NOTE-2` and no `BLOCK`/`FIX`.
+  `NOTE-1` is corrected in root `AGENTS.md`; `NOTE-2` is accepted residual. The
+  owner confirmed on 2026-11-26 that both generated bookmarklets from `01e2c02`
+  load and run in the owner's browser (`src/bookmarklet.js` 131,268 B and
+  `src/bookmarklets/key/bookmarklet.js` 71,422 B), clearing the PC02 external
+  gate. `origin/scratch/pc02-single-parser-source` (`55afe15`) was fast-forward
+  merged into `scratch/parser-convergence-cycle` from `0279e70`; the product
+  tree matches the reviewed implementation commit `6592991`, and
+  `node src/build/build.js --check`,
+  `node src/bookmarklets/key/build.js --check`, and `node tests/single-source.js`
+  (15 checks) pass on the merged tip. PC02 is `done`; PC03 is `not started` on
+  `scratch/pc03-spaced-initialisms`, with Gate 1 not begun.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle
