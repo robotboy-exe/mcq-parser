@@ -109,5 +109,7 @@ disposable MySQL URL. The stimulus artifact size grew by 29,931 B because it now
 carries the whole canonical core instead of a partial copy; mobile bookmarklet
 limits are unchanged from the prior documented risk.
 
-**Review status.** Awaiting independent rigorous review of
-`origin/scratch/pc02-single-parser-source`. `Commit: deferred`.
+**Review status.** Candidate committed and pushed at the owner's explicit
+request as `6592991` on `origin/scratch/pc02-single-parser-source` (product tree
+the same as measured above); awaiting independent rigorous review.
+`Commit: 6592991`.
