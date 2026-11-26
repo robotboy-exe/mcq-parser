@@ -266,7 +266,7 @@ function splitRegions(text) {
       continue;
     }
     if (current && (kind === 'heading' ||
-      (kind === 'instruction' && sawOption && !bareOption && !stimulusIntroLine(line)))) {
+      (kind === 'instruction' && sawOption && !(bareOption && /^["'\u201c\u2018].*["'\u201d\u2019]$/.test(line.trim())) && !stimulusIntroLine(line)))) {
       pending.push({ kind, text: line.trim() });
       bareOption = false;
       continue;
@@ -647,7 +647,7 @@ function stimulusIntroRangeText(line) {
       end += next[0].length;
       count++;
       const afterTok = s.slice(end);
-      const validEnd = /^(?:$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively|are|refer|use|based|on|in|for|from|of|under|with|which|that)\b)/i.test(afterTok);
+      const validEnd = /^(?:$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively|are|refer|use|based|on|in\s+(?:the|this|that|these|those|section|part)|for|from|of|under|with|which|that)\b)/i.test(afterTok);
       if (!inCommaTail || /^Q/i.test(tok) || validEnd) {
         safeEnd = end;
         safeCount = count;
@@ -855,6 +855,7 @@ function extractStimulusMarkers(raw, num) {
     STIMULUS_MARKER_INLINE.lastIndex = 0;
     let m;
     while ((m = STIMULUS_MARKER_INLINE.exec(line))) {
+      if ((m.index > 0 && line[m.index - 1] === '[') || line[m.index + m[0].length] === ']') continue;
       markers.push({
         at: i + m.index / Math.max(1, line.length),
         line: i,

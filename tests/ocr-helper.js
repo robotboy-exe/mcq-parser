@@ -724,6 +724,32 @@ test('Load reproduces/guards PC04 BLOCK-1, BLOCK-2, BLOCK-3, BLOCK-4, and BLOCK-
   const g1 = formState(loadThroughForm(full(H + '\n' + I + '\n[image]]')));
   assert.strictEqual(g1.d, 'four ' + I + ' [image]]');
   assert.strictEqual(g1.queue.items[0].stimuli, undefined);
+
+  const v6 = formState(loadThroughForm(full(H + '\n\nUse the diagram below to answer questions 20 to 22, 25 in cash was deposited.\n[image]')));
+  assert.strictEqual(v6.d, 'four');
+  assert.deepStrictEqual(v6.queue.items[0].flags, []);
+  assert.deepStrictEqual(v6.queue.items[0].stimuli[0].nums, [20, 21, 22]);
+
+  for (const instr of ['Answer all questions in this section.', 'Answer questions 20, 22 and 24.']) {
+    const v7 = formState(loadThroughForm(full('19. Which statement is correct?\nA. one\nB. two\nC. three\nD.\n' + instr)));
+    assert.strictEqual(v7.d, '');
+    assert.deepStrictEqual(v7.queue.items[0].flags, ['option D missing']);
+    assert.strictEqual(v7.queue.items[0].stimuli, undefined);
+  }
+
+  const s4Unquoted = formState(loadThroughForm(full('19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nD.\n' + I + '\n[image]')));
+  assert.strictEqual(s4Unquoted.d, I);
+  assert.deepStrictEqual(s4Unquoted.queue.items[0].stimuli[0].nums, []);
+
+  for (const marker of ['[[image: 21]]]', '[[[image: 21]]']) {
+    const v8 = formState(loadThroughForm(full(H + '\n' + I + '\n' + marker)));
+    assert.strictEqual(v8.d, 'four ' + I + ' ' + marker);
+    assert.strictEqual(v8.queue.items[0].stimuli, undefined);
+  }
+
+  const v8Inline = formState(loadThroughForm(full(H + ' [[image: 21]]')));
+  assert.strictEqual(v8Inline.d, 'four');
+  assert.deepStrictEqual(v8Inline.queue.items[0].stimuli[0].nums, [21]);
 });
 
 test('Load leaves E/F text out of the native four-option form', () => {

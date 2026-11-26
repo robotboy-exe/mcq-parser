@@ -186,7 +186,10 @@ const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spa
     '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25-10-2023 is the issue date.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
     '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nUse the diagram below to answer questions 20 to 22.\nBalance: 500\nOrdinary explanatory prose stays in this option.\n[image]',
     '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nAnswer questions 20, 22 and 24.\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
-    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nUse the diagram below to answer questions 20 to 22.\n[image]]'
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nUse the diagram below to answer questions 20 to 22.\n[image]]',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25 in cash was deposited.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD.\nAnswer all questions in this section.\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nUse the diagram below to answer questions 20 to 22.\n[[image: 21]]]'
   ]);
 
 for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {

@@ -797,6 +797,93 @@ test('PC04 BLOCK-5: mismatched brackets are never recognized as image markers (G
   eq(inline.items[0].stimuli[0].nums, [21], 'inline explicit range');
 });
 
+test('PC04 BLOCK-6: amounts followed by in cash never become image targets (V6)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const intro = 'Use the diagram below to answer questions 20 to 22, 25 in cash was deposited.';
+  const v6 = parser.parsePaste(full(H + '\n\n' + intro + '\n[image]'));
+  const q19 = v6.items[0];
+  eq(q19.question, 'Which statement is correct?', 'V6 Q19 stem');
+  eq([q19.a, q19.b, q19.c, q19.d], ['one', 'two', 'three', 'four'], 'V6 Q19 options');
+  eq(q19.flags, [], 'V6 Q19 flags');
+  eq(q19.stimuli.length, 1, 'V6 one stimulus');
+  eq(q19.stimuli[0].text, intro, 'V6 full intro preserved');
+  eq(q19.stimuli[0].nums, [20, 21, 22], 'V6 nums');
+  eq(q19.stimuli[0].missing, [], 'V6 missing');
+  eq(v6.items.filter(item => item.needsImage).map(item => item.num), [20, 21, 22], 'V6 flagged items');
+
+  const ctrlIntro = 'Use the diagram below to answer questions 20, 22 in the section below.';
+  const ctrl = parser.parsePaste(full(H + '\n\n' + ctrlIntro + '\n[image]'));
+  eq(ctrl.items[0].stimuli[0].nums, [20, 22], 'in the section below control nums');
+  eq(ctrl.items[0].stimuli[0].missing, [], 'in the section below control missing');
+  eq(ctrl.items.filter(item => item.needsImage).map(item => item.num), [20, 22], 'in the section below flagged items');
+});
+
+test('PC04 BLOCK-7: bare Option D label never steals ordinary RM01 instructions (V7, V7-r)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const bareD = '19. Which statement is correct?\nA. one\nB. two\nC. three\nD.';
+  const I = 'Use the diagram below to answer questions 20 to 22.';
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  for (const [label, instr] of [['V7', 'Answer all questions in this section.'], ['V7-r', 'Answer questions 20, 22 and 24.']]) {
+    const parsed = parser.parsePaste(full(bareD + '\n' + instr));
+    const q19 = parsed.items[0];
+    eq(q19.question, 'Which statement is correct?', label + ' Q19 stem');
+    eq([q19.a, q19.b, q19.c, q19.d], ['one', 'two', 'three', ''], label + ' Q19 options');
+    eq(q19.flags, ['option D missing'], label + ' Q19 flags');
+    eq(q19.stimuli, undefined, label + ' no marker stimulus');
+    eq(parsed.items[1].sectionInstruction, instr, label + ' Q20 sectionInstruction');
+    eq(parsed.regions, [{ kind: 'instruction', text: instr, from: 20, to: 26 }], label + ' regions');
+  }
+
+  const unquotedS4 = parser.parsePaste(full('19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nD.\n' + I + '\n[image]'));
+  const s4Item = unquotedS4.items[0];
+  eq(s4Item.question, 'Which of these instructions mentions the diagram?', 'unquoted S4 stem');
+  eq([s4Item.a, s4Item.b, s4Item.c, s4Item.d], ['one', 'two', 'three', I], 'unquoted S4 options');
+  eq(s4Item.flags, ['option D contains section heading or instruction'], 'unquoted S4 flags');
+  eq(s4Item.stimuli.length, 1, 'unquoted S4 marker');
+  eq(s4Item.stimuli[0].text, '', 'unquoted S4 empty marker text');
+  eq(s4Item.stimuli[0].nums, [], 'unquoted S4 empty marker nums');
+  eq(unquotedS4.items.filter(item => item.needsImage), [], 'unquoted S4 no needsImage');
+});
+
+test('PC04 BLOCK-8: bad bracket runs never fall through to inline marker matching (V8)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const I = 'Use the diagram below to answer questions 20 to 22.';
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  for (const [label, marker] of [['V8-close', '[[image: 21]]]'], ['V8-open', '[[[image: 21]]']]) {
+    const parsed = parser.parsePaste(full(H + '\n' + I + '\n' + marker));
+    eq(parsed.items[0].stimuli, undefined, label + ' no marker stimulus');
+    eq(parsed.items[0].d, 'four ' + I + ' ' + marker, label + ' Q19.D preserved');
+    eq(parsed.items.filter(item => item.needsImage), [], label + ' no needsImage');
+  }
+
+  const pairedStandalone = parser.parsePaste(full(H + '\n' + I + '\n[[image: 21]]'));
+  eq(pairedStandalone.items[0].d, 'four', 'paired standalone Q19.D');
+  eq(pairedStandalone.items[0].flags, [], 'paired standalone flags');
+  eq(pairedStandalone.items[0].stimuli[0].text, I, 'paired standalone marker text');
+  eq(pairedStandalone.items[0].stimuli[0].nums, [21], 'paired standalone explicit range');
+  eq(pairedStandalone.items.filter(item => item.needsImage).map(item => item.num), [21], 'paired standalone flagged item');
+
+  const pairedInline = parser.parsePaste(full(H + ' [[image: 21]]'));
+  eq(pairedInline.items[0].d, 'four', 'paired inline stripped');
+  eq(pairedInline.items[0].stimuli[0].nums, [21], 'paired inline explicit range');
+  eq(pairedInline.items.filter(item => item.needsImage).map(item => item.num), [21], 'paired inline flagged item');
+});
+
 test('splitSections removes a 19xx answer title without extending option D', () => {
   const parsed = parser.parsePaste([
     'CRS 1994 JAMB',

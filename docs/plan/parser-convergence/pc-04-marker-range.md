@@ -1,8 +1,8 @@
 # PC04 — Marker-Adjacent Range Extraction
 
-- **Status:** in progress — `BLOCK-1`–`BLOCK-5` fixes implemented on
-  `scratch/pc04-marker-range` at base `9afe4f8` (core `2.5.6`, D-112); awaiting
-  rigorous phase-4 re-review
+- **Status:** in progress — `BLOCK-1`–`BLOCK-5` closed by re-review 1;
+  `BLOCK-6`–`BLOCK-8` fixes implemented on `scratch/pc04-marker-range` at base
+  `9afe4f8` (core `2.5.6`, D-112), awaiting rigorous phase-4 re-review 2
 - **Package base:** `9afe4f806e1254ecf74c93f13f5ee73d1c4fd497` (reconciled PC03
   cycle tip on `scratch/parser-convergence-cycle`)
 - **Implementation branch:** short-lived `scratch/pc04-marker-range`
@@ -202,6 +202,49 @@ Five additive regression blocks in `tests/unit.js` and the PC04 Load suite in `t
 - PHP CLI `8.5.12` and `8.3.32` (`$HOME/tmp/php83-review/php`): `php-render` (33), `admin-question-store` (8), `cbt-question-order` (14), `php -l` on all 7 `deployed/*.php` files PASS.
 - Disposable SQLite HTTP staging (`tools/start-phone-staging.sh`, Chromium `157.0.8103.38` via `chromium-cdp`): `coreVersion: "2.5.6"`, 0 `pageerror`, 0 POSTs across 27 real `Load` calls (`raw`, `S1`, `S2`, `S5`, `N1`, `N2`, `A1`, `R1`, `G1` on manual, key, and stimulus), plus real PNG Attach on `N1`/`N2` (`#ocr_img_range_0 = "20-22"`, status `"Ready"`), `A1` (`#ocr_img_range_0 = ""`), and `G1` (`#ocr_image_plan` hidden); staging and CDP stopped and cleaned afterwards.
 
-**Review status.** `BLOCK-1`–`BLOCK-5` fixes implemented on `scratch/pc04-marker-range`; requires independent rigorous phase-4 re-review (`NOTE-1` documentation drift remains deferred/non-blocking).
+**Review status.** `BLOCK-1`–`BLOCK-5` fixes implemented on `scratch/pc04-marker-range`; round 1 rigorous re-review ([record](../reviews/parser-convergence-2026-11-phase-4-re-review.md)) closed `BLOCK-1`–`BLOCK-5` and recorded round-1 `BLOCK-6`, `BLOCK-7`, and `BLOCK-8` (`NOTE-1` documentation drift remains deferred/non-blocking).
+
+**2026-11-26 — phase-4 fix 2 (`BLOCK-6`, `BLOCK-7`, `BLOCK-8`), awaiting rigorous re-review 2.**
+
+**Failing-first reproduction (against unfixed candidate `7b66bf1`).**
+Three additive regression blocks in `tests/unit.js` and the corresponding PC04 Load checks in `tests/ocr-helper.js` were added and run before editing `src/parser/core.js`:
+- `BLOCK-6` (`tests/unit.js`): `V6 nums` failed: `actual [20, 21, 22, 25]` vs `expected [20, 21, 22]` (and `tests/ocr-helper.js` Q19 Load failed on `V6`: `actual [20, 21, 22, 25]` vs `expected [20, 21, 22]`).
+- `BLOCK-7` (`tests/unit.js`): `V7 Q19 options` failed: `actual ['one', 'two', 'three', 'Answer all questions in this section.']` vs `expected ['one', 'two', 'three', '']`.
+- `BLOCK-8` (`tests/unit.js`): `V8-close no marker stimulus` failed: `actual [{ id: 'stim-1', marker: '[[image: 21]]', nums: [21], ... }]` vs `expected undefined`.
+- `tests/unit.js` unfixed summary: `194 PASS, 3 FAIL` (`tests/ocr-helper.js` exited 1 at `V6`).
+
+**Frozen closure mapping (implementation and evidence).**
+- `BLOCK-6` (`V6`, positive control `Use the diagram below to answer questions 20, 22 in the section below.`, `N1–N5`, `B6`, `P1`, `P2`): `stimulusIntroRangeText` in `src/parser/core.js` narrows the `in` terminator in `validEnd` to `in\s+(?:the|this|that|these|those|section|part)`, so `, 25 in cash was deposited.` is not treated as a question-list terminator (`nums=[20,21,22]`, `missing=[]`, Q19 unchanged with `flags=[]`) while `20, 22 in the section below.` continues to yield `[20,22]`. Verified via `tests/unit.js`, `tests/ocr-helper.js` (`V6` Load), `tests/single-source.js`, and real staging browser `Load` across all three products (`V6` and `V6-ctrl`, with stimulus `#ocr_img_range_0 = "20-22"` accepting PNG Attach as `Ready`).
+- `BLOCK-7` (`V7`, `V7-r`, controls `R1/R2`, raw positive, `S4`, unquoted wrapped `S4`): `splitRegions` in `src/parser/core.js` narrows the `bareOption` exemption on `kind === 'instruction'` to quoted option lines (`/^["'\u201c\u2018].*["'\u201d\u2019]$/`), so ordinary unquoted instructions after a bare Option D label (`D.\nAnswer all questions in this section.` and `D.\nAnswer questions 20, 22 and 24.`) route to Q20–Q26's `instruction` region with `Q20.sectionInstruction` intact, `d=''`, and `flags=['option D missing']`, while `S4` (quoted) and unquoted wrapped `S4` (`stimulusIntroLine(line)` + `stimulusTransparentLine`) retain literal `I` in Option D with no extracted stimulus range. Verified via `tests/unit.js`, `tests/ocr-helper.js`, `tests/single-source.js`, and real staging browser `Load` across all three products (`V7`, `V7-r`, `S4`, `S4-unquoted`).
+- `BLOCK-8` (`V8-close`, `V8-open`, paired controls `H\nI\n[[image: 21]]` and `H [[image: 21]]`, `G1–G4`, `P1/P2`, raw): `extractStimulusMarkers` in `src/parser/core.js` skips any `STIMULUS_MARKER_INLINE` match immediately preceded by `[` or followed by `]`, so `[[image: 21]]]` and `[[[image: 21]]` produce no marker, no `needsImage`, and no plan row and keep Option D unstripped, while paired standalone `[[image: 21]]` and paired inline `H [[image: 21]]` yield `[21]`. Verified via `tests/unit.js`, `tests/ocr-helper.js`, `tests/single-source.js`, and real staging browser `Load` across all three products (`V8-close`, `V8-open`, `V8-inline`, with stimulus `#ocr_image_plan` hidden on `V8-close`/`V8-open` and `#ocr_img_range_0 = "21"` on `V8-inline`).
+
+**Production files (cumulative from package base `9afe4f8` → post-fix 2).**
+
+| File | Base (`9afe4f8`) | Final | Cumulative `+/-` | Responsibility / deployment | Production-path test |
+|---|---|---|---|---|---|
+| `src/parser/core.js` | 1,855 L / 65,965 B `28172dfafcb3…` | 1,966 L / 70,360 B `520463006172…` | `+130/-19` | canonical pure parser `2.5.6` (D-112 + `BLOCK-1`–`BLOCK-8` fixes); site-root `src/`, loaded by `admin_questions.php`, inlined by both builders | `tests/runner.js` (74), `tests/unit.js` (197), `tests/ocr-helper.js` (43), `tests/single-source.js` (15), `tests/key-bookmarklet.js` (42), 73-prior-input diff (0 diffs), staging Loads (27/27) |
+| `ocr_helper.js` | 127 L / 4,917 B `86497f4d0686…` | 127 L / 4,917 B `5cdba5c3b7e9…` | `+1/-1` | deployed manual adapter (`EXPECTED_CORE_VERSION` `2.5.6`); site root; live-origin `+51/-45` (cap <= 100) | `tests/ocr-helper.js` (43 checks), staging manual `Load` (9/9) |
+| `src/bookmarklets/key/entry.js` | 596 L / 24,700 B `34e78c3e1e89…` | 596 L / 24,700 B `ddbd8aebd10e…` | `+1/-1` | key/autosave entry (`EXPECTED_CORE_VERSION` `2.5.6`); inlined only into key artifact | `tests/key-bookmarklet.js` (42 checks), staging key `Load` (9/9) |
+| `deployed/admin_questions.php` | 1,057 L / 62,877 B `388d38532c83…` | 1,057 L / 62,877 B `1e193d34f9d3…` | `+2/-2` | `core.js?v=2.5.6` before `ocr_helper.js?v=2.4.9`; site root; live-origin `+96/-85` (cap <= 100) | `php -l` (8.5.12 & 8.3.32), staging page, `docs/DEPLOYMENT.md` manifest (`15/15`) |
+
+**Excluded generated and archived artifacts (never hand-edited).**
+- `src/bookmarklet.js`: 1 L / 138,958 B (`138,957` B stripped, sha256 `58e30bd058fe…`, rebuilt via `node src/build/build.js`, `--check` exit 0, `node --check` pass, `%HH`-free, `tests/single-source.js` + staging stimulus `Load` 9/9 + `V6` Attach `Ready`).
+- `src/bookmarklets/key/bookmarklet.js`: 1 L / 79,112 B (`79,111` B stripped, sha256 `925a17060016…`, rebuilt via `node src/bookmarklets/key/build.js`, `--check` exit 0, `node --check` pass, `%HH`-free, `tests/key-bookmarklet.js` + `tests/single-source.js` + staging key `Load` 9/9).
+- `src/bookmarklet.min.js`: untracked/absent, untouched.
+- `archive/live-sources/*`, root `admin_questions.php` / `answer_details.php` / `cbt.php` / `cbt_practice.php`, and `docs/plan/reviews/parser-convergence-2026-11-phase-4*.md`: excluded evidence/review records, untouched.
+
+**Verification summary (post-fix 2).**
+- `node src/build/build.js --check` / `node src/bookmarklets/key/build.js --check`: exit 0 (`138,957` / `79,111` B stripped); `wc -l`: `1` each; `node --check`: PASS.
+- `node tests/runner.js`: 74 fixtures: 74 PASS, 0 FAIL, 0 PENDING.
+- 73 prior inputs from `9afe4f8`: 0 diffs vs base `parsePaste` (ignoring `version`) and `ocr_helper.parseAll`.
+- `node tests/unit.js`: 197 PASS, 0 FAIL.
+- `node tests/ocr-helper.js`: 43 PASS.
+- `node tests/key-bookmarklet.js`: 42 PASS.
+- `node tests/single-source.js`: 15 PASS (including `V6`, `V7`, `V8-close` parity).
+- `node tests/underline-toolbar.js` / `question-preview.js` / `math-tool.js` / `render-markup.js`: 10 / 7 / 26 / 69 PASS; `node tools/extract-bank.js --check`: 7 hashes OK.
+- PHP CLI `8.5.12` and `8.3.32` (`$HOME/tmp/php83-review/php`): `php-render` (33), `admin-question-store` (8), `cbt-question-order` (14), `php -l` on all 7 `deployed/*.php` files PASS.
+- Disposable SQLite HTTP staging (`tools/start-phone-staging.sh`, Chromium `157.0.8103.38` via `chromium-cdp`): `coreVersion: "2.5.6"`, 0 `pageerror`, 0 unexpected POSTs across 27 real `Load` calls (`V6`, `V6-ctrl`, `V7`, `V7-r`, `S4`, `S4-unquoted`, `V8-close`, `V8-open`, `V8-inline` on manual, key, and stimulus), plus real PNG Attach on `V6` (`#ocr_img_range_0 = "20-22"`, `#ocr_img_status_0 = "Ready"`), and `#ocr_image_plan` hidden on `V7`, `V7-r`, `V8-close`, `V8-open`; staging and CDP stopped and cleaned afterwards.
+
+**Review status.** `BLOCK-6`, `BLOCK-7`, and `BLOCK-8` fixes implemented on `scratch/pc04-marker-range` (`BLOCK-1`–`BLOCK-5` closed by re-review 1); requires independent rigorous phase-4 re-review 2 (`NOTE-1` documentation drift remains deferred/non-blocking).
 
 `Commit: deferred`.
