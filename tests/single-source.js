@@ -180,7 +180,13 @@ const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spa
     '1. Who is John F.\nA.\nKennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe',
     '1. This happened in A. D. A. 70 B. 80 C. 90 D. 100',
     '1. Which refers to C. I. F.\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery',
-    '19. Stem\nA. one\nB. two\nC. three\nD. four\nUse Figure 2 from 2023 (October 25, 2023, account 123456) below to answer questions 20 to 22.\n[image]'
+    '19. Stem\nA. one\nB. two\nC. three\nD. four\nUse Figure 2 from 2023 (October 25, 2023, account 123456) below to answer questions 20 to 22.\n[image]',
+    '19. What does the diagram below, used for questions 20 to 22, show?\n[image]\nA. one\nB. two\nC. three\nD. four',
+    '19. Which of these instructions mentions the diagram? A. one B. two C. three D. "Use the diagram below to answer questions 20 to 22."\n[image]',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25-10-2023 is the issue date.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nUse the diagram below to answer questions 20 to 22.\nBalance: 500\nOrdinary explanatory prose stays in this option.\n[image]',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nAnswer questions 20, 22 and 24.\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nUse the diagram below to answer questions 20 to 22.\n[image]]'
   ]);
 
 for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {

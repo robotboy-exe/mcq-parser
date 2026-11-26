@@ -24,8 +24,9 @@ Last updated: 2026-11-26.
   stimulus baseline `d5a62f0`; and the key/main scratch merge at `793cb8f`.
   The pre-package `scratch/single-core-port` diff and its external backup are
   quarantined exploration, not package evidence or a cherry-pick source.
-- Current package: PC03 is `done`; PC04 is `in progress` (implemented on
-  `scratch/pc04-marker-range` at base `9afe4f8`, awaiting rigorous review). PC01 is `done` and
+- Current package: PC03 is `done`; PC04 is `in progress` (`BLOCK-1`–`BLOCK-5`
+  fixes implemented on `scratch/pc04-marker-range` at base `9afe4f8`, awaiting
+  rigorous phase-4 re-review). PC01 is `done` and
   review-settled: the 2026-11-26 re-review 3 of candidate `cc72e3b`
   ([record](reviews/parser-convergence-2026-11-phase-1-re-review-3.md)) returned
   `PASS` with no new findings, closing `BLOCK-5` and `FIX-4`, so every
@@ -70,18 +71,23 @@ Last updated: 2026-11-26.
   residual), and `origin/scratch/pc03-spaced-initialisms` (`a4c6d53`) was
   fast-forward merged into `scratch/parser-convergence-cycle` from `331e81f`
   with a product tree matching `69934bf`. PC03 is `done`. PC04 was implemented on
-  `scratch/pc04-marker-range` from package base `9afe4f8` under D-112: a
-  standalone image marker adjacent to a qualifying ranged intro extracts the
-  trimmed run and derives target question numbers from the `questions ...` range
-  clause even without table evidence, explicit marker ranges stay authoritative,
-  intro lines never count as table evidence, and non-target numbers
-  (dates/years/amounts/account numbers/figure labels/options/following questions)
-  never become targets. Core rotates to `2.5.6` (`+48/-11`, `1,892 L / 67,351 B`),
-  helper/key guards and `admin_questions.php` tokens rotate (`?v=2.5.6`, `?v=2.4.9`),
-  both generated artifacts rebuild cleanly (`136,253` / `76,407` B stripped),
-  revalidated `new-edge-image-intro-marker` failed first on `9afe4f8` and now
-  passes alongside 74 runner, 189 unit, 42 helper, 42 key, 15 single-source,
-  PHP 8.5.12 CLI suites, and 4-surface parity. Awaiting rigorous review.
+  `scratch/pc04-marker-range` from package base `9afe4f8` under D-112; its
+  round-1 rigorous review ([record](reviews/parser-convergence-2026-11-phase-4.md))
+  returned `BLOCK` (`BLOCK-1`–`BLOCK-5`, non-blocking `NOTE-1`). The phase-4 fix
+  session hardens `STIMULUS_MARKER_LINE` to paired brackets (`BLOCK-5`),
+  exempts instructions in `splitRegions` only under `stimulusIntroLine`
+  (`BLOCK-4`), restricts marker intro ranges to adjacent blocks (`BLOCK-3`),
+  drops comma-followed prose tails and formatted numbers/dates in
+  `stimulusIntroRangeText` (`BLOCK-2`), and protects stems, inline options,
+  lowercase/slash options, and bare-option wrapped lines (`BLOCK-1`). Core
+  `2.5.6` is `1,965 L / 70,150 B` (`+129/-19`), helper/key guards and
+  `admin_questions.php` tokens remain `?v=2.5.6` / `?v=2.4.9`, both generated
+  artifacts rebuild cleanly (`138,754` / `78,908` B), all 5 findings reproduced
+  failing-first on `b2cb897`, 73 prior inputs show 0 diffs vs `9afe4f8`, and
+  full Node (74 runner, 194 unit, 43 helper, 42 key, 15 single-source, 10
+  underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes), PHP
+  8.5.12 & 8.3.32 CLI (33/8/14, 7/7 lint), and 27 disposable staging browser
+  Loads across all three products pass. Awaiting rigorous phase-4 re-review.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -397,7 +403,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings, closing `BLOCK-5`/`FIX-4`; every `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed; merged into `scratch/parser-convergence-cycle` at `e6f34f8` | disposable browser; no deploy/live |
 | 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | done — 2026-11-26 rigorous review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1`–`NOTE-2`, no `BLOCK`/`FIX`); owner confirmed both generated bookmarklets load and run in the owner's browser; fast-forward merged into `scratch/parser-convergence-cycle` (`0279e70`→`55afe15`) | owner's browser bookmarklet installability (confirmed 2026-11-26) |
 | 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | done — 2026-11-26 re-review 2 of `69934bf` returned `PASS WITH ACCEPTED FINDINGS` (closing `BLOCK-1` and `BLOCK-3`; `BLOCK-2`/`FIX-1` previously closed; non-blocking `NOTE-3`); fast-forward merged into `scratch/parser-convergence-cycle` (`331e81f`→`a4c6d53`) | none; parser and real-surface evidence |
-| 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | in progress — implemented on `scratch/pc04-marker-range` at base `9afe4f8` (core `2.5.6`, D-112), awaiting rigorous review | none; parser and real-surface evidence |
+| 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | in progress — `BLOCK-1`–`BLOCK-5` fixes implemented on `scratch/pc04-marker-range` at base `9afe4f8` (core `2.5.6`, D-112), awaiting rigorous phase-4 re-review | none; parser and real-surface evidence |
 | 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | not started | none; prior BLOCK controls mandatory |
 | 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | not started | owner's browser for both bookmarklets; owner choice for key `needsImage` policy |
 
@@ -474,7 +480,7 @@ verifies the detail path with the rest of Release A.
 | phase 1 | PC01 product separation | rigorous | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings (`BLOCK-5`/`FIX-4` closed, all `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed); merged into the scratch cycle line at `e6f34f8` |
 | phase 2 | PC02 one parser source and build parity | rigorous | done — 2026-11-26 review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1` corrected, `NOTE-2` accepted); owner confirmed both generated bookmarklets in the owner's browser; fast-forward merged into the scratch cycle line |
 | phase 3 | PC03 spaced initialisms | rigorous | done — 2026-11-26 re-review 2 of `69934bf` returned `PASS WITH ACCEPTED FINDINGS` (closing `BLOCK-1` and `BLOCK-3`; `BLOCK-2`/`FIX-1` previously closed; `NOTE-3` accepted residual); fast-forward merged into the scratch cycle line at `a4c6d53` |
-| phase 4 | PC04 marker-adjacent range | rigorous | implemented on `scratch/pc04-marker-range` (base `9afe4f8`, core `2.5.6`); awaiting rigorous review |
+| phase 4 | PC04 marker-adjacent range | rigorous | `BLOCK-1`–`BLOCK-5` fixes implemented on `scratch/pc04-marker-range` (base `9afe4f8`, core `2.5.6`); awaiting rigorous re-review |
 | phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | blocked by PC04 review |
 | phase 6 | PC06 bookmarklet policy and scratch release | rigorous | blocked by PC05 review and owner key-image policy choice |
 | cycle | phases 1–6 on `scratch/parser-convergence-cycle` | rigorous cycle-wide | blocked until every package review settles |
@@ -506,15 +512,16 @@ verifies the detail path with the rest of Release A.
 7. **Owner decision after review** — only after every finding settles, decide
    whether and how to integrate the reviewed scratch cycle into real branches.
 
-Current workflow stop: PC04 is implemented on `scratch/pc04-marker-range` from
-package base `9afe4f8` (`Commit: deferred`). Revalidated
-`new-edge-image-intro-marker` failed first on the base and now passes on
-`2.5.6`; full Node (74 runner, 189 unit, 42 helper, 42 key, 15 single-source,
-10 underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes) and
-PHP 8.5.12 CLI (33 renderer, 8 store, 14 ordering, 7/7 lint) plus both
-`build.js --check` guards pass. Next: explicit owner authorization to commit/push
-`scratch/pc04-marker-range` and run the rigorous phase-4 review; no deploy or
-live action is authorized.
+Current workflow stop: PC04 `BLOCK-1`–`BLOCK-5` fixes are implemented on
+`scratch/pc04-marker-range` from package base `9afe4f8` (`Commit: deferred`).
+All 5 findings reproduced failing-first on `b2cb897` and now pass alongside
+73 prior-input parity (0 diffs), full Node (74 runner, 194 unit, 43 helper,
+42 key, 15 single-source, 10 underline, 7 preview, 26 math-tool, 69
+render-markup, 7 bank hashes), PHP 8.5.12 & 8.3.32 CLI (33 renderer, 8 store, 14
+ordering, 7/7 lint), both `build.js --check` guards, and 27 disposable staging
+browser Loads across all three products. Next: commit/push `scratch/pc04-marker-range`
+on explicit owner authorization and run the rigorous phase-4 re-review; no
+deploy or live action is authorized.
 
 ## Archived `math-editor-2026-11` close path
 

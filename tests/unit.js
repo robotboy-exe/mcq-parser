@@ -644,6 +644,159 @@ test('parseQuestion keeps blank-line structure around marker-adjacent ranged int
   eq(inline.stimuli[0].nums, [2, 3]);
 });
 
+test('PC04 BLOCK-1: marker-adjacent range extraction never deletes stem or option text (S1-S5)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const I = 'Use the diagram below to answer questions 20 to 22.';
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const s1 = parser.parsePaste(full('19. What does the diagram below, used for questions 20 to 22, show?\n[image]\n' + O));
+  eq(s1.items[0].question, 'What does the diagram below, used for questions 20 to 22, show?', 'S1 stem');
+  eq([s1.items[0].a, s1.items[0].b, s1.items[0].c, s1.items[0].d], ['one', 'two', 'three', 'four'], 'S1 options');
+  eq(s1.items[0].flags, [], 'S1 flags');
+  eq(s1.items[0].stimuli.length, 1, 'S1 marker');
+  eq(s1.items[0].stimuli[0].text, '', 'S1 empty marker text');
+  eq(s1.items[0].stimuli[0].nums, [], 'S1 empty marker nums');
+  eq(s1.items.filter(item => item.needsImage), [], 'S1 no needsImage targets');
+
+  const quotedVectors = [
+    ['S2', '19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nd) "' + I + '"\n[image]'],
+    ['S3', '19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nD/ "' + I + '"\n[image]'],
+    ['S4', '19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nD.\n"' + I + '"\n[image]'],
+    ['S5', '19. Which of these instructions mentions the diagram? A. one B. two C. three D. "' + I + '"\n[image]'],
+    ['D) control', '19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nD) "' + I + '"\n[image]']
+  ];
+  for (const [label, text] of quotedVectors) {
+    const parsed = parser.parsePaste(full(text));
+    const q19 = parsed.items[0];
+    eq(q19.question, 'Which of these instructions mentions the diagram?', label + ' stem');
+    eq([q19.a, q19.b, q19.c, q19.d], ['one', 'two', 'three', '"' + I + '"'], label + ' options');
+    eq(q19.flags, ['option D contains section heading or instruction'], label + ' flags');
+    eq(q19.stimuli.length, 1, label + ' marker');
+    eq(q19.stimuli[0].text, '', label + ' empty marker text');
+    eq(q19.stimuli[0].nums, [], label + ' empty marker nums');
+    eq(parsed.items.filter(item => item.needsImage), [], label + ' no needsImage targets');
+  }
+});
+
+test('PC04 BLOCK-2: suffix dates and amounts never become question targets (N1-N5)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const suffixes = [
+    ['N1', '25 October 2023 is the issue date.'],
+    ['N2', '25-10-2023 is the issue date.'],
+    ['N3', '1,200 copies were issued.'],
+    ['N4', '25 dollars is the deposit.'],
+    ['N5', '25.50 is the balance.']
+  ];
+  for (const [label, tail] of suffixes) {
+    const intro = 'Use the diagram below to answer questions 20 to 22, ' + tail;
+    const parsed = parser.parsePaste(full(H + '\n\n' + intro + '\n[image]'));
+    const q19 = parsed.items[0];
+    eq(q19.d, 'four', label + ' Q19.D');
+    eq(q19.flags, [], label + ' Q19 flags');
+    eq(q19.stimuli.length, 1, label + ' one stimulus');
+    eq(q19.stimuli[0].nums, [20, 21, 22], label + ' nums');
+    eq(q19.stimuli[0].missing, [], label + ' missing');
+    eq(q19.stimuli[0].text, intro, label + ' full intro preserved');
+    eq(parsed.items.filter(item => item.needsImage).map(item => item.num), [20, 21, 22], label + ' flagged items');
+  }
+
+  const commaList = parser.parsePaste(full(H + '\n\nUse the diagram below to answer questions 20, 22.\n[image]'));
+  eq(commaList.items[0].stimuli[0].nums, [20, 22], 'comma list targets');
+
+  const qRange = parser.parsePaste(full(H + '\n\nUse the diagram below to answer questions Q20-Q22.\n[image]'));
+  eq(qRange.items[0].stimuli[0].nums, [20, 21, 22], 'Q-prefixed range targets');
+});
+
+test('PC04 BLOCK-3: non-adjacent nearest-table fallback does not borrow intro range (A1-A3)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const I = 'Use the diagram below to answer questions 20 to 22.';
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const directions = [
+    ['A1', H + '\n' + I + '\nBalance: 500\nOrdinary explanatory prose stays in this option.\n[image]'],
+    ['A2', H + '\n[image]\nOrdinary explanatory prose stays in this option.\n' + I + '\nBalance: 500']
+  ];
+  for (const [label, text] of directions) {
+    const parsed = parser.parsePaste(full(text));
+    const q19 = parsed.items[0];
+    eq(q19.d, 'four Ordinary explanatory prose stays in this option.', label + ' Q19.D');
+    eq(q19.stimuli.length, 1, label + ' one stimulus');
+    eq(q19.stimuli[0].source, 'marker', label + ' source');
+    eq(q19.stimuli[0].text, I + '\nBalance: 500', label + ' fallback text');
+    eq(q19.stimuli[0].nums, [], label + ' empty nums');
+    eq(q19.stimuli[0].missing, [], label + ' empty missing');
+    eq(parsed.items.filter(item => item.needsImage), [], label + ' no needsImage');
+  }
+
+  const a3 = parser.parsePaste(full(H + '\n' + I + '\nBalance: 500\nOrdinary explanatory prose stays in this option.\n[image: 21]'));
+  eq(a3.items[0].stimuli[0].nums, [21], 'A3 explicit range');
+  eq(a3.items.filter(item => item.needsImage).map(item => item.num), [21], 'A3 flagged item');
+});
+
+test('PC04 BLOCK-4: ordinary RM01 ranged instructions never enter Option D (R1-R2)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const vectors = [
+    ['R1', H + '\nAnswer questions 20, 22 and 24.', 'Answer questions 20, 22 and 24.'],
+    ['R2', '19. Which statement is correct? A. one B. two C. three D. four\nAnswer questions Q20 to Q22.', 'Answer questions Q20 to Q22.']
+  ];
+  for (const [label, prefix, expectedInstr] of vectors) {
+    const parsed = parser.parsePaste(full(prefix));
+    const q19 = parsed.items[0];
+    eq(q19.question, 'Which statement is correct?', label + ' Q19 stem');
+    eq([q19.a, q19.b, q19.c, q19.d], ['one', 'two', 'three', 'four'], label + ' Q19 options');
+    eq(q19.flags, [], label + ' Q19 flags');
+    eq(q19.stimuli, undefined, label + ' no marker stimulus');
+    eq(parsed.items[1].sectionInstruction, expectedInstr, label + ' Q20 sectionInstruction');
+    eq(parsed.regions, [{ kind: 'instruction', text: expectedInstr, from: 20, to: 26 }], label + ' regions');
+  }
+});
+
+test('PC04 BLOCK-5: mismatched brackets are never recognized as image markers (G1-G4)', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const I = 'Use the diagram below to answer questions 20 to 22.';
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  for (const [label, marker] of [['G1', '[image]]'], ['G2', '[[image]'], ['G3', '[image: 21]]'], ['G4', '[[image: 21]'], ['missing', '[missing text]'], ['diagram', '[diagram]']]) {
+    const parsed = parser.parsePaste(full(H + '\n' + I + '\n' + marker));
+    eq(parsed.items[0].stimuli, undefined, label + ' no marker stimulus');
+    eq(parsed.items[0].d, 'four ' + I + ' ' + marker, label + ' Q19.D preserved');
+    eq(parsed.items.filter(item => item.needsImage), [], label + ' no needsImage');
+  }
+
+  for (const [label, marker] of [['single', '[image]'], ['double', '[[image]]']]) {
+    const parsed = parser.parsePaste(full(H + '\n' + I + '\n' + marker));
+    eq(parsed.items[0].d, 'four', label + ' clean Q19.D');
+    eq(parsed.items[0].stimuli[0].nums, [20, 21, 22], label + ' nums');
+  }
+
+  const inline = parser.parsePaste(full(H + ' [[image: 21]]'));
+  eq(inline.items[0].d, 'four', 'inline marker stripped');
+  eq(inline.items[0].stimuli[0].nums, [21], 'inline explicit range');
+});
+
 test('splitSections removes a 19xx answer title without extending option D', () => {
   const parsed = parser.parsePaste([
     'CRS 1994 JAMB',

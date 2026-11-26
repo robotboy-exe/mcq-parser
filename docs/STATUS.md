@@ -8,8 +8,8 @@ Last updated: 2026-11-26.
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
 - Frozen base: `793cb8f`; scratch integration line:
   `scratch/parser-convergence-cycle`; PC01, PC02, and PC03 are `done` and
-  review-settled; PC04 is `in progress` (implemented on `scratch/pc04-marker-range`
-  at base `9afe4f8`, awaiting rigorous review).
+  review-settled; PC04 is `in progress` (`BLOCK-1`–`BLOCK-5` fixes implemented
+  on `scratch/pc04-marker-range` at base `9afe4f8`, awaiting phase-4 re-review).
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /
@@ -160,7 +160,24 @@ Last updated: 2026-11-26.
   15 PASS, plus 5-vector 4-surface parity probe), full Node baseline (74 runner,
   42 key, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes)
   and PHP 8.5.12 CLI baseline (33 renderer, 8 store, 14 ordering, 7/7 lint)
-  pass. Awaiting rigorous review; no commit, merge, deploy, or live action.
+  pass. The round-1 rigorous review ([record](plan/reviews/parser-convergence-2026-11-phase-4.md))
+  returned `BLOCK` (`BLOCK-1`–`BLOCK-5`, non-blocking `NOTE-1`).
+- PC04 phase-4 fix (2026-11-26, `BLOCK-1`–`BLOCK-5` on `scratch/pc04-marker-range`
+  from base `9afe4f8`): paired bracket matching on `STIMULUS_MARKER_LINE`
+  (`BLOCK-5`); `splitRegions` exempts instructions only when `stimulusIntroLine`
+  holds (`BLOCK-4`); `extractStimulusMarkers` applies intro ranges only when the
+  block is adjacent (`BLOCK-3`); `stimulusIntroRangeText` drops comma-followed
+  prose tails, thousands-grouped numbers, decimals, and multi-hyphen dates
+  (`BLOCK-2`); and `REGION_OPTION`, `stimulusOptionLine`, `stimulusStructuralLine`,
+  `bareOption`, interrogative/quoted intro guards, and `rangedBlockConsumesStem`
+  protect real stems and options (`BLOCK-1`). Core `2.5.6` is `1,965 L / 70,150 B`
+  (`c28fc630…`, `+129/-19`), built artifacts are `138,754` / `78,908` B, all 5
+  findings reproduced failing-first on `b2cb897`, 73 prior inputs show 0 diffs vs
+  base, and full Node (74 runner, 194 unit, 43 helper, 42 key, 15 single-source,
+  10 underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes), PHP
+  8.5.12 & 8.3.32 CLI (33/8/14, 7/7 lint), and 27 disposable staging browser
+  Loads across all three products pass. Awaiting rigorous phase-4 re-review; no
+  commit, merge, deploy, or live action.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

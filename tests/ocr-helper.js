@@ -684,6 +684,48 @@ test('Load keeps a marker-adjacent ranged intro out of Q19 option D and marks Q2
   assert(!/Use the diagram|\[image\]/.test(fields), 'marker and intro must not reach the form');
 });
 
+test('Load reproduces/guards PC04 BLOCK-1, BLOCK-2, BLOCK-3, BLOCK-4, and BLOCK-5 on Q19', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const I = 'Use the diagram below to answer questions 20 to 22.';
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const s1 = formState(loadThroughForm(full('19. What does the diagram below, used for questions 20 to 22, show?\n[image]\n' + O)));
+  assert.strictEqual(s1.question, 'What does the diagram below, used for questions 20 to 22, show?');
+  assert.deepStrictEqual([s1.a, s1.b, s1.c, s1.d], ['one', 'two', 'three', 'four']);
+  assert.deepStrictEqual(s1.queue.items[0].stimuli[0].nums, []);
+
+  const s2 = formState(loadThroughForm(full('19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nd) "' + I + '"\n[image]')));
+  assert.strictEqual(s2.d, '"' + I + '"');
+  assert.deepStrictEqual(s2.queue.items[0].stimuli[0].nums, []);
+
+  const s5 = formState(loadThroughForm(full('19. Which of these instructions mentions the diagram? A. one B. two C. three D. "' + I + '"\n[image]')));
+  assert.strictEqual(s5.question, 'Which of these instructions mentions the diagram?');
+  assert.strictEqual(s5.d, '"' + I + '"');
+  assert.deepStrictEqual(s5.queue.items[0].stimuli[0].nums, []);
+
+  for (const tail of ['25 October 2023 is the issue date.', '25-10-2023 is the issue date.']) {
+    const nState = formState(loadThroughForm(full(H + '\n\nUse the diagram below to answer questions 20 to 22, ' + tail + '\n[image]')));
+    assert.strictEqual(nState.d, 'four');
+    assert.deepStrictEqual(nState.queue.items[0].stimuli[0].nums, [20, 21, 22]);
+  }
+
+  const a1 = formState(loadThroughForm(full(H + '\n' + I + '\nBalance: 500\nOrdinary explanatory prose stays in this option.\n[image]')));
+  assert.strictEqual(a1.d, 'four Ordinary explanatory prose stays in this option.');
+  assert.deepStrictEqual(a1.queue.items[0].stimuli[0].nums, []);
+
+  const r1 = formState(loadThroughForm(full(H + '\nAnswer questions 20, 22 and 24.')));
+  assert.strictEqual(r1.d, 'four');
+  assert.deepStrictEqual(r1.queue.items[0].flags, []);
+
+  const g1 = formState(loadThroughForm(full(H + '\n' + I + '\n[image]]')));
+  assert.strictEqual(g1.d, 'four ' + I + ' [image]]');
+  assert.strictEqual(g1.queue.items[0].stimuli, undefined);
+});
+
 test('Load leaves E/F text out of the native four-option form', () => {
   const result = loadThroughForm('1. Which option is right? A. One B. Two C. Three D. Four E. Five F. Six');
   const state = formState(result);

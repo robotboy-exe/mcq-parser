@@ -423,20 +423,26 @@ block from the question text.
   `total/subtotal/balance/net/gross` row with a number, or at least two rows
   with two or more number tokens (or three or more number tokens). A recognized
   intro line does not count as table evidence.
-- **Markers:** standalone `[image]`, `[[image]]`, `[image: 14-15]`,
-  `[[image: 14-15]]`; inline double-bracket markers only. A standalone marker
-  uses an adjacent valid block first — either a table-evidenced run or a
-  qualifying adjacent ranged intro (even without a table) — then the nearest
-  table-evidenced block in the same question chunk forward then backward; if
-  none is valid, only the marker is removed. Explicit marker ranges remain
-  authoritative; otherwise targets come only from the qualifying adjacent ranged
-  intro (`questions ...` range clause). An inline marker removes only its own
-  text. `[missing text]` and `[diagram]` are not markers.
+- **Markers:** standalone paired `[image]`, `[[image]]`, `[image: 14-15]`,
+  `[[image: 14-15]]` (mismatched brackets are not markers); inline
+  double-bracket markers only. A standalone marker uses an adjacent valid block
+  first — either a table-evidenced run or a qualifying adjacent ranged intro
+  that neither ends with `?`, is quoted, follows a bare option label, nor
+  consumes the sole stem before options (even without a table) — then the
+  nearest table-evidenced block in the same question chunk forward then backward
+  (whose text may still be extracted as fallback, without borrowing a
+  non-adjacent intro range); if none is valid, only the marker is removed.
+  Explicit marker ranges remain authoritative; otherwise targets come only from
+  the qualifying adjacent ranged intro (`questions ...` range clause). An
+  inline marker removes only its own text. `[missing text]` and `[diagram]` are
+  not markers.
 - **Ranges:** `parseStimulusRange` accepts `14-15`, `14–15`, `14 to 15`,
   `14 and 15`, `14,16`, and `Q14-Q15` (ignoring numbers over 3 digits); a span
-  over 50 keeps only its endpoints. Intro range extraction parses only the
-  `questions ...` range clause so dates, years, amounts, account numbers, and
-  figure labels elsewhere on the line never become targets.
+  over 50 keeps only its endpoints. Intro range extraction isolates only the
+  `questions ...` range/list clause and stops before comma-followed prose
+  tails, thousands-grouped numbers, decimals, and multi-hyphen dates so dates,
+  years, amounts, account numbers, and figure labels elsewhere on the line
+  never become targets.
 - **Output:** `q.stimuli` is present only when non-empty. Each entry is
   `{sourceNum, nums, marker, text, source}` before `applyStimulusFlags` adds
   `id`, `order`, and `missing`. `applyStimulusFlags` clears old `needsImage`

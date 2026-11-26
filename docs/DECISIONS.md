@@ -1894,17 +1894,22 @@ Unspaced `A.D.` abbreviations remain excluded. `OPTION`, `LOOSE`, `FIXES`,
 
 ## D-112 — Marker-adjacent ranged intros without a table
 
-**Choice.** A standalone `[image]` or `[[image]]` marker whose adjacent
-`stimulusRun` contains a qualifying ranged intro (`STIMULUS_INTRO_RANGE`, at
+**Choice.** A standalone paired `[image]` or `[[image]]` marker whose adjacent
+`stimulusRun` contains a qualifying ranged intro (`stimulusIntroRangeText`, at
 least two question numbers after `questions?`) removes that trimmed run and uses
-the intro's question range even when there is no table evidence. Explicit marker
-ranges (`[image: 21]`, `[[image: 20, 22]]`) remain authoritative over the intro
-range. Intro range extraction parses only the `questions ...` range clause (and
-ignores numbers over three digits), and intro lines never count as weak table
-evidence. When no valid table block or adjacent ranged intro exists (including
-un-ranged intros or intros separated by prose), marker-only removal is
-preserved. The parser version rotates to `2.5.6`, and the helper/key guards and
-deployed core/helper tokens follow it.
+the intro's question range even when there is no table evidence (unless the
+block would consume the sole stem, follows a bare option label, is quoted, or
+ends with `?`; mismatched marker brackets such as `[image]]` or `[[image]` are
+not markers). Explicit marker ranges (`[image: 21]`, `[[image: 20, 22]]`) remain
+authoritative over the intro range; non-adjacent nearest-table fallbacks never
+borrow an intro range. Intro range extraction parses only the `questions ...`
+range clause (ignoring numbers over three digits, thousands-grouped numbers,
+decimals, multi-hyphen dates, and comma-followed prose tails), `splitRegions`
+exempts instructions only under `stimulusIntroLine`, and intro lines never count
+as weak table evidence. When no valid table block or adjacent ranged intro
+exists (including un-ranged intros or intros separated by prose), marker-only
+removal is preserved. The parser version rotates to `2.5.6`, and the helper/key
+guards and deployed core/helper tokens follow it.
 
 **Why.** In Q18–Q23 OCR pastes (`Use the diagram below to answer questions 20 to
 22.\n[image]`), the marker had no explicit range and no text table, so the

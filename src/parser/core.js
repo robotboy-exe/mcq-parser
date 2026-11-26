@@ -17,10 +17,9 @@ const STEM_LINE = /^\s*\d{1,3}[.)]\s+\S.{11,}/;
 const KEY_WORD = /\b(ANSWERS?|KEY|SCHEME|SOLUTIONS?)\b/i;
 const INLINE_PAIR = /(\d{1,3})\s*[.\-:)]\s*\(?([A-F])\)?(?![A-Za-z])/gi;
 const LOOSE = { E: /\n[^\S\n]*E[^\S\n]+(?=\S)/, F: /\n[^\S\n]*F[^\S\n]+(?=\S)/ };
-const STIMULUS_MARKER_LINE = /^[^\S\n]*\[\[?\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]?[^\S\n]*$/i;
+const STIMULUS_MARKER_LINE = /^[^\S\n]*(?:\[\[\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]|\[\s*image(?:\s*:\s*([^\]]*?))?\s*\])[^\S\n]*$/i;
 const STIMULUS_MARKER_INLINE = /\[\[\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]/gi;
 const STIMULUS_INTRO = /\b(?:use|study|consider|refer\s+to|the\s+following|below|above)\b[^\n]{0,100}\b(?:information|data|table|schedule|list|diagram|figure|chart|passage|graph|extract)\b[^\n]{0,100}\bquestions?\b/i;
-const STIMULUS_INTRO_RANGE = /\bquestions?\s+((?:Q\s*)?\d{1,3}(?!\d)(?:\s*(?:,\s*(?:and|&)|[-–—]|to|and|&|,)\s*(?:Q\s*)?\d{1,3}(?!\d))+)/i;
 
 function parseHeader(text) {
   const header = text.split('\n').slice(0, 3).join(' ').toUpperCase();
@@ -122,7 +121,7 @@ function pickCategoryIndex(header, optionTexts) {
 }
 
 const REGION_STEM = /^[^\S\n]*(\d{1,3})\s*\.\s+(\S.*)$/;
-const REGION_OPTION = /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-Fa-f]\s*[.)])[^\S\n]*\S/;
+const REGION_OPTION = /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-Fa-f]\s*[.)]|[A-F]\/[^\S\n]+)[^\S\n]*\S/;
 const REGION_HEADING = /^(?:SECTION|PART|PAPER)\s+[A-Z0-9IVXLC]+\b/i;
 const REGION_INSTRUCTION = /\b(?:lettered\s+A\s+to\s+D|from\s+the\s+words|choose\s+(?:the|a|an|one)|select\s+the|pick\s+the|answer\s+(?:all|the|questions?)|read\s+the|study\s+the|use\s+the|refer\s+to|complete\s+each|fill\s+(?:each|in\s+the)|the\s+following\s+(?:passage|words|sentences?|questions?)|questions?\s+\d{1,3}\s*(?:to|and|[-–—])\s*\d{1,3})\b/i;
 const REGION_PAREN = /(^|[^A-Za-z])\(\s*([A-Fa-f])\s*\)\s*[.)]*[^\S\n]*/g;
@@ -222,12 +221,14 @@ function splitRegions(text) {
   let pending = [];
   let last = 0;
   let sawOption = false;
+  let bareOption = false;
 
   function finish() {
     if (!current) return;
     chunks.push({ num: current.num, text: current.lines.join('\n'), structural: current.structural });
     current = null;
     sawOption = false;
+    bareOption = false;
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -237,6 +238,7 @@ function splitRegions(text) {
       const n = +REGION_STEM.exec(line)[1];
       if (last && (n <= last || n > last + 5)) {
         (current ? current.lines : head).push(line);
+        bareOption = false;
         continue;
       }
       finish();
@@ -250,23 +252,26 @@ function splitRegions(text) {
     }
     if (kind === 'blank') {
       (current ? current.lines : head).push(line);
+      bareOption = false;
       continue;
     }
     if (kind === 'option') {
       if (current) {
         current.lines.push(line);
         sawOption = true;
+        bareOption = false;
       } else {
         head.push(line);
       }
       continue;
     }
     if (current && (kind === 'heading' ||
-      (kind === 'instruction' && sawOption && !STIMULUS_INTRO.test(line) && !STIMULUS_INTRO_RANGE.test(line)))) {
+      (kind === 'instruction' && sawOption && !bareOption && !stimulusIntroLine(line)))) {
       pending.push({ kind, text: line.trim() });
+      bareOption = false;
       continue;
     }
-    if (kind === 'text' && current && sawOption) {
+    if (kind === 'text' && current && sawOption && !bareOption) {
       let following = 0;
       for (let j = i + 1; j < lines.length; j++) {
         if (kinds[j] === 'option') following++;
@@ -278,6 +283,7 @@ function splitRegions(text) {
         continue;
       }
     }
+    bareOption = Boolean(current && isBareOptionLabel(line));
     (current ? current.lines : head).push(line);
   }
   finish();
@@ -582,8 +588,12 @@ function stimulusQuestionLine(line) {
 }
 
 function stimulusOptionLine(line) {
-  return /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-F][^\S\n]*[.)])[^\S\n]*\S?/.test(line)
+  return /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-F][^\S\n]*[.)]|[a-f][^\S\n]*(?:\)|\.(?=[^\S\n]|$))|[A-Fa-f]\/[^\S\n]+)[^\S\n]*\S?/.test(line)
     || /^[^\S\n]*[A-F][^\S\n]+(?=\d)/.test(line);
+}
+
+function isBareOptionLabel(line) {
+  return /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-Fa-f][^\S\n]*(?:\)|\.(?=[^\S\n]|$))|[A-Fa-f]\/)[^\S\n]*$/.test(line);
 }
 
 function stimulusDividerLine(line) {
@@ -597,18 +607,65 @@ function stimulusKeyHeading(line) {
 function stimulusStructuralLine(line) {
   return stimulusQuestionLine(line)
     || stimulusOptionLine(line)
+    || inlineOptionSet(line)
     || stimulusDividerLine(line)
     || stimulusKeyHeading(line)
     || KEY_LINE.test(line)
     || PLACEHOLDER.test(line);
 }
 
+function stimulusIntroRangeText(line) {
+  const s = String(line == null ? '' : line).trim();
+  const leadRe = /\bquestions?\s+/gi;
+  let lead;
+  while ((lead = leadRe.exec(s))) {
+    const pos = lead.index + lead[0].length;
+    const first = s.slice(pos).match(/^(?:Q\s*)?\d{1,3}(?!\d)/i);
+    if (!first) continue;
+    const afterFirst = s.slice(pos);
+    if (/^(?:Q\s*)?\d+(?:,\d{3}\b|\.\d|\/\d|\s*[-–—]\s*\d+\s*[-–—]\s*\d+)/i.test(afterFirst)) continue;
+    let end = pos + first[0].length;
+    let count = 1;
+    let safeEnd = 0;
+    let safeCount = 0;
+    let inCommaTail = false;
+    while (end < s.length) {
+      const rest = s.slice(end);
+      const next = rest.match(/^(\s*(?:,\s*(?:and|&)|[-–—]|to|and|&|,)\s*)((?:Q\s*)?\d{1,3}(?!\d))/i);
+      if (!next) break;
+      const conn = next[1];
+      const tok = next[2];
+      const afterConn = rest.slice(conn.length);
+      if (/^(?:Q\s*)?\d+(?:,\d{3}\b|\.\d|\/\d|\s*[-–—]\s*\d+\s*[-–—]\s*\d+)/i.test(afterConn)) break;
+      if (/^\s*,/.test(conn)) {
+        if (count >= 2 && !inCommaTail) {
+          safeEnd = end;
+          safeCount = count;
+        }
+        inCommaTail = true;
+      }
+      end += next[0].length;
+      count++;
+      const afterTok = s.slice(end);
+      const validEnd = /^(?:$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively|are|refer|use|based|on|in|for|from|of|under|with|which|that)\b)/i.test(afterTok);
+      if (!inCommaTail || /^Q/i.test(tok) || validEnd) {
+        safeEnd = end;
+        safeCount = count;
+        inCommaTail = false;
+      }
+    }
+    if (safeCount >= 2) return s.slice(pos, safeEnd);
+  }
+  return '';
+}
+
 function stimulusIntroLine(line) {
   if (stimulusStructuralLine(line)) return false;
   const t = line.trim();
   if (!t || t.length > 220) return false;
+  if (/\?$/.test(t) || /^["'\u201c\u2018].*["'\u201d\u2019]$/.test(t)) return false;
   return STIMULUS_INTRO.test(t)
-    || (STIMULUS_INTRO_RANGE.test(t) && /\b(?:below|above|following)\b/i.test(t));
+    || (stimulusIntroRangeText(t) !== '' && /\b(?:below|above|following)\b/i.test(t));
 }
 
 function stimulusStrongTableLine(line) {
@@ -642,7 +699,12 @@ function stimulusMarkerLine(line) {
 
 function stimulusTransparentLine(lines, index) {
   const line = lines[index];
-  return !line.trim() || stimulusMarkerLine(line) || stimulusBlockLine(line);
+  if (!line.trim() || stimulusMarkerLine(line)) return true;
+  if (!stimulusBlockLine(line)) return false;
+  let prev = index - 1;
+  while (prev >= 0 && !lines[prev].trim()) prev--;
+  if (prev >= 0 && isBareOptionLabel(lines[prev])) return false;
+  return true;
 }
 
 function stimulusRun(lines, index) {
@@ -744,8 +806,8 @@ function parseStimulusRange(text) {
 
 function stimulusIntroRange(line) {
   if (!stimulusIntroLine(line)) return [];
-  const m = String(line == null ? '' : line).trim().match(STIMULUS_INTRO_RANGE);
-  return m ? parseStimulusRange(m[1]) : [];
+  const text = stimulusIntroRangeText(line);
+  return text ? parseStimulusRange(text) : [];
 }
 
 function stimulusSingleQuestionRef(line) {
@@ -763,10 +825,21 @@ function stimulusBlockIntroRange(lines, start, end) {
   return [...nums].sort((a, b) => a - b);
 }
 
-function stimulusMarkerRange(lines, block, markerRange) {
+function stimulusMarkerRange(lines, block, markerRange, adjacent) {
   const explicit = parseStimulusRange(markerRange);
   if (explicit.length) return explicit;
-  return block ? stimulusBlockIntroRange(lines, block.start, block.end) : [];
+  return (block && adjacent) ? stimulusBlockIntroRange(lines, block.start, block.end) : [];
+}
+
+function rangedBlockConsumesStem(lines, trimmed) {
+  let optIdx = lines.findIndex(line => stimulusOptionLine(line) || inlineOptionSet(line));
+  if (optIdx === -1) optIdx = lines.length;
+  if (trimmed.start >= optIdx) return false;
+  for (let i = 0; i < optIdx; i++) {
+    if (i >= trimmed.start && i <= trimmed.end) continue;
+    if (lines[i].trim() && !stimulusMarkerLine(lines[i])) return false;
+  }
+  return true;
 }
 
 function extractStimulusMarkers(raw, num) {
@@ -776,7 +849,7 @@ function extractStimulusMarkers(raw, num) {
     const line = lines[i];
     const standalone = line.match(STIMULUS_MARKER_LINE);
     if (standalone) {
-      markers.push({ at: i, line: i, inline: false, range: standalone[1] || '', marker: line.trim() });
+      markers.push({ at: i, line: i, inline: false, range: standalone[1] || standalone[2] || '', marker: line.trim() });
       continue;
     }
     STIMULUS_MARKER_INLINE.lastIndex = 0;
@@ -799,10 +872,10 @@ function extractStimulusMarkers(raw, num) {
     const run = stimulusRun(lines, mk.line);
     const trimmed = trimStimulusRun(lines, run);
     const hasTableBlock = validStimulusBlock(lines, run.start, run.end);
-    const hasRangedIntro = stimulusBlockIntroRange(lines, trimmed.start, trimmed.end).length > 0;
-    mk.block = (hasTableBlock || hasRangedIntro)
-      ? trimmed
-      : nearestStimulusBlock(lines, mk.line);
+    const hasRangedIntro = !rangedBlockConsumesStem(lines, trimmed)
+      && stimulusBlockIntroRange(lines, trimmed.start, trimmed.end).length > 0;
+    mk.adjacent = hasTableBlock || hasRangedIntro;
+    mk.block = mk.adjacent ? trimmed : nearestStimulusBlock(lines, mk.line);
   }
   const removed = new Set();
   for (const mk of markers) {
@@ -822,7 +895,7 @@ function extractStimulusMarkers(raw, num) {
     return {
       at: mk.at,
       sourceNum: num,
-      nums: stimulusMarkerRange(lines, mk.block, mk.range),
+      nums: stimulusMarkerRange(lines, mk.block, mk.range, mk.adjacent),
       marker: mk.marker,
       text,
       source: 'marker'
