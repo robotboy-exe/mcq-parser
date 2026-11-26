@@ -36,12 +36,13 @@ evidence or product files.
 
 The owner explicitly chooses `fix`, `reject` with rationale, `accept risk`,
 `defer` to a named package, or `change requirement`. A finding escalates to
-owner disposition only after two review rounds without resolution: it is still
-open, or needs another fix, at the review round after the one that recorded it.
-A first-round finding routes directly to a fix session instead. The one
-exception is a finding the fix session reports as `NOT REPRODUCED`: it goes
-straight to owner disposition. This does not force a pass or hide unresolved
-risk.
+owner disposition only after three review rounds without resolution: it was
+recorded in round 1, remained open (or needed another fix) in round 2 after fix
+round 1, and is still open (or needs another fix) in round 3 after fix round 2.
+A finding in its first or second review round routes directly to a fix session
+instead. The one exception is a finding the fix session reports as
+`NOT REPRODUCED`: it goes straight to owner disposition. This does not force a
+pass or hide unresolved risk.
 
 ## Cycle close
 

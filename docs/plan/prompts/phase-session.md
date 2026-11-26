@@ -20,7 +20,7 @@ line, with nothing after it.
    three to five acceptance probes. Never trust a handoff without evidence.
 6. Check required review records and ensure no unresolved `BLOCK` or unsettled
    required finding remains. A required finding is settled only when its frozen
-   closure contract passes re-review or, after two review rounds without
+   closure contract passes re-review or, after three review rounds without
    resolution, the package and coordinator name its exact ID, disposition,
    rationale, and any deferred destination; never infer acceptance from `go` or
    silence.

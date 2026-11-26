@@ -20,7 +20,7 @@ terminal `NEXT COMMAND:` line, with nothing after it.
 4. Verify that every package and fix has settled externalize-first measurements,
    approvals, deployment inclusion, and direct production-path evidence.
 5. Verify every `BLOCK` and required `FIX` cycle-wide. A fixed finding must pass
-   its frozen closure re-review; a finding still unresolved after two review
+   its frozen closure re-review; a finding still unresolved after three review
    rounds needs an owner disposition naming the exact ID, rationale, destination
    or accepted boundary, and readiness effect in the package and coordinator.
    Stop for every unresolved or unsettled finding.

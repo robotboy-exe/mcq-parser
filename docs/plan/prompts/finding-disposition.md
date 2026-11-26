@@ -19,12 +19,13 @@ with nothing after it.
 2. State each immutable finding, its frozen closure contract, current evidence,
    supported preconditions, and residual risk without adding new review scope.
 3. Identify whether the finding is unresolved, fixed but not re-reviewed, or
-   awaiting owner disposition after re-review escalation.
-4. Confirm the finding has gone through two review rounds without resolution. If
-   it has not, owner disposition is premature: record no choice and name
-   `fix-session.md` with the exact finding ID as the next action. Exception: a
-   finding the latest fix handoff reports as `NOT REPRODUCED` is eligible for
-   disposition in its first round.
+   awaiting owner disposition after three-review-round escalation.
+4. Confirm the finding has gone through three review rounds without resolution
+   (recording review + two fix rounds with their re-reviews). If it has not,
+   owner disposition is premature: record no choice and name `fix-session.md`
+   with the exact finding ID as the next action. Exception: a finding the
+   latest fix handoff reports as `NOT REPRODUCED` is eligible for disposition
+   immediately.
 4a. For a `NOT REPRODUCED` finding, set out side by side: the review's
    reproduction steps, preconditions and environment; the fix session's exact
    attempt and output; and every difference between them. Do not attempt a new

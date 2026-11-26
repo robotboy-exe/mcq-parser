@@ -29,11 +29,13 @@ Each record includes:
 
 Once a fix is authorized, its closure contract is frozen. Re-review closes that
 finding when the frozen criteria pass. A finding requires owner disposition only
-after two review rounds without resolution: it stays open, or needs another fix,
-at the review round after the one that recorded it. A first-round finding,
-including one newly recorded in a re-review, routes to a fix session instead.
-The immutable record remains unchanged whichever disposition is chosen; record
-the choice through `../prompts/finding-disposition.md`.
+after three review rounds without resolution: it was recorded in round 1, stayed
+open (or needed another fix) in round 2 after fix round 1, and still stays open
+(or needs another fix) in round 3 after fix round 2. A finding in its first or
+second review round, including one newly recorded in a re-review, routes to a
+fix session instead (unless reported `NOT REPRODUCED`). The immutable record
+remains unchanged whichever disposition is chosen; record the choice through
+`../prompts/finding-disposition.md`.
 
 Review sessions may change only their review record. They never edit source,
 tests, fixtures, package state, handoffs, or commits.

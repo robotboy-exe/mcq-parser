@@ -338,17 +338,20 @@ Reviews are rigorous without creating a moving target:
   immutable review evidence; a `fix` disposition remains unresolved until its
   frozen checklist passes re-review.
 - Owner disposition is an escalation, not the first step. A review round is one
-  recorded review or re-review. A finding escalates only after two review rounds
-  without resolution: the review that recorded it left it open, and the next
-  review round still leaves it open or prescribes another fix. A
-  first-round `BLOCK` or `FIX` routes directly to
+  recorded review or re-review. A finding escalates only after **three review
+  rounds** without resolution: the review that recorded it left it open
+  (round 1), the re-review after fix round 1 still left it open or recommended
+  another fix (round 2), and the re-review after fix round 2 still leaves it
+  open or prescribes another fix (round 3). In its first or second review round,
+  an open `BLOCK` or `FIX` routes directly to
   [`prompts/fix-session.md`](prompts/fix-session.md) against its frozen closure
-  contract; the review record, not an inferred owner disposition, authorizes
-  that one fix.
-- A defect recorded for the first time in a re-review is also in its first
-  review round and routes to a fix session the same way; it escalates only if
-  its own re-review leaves it unresolved. This is an escalation rule, not an
-  automatic pass; genuine unresolved risk remains visible.
+  contract; the review or re-review record, not an inferred owner disposition,
+  authorizes each fix round.
+- A defect recorded for the first time in a re-review starts in its own first
+  review round and routes through the same three-review-round lifecycle; it
+  escalates only if its own third review round leaves it unresolved. This is an
+  escalation rule, not an automatic pass; genuine unresolved risk remains
+  visible.
 - Owner decisions use
   [`prompts/finding-disposition.md`](prompts/finding-disposition.md), which
   records the decision in current-facing package/coordinator documents without

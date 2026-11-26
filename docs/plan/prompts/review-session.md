@@ -100,8 +100,9 @@ Do not manufacture findings to demonstrate effort. Distinguish reproducible defe
   is promised or the precondition cannot realistically be enforced. Verdict
   `BLOCK`; not commit-ready.
 - `FIX-N`: real defect or missing evidence with core behavior present. Verdict
-  `PASS WITH ACCEPTED FINDINGS`; it routes to a fix session in its first review
-  round and escalates to owner disposition only under the two-round rule below.
+  `PASS WITH ACCEPTED FINDINGS`; it routes to a fix session in its first and
+  second review rounds and escalates to owner disposition only under the
+  three-round rule below.
 - `NOTE-N`: documentation issue or residual risk that does not invalidate the
   package.
 
@@ -135,28 +136,32 @@ production-path test evidence, approvals, and excluded-artifact list.
   acceptance requirement, a material regression introduced by the fix, or a
   reproducible security/data-loss defect on a supported path. Other new concerns
   are `FIX`, `NOTE`, or explicitly deferred evidence.
-- A finding reaches owner disposition only after two review rounds without
-  resolution: the review that recorded it left it open, and the next review
-  round still leaves it open or recommends another fix. The exact next action is
-  then owner disposition: `fix`, `reject`, `accept risk`, `defer` to a named
-  package, or `change requirement`. Hand off to `finding-disposition.md` with
-  the exact phase/package and finding IDs.
-- A first-round finding never escalates. Whether the original review or a
-  re-review recorded it, the exact next action is `fix-session.md` with its exact
-  ID and frozen closure contract.
+- A finding reaches owner disposition only after **three review rounds**
+  without resolution: the review that recorded it left it open (round 1), the
+  re-review after fix round 1 still left it open or recommended another fix
+  (round 2), and the re-review after fix round 2 still leaves it open or
+  recommends another fix (round 3). The exact next action is then owner
+  disposition: `fix`, `reject`, `accept risk`, `defer` to a named package, or
+  `change requirement`. Hand off to `finding-disposition.md` with the exact
+  phase/package and finding IDs.
+- A first- or second-round finding never escalates (unless reported
+  `NOT REPRODUCED`). Whether the original review or a re-review recorded it, in
+  its first or second review round the exact next action is `fix-session.md`
+  with its exact ID and frozen closure contract.
 - Exception: a finding the fix session reported as `NOT REPRODUCED` goes to
-  owner disposition in its first round. A re-review does not treat it as fixed
-  or open; it follows the recorded owner disposition. If no disposition is
-  recorded yet, the re-review stops and names `finding-disposition.md` with the
-  exact `NOT REPRODUCED` IDs.
+  owner disposition immediately without waiting for three review rounds. A
+  re-review does not treat it as fixed or open; it follows the recorded owner
+  disposition. If no disposition is recorded yet, the re-review stops and names
+  `finding-disposition.md` with the exact `NOT REPRODUCED` IDs.
 - Owner disposition never edits immutable review evidence. It is recorded in
   the package and coordinator before dependent work or commit readiness changes.
 - These rules do not force a pass. A genuinely unresolved blocker remains
   visible until it is fixed and settled by re-review, or the owner records a
-  disposition after two review rounds.
+  disposition after three review rounds.
 
 The final review response must use that recommended action as an exact
-copy-paste `NEXT COMMAND:`. A first-round `BLOCK` or `FIX` names
-`fix-session.md` with every exact finding ID; only a finding that has survived
-its first re-review names the disposition-session prompt. Never offer a
+copy-paste `NEXT COMMAND:`. A `BLOCK` or `FIX` in its first or second review
+round names `fix-session.md` with every exact finding ID; only a finding that
+has survived three review rounds (two fix rounds and their re-reviews, or was
+reported `NOT REPRODUCED`) names the disposition-session prompt. Never offer a
 dependent package while an unresolved blocker remains.

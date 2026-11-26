@@ -15,8 +15,8 @@ Each accepted `BLOCK` or `FIX` has an immutable closure contract: exact defect,
 supported operating preconditions, finite closure criteria, required evidence,
 and explicit non-goals or deferred checks. Once a fix is authorized, neither the
 fix session nor re-review may broaden that contract. A newly noticed defect
-requires a separate review ID; in its first review round it routes to a fix
-session like any other finding.
+requires a separate review ID; in its first and second review rounds it routes
+to a fix session like any other finding.
 
 For findings written before this rule, use only the concrete reproduced defect,
 named vectors, requested fix, and required evidence in the accepted review and
@@ -30,10 +30,10 @@ title.
    reviewed candidate history, with the published review record pulled.
 2. Require stable finding IDs and extract each frozen closure contract. Stop if
    an ID, criterion, precondition, or deferred boundary is ambiguous.
-3. Confirm the fix authority: the accepted review record's recommended fix for a
-   finding in its first review round, or a recorded `fix` disposition for a
-   finding that survived its first re-review. Neither authorizes broadening the
-   frozen closure contract.
+3. Confirm the fix authority: the accepted review or re-review record's
+   recommended fix for a finding in its first or second review round, or a
+   recorded `fix` disposition for a finding that survived three review rounds.
+   Neither authorizes broadening the frozen closure contract.
 4. Restate a closure matrix mapping every finding ID to its exact criteria,
    planned production path, required evidence, and non-goals before offering
    `go`.
