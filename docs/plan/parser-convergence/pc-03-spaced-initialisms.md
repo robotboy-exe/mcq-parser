@@ -201,5 +201,6 @@ real generated artifacts) is green on 12 boundary vectors.
 **Review status.** The phase-3 review record is at
 [`reviews/parser-convergence-2026-11-phase-3.md`](../reviews/parser-convergence-2026-11-phase-3.md)
 (`BLOCK`, review round 1). This fix is committed on
-`scratch/pc03-spaced-initialisms` at the owner's explicit request; re-review of
-that exact candidate is required. Nothing is merged. `Commit: pending`.
+`scratch/pc03-spaced-initialisms` at the owner's explicit request as `adb3e2a`;
+this handoff-only child records the pushed ref the re-review must target.
+Re-review is required. Nothing is merged. `Commit: adb3e2a`.
