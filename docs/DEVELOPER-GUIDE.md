@@ -26,7 +26,7 @@ testing commands, and known limitations. Deployment steps are in
 | `src/math-tool.js` | Operator row, five freeform shape editors (fraction, exponent, subscript, root, 2×2 matrix), and advisory UTF-8 byte counter around `#question_text`, mounted once in Add and Edit forms with `data-math-tool-mounted`; inserts only exact shape markers at the remembered caret and writes no storage, network, submit, underline marker, or `constant_text`. |
 | `src/math-tool.css` | Operator row, shape panels, 2×2 matrix input grid, live preview, hint, counter, focus, and mobile-target styles; all selectors are `.math-tool-*` (D-92, D-100). |
 | `src/owner-tool/render.js` | Browser safe renderer (`window.CBTText`) used by `cbt.php` and the admin preview; restores the six exact marker pairs and builds fraction/root/matrix nodes. The legacy context-card helpers remain in the file but no page calls them. |
-| `src/parser/core.js` | Pure canonical parser `2.5.5` (RM01, D-111). Loaded by the production admin page before the root `ocr_helper.js` adapter and exercised by the runner/unit/helper suites. |
+| `src/parser/core.js` | Pure canonical parser `2.5.6` (RM01, D-111, D-112). Loaded by the production admin page before the root `ocr_helper.js` adapter and exercised by the runner/unit/helper suites. |
 | `deployed/sql/base-schema.working.sql` | Working schema copy, now including `constant_text`. |
 | `deployed/sql/01-constant-text.sql` | Guarded, rerunnable forward migration. |
 | `deployed/sql/02-constant-text-rollback.sql` | Guarded rollback that refuses non-empty data. |

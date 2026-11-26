@@ -16,15 +16,10 @@ Updated: 2026-11-26
 | 6 | `PC06` — `parser-convergence/pc-06-bookmarklet-policy-release.md` |
 
 Current gate: PC01, PC02, and PC03 are `done` and merged into
-`scratch/parser-convergence-cycle`. PC03's 2026-11-26 phase-3 re-review 2 of
-candidate `69934bf` returned `PASS WITH ACCEPTED FINDINGS`, closing `BLOCK-1`
-and `BLOCK-3` (with `BLOCK-2`/`FIX-1` previously closed and non-blocking
-`NOTE-3` accepted as residual), and `origin/scratch/pc03-spaced-initialisms`
-(`a4c6d53`) was fast-forward merged into `scratch/parser-convergence-cycle` from
-`331e81f` with a product tree matching `69934bf`. PC04 is the next package in
-sequence and is `not started`, with its branch `scratch/pc04-marker-range` cut
-from the reconciled cycle tip (Gate 1 has not started). No deploy or live action
-is authorized.
+`scratch/parser-convergence-cycle`. PC04 is `in progress` — implemented on
+`scratch/pc04-marker-range` from package base `9afe4f8` (core `2.5.6`, D-112)
+with full Node/PHP acceptance passing, `Commit: deferred`, and awaiting
+independent rigorous review. No deploy or live action is authorized.
 
 ## Starting a new cycle
 

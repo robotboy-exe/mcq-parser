@@ -3,7 +3,7 @@
   // inlines the canonical parser core, then boot.js, then this file. This entry
   // owns only the key panel, answer fill, dry run, autosave, and in-place save;
   // it is never loaded by a deployed page.
-  const EXPECTED_CORE_VERSION = '2.5.5';
+  const EXPECTED_CORE_VERSION = '2.5.6';
   const core = typeof window !== 'undefined' ? window.OCRParser : null;
 
   function coreProblem() {

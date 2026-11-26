@@ -292,10 +292,11 @@ EC-95 through EC-126 above belong to the archived context/owner-tool subsystem
 | EC-161 | Initialism split by one OCR wrap | `C. I.` ends a line and `F. Lagos` starts the next inside the stem | The wrap is whitespace inside one initialism run, so the stem folds it and no boundary is created | CONFIRMED | D-111; `spaced-initialism-wrapped`; real-artifact parity |
 | EC-162 | Spaced initialism inside option text | The initialism sits after a real option label instead of in the stem | The outer A–D labels still win and the initialism stays in its option; recorded as a must-stay-passing control because it already passed on package base `331e81f` | CONFIRMED | D-111; `spaced-initialism-inner-option`; EC-85 |
 | EC-163 | Trailing initial or initialism immediately before a real option line | A stem or option ends with `[A-Z].` (`John F.`, `U. S.`, `Vitamin C.`, or `C. I. F.`) and the next line or paragraph starts with the real `A.`/`B.` label, while a later option mentions that letter; or the label is wrapped alone onto its line (`\nA.\nKennedy`) or its option body mentions another letter out of order (`(see D. note)`) | The real line-leading label keeps its boundary: the initialism run ends before it even when the label is wrapped or the ordered test sees an in-text mention, and a covered label is restored only when its letter has no other candidate. The restore prefers the trailing real boundary, so a stem `A. D.`/`A. B.` initialism is never turned into the option label | CONFIRMED | BLOCK-1/BLOCK-2/BLOCK-3 fixes; `tests/unit.js` boundary vectors; `tests/fixtures/ocr-helper-spaced-initialism-boundaries.txt` and `-wrapped-boundaries.txt`; 4-surface parity |
+| EC-164 | Image marker adjacent to a ranged intro without a table | `Use the diagram below to answer questions 20 to 22.` followed by `[image]` after Q19.D, or a ranged intro mentioning years/dates/amounts/account numbers/figure labels | Q19.D stays `trade discount` with `flags: []`; the trimmed intro and marker become one marker stimulus with `nums: [20,21,22]`, marking Q20–Q22 `needsImage`; explicit `[image: 21]` overrides the intro range; un-ranged or prose-separated intros keep marker-only removal and ignore dates/years/amounts/account numbers/figure labels | CONFIRMED | D-112; `new-edge-image-intro-marker`; `tests/unit.js`; `tests/ocr-helper.js`; 4-surface parity |
 
 ## Counts
 
-- Total: 153
-- CONFIRMED: 149
+- Total: 154
+- CONFIRMED: 150
 - UNVERIFIED: 4
 - CONFLICTED: 0

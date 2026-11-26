@@ -170,7 +170,7 @@ for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {
   });
 }
 
-const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spaced-initialism-wrapped.txt']
+const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spaced-initialism-wrapped.txt', 'new-edge-image-intro-marker.txt']
   .map(name => fs.readFileSync(path.join(ROOT, 'fixtures', 'inputs', name), 'utf8'))
   .concat([
     // A real option line after a trailing stem initial, and a trailing spaced
@@ -179,7 +179,8 @@ const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spa
     '1. Who is John F.\nA. Kennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe',
     '1. Who is John F.\nA.\nKennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe',
     '1. This happened in A. D. A. 70 B. 80 C. 90 D. 100',
-    '1. Which refers to C. I. F.\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery'
+    '1. Which refers to C. I. F.\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery',
+    '19. Stem\nA. one\nB. two\nC. three\nD. four\nUse Figure 2 from 2023 (October 25, 2023, account 123456) below to answer questions 20 to 22.\n[image]'
   ]);
 
 for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {

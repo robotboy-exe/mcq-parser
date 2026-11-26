@@ -530,6 +530,120 @@ test('parseQuestion does not invent a paragraph when removing an inline intro bl
   eq(q.stimuli[0].nums, [2, 3]);
 });
 
+test('parseQuestion derives targets from an adjacent ranged intro without a table', () => {
+  const after = parser.parseQuestion({
+    num: 19,
+    text: 'The term 2% / 15 net 30 represents a\nA. cash discount\nB. quantity discount\nC. seasonal discount\nD. trade discount\n\nUse the diagram below to answer questions 20 to 22.\n[image]'
+  });
+  eq(after.d, 'trade discount');
+  eq(after.flags, []);
+  eq(after.stimuli.length, 1);
+  eq(after.stimuli[0].source, 'marker');
+  eq(after.stimuli[0].nums, [20, 21, 22]);
+  eq(after.stimuli[0].text, 'Use the diagram below to answer questions 20 to 22.');
+
+  const before = parser.parseQuestion({
+    num: 19,
+    text: 'The term 2% / 15 net 30 represents a\nA. cash discount\nB. quantity discount\nC. seasonal discount\nD. trade discount\n[[image]]\nUse the diagram below to answer questions 20 to 22.'
+  });
+  eq(before.d, 'trade discount');
+  eq(before.flags, []);
+  eq(before.stimuli.length, 1);
+  eq(before.stimuli[0].nums, [20, 21, 22]);
+  eq(before.stimuli[0].text, 'Use the diagram below to answer questions 20 to 22.');
+});
+
+test('parseQuestion prefers an explicit marker range over an adjacent ranged intro', () => {
+  const single = parser.parseQuestion({
+    num: 19,
+    text: 'Which statement is correct?\nA. one\nB. two\nC. three\nD. four\nUse the diagram below to answer questions 20 to 22.\n[image: 21]'
+  });
+  eq(single.d, 'four');
+  eq(single.flags, []);
+  eq(single.stimuli[0].nums, [21]);
+  eq(single.stimuli[0].text, 'Use the diagram below to answer questions 20 to 22.');
+
+  const list = parser.parseQuestion({
+    num: 19,
+    text: 'Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n[[image: 20, 22]]\nUse the diagram below to answer questions 20 to 22.'
+  });
+  eq(list.d, 'four');
+  eq(list.stimuli[0].nums, [20, 22]);
+});
+
+test('parseQuestion keeps marker-only behavior when an intro has no range or is non-adjacent', () => {
+  const unRanged = parser.parseQuestion({
+    num: 1,
+    text: 'Use the diagram below to answer the question.\n[image]\nWhich part is labelled X?\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(unRanged.question, 'Use the diagram below to answer the question. Which part is labelled X?');
+  eq(unRanged.stimuli.length, 1);
+  eq(unRanged.stimuli[0].nums, []);
+  eq(unRanged.stimuli[0].text, '');
+
+  const separated = parser.parseQuestion({
+    num: 1,
+    text: 'Stem text stays here.\n[image]\nExplanatory note that stays.\nUse the diagram below to answer questions 20 to 22.\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(separated.question, 'Stem text stays here. Explanatory note that stays. Use the diagram below to answer questions 20 to 22.');
+  eq(separated.stimuli.length, 1);
+  eq(separated.stimuli[0].nums, []);
+  eq(separated.stimuli[0].text, '');
+});
+
+test('parseQuestion ignores non-target numbers and structural lines in marker-range extraction', () => {
+  const noisyIntro = parser.parseQuestion({
+    num: 19,
+    text: 'Stem\nA. one\nB. two\nC. three\nD. four\nUse Figure 2 from 2023 (October 25, 2023, account 123456, 1998-2002, N25,000, $100 - $200) below to answer questions 20 to 22.\n[image]'
+  });
+  eq(noisyIntro.d, 'four');
+  eq(noisyIntro.stimuli[0].nums, [20, 21, 22]);
+
+  const figureOnly = parser.parseQuestion({
+    num: 1,
+    text: 'Use Figure 2 from 2023 (October 25, 2023, account 123456, N25,000) below to answer this question.\n[image]\nWhich line is correct?\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(figureOnly.stimuli[0].nums, []);
+  eq(figureOnly.stimuli[0].text, '');
+  eq(figureOnly.question.includes('Figure 2'), true);
+
+  const yearBounds = parser.parseQuestion({
+    num: 1,
+    text: 'Use the diagram below to answer questions 20 to 2023.\n[image]\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(yearBounds.stimuli[0].nums, []);
+
+  const optionIntro = parser.parseQuestion({
+    num: 1,
+    text: 'Stem\nA. one\nB. two\nC. three\nD. Use the diagram below to answer questions 20 to 22.\n[image]'
+  });
+  eq(optionIntro.d, 'Use the diagram below to answer questions 20 to 22.');
+  eq(optionIntro.stimuli[0].nums, []);
+
+  const diagramBracket = parser.parseQuestion({
+    num: 1,
+    text: 'Stem with enough text\n[diagram]\nA. one\nB. two\nC. three\nD. four'
+  });
+  eq(diagramBracket.stimuli, undefined);
+  eq(diagramBracket.question.includes('[diagram]'), true);
+});
+
+test('parseQuestion keeps blank-line structure around marker-adjacent ranged intros', () => {
+  const surrounded = parser.parseQuestion({
+    num: 1,
+    text: 'First paragraph has enough words.\n\nUse the diagram below to answer questions 2 to 3.\n\n[image]\n\nSecond paragraph also has enough words.\nA. One\nB. Two\nC. Three\nD. Four'
+  });
+  eq(surrounded.question, 'First paragraph has enough words.\n\nSecond paragraph also has enough words.');
+  eq(surrounded.stimuli[0].nums, [2, 3]);
+
+  const inline = parser.parseQuestion({
+    num: 1,
+    text: 'First line has enough words.\nUse the diagram below to answer questions 2 to 3.\n[image]\nContinuation line has enough words.\nA. One\nB. Two\nC. Three\nD. Four'
+  });
+  eq(inline.question, 'First line has enough words. Continuation line has enough words.');
+  eq(inline.stimuli[0].nums, [2, 3]);
+});
+
 test('splitSections removes a 19xx answer title without extending option D', () => {
   const parsed = parser.parsePaste([
     'CRS 1994 JAMB',
@@ -552,7 +666,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.5.5', 'parser version');
+  eq(parsed.version, '2.5.6', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');

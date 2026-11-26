@@ -1891,3 +1891,29 @@ the trailing covered spaced label wins, and the label inside an earlier stem
 initialism (`A. D.`, `A. B.`) or a later in-text mention can never be restored.
 Unspaced `A.D.` abbreviations remain excluded. `OPTION`, `LOOSE`, `FIXES`,
 `splitQuestions`, and product policy are still untouched.
+
+## D-112 — Marker-adjacent ranged intros without a table
+
+**Choice.** A standalone `[image]` or `[[image]]` marker whose adjacent
+`stimulusRun` contains a qualifying ranged intro (`STIMULUS_INTRO_RANGE`, at
+least two question numbers after `questions?`) removes that trimmed run and uses
+the intro's question range even when there is no table evidence. Explicit marker
+ranges (`[image: 21]`, `[[image: 20, 22]]`) remain authoritative over the intro
+range. Intro range extraction parses only the `questions ...` range clause (and
+ignores numbers over three digits), and intro lines never count as weak table
+evidence. When no valid table block or adjacent ranged intro exists (including
+un-ranged intros or intros separated by prose), marker-only removal is
+preserved. The parser version rotates to `2.5.6`, and the helper/key guards and
+deployed core/helper tokens follow it.
+
+**Why.** In Q18–Q23 OCR pastes (`Use the diagram below to answer questions 20 to
+22.\n[image]`), the marker had no explicit range and no text table, so the
+intro stayed in Q19.D and Q20–Q22 received no `needsImage` flag. Parsing only
+the `questions ...` clause and excluding intro sentences from weak table
+evidence prevents dates, years (`2023`), amounts, account numbers, and figure
+labels (`Figure 2`) from becoming false-positive target questions.
+
+**Risk.** Intro-only blocks without an explicit marker still require table
+evidence (generic inter-question tails belong to PC05). A non-standard intro
+wording without `questions <range>` leaves marker-only behavior intact rather
+than guessing targets from prose numbers.

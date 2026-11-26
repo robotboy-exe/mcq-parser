@@ -335,7 +335,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.5/.test(result.thrown.message));
+  assert(/2\.5\.6/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -665,6 +665,23 @@ test('Load keeps shared stimulus text out of every saveable field', () => {
   const fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
     .map((id) => result.document.getElementById(id).value).join('\n');
   assert(!/Total: 5|Balance: 3|Use the information/.test(fields), 'stimulus lines must not reach the form');
+});
+
+test('Load keeps a marker-adjacent ranged intro out of Q19 option D and marks Q20-Q22', () => {
+  const text = readFixtureInput('new-edge-image-intro-marker');
+  const result = loadThroughForm(text);
+  const items = helper.parseAll(text);
+  assert.deepStrictEqual(items.map((item) => item.num), [18, 19, 20, 21, 22, 23]);
+  assert.strictEqual(items[1].d, 'trade discount');
+  assert.deepStrictEqual(items[1].flags, []);
+  assert.deepStrictEqual(items[1].stimuli[0].nums, [20, 21, 22]);
+  result.document.getElementById('ocr_skip').onclick();
+  const q19 = formState(result);
+  assert.strictEqual(q19.question, 'The term 2% / 15 net 30 represents a');
+  assert.strictEqual(q19.d, 'trade discount');
+  const fields = ['question_text', 'option_a', 'option_b', 'option_c', 'option_d']
+    .map((id) => result.document.getElementById(id).value).join('\n');
+  assert(!/Use the diagram|\[image\]/.test(fields), 'marker and intro must not reach the form');
 });
 
 test('Load leaves E/F text out of the native four-option form', () => {

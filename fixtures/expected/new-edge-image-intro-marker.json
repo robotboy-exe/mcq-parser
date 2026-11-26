@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "new-edge-image-intro-marker",
+  "source": [
+    "scratch/stimulus-followups docs/NEW_EDGE_CASES.txt image-only stimulus recorded 2026-10-28",
+    "User OCR from scratch-file.txt (Q18-Q23): a diagram intro and [image] follow Q19 with no table"
+  ],
+  "provenance": "Revalidated verbatim Q18-Q23 slice from scratch-file.txt with matching Answer Key lines 18-23. Transcribed independently from raw OCR evidence for PC04.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-image-intro-marker.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 6,
+    "nums": [18, 19, 20, 21, 22, 23],
+    "questions": [
+      {
+        "num": 18,
+        "question": "One of the barriers to foreign trade is",
+        "d": "imposition of embargo",
+        "needs_image": false
+      },
+      {
+        "num": 19,
+        "question": "The term 2% / 15 net 30 represents a",
+        "a": "cash discount",
+        "b": "quantity discount",
+        "c": "seasonal discount",
+        "d": "trade discount",
+        "flags": [],
+        "needs_image": false
+      },
+      {
+        "num": 20,
+        "question": "The instrument in the diagram is a",
+        "a": "warranty",
+        "d": "deposit slip",
+        "needs_image": true
+      },
+      {
+        "num": 21,
+        "question": "The two lines on the instrument shows that it is",
+        "a": "paid",
+        "d": "altered",
+        "needs_image": true
+      },
+      {
+        "num": 22,
+        "question": "The instrument will not be valid on",
+        "a": "October 25, 2023",
+        "d": "June 25, 2023",
+        "needs_image": true
+      },
+      {
+        "num": 23,
+        "question": "The rate at which a country's exports exchange for its imports is",
+        "d": "balance of payment",
+        "needs_image": false
+      }
+    ],
+    "needs_image": [20, 21, 22],
+    "stimulus_count": 1,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": 19,
+        "nums": [20, 21, 22],
+        "text_contains": [
+          "Use the diagram below to answer questions 20 to 22."
+        ],
+        "missing": []
+      }
+    ],
+    "key": {
+      "18": "D",
+      "19": "A",
+      "20": "C",
+      "21": "B",
+      "22": "A",
+      "23": "A"
+    },
+    "forbidden_flags": [
+      "option D missing",
+      "option D contains section heading or instruction",
+      "question text missing or very short"
+    ]
+  },
+  "must_not": [
+    "The diagram intro is saved as Q19 option D",
+    "Q20-Q22 are left without an image requirement",
+    "Q18, Q19, or Q23 are marked needsImage",
+    "The marker or intro remains in a saved question"
+  ],
+  "notes": [
+    "Q19.D is exactly 'trade discount'; the adjacent ranged intro and [image] become one marker-source stimulus.",
+    "The intro supplies the range because the marker has no explicit range; Q20-Q22 only get needs_image."
+  ],
+  "discrepancies": []
+}

@@ -8,7 +8,8 @@ Last updated: 2026-11-26.
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
 - Frozen base: `793cb8f`; scratch integration line:
   `scratch/parser-convergence-cycle`; PC01, PC02, and PC03 are `done` and
-  review-settled; next package PC04 is `not started` (ready to open).
+  review-settled; PC04 is `in progress` (implemented on `scratch/pc04-marker-range`
+  at base `9afe4f8`, awaiting rigorous review).
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /
@@ -137,8 +138,29 @@ Last updated: 2026-11-26.
   (`a4c6d53`) was fast-forward merged into `scratch/parser-convergence-cycle`
   from `331e81f` (product tree matching `69934bf`). Post-merge `build.js --check`,
   `key/build.js --check`, and `tests/single-source.js` pass on the merged tip;
-  PC03 is `done`, and PC04 is `not started` and ready to open on
-  `scratch/pc04-marker-range`.
+  PC03 is `done`.
+- PC04 implementation (2026-11-26, package base `9afe4f8`, branch
+  `scratch/pc04-marker-range`): under D-112, a standalone `[image]`/`[[image]]`
+  marker whose adjacent `stimulusRun` contains a qualifying ranged intro
+  (`STIMULUS_INTRO_RANGE`, at least two question numbers after `questions?`)
+  removes that trimmed run and derives `nums` from the intro range even without
+  table evidence. Explicit marker ranges stay authoritative, intro range parsing
+  reads only the `questions ...` range clause (ignoring numbers over 3 digits),
+  and intro lines never count as weak table evidence — keeping dates, years
+  (`2023`), amounts, account numbers, figure labels (`Figure 2`), option lines,
+  and following questions from becoming targets while preserving marker-only
+  behavior and surrounding blank lines. Core is `2.5.6` (`1,892 L / 67,351 B`,
+  `41585b05…`, `+48/-11`), `ocr_helper.js` requires `2.5.6`, `key/entry.js`
+  requires `2.5.6`, and `deployed/admin_questions.php` loads `core.js?v=2.5.6`
+  before `ocr_helper.js?v=2.4.9`. Both generated artifacts rebuild cleanly
+  (`src/bookmarklet.js` `1 L / 136,254 B`; key artifact `1 L / 76,408 B`).
+  Revalidated `new-edge-image-intro-marker` fixture (failing-first on `9afe4f8`,
+  now 38 checks PASS), 5 new unit tests (`tests/unit.js` 189 PASS), helper Load
+  vector (`tests/ocr-helper.js` 42 PASS), parity vectors (`tests/single-source.js`
+  15 PASS, plus 5-vector 4-surface parity probe), full Node baseline (74 runner,
+  42 key, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank hashes)
+  and PHP 8.5.12 CLI baseline (33 renderer, 8 store, 14 ordering, 7/7 lint)
+  pass. Awaiting rigorous review; no commit, merge, deploy, or live action.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

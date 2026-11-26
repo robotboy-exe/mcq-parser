@@ -223,11 +223,12 @@ helper uses only the subset exercised by `tests/ocr-helper.js`.
 | INV-154 | Field ownership: one source line belongs to at most one native form field; a line whose home is out of scope (section heading, instruction, divider, shared stimulus/table, E/F, answer key) is dropped and never reassigned to the nearest question or option. | VERIFIED | D-109; `docs/SPEC.md` §3.5; `region-midstream-orphan`; `tests/ocr-helper.js` Load vectors |
 | INV-155 | A section heading or instruction line never appears in `question_text` or `option_a`–`option_d`; the production root helper discards it, and `sectionInstruction`/`regions` stay internal metadata that the helper does not surface. | VERIFIED | D-109; `docs/SPEC.md` §3.5; `region-midstream-heading`; `tests/ocr-helper.js` Load vectors |
 | INV-156 | A stem run of at least two single uppercase letters, each followed by `.` and separated only by whitespace (one OCR wrap counts), is initialism text, not an option boundary, when the remaining accepted labels still contain a complete A–D set. The run is dropped from the accepted matches, so it also raises no duplicate-letter warning. A label that opens its own line — including one wrapped alone onto that line with its text on the next line — ends the run when the ordered rest of the set follows, where that ordered test counts only line-leading labels, so an in-text `(see D. note)` mention does not hide the boundary. A covered label is restored only when no other candidate carries its letter, and the restore prefers the trailing real boundary (a covered line-leading label, else the trailing covered spaced label), so a trailing `John F.`/`Vitamin C.`/`C. I. F.` before a real `A.`/`B.` keeps that boundary while a stem `A. D.`/`A. B.` initialism before the real `A.` option stays in the question. Spaced `C. I. F.`, `A. D.`, and `B. C.` stay in the stem, and inner initials plus `C. E. F. Small` (INV-86/EC-85) are unchanged. | VERIFIED | D-111; `spaced-initialism-cif-stem`, `-ad-stem`, `-bc-stem`, `-wrapped`, `-inner-option`; `tests/unit.js` boundary vectors; `tests/fixtures/ocr-helper-spaced-initialism-boundaries.txt` Load test; 4-surface parity |
+| INV-157 | A standalone image marker adjacent to a qualifying ranged intro extracts the trimmed run and uses the intro's `questions ...` range even without table evidence; explicit marker ranges remain authoritative, intro lines never count as table evidence, and numbers outside the `questions ...` clause or over three digits (dates, years, amounts, account numbers, figure labels) never become targets. Un-ranged or non-adjacent intros preserve marker-only behavior, and surrounding blank lines stay intact. | VERIFIED | D-112; `fixtures/inputs/new-edge-image-intro-marker.txt`; `tests/unit.js`; `tests/ocr-helper.js` Load test; 4-surface parity |
 
 ## Counts
 
-- Total: 147
-- VERIFIED: 137
+- Total: 148
+- VERIFIED: 138
 - AT_RISK: 10
 - CONFLICTED: 0
 

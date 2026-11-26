@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.5.5
+// Version: 2.5.6
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.5.5";
+const PARSER_VERSION = "2.5.6";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -20,7 +20,7 @@ const LOOSE = { E: /\n[^\S\n]*E[^\S\n]+(?=\S)/, F: /\n[^\S\n]*F[^\S\n]+(?=\S)/ }
 const STIMULUS_MARKER_LINE = /^[^\S\n]*\[\[?\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]?[^\S\n]*$/i;
 const STIMULUS_MARKER_INLINE = /\[\[\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]/gi;
 const STIMULUS_INTRO = /\b(?:use|study|consider|refer\s+to|the\s+following|below|above)\b[^\n]{0,100}\b(?:information|data|table|schedule|list|diagram|figure|chart|passage|graph|extract)\b[^\n]{0,100}\bquestions?\b/i;
-const STIMULUS_INTRO_RANGE = /\bquestions?\s+\d{1,3}\s*(?:and|to|[-–—])\s*\d{1,3}\b/i;
+const STIMULUS_INTRO_RANGE = /\bquestions?\s+((?:Q\s*)?\d{1,3}(?!\d)(?:\s*(?:,\s*(?:and|&)|[-–—]|to|and|&|,)\s*(?:Q\s*)?\d{1,3}(?!\d))+)/i;
 
 function parseHeader(text) {
   const header = text.split('\n').slice(0, 3).join(' ').toUpperCase();
@@ -582,7 +582,8 @@ function stimulusQuestionLine(line) {
 }
 
 function stimulusOptionLine(line) {
-  return /^[^\S\n]*[A-F][^\S\n]*[.)][^\S\n]*/.test(line) || /^[^\S\n]*[A-F][^\S\n]+(?=\d)/.test(line);
+  return /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-F][^\S\n]*[.)])[^\S\n]*\S?/.test(line)
+    || /^[^\S\n]*[A-F][^\S\n]+(?=\d)/.test(line);
 }
 
 function stimulusDividerLine(line) {
@@ -668,7 +669,10 @@ function stimulusEvidence(lines, start, end) {
   for (let i = start; i <= end; i++) {
     const line = lines[i];
     if (!line.trim() || stimulusMarkerLine(line) || stimulusStructuralLine(line)) continue;
-    if (stimulusIntroLine(line)) intro++;
+    if (stimulusIntroLine(line)) {
+      intro++;
+      continue;
+    }
     if (stimulusStrongTableLine(line)) {
       strong++;
       table++;
@@ -712,9 +716,10 @@ function nearestStimulusBlock(lines, markerLine) {
 function parseStimulusRange(text) {
   const s = String(text == null ? '' : text);
   const nums = new Set();
-  const rangeRe = /(\d{1,3})\s*(?:[-–—]|to|and|&)\s*(\d{1,3})/gi;
+  const rangeRe = /(?:Q\s*)?(\d+)\s*(?:[-–—]|to|and|&)\s*(?:Q\s*)?(\d+)/gi;
   let m;
   while ((m = rangeRe.exec(s))) {
+    if (m[1].length > 3 || m[2].length > 3) continue;
     let a = +m[1];
     let b = +m[2];
     if (a > b) {
@@ -729,11 +734,39 @@ function parseStimulusRange(text) {
     }
     for (let n = a; n <= b; n++) nums.add(n);
   }
-  for (const d of s.match(/\d{1,3}/g) || []) {
+  for (const d of s.match(/\d+/g) || []) {
+    if (d.length > 3) continue;
     const n = +d;
     if (n > 0) nums.add(n);
   }
   return [...nums].filter(n => Number.isInteger(n) && n > 0).sort((a, b) => a - b);
+}
+
+function stimulusIntroRange(line) {
+  if (!stimulusIntroLine(line)) return [];
+  const m = String(line == null ? '' : line).trim().match(STIMULUS_INTRO_RANGE);
+  return m ? parseStimulusRange(m[1]) : [];
+}
+
+function stimulusSingleQuestionRef(line) {
+  const m = String(line == null ? '' : line).trim().match(/\bquestions?\s+(?:Q\s*)?(\d{1,3})(?!\d)/i);
+  if (!m) return [];
+  const n = +m[1];
+  return n > 0 ? [n] : [];
+}
+
+function stimulusBlockIntroRange(lines, start, end) {
+  const nums = new Set();
+  for (let i = start; i <= end; i++) {
+    for (const n of stimulusIntroRange(lines[i])) nums.add(n);
+  }
+  return [...nums].sort((a, b) => a - b);
+}
+
+function stimulusMarkerRange(lines, block, markerRange) {
+  const explicit = parseStimulusRange(markerRange);
+  if (explicit.length) return explicit;
+  return block ? stimulusBlockIntroRange(lines, block.start, block.end) : [];
 }
 
 function extractStimulusMarkers(raw, num) {
@@ -764,8 +797,11 @@ function extractStimulusMarkers(raw, num) {
   for (const mk of markers) {
     if (mk.inline) continue;
     const run = stimulusRun(lines, mk.line);
-    mk.block = validStimulusBlock(lines, run.start, run.end)
-      ? trimStimulusRun(lines, run)
+    const trimmed = trimStimulusRun(lines, run);
+    const hasTableBlock = validStimulusBlock(lines, run.start, run.end);
+    const hasRangedIntro = stimulusBlockIntroRange(lines, trimmed.start, trimmed.end).length > 0;
+    mk.block = (hasTableBlock || hasRangedIntro)
+      ? trimmed
       : nearestStimulusBlock(lines, mk.line);
   }
   const removed = new Set();
@@ -786,7 +822,7 @@ function extractStimulusMarkers(raw, num) {
     return {
       at: mk.at,
       sourceNum: num,
-      nums: parseStimulusRange(mk.range),
+      nums: stimulusMarkerRange(lines, mk.block, mk.range),
       marker: mk.marker,
       text,
       source: 'marker'
@@ -817,10 +853,11 @@ function extractStimulusIntros(raw, num) {
     if (!validStimulusBlock(lines, run.start, run.end) || !evidence.table) continue;
     const content = trimStimulusRun(lines, run);
     for (let j = content.start; j <= content.end; j++) removed.add(j);
+    const introNums = stimulusIntroRange(lines[i]);
     stimuli.push({
       at: i,
       sourceNum: num,
-      nums: parseStimulusRange(lines[i]),
+      nums: introNums.length ? introNums : stimulusSingleQuestionRef(lines[i]),
       marker: lines[i].trim(),
       text: lines.slice(content.start, content.end + 1).join('\n').trim(),
       source: 'intro'
