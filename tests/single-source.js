@@ -177,6 +177,8 @@ const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spa
     // initialism before a real option line, must parse identically in both
     // generated artifacts and the canonical core.
     '1. Who is John F.\nA. Kennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe',
+    '1. Who is John F.\nA.\nKennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe',
+    '1. This happened in A. D. A. 70 B. 80 C. 90 D. 100',
     '1. Which refers to C. I. F.\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery'
   ]);
 

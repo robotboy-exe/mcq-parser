@@ -56,9 +56,14 @@ Last updated: 2026-11-26.
   ([record](reviews/parser-convergence-2026-11-phase-3.md)) returned `BLOCK`
   with `BLOCK-1` (a real line-start option absorbed after a trailing initial),
   `BLOCK-2` (a trailing spaced initialism before `\nA.` still split the
-  question), and `FIX-1` (stale helper token); the authorized fix ends the run
-  at a real option line, restores a covered label whose letter has no other
-  candidate, and rotates `ocr_helper.js` to `2.4.8`. Re-review is pending.
+  question), and `FIX-1` (stale helper token). The 2026-11-26 re-review of
+  `74505ae` closed `BLOCK-2`/`FIX-1`, kept `BLOCK-1` open in review round 2
+  (wrapped and out-of-order line-leading labels were still absorbed), and
+  recorded `BLOCK-3` (the covered-label restore picked a stem `A. D.`/`A. B.`
+  instead of the trailing real `A.`). The authorized re-review fix counts only
+  line-leading labels for the ordered test, treats a label wrapped alone onto
+  its line as an option line, and restores the trailing real boundary. Re-review
+  is pending.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -373,7 +378,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 |---|---|---|---|---|---|
 | 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings, closing `BLOCK-5`/`FIX-4`; every `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed; merged into `scratch/parser-convergence-cycle` at `e6f34f8` | disposable browser; no deploy/live |
 | 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | done — 2026-11-26 rigorous review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1`–`NOTE-2`, no `BLOCK`/`FIX`); owner confirmed both generated bookmarklets load and run in the owner's browser; fast-forward merged into `scratch/parser-convergence-cycle` (`0279e70`→`55afe15`) | owner's browser bookmarklet installability (confirmed 2026-11-26) |
-| 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | in progress; phase-3 review of candidate `37ea241` returned `BLOCK` with `BLOCK-1`/`BLOCK-2`/`FIX-1`; the authorized fix is applied on `scratch/pc03-spaced-initialisms` (73 runner, 181 unit, 40 helper, 42 key, 15 single-source, PHP 8.3.9 green, 12-vector 4-surface parity); awaiting re-review | none; parser and real-surface evidence |
+| 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | in progress; phase-3 review of candidate `37ea241` returned `BLOCK` with `BLOCK-1`/`BLOCK-2`/`FIX-1`; the re-review of `74505ae` closed `BLOCK-2`/`FIX-1`, kept `BLOCK-1` open (round 2), and recorded `BLOCK-3` (round 1); the authorized re-review fix is applied on `scratch/pc03-spaced-initialisms` (73 runner, 184 unit, 41 helper, 42 key, 15 single-source, PHP 8.3.9 green, 8-vector artifact parity); awaiting re-review | none; parser and real-surface evidence |
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
 | 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | not started | none; prior BLOCK controls mandatory |
 | 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | not started | owner's browser for both bookmarklets; owner choice for key `needsImage` policy |
@@ -450,7 +455,7 @@ verifies the detail path with the rest of Release A.
 |---|---|---|---|
 | phase 1 | PC01 product separation | rigorous | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings (`BLOCK-5`/`FIX-4` closed, all `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed); merged into the scratch cycle line at `e6f34f8` |
 | phase 2 | PC02 one parser source and build parity | rigorous | done — 2026-11-26 review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1` corrected, `NOTE-2` accepted); owner confirmed both generated bookmarklets in the owner's browser; fast-forward merged into the scratch cycle line |
-| phase 3 | PC03 spaced initialisms | rigorous | in progress; review of `37ea241` returned `BLOCK` (`BLOCK-1`/`BLOCK-2`/`FIX-1`); authorized fix applied and baseline green; re-review pending |
+| phase 3 | PC03 spaced initialisms | rigorous | in progress; review of `37ea241` returned `BLOCK` (`BLOCK-1`/`BLOCK-2`/`FIX-1`); the re-review of `74505ae` closed `BLOCK-2`/`FIX-1`, kept `BLOCK-1` open (round 2), and recorded `BLOCK-3`; authorized re-review fix applied and baseline green; re-review pending |
 | phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
 | phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | blocked by PC04 review |
 | phase 6 | PC06 bookmarklet policy and scratch release | rigorous | blocked by PC05 review and owner key-image policy choice |
@@ -467,11 +472,12 @@ verifies the detail path with the rest of Release A.
 3. **PC03** — implemented on `scratch/pc03-spaced-initialisms` from base
    `331e81f`: the canonical core keeps spaced dotted initialism runs as text
    under D-111 without changing `C. E. F. Small`, inner initials, or the D-91
-   grammar. The phase-3 review returned `BLOCK` with `BLOCK-1`, `BLOCK-2`, and
-   `FIX-1`; the authorized fix ends a run at a real option line, restores a
-   covered label whose letter has no other candidate, and rotates the helper
-   token to `2.4.8`. Re-review of every dangerous option-boundary control is the
-   next step.
+   grammar. The phase-3 review returned    `BLOCK` with `BLOCK-1`, `BLOCK-2`, and `FIX-1`; the re-review of `74505ae`
+   closed `BLOCK-2`/`FIX-1`, kept `BLOCK-1` open (round 2), and recorded
+   `BLOCK-3`. The authorized fix ends a run at a line-leading (including
+   wrapped) option label, counts only line-leading labels in the ordered test,
+   and restores the trailing real covered label. Re-review of every dangerous
+   option-boundary control is the next step.
 4. **PC04** — independently revalidate and implement only marker-adjacent range
    extraction; rigorous review including unrelated-number adversarial probes.
 5. **PC05** — independently revalidate anchored shared-stimulus tails and
@@ -490,14 +496,15 @@ bookmarklets from `01e2c02` load and run in the owner's browser, and the package
 was fast-forward merged into `scratch/parser-convergence-cycle` from `0279e70`
 to `55afe15` with the product tree matching `6592991`. The three post-merge
 checks (`node src/build/build.js --check`, `node src/bookmarklets/key/build.js
---check`, `node tests/single-source.js` 15 checks) pass on the merged tip. PC03
-is implemented on `scratch/pc03-spaced-initialisms` from base `331e81f`; its
+--check`, `node tests/single-source.js` 15 checks) pass on the merged tip. PC03 is implemented on `scratch/pc03-spaced-initialisms` from base `331e81f`; its
 2026-11-26 rigorous review returned `BLOCK` with `BLOCK-1`, `BLOCK-2`, and
-`FIX-1`, and the authorized fix is applied: 73 fixtures, 181 unit checks, 40
-helper vectors, 42 key vectors, 15 single-source checks, both `--check` guards,
-33 PHP renderer vectors, 8 store checks, 14 ordering checks, and 7/7 `php -l`
-pass on PHP 8.3.9, with core/helper/artifact parity on 12 boundary vectors. It
-awaits re-review. No deploy or live action is authorized.
+`FIX-1`, and the re-review of `74505ae` closed `BLOCK-2`/`FIX-1`, kept `BLOCK-1`
+open in round 2, and recorded `BLOCK-3`. The authorized re-review fix is
+applied: 73 fixtures, 184 unit checks, 41 helper vectors, 42 key vectors, 15
+single-source checks, both `--check` guards, 33 PHP renderer vectors, 8 store
+checks, 14 ordering checks, and 7/7 `php -l` pass on PHP 8.3.9, with core and
+both real artifacts identical on the 8 boundary vectors. It awaits re-review.
+No deploy or live action is authorized.
 
 ## Archived `math-editor-2026-11` close path
 

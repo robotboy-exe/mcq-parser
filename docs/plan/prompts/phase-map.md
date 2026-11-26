@@ -24,11 +24,13 @@ fast-forward merged from `0279e70` to `55afe15` with a product tree matching
 `6592991`. PC03 is the next package in sequence and is `in progress` on
 `scratch/pc03-spaced-initialisms` from package base `331e81f`: the core's
 spaced-initialism guard (D-111) keeps `C. I. F.`/`A. D.`/`B. C.` stem runs as
-text, and its phase-3 review returned `BLOCK` with `BLOCK-1`/`BLOCK-2`/`FIX-1`
-(the authorized fix ends a run at a real option line, restores a covered label
-whose letter has no other candidate, and rotates the helper token to `2.4.8`).
-The full Node/PHP baseline is green and it awaits re-review. No deploy or live
-action is authorized.
+text. Its phase-3 review returned `BLOCK` with `BLOCK-1`/`BLOCK-2`/`FIX-1`; the
+re-review of `74505ae` closed `BLOCK-2`/`FIX-1`, kept `BLOCK-1` open in round 2,
+and recorded `BLOCK-3` (the restore picked a stem `A. D.`/`A. B.` label instead
+of the trailing real `A.`). The authorized fix ends a run at a line-leading
+(including wrapped) option label, counts only line-leading labels in the ordered
+test, and restores the trailing real covered label. The full Node/PHP baseline
+is green and it awaits re-review. No deploy or live action is authorized.
 
 ## Starting a new cycle
 

@@ -1878,3 +1878,16 @@ a wrapped or inline run) stays text and the real `A.`–`D.` boundaries survive.
 The run walk, the boundary test, and the restore are three focused helpers plus
 the same single filter; `OPTION`, `LOOSE`, `FIXES`, and product policy are still
 untouched, and nothing changes when a complete set survives without the run.
+
+**Review fix 2 (2026-11-26, phase-3 re-review `BLOCK-1`/`BLOCK-3`).** Three
+narrow corrections inside the same guard. First, a label that opens its own line
+still counts as an option line when an OCR wrap leaves the label alone and the
+text starts on the immediately following line (`\nA.\nKennedy`). Second, the
+ordered-set test that ends a run counts only labels that open an option line, so
+a letter mentioned inside an option body (`(see D. note)`) neither hides the real
+boundary nor re-orders the set. Third, the covered-label restore takes the
+trailing real boundary: a covered label that opens an option line wins, otherwise
+the trailing covered spaced label wins, and the label inside an earlier stem
+initialism (`A. D.`, `A. B.`) or a later in-text mention can never be restored.
+Unspaced `A.D.` abbreviations remain excluded. `OPTION`, `LOOSE`, `FIXES`,
+`splitQuestions`, and product policy are still untouched.

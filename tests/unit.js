@@ -215,6 +215,54 @@ test('parseQuestion keeps a trailing spaced initialism before a real option line
   }
 });
 
+test('parseQuestion keeps a wrapped real option label after a trailing initial', () => {
+  const q = parser.parseQuestion({ num: 1, text: '1. Who is John F.\nA.\nKennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe' });
+  eq(q.question, '1. Who is John F.');
+  eq([q.a, q.b, q.c, q.d], ['Kennedy', 'Adams (option A. wrong)', 'Smith', 'Doe']);
+  eq(q.flags, []);
+});
+
+test('parseQuestion keeps a real option label ahead of an out-of-order letter mention', () => {
+  const john = parser.parseQuestion({ num: 1, text: '1. Who is John F.\nA. Kennedy (see D. note)\nB. Adams (option A. wrong)\nC. Smith\nD. Doe' });
+  eq(john.question, '1. Who is John F.');
+  eq(john.a, 'Kennedy (see');
+  eq(john.flags, []);
+  // 331e81f controls: the later out-of-order mention stays text, it does not
+  // reorder or rescale the real A-D set.
+  eq([john.b, john.c, john.d], ['Adams (option A. wrong)', 'Smith D. Doe', 'note)']);
+
+  const pick = parser.parseQuestion({ num: 1, text: '1. Pick one\nA. value A. B.\nB. two (see D. note) B. inside\nC. three\nD. four' });
+  eq([pick.a, pick.b], ['value A. B.', 'two (see']);
+  eq(pick.flags, []);
+
+  const vitamin = parser.parseQuestion({ num: 1, text: '1. Pick one\nA. Vitamin C.\nB. Rich in B. vitamins (see D.)\nC. other\nD. none' });
+  eq([vitamin.a, vitamin.b], ['Vitamin', 'Rich in B. vitamins (see']);
+});
+
+test('parseQuestion restores the trailing real A boundary after a stem initialism', () => {
+  const inline = parser.parseQuestion({ num: 1, text: '1. This happened in A. D. A. 70 B. 80 C. 90 D. 100' });
+  eq(inline.question, '1. This happened in A. D.');
+  eq([inline.a, inline.b, inline.c, inline.d], ['70', '80', '90', '100']);
+  eq(inline.flags, []);
+
+  const compare = parser.parseQuestion({ num: 1, text: '1. Compare A. B. with C. I. F. A. first B. second C. third D. fourth' });
+  eq(compare.question, '1. Compare A. B. with C. I. F.');
+  eq([compare.a, compare.b, compare.c, compare.d], ['first', 'second', 'third', 'fourth']);
+  eq(compare.flags, []);
+
+  const wrapped = parser.parseQuestion({ num: 1, text: '1. This happened in A. D.\nA.\n70\nB. 80\nC. 90\nD. 100' });
+  eq(wrapped.question, '1. This happened in A. D.');
+  eq([wrapped.a, wrapped.b, wrapped.c, wrapped.d], ['70', '80', '90', '100']);
+  eq(wrapped.flags, []);
+
+  const mention = parser.parseQuestion({ num: 1, text: '1. This happened in A. D.\nA. 70 (see C.)\nB. 80\nC. 90\nD. 100' });
+  eq(mention.question, '1. This happened in A. D.');
+  // The out-of-order `(see C.)` mention keeps the same D-91 behavior as the
+  // frozen `Kennedy (see` vector: the real A boundary supplies the option and
+  // the mention stays option-A text.
+  eq(mention.a, '70 (see');
+});
+
 test('parseQuestion still reads a blank-line stem initial run as text', () => {
   const q = parser.parseQuestion({ num: 1, text: '1. The sequence is A.\n\nB. followed by\nA. one\nB. two\nC. three\nD. four' });
   eq(q.question, '1. The sequence is A.\n\nB. followed by');

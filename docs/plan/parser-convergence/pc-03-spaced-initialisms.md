@@ -1,8 +1,10 @@
 # PC03 — Spaced Initialism Option Boundaries
 
 - **Status:** in progress — the phase-3 review returned `BLOCK` (`BLOCK-1`,
-  `BLOCK-2`, `FIX-1`); the authorized fix is applied 2026-11-26 on
-  `scratch/pc03-spaced-initialisms`; awaiting re-review
+  `BLOCK-2`, `FIX-1`); the 2026-11-26 re-review of `74505ae` closed
+  `BLOCK-2`/`FIX-1`, kept `BLOCK-1` open (round 2), and recorded `BLOCK-3`; the
+  authorized re-review fix is applied on `scratch/pc03-spaced-initialisms`;
+  awaiting re-review
 - **Package base:** `331e81f` (the reconciled PC02 boundary; product tree and
   review records match `55afe15`)
 - **Implementation branch:** short-lived `scratch/pc03-spaced-initialisms`
@@ -128,7 +130,7 @@ the key artifact suite passes on the real generated bookmarklet. No browser
 install gate is part of PC03.
 
 **Open questions.** P23's original raw samples are absent from this clone (no
-`scratch/stimulus-followups` ref, no P23 commit, no doc copy), so provenance is
+P23 commit or doc copy), so provenance is
 recorded as package-derived `synthetic`; the package goal's two named examples
 are covered. `php tests/cbt-staging.php` still needs a disposable MySQL URL and
 did not run (no PHP changed). PC02's `NOTE-2` residual is unaffected. Deployment
@@ -194,7 +196,7 @@ real generated artifacts) is green on 12 boundary vectors.
 | `node tests/key-bookmarklet.js` | 42 PASS |
 | `node tests/underline-toolbar.js` / `question-preview` / `math-tool` / `render-markup` | 10 / 7 / 26 / 69 PASS |
 | `node tests/single-source.js` | 15 PASS |
-| `node src/build/build.js --check` / key `--check` | exit 0 (134,122 / 74,295 B stripped) |
+| `node src/build/build.js --check` / key `--check` | exit 0 (134,947 / 75,101 B stripped) |
 | `node tools/extract-bank.js --check` | 7 hashes OK |
 | PHP 8.3.9 CLI: `php-render` / `admin-question-store` / `cbt-question-order` / `php -l` | 33 / 8 / 14 PASS, 7/7 lint |
 
@@ -204,3 +206,83 @@ real generated artifacts) is green on 12 boundary vectors.
 `scratch/pc03-spaced-initialisms` at the owner's explicit request as `adb3e2a`;
 this handoff-only child records the pushed ref the re-review must target.
 Re-review is required. Nothing is merged. `Commit: adb3e2a`.
+
+**2026-11-26 — phase-3 re-review fix (`BLOCK-1`, `BLOCK-3`).** Authorized by the
+phase-3 re-review
+([record](../reviews/parser-convergence-2026-11-phase-3-re-review.md)) in review
+round 2 for `BLOCK-1` and round 1 for `BLOCK-3`; no closure contract was
+broadened, and that re-review closed `BLOCK-2` and `FIX-1`.
+
+**Failing first (before the core change).** `node tests/unit.js` reported
+181 PASS / 3 FAIL on the new vectors — `+ actual '1. Who is John F. A. Kennedy'`
+against `'1. Who is John F.'`, `+ actual '1. Who is John F. A. Kennedy (see'` for
+the out-of-order mention, and `+ actual '1. This happened in'` against
+`'1. This happened in A. D.'` — and `node tests/ocr-helper.js` aborted at the
+real Load path with `+ actual 'Who is John F. A. Kennedy'` against
+`'Who is John F.'`.
+
+**Fix (`src/parser/core.js` only, inside the existing D-111 guard).**
+`isOptionLineStart` also accepts a label left alone on its line whose option
+text starts on the immediately following line (`\nA.\nKennedy`).
+`orderedOptionCompletion` counts only labels that open an option line, so an
+in-text mention such as `(see D. note)` no longer hides the real boundary or
+re-orders the set. `restoredOptionMatch` replaces the earliest-match restore: it
+prefers the trailing covered label that opens an option line, otherwise the
+trailing covered spaced label, so a stem `A. D.`/`A. B.` label or a later
+in-text mention can never be restored, and unspaced `A.D.` abbreviations stay
+excluded. `OPTION`, `LOOSE`, `FIXES`, `splitQuestions`, regions, E/F collapse,
+and product policy are unchanged; core stays `2.5.5` because that version is
+unreleased, and the `ocr_helper.js`, `src/bookmarklets/key/entry.js`, and
+`deployed/admin_questions.php` bytes are unchanged.
+
+**Closure mapping.**
+
+| Finding | Frozen criterion | Implementation | Evidence |
+|---|---|---|---|
+| `BLOCK-1` | a wrapped or out-of-order line-leading `A.`–`D.` after `[A-Z].` is never absorbed or discarded; the four named stem vectors keep `F.`/`U. S.` in `question`; all controls and 4-surface parity unchanged | wrapped-label option-line test, line-leading-only ordered test | `tests/unit.js` "…wrapped real option label…" (wrapped `\nA.\nKennedy`), "…real option label ahead of an out-of-order letter mention" (`(see D. note)`, `A. value A. B.`, `Vitamin C.`), plus the two existing stem tests; real Load fixture `ocr-helper-spaced-initialism-wrapped-boundaries.txt`; runner/unit/helper/key/single-source green |
+| `BLOCK-3` | the restore never prefers an earlier stem initialism over the trailing real boundary; the inline, wrapped, and `(see C.)` vectors keep the stem initialism in `question` and put `70`, and the `A. B. … C. I. F.` vector puts `first`, in Option A; `C. E. F. Small`, inner-option, and incomplete sets unchanged | `restoredOptionMatch` trailing-boundary preference | `tests/unit.js` "…trailing real A boundary after a stem initialism" (`A. D. A. 70 …`, `A. B. with C. I. F. A. first …`, wrapped `A. D.\nA.\n70`, `A. D.\nA. 70 (see C.)`); `spaced-initialism-inner-option` and `new-edge-initials-q46` green |
+
+**Criterion reconciliation (BLOCK-3, `(see C.)` vector).** Criterion 1 names
+Option A as `"70"` for this vector, but the same in-text mention grammar is
+frozen by `BLOCK-1` criterion 2, which requires `a: "Kennedy (see"` for
+`A. Kennedy (see D. note)`. Both vectors have the identical shape (a mention of
+the next letter inside Option A's text), so a single-vector special case would
+violate the `BLOCK-1` closure contract and the `Pick one … (see D. note)`
+controls. The fix therefore repairs the question and the real A boundary and
+leaves the mention as Option A text: `a: "70 (see"`, with the same structural
+flag the package base already raised for that vector. The reviewer is asked to
+confirm this reading; no other frozen value is relaxed.
+
+**Final measurements (package base `331e81f`).** `src/parser/core.js`
+1,733 L / 60,722 B → 1,855 L / 65,965 B (`+124/-2`, `28172dfa…`);
+`ocr_helper.js` unchanged (`86497f4d…`, live-origin `+51/-45`);
+`src/bookmarklets/key/entry.js` unchanged (`34e78c3e…`);
+`deployed/admin_questions.php` unchanged (`388d3853…`, live-origin `+96/-85`);
+both live-origin files stay inside the 100-addition cap with no exception.
+Generated artifacts (`--check` exit 0): `src/bookmarklet.js` 1 L / 134,947 B
+`b38a9f04…` and `src/bookmarklets/key/bookmarklet.js` 1 L / 75,101 B
+`8660fe2c…`; `src/bookmarklet.min.js` stays untracked and untouched.
+
+**Commands and results (re-review fix tip).**
+
+| Command | Result |
+|---|---|
+| `node tests/runner.js` | 73 fixtures: 73 PASS, 0 FAIL, 0 PENDING |
+| `node tests/unit.js` | 184 PASS, 0 FAIL |
+| `node tests/ocr-helper.js` | 41 PASS (real module and Load path) |
+| `node tests/key-bookmarklet.js` | 42 PASS (real generated artifact) |
+| `node tests/single-source.js` | 15 PASS (two new parity vectors) |
+| `node tests/underline-toolbar.js` / `question-preview` / `math-tool` / `render-markup` | 10 / 7 / 26 / 69 PASS |
+| `node src/build/build.js --check` / key `--check` | exit 0 (134,947 / 75,101 B stripped) |
+| `node tools/extract-bank.js --check` | 7 hashes OK |
+| PHP 8.3.9 CLI: `php-render` / `admin-question-store` / `cbt-question-order` / `php -l` | 33 / 8 / 14 PASS, 7/7 lint |
+
+**Surfaces.** Core and both real generated artifacts return identical
+`parsePaste` output on the 8 boundary vectors; the deployed helper's real
+`parseAll` plus `fillForm` Load path keeps `John F.` and `A. D.` out of every
+native field. `php tests/cbt-staging.php` was not run (needs a disposable MySQL
+URL; no PHP changed). No browser install gate is part of PC03.
+
+**Review status.** The re-review record is at
+[`reviews/parser-convergence-2026-11-phase-3-re-review.md`](../reviews/parser-convergence-2026-11-phase-3-re-review.md).
+`Commit: deferred`.

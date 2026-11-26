@@ -370,23 +370,34 @@ function isOptionAbbreviation(raw, match) {
   return /^[A-Z](?:\.|\s|$)/.test(raw.slice(match.index + match[0].length));
 }
 
-function orderedOptionCompletion(matches, index) {
+function orderedOptionCompletion(raw, matches, index) {
   const from = REQUIRED_OPTION_LETTERS.indexOf(matches[index].letter);
   if (from < 0) return false;
   const expected = REQUIRED_OPTION_LETTERS.slice(from);
   const seen = [matches[index].letter];
   for (let i = index + 1; i < matches.length && seen.length < expected.length; i++) {
     if (seen.includes(matches[i].letter)) continue;
+    // BLOCK-1: only a label that opens its own option line supplies the
+    // ordered set; a letter mentioned inside an option body does not.
+    if (!isOptionLineStart(raw, matches[i])) continue;
     seen.push(matches[i].letter);
   }
   return seen.join('') === expected;
 }
 
 function isOptionLineStart(raw, token) {
-  const lineStart = raw.lastIndexOf('\n', token.start - 1) + 1;
-  if (!/^[^\S\n]*$/.test(raw.slice(lineStart, token.start))) return false;
+  // A label match starts on its leading whitespace; test the letter itself.
+  let start = token.start;
+  while (start < token.end && raw.charAt(start) !== token.letter) start++;
+  const lineStart = raw.lastIndexOf('\n', start - 1) + 1;
+  if (!/^[^\S\n]*$/.test(raw.slice(lineStart, start))) return false;
   const lineEnd = raw.indexOf('\n', token.end);
-  return /[^\s]/.test(raw.slice(token.end, lineEnd === -1 ? raw.length : lineEnd));
+  if (/[^\s]/.test(raw.slice(token.end, lineEnd === -1 ? raw.length : lineEnd))) return true;
+  // BLOCK-1: an OCR wrap can leave the label alone on its line, with the
+  // option text starting on the immediately following line (`\nA.\nKennedy`).
+  if (lineEnd === -1) return false;
+  const nextEnd = raw.indexOf('\n', lineEnd + 1);
+  return /[^\s]/.test(raw.slice(lineEnd + 1, nextEnd === -1 ? raw.length : nextEnd));
 }
 
 function isRealOptionBoundary(raw, token, matches) {
@@ -394,7 +405,23 @@ function isRealOptionBoundary(raw, token, matches) {
   const letter = raw.charAt(token.start);
   const index = matches.findIndex(match =>
     match.letter === letter && match.start <= token.start && match.end >= token.end);
-  return index !== -1 && orderedOptionCompletion(matches, index);
+  return index !== -1 && orderedOptionCompletion(raw, matches, index);
+}
+
+function restoredOptionMatch(raw, tokens, letter, covered) {
+  // BLOCK-3: a restore must never pick the label inside an earlier stem
+  // initialism (`A. D.`, `A. B.`) or a later in-text mention. Prefer the
+  // trailing covered label that opens an option line; otherwise take the
+  // trailing covered spaced label, which is the real boundary in an inline
+  // set. Unspaced abbreviations (`A.D.`) never qualify.
+  const candidates = tokens.filter(token => {
+    if (token.letter !== letter || !covered(token)) return false;
+    if (token.start > 0 && !/\s/.test(raw.charAt(token.start - 1))) return false;
+    return !/^[A-Z](?:\.|\s|$)/.test(raw.slice(token.end));
+  });
+  const boundaries = candidates.filter(token => isOptionLineStart(raw, token));
+  if (boundaries.length) return boundaries[boundaries.length - 1];
+  return candidates.length ? candidates[candidates.length - 1] : null;
 }
 
 function initialismTokens(raw) {
@@ -945,8 +972,7 @@ function parseQuestion(chunk) {
       if (missing.length) {
         const tokens = initialismTokens(raw);
         for (const letter of missing) {
-          const keep = matches.find(match => match.letter === letter && covered(match)) ||
-            tokens.find(token => token.letter === letter && covered(token));
+          const keep = restoredOptionMatch(raw, tokens, letter, covered);
           if (keep) restored.push(keep);
         }
       }

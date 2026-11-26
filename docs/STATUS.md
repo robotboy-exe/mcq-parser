@@ -112,23 +112,26 @@ Last updated: 2026-11-26.
   labels only while the remaining labels still contain a complete A–D set, so
   stem `C. I. F.`, `A. D.`, and `B. C.` no longer displace a real option while
   `C. E. F. Small` (EC-85) and initialisms inside option text are unchanged.
-- PC03 review fix (2026-11-26, `BLOCK-1`, `BLOCK-2`, `FIX-1` from the phase-3
-  [review](plan/reviews/parser-convergence-2026-11-phase-3.md)): the run now ends
-  before a line-leading label that runs to the ordered end of the set, and a
-  covered label is restored when its letter has no other candidate, so a
-  trailing `John F.`, `U. S.`, `Vitamin C.`, or `C. I. F.` before a real `A.`/`B.`
-  line (including a wrapped, blank-line, or inline run) keeps the real
-  boundaries. Core is `2.5.5` (1,829 L / 64,452 B, `42739697…`); `ocr_helper.js`
-  still requires `2.5.5` and `deployed/admin_questions.php` loads
-  `src/parser/core.js?v=2.5.5` before `ocr_helper.js?v=2.4.8`. Both generated
-  artifacts rebuild deterministically (`src/bookmarklet.js` 1 L / 134,187 B; key
-  artifact 1 L / 74,341 B). Five new fixtures, six new unit tests, and a new
-  helper Load fixture pass; the full Node baseline is green (73 runner, 181
-  unit, 40 helper, 42 key, 10 underline, 7 preview, 26 math-tool, 69
-  render-markup, 15 single-source, 7 bank hashes), the PHP 8.3.9 baseline is
-  green (33 renderer, 8 store, 14 ordering, 7/7 lint), and core, deployed
-  helper, and both real artifacts return identical output on 12 boundary
-  vectors. PC03 is `in progress` until its re-review settles.
+- PC03 re-review fix (2026-11-26, `BLOCK-1` and new `BLOCK-3` from the phase-3
+  [re-review](plan/reviews/parser-convergence-2026-11-phase-3-re-review.md),
+  which closed `BLOCK-2`/`FIX-1`): the run now ends before a line-leading label
+  that runs to the ordered end of the set, where that ordered test counts only
+  labels that open an option line, so an in-text `(see D. note)` mention neither
+  hides the real boundary nor re-orders the set. A label wrapped alone onto its
+  line (`\nA.\nKennedy`) counts as an option line, and the covered-label restore
+  takes the trailing real boundary, so a stem `A. D.`/`A. B.` initialism or a
+  later in-text mention never becomes the option label. Core is `2.5.5`
+  (1,855 L / 65,965 B, `28172dfa…`); `ocr_helper.js` still requires `2.5.5` and
+  `deployed/admin_questions.php` still loads `src/parser/core.js?v=2.5.5`
+  before `ocr_helper.js?v=2.4.8`. Both generated artifacts rebuild
+  deterministically (`src/bookmarklet.js` 1 L / 134,947 B; key artifact 1 L /
+  75,101 B). Five new fixtures, nine new unit vectors, and two new helper Load
+  fixtures pass; the full Node baseline is green (73 runner, 184 unit, 41
+  helper, 42 key, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 15
+  single-source, 7 bank hashes), the PHP 8.3.9 baseline is green (33 renderer, 8
+  store, 14 ordering, 7/7 lint), and core and both real artifacts return
+  identical output on the 8 boundary vectors. PC03 is `in progress` until its
+  re-review settles.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

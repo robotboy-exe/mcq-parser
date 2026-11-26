@@ -371,11 +371,14 @@ unsupported: numbered markers take precedence and may absorb bullet text.
     discarded only while the remaining labels still contain a complete A–D set,
     so a stem `C. I. F.` or spaced `A. D.`/`B. C.` never supplies a boundary
     while `C. E. F. Small` and inner initials keep their options (D-111). A real
-    option line that starts right after a run — a line-leading label whose own
-    letter is followed by the ordered rest of the set — ends the run instead of
-    joining it, and a covered label is restored when no other candidate carries
-    its letter, so a stem or option ending in `John F.`, `Vitamin C.`, or
-    `C. I. F.` before `A.`/`B.` keeps the real option boundaries.
+    option line that starts right after a run — a line-leading label (also one
+    wrapped alone onto its line) whose own letter is followed by the ordered rest
+    of the set, counting only labels that open an option line — ends the run
+    instead of joining it. A covered label is restored only when no other
+    candidate carries its letter, and the restore prefers the trailing real
+    boundary, so a stem or option ending in `John F.`, `Vitamin C.`, or
+    `C. I. F.` before `A.`/`B.` keeps the real option boundaries while a stem
+    `A. D.`/`A. B.` before the real `A.` option stays in the question.
 5. Select one option set from the remaining accepted labels: take the earliest
    occurrence of each required letter A, B, C, D, then accept E (and then F)
    only when it starts after the selected D. Convert the selected marks to a
