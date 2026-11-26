@@ -7,9 +7,8 @@ Last updated: 2026-11-26.
 - Cycle: `parser-convergence-2026-11`; active map:
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
 - Frozen base: `793cb8f`; scratch integration line:
-  `scratch/parser-convergence-cycle`; PC01 and PC02 are `done` and
-  review-settled; current package PC03 is `in progress` (re-review findings fixed,
-  awaiting re-review).
+  `scratch/parser-convergence-cycle`; PC01, PC02, and PC03 are `done` and
+  review-settled; next package PC04 is `not started` (ready to open).
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /
@@ -101,10 +100,9 @@ Last updated: 2026-11-26.
   tree matches the reviewed implementation commit `6592991`, and
   `node src/build/build.js --check`,
   `node src/bookmarklets/key/build.js --check`, and `node tests/single-source.js`
-  (15 checks) pass on the merged tip. PC02 is `done`; PC03 is `in progress` on
-  `scratch/pc03-spaced-initialisms` from base `331e81f`: its 2026-11-26
-  rigorous review returned `BLOCK` with `BLOCK-1`, `BLOCK-2`, and `FIX-1`, the
-  authorized fix is applied, and it awaits re-review.
+  (15 checks) pass on the merged tip. PC02 is `done`. PC03 is `done` and
+  merged into `scratch/parser-convergence-cycle`; PC04 is `not started` and
+  ready to open on `scratch/pc04-marker-range`.
 - PC03 implementation (2026-11-26, package base `331e81f`): the canonical core
   keeps spaced dotted initialism runs as text under D-111. A maximal run of at
   least two single uppercase letters, each followed by `.` and separated only by
@@ -112,7 +110,8 @@ Last updated: 2026-11-26.
   labels only while the remaining labels still contain a complete A–D set, so
   stem `C. I. F.`, `A. D.`, and `B. C.` no longer displace a real option while
   `C. E. F. Small` (EC-85) and initialisms inside option text are unchanged.
-- PC03 re-review fix (2026-11-26, `BLOCK-1` and new `BLOCK-3` from the phase-3
+- PC03 re-review fix and settlement (2026-11-26, `BLOCK-1` and new `BLOCK-3`
+  from the phase-3
   [re-review](plan/reviews/parser-convergence-2026-11-phase-3-re-review.md),
   which closed `BLOCK-2`/`FIX-1`): the run now ends before a line-leading label
   that runs to the ordered end of the set, where that ordered test counts only
@@ -130,8 +129,16 @@ Last updated: 2026-11-26.
   helper, 42 key, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 15
   single-source, 7 bank hashes), the PHP 8.3.9 baseline is green (33 renderer, 8
   store, 14 ordering, 7/7 lint), and core and both real artifacts return
-  identical output on the 8 boundary vectors. PC03 is `in progress` until its
-  re-review settles.
+  identical output on the 8 boundary vectors. The 2026-11-26 phase-3
+  [re-review 2](plan/reviews/parser-convergence-2026-11-phase-3-re-review-2.md)
+  of candidate `69934bf` returned `PASS WITH ACCEPTED FINDINGS`, closing `BLOCK-1`
+  and `BLOCK-3` (with `BLOCK-2`/`FIX-1` previously closed and non-blocking
+  `NOTE-3` accepted as residual), and `origin/scratch/pc03-spaced-initialisms`
+  (`a4c6d53`) was fast-forward merged into `scratch/parser-convergence-cycle`
+  from `331e81f` (product tree matching `69934bf`). Post-merge `build.js --check`,
+  `key/build.js --check`, and `tests/single-source.js` pass on the merged tip;
+  PC03 is `done`, and PC04 is `not started` and ready to open on
+  `scratch/pc04-marker-range`.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

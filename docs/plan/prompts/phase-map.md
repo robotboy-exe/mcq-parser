@@ -15,22 +15,16 @@ Updated: 2026-11-26
 | 5 | `PC05` — `parser-convergence/pc-05-stimulus-boundaries.md` |
 | 6 | `PC06` — `parser-convergence/pc-06-bookmarklet-policy-release.md` |
 
-Current gate: PC01 and PC02 are `done` and merged into
-`scratch/parser-convergence-cycle`. PC02's 2026-11-26 rigorous review of
-candidate `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` with `NOTE-1`–`NOTE-2`
-and no `BLOCK`/`FIX`; the owner confirmed that both generated bookmarklets from
-that candidate load and run in the owner's browser, and the package was
-fast-forward merged from `0279e70` to `55afe15` with a product tree matching
-`6592991`. PC03 is the next package in sequence and is `in progress` on
-`scratch/pc03-spaced-initialisms` from package base `331e81f`: the core's
-spaced-initialism guard (D-111) keeps `C. I. F.`/`A. D.`/`B. C.` stem runs as
-text. Its phase-3 review returned `BLOCK` with `BLOCK-1`/`BLOCK-2`/`FIX-1`; the
-re-review of `74505ae` closed `BLOCK-2`/`FIX-1`, kept `BLOCK-1` open in round 2,
-and recorded `BLOCK-3` (the restore picked a stem `A. D.`/`A. B.` label instead
-of the trailing real `A.`). The authorized fix ends a run at a line-leading
-(including wrapped) option label, counts only line-leading labels in the ordered
-test, and restores the trailing real covered label. The full Node/PHP baseline
-is green and it awaits re-review. No deploy or live action is authorized.
+Current gate: PC01, PC02, and PC03 are `done` and merged into
+`scratch/parser-convergence-cycle`. PC03's 2026-11-26 phase-3 re-review 2 of
+candidate `69934bf` returned `PASS WITH ACCEPTED FINDINGS`, closing `BLOCK-1`
+and `BLOCK-3` (with `BLOCK-2`/`FIX-1` previously closed and non-blocking
+`NOTE-3` accepted as residual), and `origin/scratch/pc03-spaced-initialisms`
+(`a4c6d53`) was fast-forward merged into `scratch/parser-convergence-cycle` from
+`331e81f` with a product tree matching `69934bf`. PC04 is the next package in
+sequence and is `not started`, with its branch `scratch/pc04-marker-range` cut
+from the reconciled cycle tip (Gate 1 has not started). No deploy or live action
+is authorized.
 
 ## Starting a new cycle
 

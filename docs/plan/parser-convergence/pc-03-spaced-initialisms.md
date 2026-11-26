@@ -1,10 +1,9 @@
 # PC03 — Spaced Initialism Option Boundaries
 
-- **Status:** in progress — the phase-3 review returned `BLOCK` (`BLOCK-1`,
-  `BLOCK-2`, `FIX-1`); the 2026-11-26 re-review of `74505ae` closed
-  `BLOCK-2`/`FIX-1`, kept `BLOCK-1` open (round 2), and recorded `BLOCK-3`; the
-  authorized re-review fix is applied on `scratch/pc03-spaced-initialisms`;
-  awaiting re-review
+- **Status:** done — merged into `scratch/parser-convergence-cycle` at `a4c6d53`
+  (product tree matching reviewed candidate `69934bf`; 2026-11-26 re-review 2
+  returned `PASS WITH ACCEPTED FINDINGS`, closing `BLOCK-1` and `BLOCK-3` with
+  `BLOCK-2`/`FIX-1` previously closed and non-blocking `NOTE-3`)
 - **Package base:** `331e81f` (the reconciled PC02 boundary; product tree and
   review records match `55afe15`)
 - **Implementation branch:** short-lived `scratch/pc03-spaced-initialisms`
@@ -285,7 +284,42 @@ URL; no PHP changed). No browser install gate is part of PC03.
 
 **Review status.** The re-review record is at
 [`reviews/parser-convergence-2026-11-phase-3-re-review.md`](../reviews/parser-convergence-2026-11-phase-3-re-review.md).
-This fix is committed on `scratch/pc03-spaced-initialisms` at the owner's
-explicit request as `78a8f17`; this handoff-only child records the pushed ref
-the re-review must target. Re-review is required. Nothing is merged.
-`Commit: 78a8f17`.
+This fix was committed on `scratch/pc03-spaced-initialisms` at the owner's
+explicit request as `78a8f17`, with handoff-only child `69934bf` recording the
+pushed ref for re-review; re-review 2 then settled `PASS WITH ACCEPTED FINDINGS`.
+See the reconciliation handoff below.
+`Commit: 69934bf`.
+
+**2026-11-26 — review settled, merged and reconciled.**
+
+**Review outcome.** Phase-3 re-review 2
+([record](../reviews/parser-convergence-2026-11-phase-3-re-review-2.md)) reviewed
+pushed candidate `69934bf` (handoff-only child of fix commit `78a8f17`) and
+returned **`PASS WITH ACCEPTED FINDINGS`**, closing `BLOCK-1` (round 3) and
+`BLOCK-3` (round 2), with `BLOCK-2` and `FIX-1` previously closed and verified
+unchanged, and one non-blocking residual note (`NOTE-3` — compound inline
+`(not A. B.)` after stem `A. D.` and double-blank-wrap `\nA.\n\nKennedy`, both
+outside the frozen closure criteria). Review status is **settled**; no further
+fix or re-review round is required.
+
+**External gate.** None; parser and 4-surface executable evidence satisfied.
+
+**Merge.** `origin/scratch/pc03-spaced-initialisms` (`a4c6d53`) was fast-forward
+merged into `scratch/parser-convergence-cycle` from `331e81f`. The product tree
+matches reviewed candidate `69934bf` (and `78a8f17`); `a4c6d53` adds only the
+phase-3 re-review 2 record.
+
+**Post-merge checks.** `node src/build/build.js --check` (134,947 B stripped),
+`node src/bookmarklets/key/build.js --check` (75,101 B stripped), and
+`node tests/single-source.js` (15 checks) pass on the merged tip.
+
+**Reconciliation.** `NOTE-3` remains an accepted residual outside the frozen
+`BLOCK-1`/`BLOCK-3` closure criteria. Current-facing status is reconciled in
+[`../README.md`](../README.md), [`../../STATUS.md`](../../STATUS.md),
+[`../prompts/phase-map.md`](../prompts/phase-map.md), and root
+[`../../../AGENTS.md`](../../../AGENTS.md). No product, test, generated, or
+review-evidence file was changed.
+
+**Next package.** PC04 (marker-adjacent range extraction) is `not started` and
+ready to open on `scratch/pc04-marker-range`; Gate 1 has not begun. No deploy or
+live action is authorized.
