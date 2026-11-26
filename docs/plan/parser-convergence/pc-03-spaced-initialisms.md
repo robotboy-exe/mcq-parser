@@ -134,6 +134,7 @@ did not run (no PHP changed). PC02's `NOTE-2` residual is unaffected. Deployment
 tokens are rotated in the reviewed files, but no deploy or live action was
 performed.
 
-**Review status.** The candidate exists only on the local
-`scratch/pc03-spaced-initialisms` branch; it is not pushed and not merged.
-`Commit: deferred`.
+**Review status.** Product candidate committed at the owner's explicit request as
+`186d27e` on `origin/scratch/pc03-spaced-initialisms` (product tree the same as
+measured above); this handoff-only child records the pushed ref the rigorous
+review must target. Nothing is merged. `Commit: 186d27e`.
