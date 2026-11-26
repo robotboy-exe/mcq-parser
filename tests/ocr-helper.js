@@ -335,7 +335,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.4/.test(result.thrown.message));
+  assert(/2\.5\.5/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -552,6 +552,17 @@ test('Load keeps an inline option block clean when a heading and instruction fol
   assert(/SECTION 2:/.test(state.queue.items[1].sectionInstruction), 'heading owns the next stem');
   assert(/According to Matthew/.test(state.queue.items[1].sectionInstruction), 'instruction owns the next stem');
   assert.deepStrictEqual(state.queue.items[0].flags, [], 'clean inline layout needs no advisory flag');
+});
+
+test('Load keeps a spaced dotted initialism in the stem', () => {
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures/ocr-helper-spaced-initialism.txt'), 'utf8');
+  const state = formState(loadThroughForm(text));
+  assert.strictEqual(state.queue.items.length, 1);
+  assert.strictEqual(state.question, 'The quotation was based on C. I. F. Lagos terms');
+  assert.strictEqual(state.a, 'free on board');
+  assert.strictEqual(state.c, 'carriage paid');
+  assert.strictEqual(state.d, 'cash on delivery');
+  assert.deepStrictEqual(state.queue.items[0].flags, []);
 });
 
 test('Load keeps a complete mixed-case parenthesized A-D set in the native form', () => {

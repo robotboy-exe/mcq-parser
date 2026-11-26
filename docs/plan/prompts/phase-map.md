@@ -21,9 +21,11 @@ candidate `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` with `NOTE-1`–`NOTE
 and no `BLOCK`/`FIX`; the owner confirmed that both generated bookmarklets from
 that candidate load and run in the owner's browser, and the package was
 fast-forward merged from `0279e70` to `55afe15` with a product tree matching
-`6592991`. PC03 is the next package in sequence and is `not started`, with its
-branch `scratch/pc03-spaced-initialisms` cut from the reconciled cycle tip. No
-deploy or live action is authorized.
+`6592991`. PC03 is the next package in sequence and is `in progress` on
+`scratch/pc03-spaced-initialisms` from package base `331e81f`: the core's
+spaced-initialism guard (D-111) keeps `C. I. F.`/`A. D.`/`B. C.` stem runs as
+text, five fixtures and three unit tests pass, and the full Node/PHP baseline is
+green; it awaits rigorous review. No deploy or live action is authorized.
 
 ## Starting a new cycle
 

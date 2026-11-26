@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.5.4
+// Version: 2.5.5
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.5.4";
+const PARSER_VERSION = "2.5.5";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -368,6 +368,34 @@ function splitQuestionItems(text) {
 function isOptionAbbreviation(raw, match) {
   if (/\s$/.test(match[0])) return false;
   return /^[A-Z](?:\.|\s|$)/.test(raw.slice(match.index + match[0].length));
+}
+
+function spacedInitialismSpans(raw) {
+  const tokens = [];
+  for (const m of raw.matchAll(/[A-Z]\./g)) {
+    const start = m.index;
+    if (start > 0 && /[A-Za-z0-9]/.test(raw[start - 1])) continue;
+    tokens.push({ start, end: start + 2 });
+  }
+  const spans = [];
+  let runStart = -1;
+  let runEnd = -1;
+  for (const token of tokens) {
+    if (runStart < 0) {
+      runStart = token.start;
+      runEnd = token.end;
+      continue;
+    }
+    if (/^\s*$/.test(raw.slice(runEnd, token.start))) {
+      runEnd = token.end;
+      continue;
+    }
+    if (runEnd - runStart > 2) spans.push([runStart, runEnd]);
+    runStart = token.start;
+    runEnd = token.end;
+  }
+  if (runStart >= 0 && runEnd - runStart > 2) spans.push([runStart, runEnd]);
+  return spans;
 }
 
 const OPTION_LETTERS = 'ABCDEF';
@@ -858,6 +886,14 @@ function parseQuestion(chunk) {
   if (chunk && chunk.unlinkedPassage) {
     // EC-98: a PASSAGE heading with fewer than two linked questions is read as ordinary text.
     matches = matches.filter(match => !match.parenLower);
+  }
+  const initialismSpans = spacedInitialismSpans(raw);
+  if (initialismSpans.length) {
+    // EC-160/EC-161: a spaced dotted initial run is text, not an option
+    // boundary, but only when the real A-D set survives without it.
+    const narrowed = matches.filter(match =>
+      !initialismSpans.some(span => match.start < span[1] && match.end > span[0]));
+    if (narrowed.length !== matches.length && hasCompleteOptionSet(narrowed)) matches = narrowed;
   }
   if (!hasCompleteOptionSet(matches)) {
     const loose = optionInlineMatches(raw).concat(matches)

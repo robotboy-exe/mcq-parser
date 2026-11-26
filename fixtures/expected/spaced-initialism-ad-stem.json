@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "spaced-initialism-ad-stem",
+  "source": [
+    "PC03 package goal (docs/plan/parser-convergence/pc-03-spaced-initialisms.md), 2026-11-26",
+    "D-48 spaced companion of new-edge-year-abbreviation-ad"
+  ],
+  "provenance": "Assistant-written spaced `A. D.` companion to the confirmed unspaced `A.D.` fixture. Not user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/spaced-initialism-ad-stem.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question": "1. The second temple was destroyed in A. D. 70 by",
+    "a": "the Persians",
+    "b": "the Greeks",
+    "c": "the Romans",
+    "d": "the Egyptians",
+    "e": "",
+    "f": "",
+    "flags": [],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)",
+      "option A missing"
+    ]
+  },
+  "must_not": [
+    "The stem `A.` or `D.` becomes an option boundary",
+    "The stem is truncated before `A. D. 70 by`",
+    "The year abbreviation raises a duplicate-letter warning"
+  ],
+  "notes": [
+    "The same year abbreviation that D-48 already protects without spacing must stay text when the letters are spaced."
+  ],
+  "discrepancies": []
+}

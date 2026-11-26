@@ -1843,3 +1843,27 @@ intact preserves the single-source evidence and the `2.5.4` parser version.
 or written differently; the guard refuses it. Installability of the larger
 (now core-sized) stimulus artifact must be checked in a real browser, not
 inferred from the build passing.
+
+## D-111 — Spaced dotted initialisms stay text
+
+**Choice.** A maximal run of at least two single uppercase letters, each
+followed by `.` and separated only by whitespace (one OCR line wrap counts as
+whitespace), is initialism text. Option-label matches that overlap such a run are
+discarded only when the remaining accepted labels still contain a complete A–D
+set. The guard is one helper plus one filter in `src/parser/core.js`; no new
+module, regex branch, or product policy is added. The parser version rotates to
+`2.5.5`, and the helper and key-entry guards and the deployed core token follow
+it.
+
+**Why.** `OPTION` consumes trailing horizontal whitespace, so D-48's abbreviation
+skip — which only fires when the label match does not end in whitespace — never
+applied to `C. I. F.`, spaced `A. D.`, or spaced `B. C.`. Those stem initials
+became option boundaries and displaced a real option (for example Option C became
+`I. F. Lagos terms`). Requiring the real A–D set to survive keeps
+`C. E. F. Small` (EC-85), where the initialism run starts at the genuine Option
+C, byte-identical, and leaves an initialism inside option text unchanged.
+
+**Risk.** A question whose genuine options are single letters followed by dots
+and separated only by whitespace would be read as one initialism, but only while
+no complete A–D set remains; the guard then changes nothing. An initialism run
+in an incomplete option set keeps current behavior, so no new repair is invented.

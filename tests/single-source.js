@@ -170,7 +170,8 @@ for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {
   });
 }
 
-const PARITY_FIXTURE = fs.readFileSync(path.join(ROOT, 'fixtures', 'inputs', 'bank-2021.txt'), 'utf8');
+const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spaced-initialism-wrapped.txt']
+  .map(name => fs.readFileSync(path.join(ROOT, 'fixtures', 'inputs', name), 'utf8'));
 
 for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {
   test(label + ' artifact parses exactly like core.js', () => {
@@ -195,11 +196,13 @@ for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {
     vm.runInContext(artifactBody(file).replace(/^javascript:/, ''), sandbox);
     assert.ok(sandbox.OCRParser, label + ' artifact must expose the inlined core');
     assert.strictEqual(sandbox.OCRParser.version, core.version);
-    assert.strictEqual(
-      JSON.stringify(sandbox.OCRParser.parsePaste(PARITY_FIXTURE)),
-      JSON.stringify(core.parsePaste(PARITY_FIXTURE)),
-      label + ' artifact must parse the bank fixture exactly like core.js'
-    );
+    for (const fixture of PARITY_FIXTURES) {
+      assert.strictEqual(
+        JSON.stringify(sandbox.OCRParser.parsePaste(fixture)),
+        JSON.stringify(core.parsePaste(fixture)),
+        label + ' artifact must parse every parity fixture exactly like core.js'
+      );
+    }
   });
 }
 

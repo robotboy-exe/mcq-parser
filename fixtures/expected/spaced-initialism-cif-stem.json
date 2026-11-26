@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "spaced-initialism-cif-stem",
+  "source": [
+    "PC03 package goal (docs/plan/parser-convergence/pc-03-spaced-initialisms.md), 2026-11-26",
+    "EC-96 (dotted initials stay text); D-48 (unspaced dotted abbreviations)"
+  ],
+  "provenance": "Assistant-written stem vector for the spaced initialism C. I. F. The option text is assisting prose, not user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/spaced-initialism-cif-stem.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question": "1. The quotation was based on C. I. F. Lagos terms",
+    "a": "free on board",
+    "b": "cost insurance freight",
+    "c": "carriage paid",
+    "d": "cash on delivery",
+    "e": "",
+    "f": "",
+    "flags": [],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "The stem `C.` or `F.` becomes an option boundary",
+    "Option C loses `carriage paid` or Option B absorbs it",
+    "The initialism raises a duplicate-letter warning"
+  ],
+  "notes": [
+    "A spaced dotted initialism run before the real A-D set stays stem text, exactly as the unspaced B.C./A.D. guard already does."
+  ],
+  "discrepancies": []
+}

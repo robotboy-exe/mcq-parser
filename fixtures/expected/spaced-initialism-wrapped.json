@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "spaced-initialism-wrapped",
+  "source": [
+    "PC03 package scope (docs/plan/parser-convergence/pc-03-spaced-initialisms.md), 2026-11-26",
+    "INTENT.md parser intent: fold single OCR wraps; EC-96"
+  ],
+  "provenance": "Assistant-written OCR-wrap vector that splits the initialism run across a line break. Not user OCR.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/spaced-initialism-wrapped.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question": "1. The goods were shipped C. I. F. Lagos by the firm",
+    "a": "one",
+    "b": "two",
+    "c": "three",
+    "d": "four",
+    "e": "",
+    "f": "",
+    "flags": [],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "The wrapped `C.` or `F.` becomes an option boundary",
+    "Option B absorbs the real `C. three` label",
+    "The single stem wrap inserts a paragraph break"
+  ],
+  "notes": [
+    "A newline inside the initialism run is still one OCR wrap, so the stem folds it to a single space."
+  ],
+  "discrepancies": []
+}

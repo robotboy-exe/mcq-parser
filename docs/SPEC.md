@@ -365,7 +365,13 @@ unsupported: numbered markers take precedence and may absorb bullet text.
    whitespace and the next text begins with an uppercase letter followed by
    `.`, whitespace, or the end. For example, the `B.` in `597 B.C.` is not an
    option.
-5. Select one option set from the accepted labels: take the earliest
+4a. Spaced initialism run: a maximal run of at least two single uppercase
+    letters, each followed by `.` and separated only by whitespace (a single
+    OCR line wrap included), is text. Accepted labels overlapping that run are
+    discarded only while the remaining labels still contain a complete A–D set,
+    so a stem `C. I. F.` or spaced `A. D.`/`B. C.` never supplies a boundary
+    while `C. E. F. Small` and inner initials keep their options (D-111).
+5. Select one option set from the remaining accepted labels: take the earliest
    occurrence of each required letter A, B, C, D, then accept E (and then F)
    only when it starts after the selected D. Convert the selected marks to a
    position map and sort them by text position before slicing. This keeps

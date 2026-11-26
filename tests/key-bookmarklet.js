@@ -193,7 +193,7 @@ test('artifact is one line, syntax-valid, percent-free, and deterministic', () =
   const second = crypto.createHash('sha256').update(fs.readFileSync(ARTIFACT, 'utf8')).digest('hex');
   assert.strictEqual(first, second, 'build output is deterministic');
 
-  assert.strictEqual(body.includes('PARSER_VERSION = "2.5.4"'), true, 'inlines the canonical core version');
+  assert.strictEqual(body.includes('PARSER_VERSION = "2.5.5"'), true, 'inlines the canonical core version');
   assert.strictEqual(body.includes('window.OCRParser'), true, 'inlines the canonical core');
   assert.strictEqual(body.includes('__ocrBookmarklet = true'), true, 'runs the boot step');
   assert.strictEqual(body.includes('const EXPECTED_CORE_VERSION'), true, 'runs the key entry');
@@ -207,7 +207,7 @@ test('runs the real artifact against the canonical core, not a copy', () => {
     assert(panel.includes(id), 'panel id ' + id);
   }
   assert.strictEqual(result.field('ocr_title').textContent, 'Bookmarklet paste');
-  assert.strictEqual(CORE.version, '2.5.4');
+  assert.strictEqual(CORE.version, '2.5.5');
   assert.strictEqual(typeof linkComprehension, 'function');
 });
 
@@ -910,7 +910,7 @@ test('refuses to run without the canonical core and never touches Constant Text'
   const cases = [
     ['missing window.OCRParser', undefined, /window\.OCRParser is missing/],
     ['version mismatch', { version: '2.3.0', parsePaste() {} }, /reports version 2\.3\.0/],
-    ['missing parsePaste', { version: '2.5.4' }, /no parsePaste export/]
+    ['missing parsePaste', { version: '2.5.5' }, /no parsePaste export/]
   ];
   for (const [label, core, pattern] of cases) {
     const run = runKeyEntry(core);

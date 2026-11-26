@@ -134,6 +134,34 @@ test('parseQuestion keeps single initials inside option text', () => {
   eq(q.flags, []);
 });
 
+test('parseQuestion keeps spaced dotted initialisms in the stem', () => {
+  const cif = parser.parseQuestion({ num: 1, text: fs.readFileSync(path.join(INPUT_DIR, 'spaced-initialism-cif-stem.txt'), 'utf8') });
+  eq(cif.question, '1. The quotation was based on C. I. F. Lagos terms');
+  eq([cif.a, cif.b, cif.c, cif.d], ['free on board', 'cost insurance freight', 'carriage paid', 'cash on delivery']);
+  eq(cif.flags, []);
+  const ad = parser.parseQuestion({ num: 1, text: fs.readFileSync(path.join(INPUT_DIR, 'spaced-initialism-ad-stem.txt'), 'utf8') });
+  eq(ad.question, '1. The second temple was destroyed in A. D. 70 by');
+  eq(ad.a, 'the Persians');
+  eq(ad.flags, []);
+  const bc = parser.parseQuestion({ num: 1, text: fs.readFileSync(path.join(INPUT_DIR, 'spaced-initialism-bc-stem.txt'), 'utf8') });
+  eq(bc.question, '1. Johoiachin surrendered to Babylon in 597 B. C. in order to');
+  eq(bc.flags, []);
+});
+
+test('parseQuestion keeps a wrapped spaced initialism in the stem', () => {
+  const q = parser.parseQuestion({ num: 1, text: fs.readFileSync(path.join(INPUT_DIR, 'spaced-initialism-wrapped.txt'), 'utf8') });
+  eq(q.question, '1. The goods were shipped C. I. F. Lagos by the firm');
+  eq([q.a, q.b, q.c, q.d], ['one', 'two', 'three', 'four']);
+  eq(q.flags, []);
+});
+
+test('parseQuestion keeps a spaced initialism inside its option', () => {
+  const q = parser.parseQuestion({ num: 1, text: fs.readFileSync(path.join(INPUT_DIR, 'spaced-initialism-inner-option.txt'), 'utf8') });
+  eq(q.b, 'C. I. F. Lagos terms');
+  eq(q.c, 'gamma terms');
+  eq(q.flags, []);
+});
+
 test('parseQuestion flags a structural line that reaches an option', () => {
   const heading = core.parseQuestion({
     num: 1,
@@ -416,7 +444,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.5.4', 'parser version');
+  eq(parsed.version, '2.5.5', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');

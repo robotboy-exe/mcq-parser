@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "spaced-initialism-bc-stem",
+  "source": [
+    "PC03 package goal (docs/plan/parser-convergence/pc-03-spaced-initialisms.md), 2026-11-26",
+    "D-48 spaced companion of new-edge-year-abbreviation"
+  ],
+  "provenance": "Assistant-written spaced `B. C.` companion to the confirmed unspaced `B.C.` fixture. The stem text follows the archived Q18 wording; the spacing is synthetic.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/spaced-initialism-bc-stem.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question": "1. Johoiachin surrendered to Babylon in 597 B. C. in order to",
+    "a": "save Jerusalem from destruction",
+    "b": "become a servant of Nebuchadnezzar",
+    "c": "fulfill God's prophecies through Nehemiah",
+    "d": "have jews exiled into Babylon",
+    "e": "",
+    "f": "",
+    "flags": [],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)",
+      "option B missing"
+    ]
+  },
+  "must_not": [
+    "The stem `B.` or `C.` becomes an option boundary",
+    "The stem is truncated before `B. C. in order to`"
+  ],
+  "notes": [
+    "Pins the spaced form of the B.C. year abbreviation next to the confirmed unspaced fixture."
+  ],
+  "discrepancies": []
+}

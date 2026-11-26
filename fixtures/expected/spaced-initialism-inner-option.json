@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "input_origin": "synthetic",
+  "id": "spaced-initialism-inner-option",
+  "source": [
+    "PC03 package rejection of a failing-first inner-option vector, 2026-11-26",
+    "EC-85/D-55 (initials inside option text stay text)"
+  ],
+  "provenance": "Assistant-written control vector: the initialism sits inside Option B rather than the stem, matching the confirmed Q46/single-initial behavior.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/spaced-initialism-inner-option.txt",
+  "kind": "question",
+  "parse_num": 1,
+  "expected": {
+    "question": "1. The sale was made on",
+    "a": "alpha terms",
+    "b": "C. I. F. Lagos terms",
+    "c": "gamma terms",
+    "d": "delta terms",
+    "e": "",
+    "f": "",
+    "flags": [],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "The inner `C.` replaces the outer Option C",
+    "Option B loses `C. I. F. Lagos terms`"
+  ],
+  "notes": [
+    "Recorded as a must-stay-passing control, not a failing-first vector: it already passes on package base 331e81f."
+  ],
+  "discrepancies": []
+}

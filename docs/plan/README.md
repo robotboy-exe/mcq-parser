@@ -24,7 +24,7 @@ Last updated: 2026-11-26.
   stimulus baseline `d5a62f0`; and the key/main scratch merge at `793cb8f`.
   The pre-package `scratch/single-core-port` diff and its external backup are
   quarantined exploration, not package evidence or a cherry-pick source.
-- Current package: PC03, `not started`; PC02 is `done`. PC01 is `done` and
+- Current package: PC03, `in progress`; PC02 is `done`. PC01 is `done` and
   review-settled: the 2026-11-26 re-review 3 of candidate `cc72e3b`
   ([record](reviews/parser-convergence-2026-11-phase-1-re-review-3.md)) returned
   `PASS` with no new findings, closing `BLOCK-5` and `FIX-4`, so every
@@ -46,7 +46,13 @@ Last updated: 2026-11-26.
   load and run in the owner's browser, and `scratch/pc02-single-parser-source`
   was fast-forward merged into the scratch cycle line from `0279e70` to
   `55afe15` with a product tree matching `6592991`. `NOTE-1` is corrected in
-  root `AGENTS.md`; `NOTE-2` is accepted residual. PC02 is `done`.
+  root `AGENTS.md`; `NOTE-2` is accepted residual. PC02 is `done`. PC03 is
+  implemented on `scratch/pc03-spaced-initialisms` from package base `331e81f`:
+  the spaced-initialism guard (D-111) keeps stem `C. I. F.`/`A. D.`/`B. C.` runs
+  as text while `C. E. F. Small` and inner initials are unchanged, five new
+  fixtures and three unit tests pass, the core rotates to `2.5.5` with the
+  helper/key guards and the deployed core token following it, and the full
+  Node/PHP baseline is green (PHP 8.3.9). Rigorous review is pending.
 
 ### Archived `math-editor-2026-11` evidence
 
@@ -361,7 +367,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 |---|---|---|---|---|---|
 | 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings, closing `BLOCK-5`/`FIX-4`; every `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed; merged into `scratch/parser-convergence-cycle` at `e6f34f8` | disposable browser; no deploy/live |
 | 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | done — 2026-11-26 rigorous review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1`–`NOTE-2`, no `BLOCK`/`FIX`); owner confirmed both generated bookmarklets load and run in the owner's browser; fast-forward merged into `scratch/parser-convergence-cycle` (`0279e70`→`55afe15`) | owner's browser bookmarklet installability (confirmed 2026-11-26) |
-| 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | not started | none; parser and real-surface evidence |
+| 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | in progress; implemented on `scratch/pc03-spaced-initialisms` from base `331e81f`; five fixtures and three unit tests pass; full Node/PHP baseline green; awaiting rigorous review | none; parser and real-surface evidence |
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
 | 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | not started | none; prior BLOCK controls mandatory |
 | 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | not started | owner's browser for both bookmarklets; owner choice for key `needsImage` policy |
@@ -438,7 +444,7 @@ verifies the detail path with the rest of Release A.
 |---|---|---|---|
 | phase 1 | PC01 product separation | rigorous | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings (`BLOCK-5`/`FIX-4` closed, all `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed); merged into the scratch cycle line at `e6f34f8` |
 | phase 2 | PC02 one parser source and build parity | rigorous | done — 2026-11-26 review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1` corrected, `NOTE-2` accepted); owner confirmed both generated bookmarklets in the owner's browser; fast-forward merged into the scratch cycle line |
-| phase 3 | PC03 spaced initialisms | rigorous | not started — PC02 settled; Gate 1 not begun |
+| phase 3 | PC03 spaced initialisms | rigorous | in progress; candidate on `scratch/pc03-spaced-initialisms` from base `331e81f`, five fixtures and three unit tests green, full Node/PHP baseline green; awaiting rigorous review |
 | phase 4 | PC04 marker-adjacent range | rigorous | blocked by PC03 review |
 | phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | blocked by PC04 review |
 | phase 6 | PC06 bookmarklet policy and scratch release | rigorous | blocked by PC05 review and owner key-image policy choice |
@@ -452,8 +458,11 @@ verifies the detail path with the rest of Release A.
 2. **PC02** — remove the inlined parser source without parser/product behavior
    change; prove both real bookmarklet builds use the exact core; rigorous
    review and browser install checks.
-3. **PC03** — independently reproduce and narrowly fix spaced initialisms in the
-   canonical core; rigorous review of every dangerous option-boundary control.
+3. **PC03** — implemented on `scratch/pc03-spaced-initialisms` from base
+   `331e81f`: the canonical core now keeps spaced dotted initialism runs as text
+   under D-111, without changing `C. E. F. Small`, inner initials, or the D-91
+   grammar. Rigorous review of every dangerous option-boundary control is the
+   next step.
 4. **PC04** — independently revalidate and implement only marker-adjacent range
    extraction; rigorous review including unrelated-number adversarial probes.
 5. **PC05** — independently revalidate anchored shared-stimulus tails and
@@ -473,8 +482,11 @@ was fast-forward merged into `scratch/parser-convergence-cycle` from `0279e70`
 to `55afe15` with the product tree matching `6592991`. The three post-merge
 checks (`node src/build/build.js --check`, `node src/bookmarklets/key/build.js
 --check`, `node tests/single-source.js` 15 checks) pass on the merged tip. PC03
-is `not started` on `scratch/pc03-spaced-initialisms`; Gate 1 has not begun. No
-deploy or live action is authorized.
+is implemented on `scratch/pc03-spaced-initialisms` from base `331e81f` and
+awaits its rigorous review: 73 fixtures (including five new spaced-initialism
+vectors), 176 unit checks, 39 helper vectors, 15 single-source checks, both
+`--check` guards, 33 PHP renderer vectors, 8 store checks, 14 ordering checks,
+and 7/7 `php -l` pass on PHP 8.3.9. No deploy or live action is authorized.
 
 ## Archived `math-editor-2026-11` close path
 

@@ -8,7 +8,7 @@ Last updated: 2026-11-26.
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
 - Frozen base: `793cb8f`; scratch integration line:
   `scratch/parser-convergence-cycle`; PC01 and PC02 are `done` and
-  review-settled; current package PC03 is `not started`.
+  review-settled; current package PC03 is `in progress`.
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /
@@ -100,8 +100,25 @@ Last updated: 2026-11-26.
   tree matches the reviewed implementation commit `6592991`, and
   `node src/build/build.js --check`,
   `node src/bookmarklets/key/build.js --check`, and `node tests/single-source.js`
-  (15 checks) pass on the merged tip. PC02 is `done`; PC03 is `not started` on
-  `scratch/pc03-spaced-initialisms`, with Gate 1 not begun.
+  (15 checks) pass on the merged tip. PC02 is `done`; PC03 is `in progress` on
+  `scratch/pc03-spaced-initialisms` from base `331e81f`, awaiting rigorous
+  review.
+- PC03 implementation (2026-11-26, package base `331e81f`): the canonical core
+  keeps spaced dotted initialism runs as text under D-111. A maximal run of at
+  least two single uppercase letters, each followed by `.` and separated only by
+  whitespace (one OCR wrap included), is discarded from the accepted option
+  labels only while the remaining labels still contain a complete A–D set, so
+  stem `C. I. F.`, `A. D.`, and `B. C.` no longer displace a real option while
+  `C. E. F. Small` (EC-85) and initialisms inside option text are unchanged.
+  Core is `2.5.5` (1,769 L / 61,942 B, `9597948d…`); `ocr_helper.js` requires
+  `2.5.5` and `deployed/admin_questions.php` loads `src/parser/core.js?v=2.5.5`.
+  Both generated artifacts rebuild deterministically (`src/bookmarklet.js`
+  1 L / 132,235 B; key artifact 1 L / 72,389 B). Five new fixtures and three
+  unit tests pass; the full Node baseline is green (73 runner, 176 unit, 39
+  helper, 42 key, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 15
+  single-source, 7 bank hashes) and the PHP 8.3.9 baseline is green (33
+  renderer, 8 store, 14 ordering, 7/7 lint). PC03 is `in progress` until its
+  rigorous review settles.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle
