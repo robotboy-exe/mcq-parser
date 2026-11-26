@@ -45,8 +45,23 @@ Last updated: 2026-11-25.
   69 render-markup, 7 bank hashes; 33 renderer, 8 store, 14 ordering, 7/7 lint),
   and a 13/13 disposable-browser probe ran `B2-A`–`B2-D` and an ordinary
   two-save run on real `admin_questions.php`. `BLOCK-2` and `FIX-3` stay open
-  until independent re-review settles that candidate. PC01 remains
-  `in progress`; commit, scratch-cycle merge, and PC02 stay blocked.
+  until independent re-review settles that candidate. The 2026-11-26 re-review 2
+  of candidate `6e28e82`
+  ([record](plan/reviews/parser-convergence-2026-11-phase-1-re-review-2.md))
+  closed `BLOCK-2` and `FIX-3` and recorded first-round `BLOCK-5` and `FIX-4`:
+  an in-place save adopted by Start autosave wedged the run and Stop/Start could
+  silently skip question 2, and Start during an in-flight in-place save posted
+  the same question twice. The same-day fix session reuses the outstanding
+  `owner.inFlight` record for the active batch/index, settles an adopted
+  in-place save through autosave (clearing the run state and arming the next
+  question), and keeps `stopAuto()` from turning a settled request into a new
+  save. Both findings were reproduced failing-first (38 passed, 4 failed); the
+  rebuilt artifact passes 42 key vectors, the full Node/PHP 8.3.32 baseline is
+  green (68 runner, 173 unit, 38 helper, 10 underline, 7 preview, 26 math-tool,
+  69 render-markup, 7 bank hashes; 33 renderer, 8 store, 14 ordering, 7/7 lint),
+  and a real-page disposable-browser probe wrote two rows per scenario with no
+  duplicate POST. PC01 remains `in progress`; commit, scratch-cycle merge, and
+  PC02 stay blocked until the fixed candidate is re-reviewed.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

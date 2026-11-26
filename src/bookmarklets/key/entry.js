@@ -244,9 +244,10 @@
     const waiting = auto.inFlight;
     if (waiting) {
       // Keep the same record so its settled flag and batch identity stay shared.
-      pendingSave = owner.inFlight && owner.inFlight.request === auto.request
-        ? owner.inFlight
-        : { index: queue.i, request: auto.request, batch: owner.batch, kind: 'auto', settled: false };
+      // A settled or abandoned request must never become a new unsettled save, or
+      // Start would reuse a finished answer for the next question.
+      const record = owner.inFlight && owner.inFlight.request === auto.request ? owner.inFlight : null;
+      pendingSave = record && !record.settled ? record : null;
       auto.inFlight = false;
       auto.request = null;
     }
@@ -287,7 +288,15 @@
     if (!claimSave(entry)) return;
     if (entry.batch !== owner.batch) return;
     const number = entry.index + 1;
-    if (entry.kind === 'inplace') return settleInPlace(entry, result, number);
+    if (entry.kind === 'inplace') {
+      // An in-place save that Start autosave adopted belongs to the run now, so it
+      // settles as autosave and the run continues. Only an in-place save this
+      // panel still owns by itself uses the manual result path.
+      const adopted = auto && auto.request === entry.request;
+      if (!adopted) return settleInPlace(entry, result, number);
+      if (savingInPlace === entry) savingInPlace = null;
+      store.del('ocrSubmitted');
+    }
     return settleAuto(entry, result, number);
   }
 
@@ -377,11 +386,12 @@
     if (typeof fetch !== 'function' || typeof FormData !== 'function') {
       return stopAuto('Autosave needs a browser with fetch; save this question by hand.');
     }
-    // Reuse an unanswered save for this same question and list from a stopped or
-    // replaced run instead of posting it again.
-    const reusable = pendingSave && !pendingSave.settled
-      && pendingSave.index === queue.i && pendingSave.batch === owner.batch;
-    const entry = reusable ? pendingSave : {
+    // Reuse an unanswered save for this same question and list from a stopped,
+    // replaced, or in-place run instead of posting it again.
+    const reusable = [pendingSave, owner.inFlight].find((record) => record && !record.settled
+      && record.index === queue.i && record.batch === owner.batch) || null;
+    if (reusable && reusable.kind === 'inplace' && savingInPlace === reusable) savingInPlace = null;
+    const entry = reusable || {
       index: queue.i,
       request: postSave(),
       batch: owner.batch,

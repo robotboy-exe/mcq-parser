@@ -4,8 +4,12 @@
   closed `BLOCK-1`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, and `FIX-2`; `BLOCK-2`
   stayed open after two review rounds and the owner chose `fix` on 2026-11-25
   against its frozen closure criteria; first-round `FIX-3` is fixed in the same
-  session. The `BLOCK-2`/`FIX-3` fix session is applied on
-  `scratch/pc01-product-separation`; independent re-review pending.
+  session. The 2026-11-26 re-review 2 of candidate `6e28e82` closed `BLOCK-2`
+  and `FIX-3` and recorded first-round `BLOCK-5` (an adopted in-place save
+  wedges autosave and can silently skip question 2) and `FIX-4` (Start during
+  an in-flight in-place save posts the same question twice). Both are fixed in
+  the 2026-11-26 fix session below. Independent re-review of the fixed
+  candidate is pending.
 - **Product baseline:** `793cb8f`
 - **Package base:** record the docs-only cycle-setup commit on
   `scratch/parser-convergence-cycle` at Gate 1; verify its product tree equals
@@ -536,3 +540,134 @@ re-review. PC01 stays `in progress`; commit readiness, scratch-cycle merge, and
 PC02 stay blocked until the re-review settles. This fix round was committed and
 pushed to `scratch/pc01-product-separation` on the owner's explicit request in
 the same session; no merge, deployment, or live action was performed.
+
+### Fix session — 2026-11-26 (`BLOCK-5`, `FIX-4`)
+
+Authority: [`reviews/parser-convergence-2026-11-phase-1-re-review-2.md`](../reviews/parser-convergence-2026-11-phase-1-re-review-2.md),
+`Recommended Next Action`. Both findings were recorded for the first time by
+that re-review, so neither needed an owner disposition and no frozen closure
+contract was broadened. Worktree branch `freebuff/pc01-fix-block5-fix4` at
+`2696c42` (the pushed review-record child of reviewed candidate `6e28e82`; its
+product tree is identical to `6e28e82`). No review-record edit, commit, push,
+merge, deployment, or live action in this session. `Commit:` deferred.
+
+#### Finding resolution
+
+- `BLOCK-5` criterion 1: `autoStep()` now reuses an outstanding
+  `owner.inFlight` record for the active `batch`/`index` in addition to
+  `pendingSave`, so Start attaches to an in-place save without posting. An
+  adopted `kind: 'inplace'` record now settles through `settleAuto()` — clearing
+  `auto.inFlight`/`auto.request`, advancing the queue once, then arming the next
+  question on success or calling `stopAuto()` on failure — instead of wedging the
+  run. Only that same identity releases the manual `savingInPlace` lock and the
+  page-helper marker.
+- `BLOCK-5` criterion 2: `stopAuto()` keeps a `pendingSave` only when the record
+  is genuinely unsettled and still `owner.inFlight`; a settled or abandoned
+  request is never turned into a new unsettled save, so Stop/Start cannot reuse
+  question 1's finished answer for question 2.
+- `FIX-4`: the same `owner.inFlight` reuse makes same-panel `Save Question` →
+  `Start autosave` attach with `calls === 1`. No new message, field, control,
+  storage key, or storage shape is added.
+
+#### Failing-first evidence (unfixed artifact `fc96fdb8…`, rebuilt from `a6a51249…`)
+
+The four new real-artifact vectors were run first against the unfixed entry; the
+suite was executed through a temporary tolerant copy that reports every vector
+(it was removed afterwards; 38 previously passing vectors stayed green).
+
+```text
+[FAIL] reinjecting during an in-place save and starting autosave completes the batch :: question 2 posts once after the adopted save settles
+1 !== 2
+
+[FAIL] Stop after an adopted save does not skip question 2 :: question 2 posts exactly once after the restart
+1 !== 2
+
+[FAIL] an in-place save adopted by autosave stops cleanly when it fails :: The expression evaluated to a falsy value:
+
+  assert(/Autosave stopped at question 1: Duplicate question/.test(second.field('ocr_status').innerHTML))
+
+[FAIL] starting autosave during an in-place save does not post the question twice :: Start attaches to the in-place save instead of posting again
+2 !== 1
+
+RESULT: 38 passed, 4 failed
+```
+
+After the fix the same suite reports `PASS: 42 key-bookmarklet vectors`.
+
+#### Frozen-criterion mapping
+
+| Finding / criterion | Implementation | Evidence |
+|---|---|---|
+| `BLOCK-5.1` adopted request settles as autosave | `settleSave()` dispatches an `inplace` entry owned by the live `auto.request` to `settleAuto()` after releasing the matching `savingInPlace` lock and marker | `reinjecting during an in-place save and starting autosave completes the batch` (`calls === 2`, `i === 2`, `Autosave complete: 2 of 2 saved.`) plus staging probe |
+| `BLOCK-5.2` no unsettled save from a settled/abandoned request | `stopAuto()` reuses only an unsettled `owner.inFlight` for the same request | `Stop after an adopted save does not skip question 2` (`calls === 2` only after the restart posts) plus the failure vector |
+| `BLOCK-5.3` failing-first success and failure variants | the two vectors named above, executing the real generated artifact | failing-first output above; 42/42 after the fix |
+| `BLOCK-5.4` rebuild, staging probe, baselines | `node src/bookmarklets/key/build.js`; real page probe; full Node/PHP baseline | artifact `8d8c1a33…`; staging `posts === 2` and two saved rows; baselines below |
+| `FIX-4.1` one POST when Start follows an in-flight in-place save | `autoStep()` reuses `owner.inFlight` for the active batch/index | `starting autosave during an in-place save does not post the question twice` (`calls === 1`, then `2` only for question 2) plus staging probe |
+| `FIX-4.2` failing-first real-artifact vector | the vector named above | failing-first output above |
+| `FIX-4.3` rebuild and baselines | key build plus full baseline | rebuild and baseline table below |
+
+#### Measurements (from package base `bb78c57`)
+
+| File | Base | Review candidate `6e28e82` | Final | This session's diff |
+|---|---|---|---|---|
+| `src/bookmarklets/key/entry.js` | absent | 586 L / 24,045 B `a6a51249…` | 596 L / 24,700 B `14c33a5d…` | `+19/−9` (cumulative `+596/−0` from base) |
+| `tests/key-bookmarklet.js` | absent | 941 L / 43,370 B `8edcdc66…` | 1,062 L / 48,885 B `8f161f5e…` | `+121/−0` (cumulative `+1,062/−0`) |
+| `src/bookmarklets/key/bookmarklet.js` (generated) | absent | 1 L / 71,179 B `fc96fdb8…` | 1 L / 71,421 B `8d8c1a33…` | `+1/−1`, regenerated |
+
+Unchanged and re-verified: `ocr_helper.js` 127 L / 4,917 B `b83835b7…`
+(byte-identical to `94a7593:ocr_helper.js`; live-origin additions stay
+`+51/−47` of the 100 cap, no exception needed), `boot.js` 12 L / 589 B,
+`build.js` 44 L / 1,364 B, `src/parser/core.js`, `src/parser/parser.js`,
+`src/ui/ui.js`, `src/bookmarklet.js`, `deployed/*.php`, and `fixtures/`. New
+phase-cycle modules have no fixed line cap; `entry.js` remains one cohesive key
+product entry inlined only by its own build.
+
+#### Baselines and environment
+
+- Node v24.22.1: `runner` 68 PASS / 0 FAIL / 0 PENDING; `unit` 173 PASS;
+  `ocr-helper` 38 PASS; `key-bookmarklet` 42 PASS; `underline-toolbar` 10 PASS;
+  `question-preview` 7 PASS; `math-tool` 26 PASS; `render-markup` 69 PASS;
+  `extract-bank --check` OK, 7 output hashes match.
+- PHP 8.3.32 static CLI provisioned in this session at
+  `$HOME/tmp/toolchain/php` (`pdo_sqlite`, `pdo_mysql`, `mbstring`, `json`):
+  renderer 33 PASS, store 8 PASS, ordering 14 PASS / 0 FAIL, `php -l` 7/7 on
+  `deployed/*.php`. `php tests/cbt-staging.php` was not run: it needs the EL01
+  MySQL URL gate and no PHP file changed.
+- Build: `node src/bookmarklets/key/build.js` wrote one line
+  (`71,421` B reported, `71,422` B on disk with the trailing newline), `new
+  Function` parses it, no `%XX`, and the suite's determinism vector reproduces
+  the same hash.
+
+#### Disposable browser staging probe
+
+The repo's own `tools/start-phone-staging.sh` served the real
+`deployed/admin_questions.php` (loading `src/parser/core.js?v=2.5.4` then
+`ocr_helper.js?v=2.4.7`) and the real generated
+`src/bookmarklets/key/bookmarklet.js` from `0.0.0.0:3020` on the static PHP
+8.3.32 CLI with a throwaway SQLite database. A Cloud Chromium (build mode)
+drove the authenticated workspace preview origin; no live host was contacted.
+Both POSTs were temporarily held in the page so the in-flight states could be
+driven exactly, then released to the real server.
+
+- `BLOCK-5`: in-place `Save Question` queued one POST; reinjecting showed
+  `A save was already in progress; Start autosave attaches to it instead of
+  posting again.`; `Start autosave` kept the count at one POST; question 1 then
+  settled once (`i = 1`, still `Stop autosave`, progress
+  `1 of 2 saved · saving question 2...`), question 2 posted once, and the run
+  ended `Autosave complete: 2 of 2 saved.` (`i = 2`, button `Start autosave`).
+  The disposable database gained exactly two rows for that run (`103` key A →
+  `correct_option 0`, `104` key B → `1`).
+- `FIX-4`: same-panel `Save Question` queued one POST and `Start autosave` sent
+  no second POST; question 1 settled once and question 2 posted once, ending at
+  `Autosave complete: 2 of 2 saved.`. The disposable database gained exactly two
+  rows for that run (`105` key A, `106` key B); it did not gain a duplicate row
+  for question 1.
+- Cleanup: the staging server was stopped by its recorded PID, port 3020 was
+  confirmed free, and the throwaway root, database, and log were removed.
+
+#### Status after this session
+
+`BLOCK-5` and `FIX-4` are not closed by the fix: both need an independent
+re-review of this candidate against their frozen criteria, and PC01 stays
+`in progress` with commit readiness, scratch-cycle merge, and PC02 blocked until
+that re-review settles. `Commit:` deferred.

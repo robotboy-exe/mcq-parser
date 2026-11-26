@@ -928,6 +928,127 @@ test('refuses to run without the canonical core and never touches Constant Text'
   }
 });
 
+// BLOCK-5 (`ADV_1`): an in-place save adopted by Start autosave must settle into
+// the run, keep it moving, and post question 2 exactly once.
+test('reinjecting during an in-place save and starting autosave completes the batch', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.form.submit();
+  assert.strictEqual(calls, 1, 'the first panel saves question 1');
+
+  const second = ready(keyBookmarklet({ shared, fetch }));
+  assert(/already in progress/.test(second.field('ocr_status').innerHTML),
+    'the replacement panel shows the inherited save');
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'Start attaches to the inherited save instead of posting');
+  assert.strictEqual(second.field('ocr_auto').textContent, 'Stop autosave');
+
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 1, 'question 1 settles once');
+  assert.strictEqual(second.field('ocr_auto').textContent, 'Stop autosave',
+    'the adopted save keeps the run running');
+
+  second.runTimers();
+  await flush();
+  assert.strictEqual(calls, 2, 'question 2 posts once after the adopted save settles');
+  assert(/Second autosave question/.test(second.field('question_text').value), 'question 2 is filled');
+  pending[1](savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 2, 'both questions are saved');
+  assert(/Autosave complete: 2 of 2 saved/.test(second.field('ocr_status').innerHTML));
+});
+
+// BLOCK-5 criterion 2: Stop must not hold a settled answer as the next save.
+test('Stop after an adopted save does not skip question 2', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.form.submit();
+  const second = ready(keyBookmarklet({ shared, fetch }));
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'Start attaches to the inherited save');
+
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 1, 'question 1 is saved');
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(second.field('ocr_auto').textContent, 'Start autosave', 'Stop is immediate');
+
+  second.runTimers();
+  await flush();
+  assert.strictEqual(calls, 1, 'a stopped run posts nothing after question 1 settled');
+
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 2, 'question 2 posts exactly once after the restart');
+  pending[1](savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 2,
+    'question 2 is marked saved only after its own POST');
+});
+
+// BLOCK-5 criterion 3 (failure variant): an adopted save that fails stops the run
+// cleanly with question 1 still queued, and a retry posts it once.
+test('an in-place save adopted by autosave stops cleanly when it fails', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const shared = {};
+  const first = ready(keyBookmarklet({ shared, fetch }));
+  loadPaste(first, AUTO_PASTE);
+  first.form.submit();
+  const second = ready(keyBookmarklet({ shared, fetch }));
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'Start attaches to the inherited save');
+
+  pending[0](failedResponse('Duplicate question.'));
+  await flush();
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 0, 'question 1 stays queued');
+  assert(/Autosave stopped at question 1: Duplicate question/.test(second.field('ocr_status').innerHTML));
+  assert.strictEqual(second.field('ocr_auto').textContent, 'Start autosave', 'the run stops cleanly');
+
+  second.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 2, 'the retry posts question 1 once');
+  pending[1](savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(second.storage.get('ocrQueue')).i, 1, 'the retry saves question 1');
+});
+
+// FIX-4 (`ADV_2`): Start autosave on the same panel must attach to the in-place
+// save instead of posting the same question a second time.
+test('starting autosave during an in-place save does not post the question twice', async () => {
+  let calls = 0;
+  const pending = [];
+  const fetch = () => { calls++; return new Promise((resolve) => pending.push(resolve)); };
+  const result = ready(keyBookmarklet({ fetch }));
+  loadPaste(result, AUTO_PASTE);
+  result.form.submit();
+  assert.strictEqual(calls, 1, 'Save Question posts question 1');
+
+  result.field('ocr_auto').onclick();
+  assert.strictEqual(calls, 1, 'Start attaches to the in-place save instead of posting again');
+  assert.strictEqual(result.field('ocr_auto').textContent, 'Stop autosave');
+
+  pending[0](savedResponse());
+  await flush();
+  assert.strictEqual(calls, 1, 'the single request settles once');
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 1, 'question 1 is saved once');
+
+  result.runTimers();
+  await flush();
+  assert.strictEqual(calls, 2, 'question 2 posts once');
+  pending[1](savedResponse());
+  await flush();
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 2);
+});
+
 (async () => {
   for (const [name, fn] of tests) {
     await fn();

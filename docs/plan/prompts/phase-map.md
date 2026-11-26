@@ -15,6 +15,12 @@ Updated: 2026-11-25
 | 5 | `PC05` — `parser-convergence/pc-05-stimulus-boundaries.md` |
 | 6 | `PC06` — `parser-convergence/pc-06-bookmarklet-policy-release.md` |
 
+Current gate: PC01 is `in progress`. The 2026-11-26 re-review 2 of candidate
+`6e28e82` closed `BLOCK-2`/`FIX-3` and recorded first-round `BLOCK-5`/`FIX-4`;
+the same-day fix session is applied on `scratch/pc01-product-separation` and an
+independent re-review of that fixed candidate is pending. No commit, merge,
+deploy, or live action is authorized while it is open.
+
 ## Starting a new cycle
 
 See `cycles/README.md`.

@@ -38,8 +38,22 @@ Last updated: 2026-11-25.
   frozen closure criteria; the follow-up fix session applied `BLOCK-2` and
   `FIX-3` on 2026-11-25 (see the package fix note) with a real-artifact
   failing-first vector per defect, all Node/PHP baselines, and a 13/13
-  disposable-browser probe. The package is not `done` until an independent
-  re-review of that candidate settles.
+  disposable-browser probe. The 2026-11-26 re-review 2 of candidate `6e28e82`
+  ([record](reviews/parser-convergence-2026-11-phase-1-re-review-2.md)) closed
+  `BLOCK-2` and `FIX-3` and recorded first-round `BLOCK-5` (an in-place save
+  adopted by Start autosave wedges the run and can silently skip question 2 on
+  Stop/Start) and `FIX-4` (Start during an in-flight in-place save posts the
+  same question twice). The same-day fix session attached autosave to the
+  outstanding `owner.inFlight` record, routed an adopted in-place settlement
+  through autosave so the run continues, and stopped `stopAuto()` from
+  fabricating a save from a settled request; both findings were reproduced
+  failing-first (38 passed, 4 failed), the rebuilt artifact passes all 42 key
+  vectors, the full Node/PHP 8.3.32 baseline is green (68 runner, 173 unit, 38
+  helper, 10 underline, 7 preview, 26 math-tool, 69 render-markup, 7 bank
+  hashes; 33 renderer, 8 store, 14 ordering, 7/7 lint), and a real-page
+  disposable-browser probe saved two rows per scenario with no duplicate POST.
+  The package is not `done` until an independent re-review of that fixed
+  candidate settles.
 
 ### Archived `math-editor-2026-11` evidence
 
