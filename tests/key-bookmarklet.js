@@ -193,7 +193,7 @@ test('artifact is one line, syntax-valid, percent-free, and deterministic', () =
   const second = crypto.createHash('sha256').update(fs.readFileSync(ARTIFACT, 'utf8')).digest('hex');
   assert.strictEqual(first, second, 'build output is deterministic');
 
-  assert.strictEqual(body.includes('PARSER_VERSION = "2.5.5"'), true, 'inlines the canonical core version');
+  assert.strictEqual(body.includes('PARSER_VERSION = "2.5.7"'), true, 'inlines the canonical core version');
   assert.strictEqual(body.includes('window.OCRParser'), true, 'inlines the canonical core');
   assert.strictEqual(body.includes('__ocrBookmarklet = true'), true, 'runs the boot step');
   assert.strictEqual(body.includes('const EXPECTED_CORE_VERSION'), true, 'runs the key entry');
@@ -207,7 +207,7 @@ test('runs the real artifact against the canonical core, not a copy', () => {
     assert(panel.includes(id), 'panel id ' + id);
   }
   assert.strictEqual(result.field('ocr_title').textContent, 'Bookmarklet paste');
-  assert.strictEqual(CORE.version, '2.5.5');
+  assert.strictEqual(CORE.version, '2.5.7');
   assert.strictEqual(typeof linkComprehension, 'function');
 });
 
@@ -910,7 +910,7 @@ test('refuses to run without the canonical core and never touches Constant Text'
   const cases = [
     ['missing window.OCRParser', undefined, /window\.OCRParser is missing/],
     ['version mismatch', { version: '2.3.0', parsePaste() {} }, /reports version 2\.3\.0/],
-    ['missing parsePaste', { version: '2.5.5' }, /no parsePaste export/]
+    ['missing parsePaste', { version: '2.5.7' }, /no parsePaste export/]
   ];
   for (const [label, core, pattern] of cases) {
     const run = runKeyEntry(core);
@@ -1047,6 +1047,45 @@ test('starting autosave during an in-place save does not post the question twice
   pending[1](savedResponse());
   await flush();
   assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 2);
+});
+
+test('key comparator Load reproduces frozen PC04 and PC05 stimulus ranges cleanly', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const cases = [
+    ['V9', 'Use the diagram below to answer questions 20 to 22, 25 in the local currency was deposited.', [20, 21, 22], [20, 21, 22]],
+    ['V9-ctrl', 'Use the diagram below to answer questions 20 to 22, 25 in the section below.', [20, 21, 22, 25], [20, 21, 22, 25]],
+    ['V6', 'Use the diagram below to answer questions 20 to 22, 25 in cash was deposited.', [20, 21, 22], [20, 21, 22]],
+    ['V10', 'Use the diagram below to answer questions 20 to 22, 25 in the table is the cash deposit.', [20, 21, 22], [20, 21, 22]],
+    ['V11', 'Use the diagram below to answer questions 20 to 22, 25 in the same section.', [20, 21, 22, 25], [20, 21, 22, 25]],
+    ['V11-ctrl', 'Use the diagram below to answer questions 20 to 22, 25 in this section.', [20, 21, 22, 25], [20, 21, 22, 25]]
+  ];
+  for (const [label, intro, wantNums, wantImgNums] of cases) {
+    const result = keyBookmarklet();
+    loadPaste(result, H + '\n\n' + intro + '\n[image]\n\n' + suffix + '\n\n=== ANSWER KEY ===\n19.A 20.B 21.C 22.D 23.A 24.B 25.C 26.D');
+    const queue = JSON.parse(result.storage.get('ocrQueue'));
+    assert.strictEqual(result.field('question_text').value, 'Which statement is correct?', label + ' Q19 stem');
+    assert.strictEqual(result.field('option_d').value, 'four', label + ' Q19.D');
+    assert.deepStrictEqual(queue.items[0].flags, [], label + ' Q19 flags');
+    assert.deepStrictEqual(queue.items[0].stimuli[0].nums, wantNums, label + ' nums');
+    assert.deepStrictEqual(queue.items.filter(item => item.needsImage).map(item => item.num), wantImgNums, label + ' flagged');
+  }
+  const textRaw = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'inputs', 'new-edge-inter-question-text.txt'), 'utf8');
+  const textRes = keyBookmarklet();
+  loadPaste(textRes, textRaw);
+  const textQ = JSON.parse(textRes.storage.get('ocrQueue'));
+  assert.strictEqual(textQ.items[0].d, 'a delivery note');
+  assert.deepStrictEqual(textQ.items.filter(item => item.needsImage), []);
+
+  const diagRaw = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'inputs', 'new-edge-inter-question-diagram.txt'), 'utf8');
+  const diagRes = keyBookmarklet();
+  loadPaste(diagRes, diagRaw);
+  const diagQ = JSON.parse(diagRes.storage.get('ocrQueue'));
+  assert.strictEqual(diagQ.items[0].d, 'credit transfer.');
+  assert.deepStrictEqual(diagQ.items.filter(item => item.needsImage).map(item => item.num), [21, 22, 23]);
 });
 
 (async () => {

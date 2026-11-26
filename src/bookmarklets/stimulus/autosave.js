@@ -362,6 +362,7 @@ function savedLogPriorDuplicate(log, currentBatchId, fingerprint) {
 function formMatchesQuestion(form, q) {
   if (!form || !q) return false;
   if (normalizeAnswer(form.question) !== normalizeAnswer(q.question)) return false;
+  if (form.constantText !== undefined && normalizeAnswer(form.constantText) !== normalizeAnswer(q.constantText || '')) return false;
   const options = Array.isArray(form.options) ? form.options : [];
   return ['a', 'b', 'c', 'd'].every((letter, i) => normalizeAnswer(options[i]) === normalizeAnswer(q[letter]));
 }
@@ -420,6 +421,11 @@ function autosaveBlockers(state) {
     add('queue-number', 'All questions in this batch are done.');
     return out;
   }
+  const pendingItems = items.slice(Number.isInteger(queue.i) && queue.i > 0 ? queue.i : 0);
+  const missingText = pendingItems.find(item => item && Array.isArray(item.flags) && item.flags.includes('[missing text] placeholder'));
+  if (missingText) {
+    add('missing-text', 'Question ' + (missingText.num == null ? '?' : missingText.num) + ' contains a [missing] marker. Edit it and save by hand, or re-paste and Load again.');
+  }
   const imagePlan = Array.isArray(s.imagePlan) ? s.imagePlan : [];
   const queueNums = new Set(items.map(item => item.num).filter(Number.isInteger));
   const planFor = id => imagePlan.find(entry => entry && String(entry.stimulusId) === String(id)) || null;
@@ -429,24 +435,16 @@ function autosaveBlockers(state) {
     for (const stim of stimuli) {
       if (!stim || typeof stim !== 'object') continue;
       stimIndex++;
-      const label = 'Image block ' + (Number.isInteger(stim.order) ? stim.order : stimIndex)
+      const label = (stim.needsImage === false ? 'Text block ' : 'Image block ')
+        + (Number.isInteger(stim.order) ? stim.order : stimIndex)
         + (Number.isInteger(stim.sourceNum) ? ' (after Q' + stim.sourceNum + ')' : '');
       const plan = planFor(stim.id);
       const rawNums = plan && Array.isArray(plan.nums) ? plan.nums : [];
       const nums = rawNums.map(n => Number(n)).filter(n => Number.isInteger(n) && n > 0);
-      if (!plan || !plan.file || !plan.name || !nums.length) {
-        add('stimulus-unassigned', label + ' has no image or range yet.');
-        continue;
-      }
       const bad = nums.filter(n => !queueNums.has(n));
       if (bad.length) add('stimulus-range', label + ' names question ' + bad.join(', ') + ', which is not in this paste.');
     }
   }
-  const covers = num => imagePlan.some(entry => {
-    if (!entry || !entry.file || !entry.name || !Array.isArray(entry.nums)) return false;
-    return entry.nums.map(n => Number(n)).includes(Number(num));
-  });
-  if (q.needsImage && !covers(q.num)) add('image-required', 'Question ' + q.num + ' needs an image.');
   if (!queue.batchId) add('batch-missing', 'This queue has no batch identity. Paste the questions again.');
   else if (!s.keyBatch || s.keyBatch !== queue.batchId) add('batch-mismatch', 'The saved key belongs to a different batch. Paste the matching key.');
   if (!isConsecutiveQueue(items)) add('queue-number', 'The question numbers are not consecutive.');
@@ -460,7 +458,7 @@ function autosaveBlockers(state) {
   if (!s.radioLetter) add('no-answer', 'No answer is ticked.');
   else if (s.radioLetter !== keyLetter) add('answer-mismatch', 'The ticked answer does not match the key.');
   if (q.e || q.f) add('ef-present', 'This question has an E/F option, which the form cannot hold.');
-  const otherFlags = (q.flags || []).filter(flag => flag !== 'E/F options present');
+  const otherFlags = (q.flags || []).filter(flag => flag !== 'E/F options present' && flag !== '[missing text] placeholder');
   if (otherFlags.length) add('flags', 'Check this one first: ' + otherFlags.join(', ') + '.');
   const letters = optionLetters(q);
   if (letters.some(letter => 'ABCD'.indexOf(letter) < 0)) add('options-not-abcd', 'The options are not exactly A, B, C and D.');
@@ -478,6 +476,7 @@ function autosaveBlockers(state) {
     if (byteLength(q[letter]) > 500) add('option-long', 'Option ' + letter.toUpperCase() + ' is over 500 characters.');
   }
   if (String(q.question || '').trim().length < 10) add('question-short', 'The question text is missing or very short.');
+  if (byteLength(q.constantText || '') > 60000) add('constant-long', 'The constant text is over 60000 characters.');
   const meta = s.meta || {};
   if (meta.subject == null || meta.subject === '' || meta.category == null || meta.category === '' || meta.year == null || meta.year === '') {
     add('meta-missing', 'Subject, category or year is missing.');
@@ -541,6 +540,7 @@ function blockerText(blocker) {
     case 'stimulus-unassigned': return 'Cannot auto-save:' + detail;
     case 'stimulus-range': return 'Cannot auto-save:' + detail;
     case 'image-required': return 'Cannot auto-save:' + detail;
+    case 'missing-text': return 'Cannot auto-save:' + detail;
     case 'file-attached': return 'Cannot auto-save:' + detail;
     case 'has-explanation': return 'Cannot auto-save:' + detail;
     case 'saving-marker': return 'Cannot auto-save:' + detail;
@@ -551,6 +551,7 @@ function blockerText(blocker) {
     case 'saved-log': return 'Cannot auto-save:' + detail;
     case 'duplicate': return 'Cannot auto-save:' + detail;
     case 'form-edited': return 'Cannot auto-save:' + detail;
+    case 'constant-long': return 'Cannot auto-save:' + detail;
     default: return 'Cannot auto-save:' + (b.detail || 'unknown reason.');
   }
 }

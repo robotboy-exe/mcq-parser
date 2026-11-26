@@ -170,7 +170,14 @@ for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {
   });
 }
 
-const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spaced-initialism-wrapped.txt']
+const PARITY_FIXTURES = [
+  'bank-2021.txt',
+  'spaced-initialism-cif-stem.txt',
+  'spaced-initialism-wrapped.txt',
+  'new-edge-image-intro-marker.txt',
+  'new-edge-inter-question-text.txt',
+  'new-edge-inter-question-diagram.txt'
+]
   .map(name => fs.readFileSync(path.join(ROOT, 'fixtures', 'inputs', name), 'utf8'))
   .concat([
     // A real option line after a trailing stem initial, and a trailing spaced
@@ -179,7 +186,11 @@ const PARITY_FIXTURES = ['bank-2021.txt', 'spaced-initialism-cif-stem.txt', 'spa
     '1. Who is John F.\nA. Kennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe',
     '1. Who is John F.\nA.\nKennedy\nB. Adams (option A. wrong)\nC. Smith\nD. Doe',
     '1. This happened in A. D. A. 70 B. 80 C. 90 D. 100',
-    '1. Which refers to C. I. F.\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery'
+    '1. Which refers to C. I. F.\nA. cost insurance freight\nB. free on board\nC. carriage paid\nD. cash on delivery',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25 in the local currency was deposited.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25 in the table is the cash deposit.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four\n25. Later?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25 in the same section.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four\n25. Later?\nA. one\nB. two\nC. three\nD. four',
+    '33. Q33?\nA. a\nB. b\nC. c\nD. d\n\nUse the dialogue below to answer questions 34 to 35.\nA: Hello\nB: World\n\nFirst unnumbered\nA. a\nB. b\nC. c\nD. d\n\nSecond unnumbered\nA. a\nB. b\nC. c\nD. [Option missing]\n\n36. Final?\nA. a\nB. b\nC. c\nD. d'
   ]);
 
 for (const [label, file] of [['stimulus', STIMULUS_OUT], ['key', KEY_OUT]]) {

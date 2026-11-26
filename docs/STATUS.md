@@ -6,9 +6,33 @@ Last updated: 2026-11-26.
 
 - Cycle: `parser-convergence-2026-11`; active map:
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
-- Frozen base: `793cb8f`; scratch integration line:
-  `scratch/parser-convergence-cycle`; PC01, PC02, and PC03 are `done` and
-  review-settled; next package PC04 is `not started` (ready to open).
+- Settled scratch cycle base through PC03: `9afe4f8`; active PC07 implementation
+  branch: `scratch/pc07-stimulus-first`; `PC01`, `PC02`, and `PC03` are `done`
+  and review-settled. Unfinished `PC04`–`PC06` are superseded by Phase 7
+  (`PC07`, approved at Gate 1 on 2026-11-26); carried `PC04` findings
+  `BLOCK-10` and `BLOCK-11` remain **open** for independent Phase 7 verification.
+- PC07 implementation (2026-11-26, package base `9afe4f8`, donor snapshot
+  `ed96b11`, branch `scratch/pc07-stimulus-first`, handoff `Commit: deferred`):
+  converged on two supported surfaces over canonical `src/parser/core.js`
+  (`2.5.7`, `2,312 L / 85,791 B`, SHA-256 `f9e88c31…`) — deployed manual
+  helper (`ocr_helper.js` `127 L / 4,917 B`, `75671c2e…`, `EXPECTED_CORE_VERSION
+  = '2.5.7'`, `+51/-45` live-origin) loaded by `deployed/admin_questions.php`
+  (`1,057 L / 62,878 B`, `33165c0b…`, `?v=2.5.7`/`?v=2.4.10`, `+96/-85`
+  live-origin), and ONE supported stimulus-first bookmarklet (`src/bookmarklet.js`,
+  `1 L / 162,516 B`, `803a7c55…`) built from `core.js` +
+  `src/bookmarklets/stimulus/autosave.js` + `src/ui/ui.js`. Retained
+  `src/bookmarklets/key/bookmarklet.js` (`1 L / 93,110 B`, `0de81329…`,
+  `EXPECTED_CORE_VERSION = '2.5.7'`) strictly as comparator and rollback
+  reference (`9afe4f8:src/bookmarklets/key/bookmarklet.js`) pending desktop +
+  owner Brave/Android checks and a separate reviewed retirement diff. Full Node
+  and PHP 8.3.32 / 8.5.12 suites pass (76 runner, 187 unit, 42 helper, 43 key
+  comparator, 15 single-source, 10 underline, 7 preview, 26 math-tool, 69 JS +
+  33 PHP marker, 8 store, 14 ordering, 7/7 lint, 7 bank hashes), and disposable
+  Chromium + PHP/SQLite staging verified 3-surface parity on 10 vectors,
+  end-to-end multipart PNG upload (`#113`–`#115` HTTP 200 SHA-256 matched) &
+  standalone isolation (`#111`, `#112`, `#116`), `constant_text` autosave +
+  clearing (`#117`–`#119`), pre-POST `[missing text]` / uncovered `PAUSED (IMAGE)`
+  gating (`#120`), and zero-duplicate slow-POST reinjection (`#121`).
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /

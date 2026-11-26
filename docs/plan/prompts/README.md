@@ -13,6 +13,16 @@ first response is read-only, includes `WAITING FOR GO`, and ends with
 `NEXT COMMAND: go` when the gate passes. After an explicit `go`, execute only
 that package and stop after its handoff.
 
+## Phase 7 stimulus-first convergence
+
+Use [stimulus-convergence-scratch.md](stimulus-convergence-scratch.md) for the
+approved Phase 7 (`PC07`) two-surface convergence package in
+[PC07](../parser-convergence/pc-07-stimulus-first.md) (`phase-map.md` registers
+Phase 7; `PC01`–`PC03` stay settled, `PC04`–`PC06` stay preserved as superseded
+history, `BLOCK-10` and `BLOCK-11` remain carried open until Phase 7 independent
+review closes them, and `src/bookmarklets/key/` stays retained until owner
+acceptance and a separate reviewed retirement diff).
+
 ## Review session
 
 Use [`review-session.md`](review-session.md) with `review phase N`, a package ID,

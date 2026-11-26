@@ -335,7 +335,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.5/.test(result.thrown.message));
+  assert(/2\.5\.7/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -692,6 +692,47 @@ test('helper suite executes the real exported parseAll', () => {
   const text = readFixtureInput('region-midstream-orphan');
   assert.deepStrictEqual(helper.parseAll(text).map((item) => item.num), [24, null, 25]);
   assert.deepStrictEqual(helper.parseAll(text), require('../src/parser/core.js').parsePaste(text).items);
+});
+
+test('Load handles PC04 V9, V9-ctrl, V6, V10, V11, V11-ctrl, adv-bank, and PC05 boundaries without writing constant_text', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const rangeCases = [
+    ['V9', '20 to 22, 25 in the local currency was deposited.', [20, 21, 22]],
+    ['V9-ctrl', '20 to 22, 25 in the section below.', [20, 21, 22, 25]],
+    ['V6', '20 to 22, 25 in cash was deposited.', [20, 21, 22]],
+    ['V6-ctrl', '20, 22 in the section below.', [20, 22]],
+    ['V10', '20 to 22, 25 in the table is the cash deposit.', [20, 21, 22]],
+    ['V11', '20 to 22, 25 in the same section.', [20, 21, 22, 25]],
+    ['V11-ctrl', '20 to 22, 25 in this section.', [20, 21, 22, 25]],
+    ['adv-bank', '20 to 22, 25 in the bank was deposited.', [20, 21, 22]]
+  ];
+  for (const [label, clause, wantNums] of rangeCases) {
+    const paste = full(H + '\n\nUse the diagram below to answer questions ' + clause + '\n[image]');
+    const state = formState(loadThroughForm(paste));
+    assert.strictEqual(state.question, 'Which statement is correct?', label + ' stem');
+    assert.strictEqual(state.d, 'four', label + ' clean Q19.D');
+    assert.deepStrictEqual(state.queue.items[0].flags, [], label + ' flags');
+    assert.deepStrictEqual(state.queue.items[0].stimuli[0].nums, wantNums, label + ' source range');
+  }
+
+  for (const [fixtureId, wantFirstD, wantNums] of [
+    ['new-edge-image-intro-marker', 'imposition of embargo', [20, 21, 22]],
+    ['new-edge-inter-question-text', 'a delivery note', [20, 21]],
+    ['new-edge-inter-question-diagram', 'credit transfer.', [21, 22, 23]]
+  ]) {
+    const raw = readFixtureInput(fixtureId);
+    const result = loadThroughForm(raw);
+    const state = formState(result);
+    assert.strictEqual(state.d, wantFirstD, fixtureId + ' first D');
+    const stimItem = state.queue.items.find(item => Array.isArray(item.stimuli) && item.stimuli.length);
+    assert.deepStrictEqual(stimItem.stimuli[0].nums, wantNums, fixtureId + ' nums');
+  }
 });
 
 (async () => {

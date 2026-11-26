@@ -35,13 +35,16 @@ Root `ocr_helper.js` is a thin adapter: Node resolves the core through
 `FIXES` normalization, `parseAll`, the queue panel, and `fillForm`. Do not add
 parser logic back to it.
 
-The deployed helper and the key/autosave bookmarklet are separate products.
-`ocr_helper.js` is the deployed manual product and is byte-aligned with the
-reviewed published baseline; it must never regain answer-key load, dry run,
-autosave, in-place save, image plan, batch history, or a bookmarklet title. That
-behavior lives only in `src/bookmarklets/key/entry.js`, which the dedicated
-build inlines with the canonical core and `boot.js` into
-`src/bookmarklets/key/bookmarklet.js`.
+The deployed helper and the converged bookmarklet are separate products.
+`ocr_helper.js` is the deployed manual product and keeps only manual Load,
+form fill, and manual POST (`EXPECTED_CORE_VERSION = '2.5.7'`); it must never
+regain answer-key load, dry run, autosave, in-place save, image plan, batch
+history, Constant Text writes, or a bookmarklet title. Under D-113 (`PC07`),
+`src/bookmarklet.js` (`core.js` + `src/bookmarklets/stimulus/autosave.js` +
+`src/ui/ui.js`) is the single supported bookmarklet product, while
+`src/bookmarklets/key/entry.js` (`src/bookmarklets/key/bookmarklet.js`) stays
+retained strictly as a comparator and rollback reference until owner desktop +
+Brave/Android verification and a separate reviewed retirement diff.
 
 ### Region model (RM01)
 

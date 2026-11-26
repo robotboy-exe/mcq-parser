@@ -9,35 +9,30 @@ Last updated: 2026-11-26.
 ## Current state
 
 - Active cycle: `parser-convergence-2026-11` (created 2026-11-24 after explicit
-  owner approval to archive `math-editor-2026-11`). Its six packages separate
-  the three products, remove the second parser source, revalidate P23/P20/P21/P22
-  in narrow packages, and prepare a reviewed scratch release.
-- Frozen cycle base: `793cb8f`. Long-lived scratch integration line:
-  `scratch/parser-convergence-cycle`. Each package is implemented on the owner's
-  VM on a short-lived `scratch/pcNN-*` branch and pushed for an independent
-  review in this environment.
+  owner approval to archive `math-editor-2026-11`, amended 2026-11-26 for
+  Phase 7 `PC07` stimulus-first convergence onto one supported bookmarklet plus
+  the deployed manual helper; key-only retained only through comparator/rollback
+  checks until owner acceptance and a separate reviewed retirement diff).
+- Frozen cycle base: `793cb8f`. Settled scratch integration tip through PC03:
+  `9afe4f8` on `scratch/parser-convergence-cycle`. Each package is implemented on
+  a short-lived `scratch/pcNN-*` branch and pushed for independent review.
 - Real branches are read-only cycle-wide: `main`, `owner-tool-integration`,
   `experiments`, and `experiments-alt`. A settled package may merge only into
   the scratch cycle line. Real-branch integration needs a final cycle-wide review
   and a separate owner authorization.
 - Preserved evidence: `scratch/stimulus-followups` at `f3f5957`; the old clean
-  stimulus baseline `d5a62f0`; and the key/main scratch merge at `793cb8f`.
+  stimulus baseline `d5a62f0`; donor working snapshot `ed96b11` (`ed14323` PC04
+  candidate cross-checked); and the key/main scratch merge at `793cb8f`.
   The pre-package `scratch/single-core-port` diff and its external backup are
   quarantined exploration, not package evidence or a cherry-pick source.
-- Current package: PC03 is `done`; next package PC04 is `not started` (ready
-  to open on `scratch/pc04-marker-range`). PC01 is `done` and
-  review-settled: the 2026-11-26 re-review 3 of candidate `cc72e3b`
-  ([record](reviews/parser-convergence-2026-11-phase-1-re-review-3.md)) returned
-  `PASS` with no new findings, closing `BLOCK-5` and `FIX-4`, so every
-  `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` is closed. `scratch/pc01-product-separation`
-  was fast-forward merged into `scratch/parser-convergence-cycle` from `bb78c57`
-  to `e6f34f8`; the product tree is byte-identical to the reviewed candidate
-  `cc72e3b`, and `scratch/pc02-single-parser-source` is cut from the reconciled
-  tip `0279e70` (package base). PC02 is implemented on that branch:
-  `src/parser/core.js` is the only parser source, `src/parser/parser.js` is a
-  7-line Node facade, the autosave/saved-log helpers moved to
-  `src/bookmarklets/stimulus/autosave.js`, the stimulus build inlines the core,
-  both builds accept `--check`, and the `%` guard narrowed to `%HH` under D-110.
+- Current package: `PC01`, `PC02`, and `PC03` remain `done` and merged on
+  `scratch/parser-convergence-cycle` (through `9afe4f8`). Unfinished
+  `PC04`–`PC06` are superseded by Phase 7 (`PC07`, stimulus-first convergence)
+  implemented on `scratch/pc07-stimulus-first` (`Commit: deferred`), with
+  `PC04` `BLOCK-10` and `BLOCK-11` carried **open** for independent Phase 7
+  verification. `src/bookmarklets/key/*` stays retained as comparator and
+  rollback reference until desktop + owner Brave/Android verification and a
+  separate reviewed retirement diff.
   New `tests/single-source.js` passes 15 checks and the full Node/PHP baseline
   is green; a Cloud Chromium probe ran both generated artifacts on the real
   staging admin page. The 2026-11-26 rigorous review of candidate `01e2c02`
@@ -386,9 +381,10 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 1 | PC01 | [Product Surface Separation](parser-convergence/pc-01-product-separation.md) | docs-only cycle setup over product base `793cb8f` | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings, closing `BLOCK-5`/`FIX-4`; every `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed; merged into `scratch/parser-convergence-cycle` at `e6f34f8` | disposable browser; no deploy/live |
 | 2 | PC02 | [Single Parser Source](parser-convergence/pc-02-single-parser-source.md) | PC01 rigorous review settled | done — 2026-11-26 rigorous review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1`–`NOTE-2`, no `BLOCK`/`FIX`); owner confirmed both generated bookmarklets load and run in the owner's browser; fast-forward merged into `scratch/parser-convergence-cycle` (`0279e70`→`55afe15`) | owner's browser bookmarklet installability (confirmed 2026-11-26) |
 | 3 | PC03 | [Spaced Initialism Option Boundaries](parser-convergence/pc-03-spaced-initialisms.md) | PC02 rigorous review settled | done — 2026-11-26 re-review 2 of `69934bf` returned `PASS WITH ACCEPTED FINDINGS` (closing `BLOCK-1` and `BLOCK-3`; `BLOCK-2`/`FIX-1` previously closed; non-blocking `NOTE-3`); fast-forward merged into `scratch/parser-convergence-cycle` (`331e81f`→`a4c6d53`) | none; parser and real-surface evidence |
-| 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | not started | none; parser and real-surface evidence |
-| 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | not started | none; prior BLOCK controls mandatory |
-| 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | not started | owner's browser for both bookmarklets; owner choice for key `needsImage` policy |
+| 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | superseded by PC07 (Gate 1 approved 2026-11-26; `BLOCK-10` & `BLOCK-11` carried **open** into Phase 7) | preserved as history/evidence |
+| 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | superseded by PC07 (anchored blocks, leading stimuli, gap recovery, & `[missing text]` implemented in Phase 7) | preserved as history/evidence |
+| 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | superseded by PC07 (key-only retirement deferred to separate reviewed diff after owner acceptance) | desktop + Brave/Android acceptance for `src/bookmarklet.js` |
+| 7 | PC07 | [Stimulus-First Convergence](parser-convergence/pc-07-stimulus-first.md) | PC01–PC03 settled & Gate 1 `go` | in progress — implementation handoff complete on `scratch/pc07-stimulus-first` (`Commit: deferred`); `BLOCK-10` & `BLOCK-11` open for Phase 7 review | desktop + owner Brave/Android check before key-only retirement |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -463,48 +459,39 @@ verifies the detail path with the rest of Release A.
 | phase 1 | PC01 product separation | rigorous | done — 2026-11-26 re-review 3 of `cc72e3b` returned `PASS` with no new findings (`BLOCK-5`/`FIX-4` closed, all `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` closed); merged into the scratch cycle line at `e6f34f8` |
 | phase 2 | PC02 one parser source and build parity | rigorous | done — 2026-11-26 review of `01e2c02` returned `PASS WITH ACCEPTED FINDINGS` (`NOTE-1` corrected, `NOTE-2` accepted); owner confirmed both generated bookmarklets in the owner's browser; fast-forward merged into the scratch cycle line |
 | phase 3 | PC03 spaced initialisms | rigorous | done — 2026-11-26 re-review 2 of `69934bf` returned `PASS WITH ACCEPTED FINDINGS` (closing `BLOCK-1` and `BLOCK-3`; `BLOCK-2`/`FIX-1` previously closed; `NOTE-3` accepted residual); fast-forward merged into the scratch cycle line at `a4c6d53` |
-| phase 4 | PC04 marker-adjacent range | rigorous | ready — PC03 review settled and merged; Gate 1 not started |
-| phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | blocked by PC04 review |
-| phase 6 | PC06 bookmarklet policy and scratch release | rigorous | blocked by PC05 review and owner key-image policy choice |
-| cycle | phases 1–6 on `scratch/parser-convergence-cycle` | rigorous cycle-wide | blocked until every package review settles |
+| phase 4 | PC04 marker-adjacent range | rigorous | superseded by PC07 (Gate 1 approved 2026-11-26); `BLOCK-10` & `BLOCK-11` carried **open** into Phase 7 |
+| phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | superseded by PC07 |
+| phase 6 | PC06 bookmarklet policy and scratch release | rigorous | superseded by PC07; key-only retirement deferred to separate reviewed diff after owner acceptance |
+| phase 7 | PC07 stimulus-first convergence | rigorous | in progress — implementation handoff complete on `scratch/pc07-stimulus-first` (`Commit: deferred`); awaiting push/publication & independent Phase 7 review |
+| cycle | settled phases on `scratch/parser-convergence-cycle` | rigorous cycle-wide | blocked until Phase 7 review (and key-only retirement delta, if applicable) settles |
 
 ## Current path to cycle close
 
-1. **PC01** — separate deployed manual helper and key bookmarklet products on
-   the VM; push exact candidate; rigorous review here; settle before merge into
-   the scratch cycle line.
-2. **PC02** — remove the inlined parser source without parser/product behavior
-   change; prove both real bookmarklet builds use the exact core; rigorous
-   review and browser install checks.
-3. **PC03** — done and merged into `scratch/parser-convergence-cycle` from
-   `331e81f` to `a4c6d53` (product tree matching `69934bf`): the canonical core
-   keeps spaced dotted initialism runs as text under D-111 without changing
-   `C. E. F. Small`, inner initials, or the D-91 grammar, while ending runs at
-   wrapped or line-leading option labels, counting only line-leading labels in
-   the ordered test, and restoring the trailing real covered label. Re-review 2
-   returned `PASS WITH ACCEPTED FINDINGS` (`BLOCK-1` and `BLOCK-3` closed;
-   `BLOCK-2`/`FIX-1` previously closed; non-blocking `NOTE-3`).
-4. **PC04** — independently revalidate and implement only marker-adjacent range
-   extraction; rigorous review including unrelated-number adversarial probes.
-5. **PC05** — independently revalidate anchored shared-stimulus tails and
-   missing-text classification while closing every prior deletion/range control;
-   rigorous review.
-6. **PC06** — implement bookmarklet-only image/missing policy, run both real
-   browser products, prepare integration/rollback evidence, and complete package
-   plus cycle-wide rigorous reviews.
-7. **Owner decision after review** — only after every finding settles, decide
-   whether and how to integrate the reviewed scratch cycle into real branches.
+1. **PC01–PC03** — `done` and review-settled on `scratch/parser-convergence-cycle`
+   through `9afe4f8`.
+2. **PC07** — supersedes unfinished `PC04`–`PC06` (history retained in
+   `docs/plan/parser-convergence/pc-04..06.md` and `phase-4*.md`): implemented
+   on `scratch/pc07-stimulus-first` from `9afe4f8` converging onto two supported
+   surfaces (`ocr_helper.js` `?v=2.4.10` manual helper + `src/bookmarklet.js`
+   stimulus-first bookmarklet over `src/parser/core.js` `2.5.7`), carrying
+   `BLOCK-10` (`V10`) and `BLOCK-11` (`V11`) open for independent Phase 7 review
+   and retaining `src/bookmarklets/key/` as comparator/rollback reference.
+3. **Phase 7 rigorous review** — publish/push candidate after separate owner
+   authorization, then run independent review (`docs/plan/reviews/parser-convergence-2026-11-phase-7.md`).
+4. **Owner device checks & key-only retirement** — after Phase 7 settles, owner
+   verifies the installed replacement bookmarklet on desktop and Brave/Android,
+   then a separate reviewed diff retires `src/bookmarklets/key/`.
+5. **Owner decision after cycle-wide review** — only after every finding and
+   rigorous cycle-wide review settle, decide whether and how to integrate the
+   reviewed scratch cycle into real branches.
 
-Current workflow stop: PC03 is `done`. Its 2026-11-26 phase-3 re-review 2 of
-candidate `69934bf` returned `PASS WITH ACCEPTED FINDINGS`, closing `BLOCK-1`
-and `BLOCK-3` (with `BLOCK-2`/`FIX-1` previously closed and non-blocking
-`NOTE-3` accepted as residual), and `origin/scratch/pc03-spaced-initialisms`
-(`a4c6d53`) was fast-forward merged into `scratch/parser-convergence-cycle` from
-`331e81f` with a product tree matching `69934bf`. The post-merge checks
-(`node src/build/build.js --check`, `node src/bookmarklets/key/build.js --check`,
-and `node tests/single-source.js`) pass on the merged tip. PC04 is `not started`
-and ready to open on `scratch/pc04-marker-range`; Gate 1 has not begun. No
-deploy or live action is authorized.
+Current workflow stop: PC07 implementation and handoff are complete on
+`scratch/pc07-stimulus-first` (`Commit: deferred`). All baseline tests (76
+runner, 187 unit, 42 helper, 43 key comparator, 15 single-source, 10 underline,
+7 preview, 26 math-tool, 69 JS + 33 PHP marker, 8 store, 14 ordering, 7/7 lint
+on PHP 8.3.32 and PHP 8.5.12, 7 bank hashes) and real Chromium + SQLite staging
+checks passed; `BLOCK-10` and `BLOCK-11` remain **open** pending independent
+Phase 7 review. No commit, push, merge, deploy, or live action is authorized.
 
 ## Archived `math-editor-2026-11` close path
 
@@ -683,7 +670,7 @@ summary and final counts live in [`history.md`](history.md).
 
 ## Cycle close
 
-After PC06 and the rigorous cycle-wide review settle, use
-[`prompts/cycle-close.md`](prompts/cycle-close.md). Cycle close executes no
-package, commits only with explicit authorization, and leaves the cycle active
-until the owner separately confirms archival.
+After PC07 (and any follow-up key-only retirement delta) plus the rigorous
+cycle-wide review settle, use [`prompts/cycle-close.md`](prompts/cycle-close.md).
+Cycle close executes no package, commits only with explicit authorization, and
+leaves the cycle active until the owner separately confirms archival.

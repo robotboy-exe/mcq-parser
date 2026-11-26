@@ -1,0 +1,40 @@
+20. An instruction to a bank to make regular payment to a third party on behalf of a customer is
+A. standing order.
+B. money order.
+C. money transfer.
+D. credit transfer.
+
+[diagram]
+XYZ Bank of Commerce PLC
+55 Jones Road, Freetown
+18/06/2016
+Pay Peter Saidy or Order the sum of Sixty thousand leones.
+Le 60,000.00
+SIGN: Oki Williams
+2001030693 11096245 10000230
+
+Use the diagram above to answer questions 21 to 23.
+
+21. The diagram above shows a
+A. standing order.
+B. receipt.
+C. cheque.
+D. bill of exchange.
+
+22. XYZ Bank of Commerce PLC is the
+A. payee.
+B. endorser.
+C. drawer.
+D. drawee.
+
+23. Oki Williams is the
+A. payee.
+B. endorser.
+C. drawer.
+D. drawee.
+
+Answer Key
+20. A
+21. C
+22. D
+23. C

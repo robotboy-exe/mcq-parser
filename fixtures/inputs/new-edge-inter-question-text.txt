@@ -1,0 +1,27 @@
+19. An error on an invoice may be rectified by issuing
+A. an advice note
+B. a consignment note
+C. a credit note
+D. a delivery note
+
+Use the information below to answer questions 20 and 21.
+Opening stock 4,000
+Closing stock 12,000
+Purchases 17,000
+
+20. What is the average stock?
+A. 10,500
+B. 8,500
+C. 8,000
+D. 6,000
+
+21. The cost of goods sold is
+A. 4,000
+B. 9,000
+C. 16,000
+D. 21,000
+
+Answer Key
+19. C
+20. C
+21. B

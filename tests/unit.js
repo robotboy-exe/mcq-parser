@@ -552,7 +552,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.5.5', 'parser version');
+  eq(parsed.version, '2.5.7', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');
@@ -1245,15 +1245,15 @@ test('autosaveBlockers clears a clean batch', () => {
   eq(parser.autosaveBlockers(cleanState()), []);
 });
 
-test('autosaveBlockers requires an assigned image for each detected block', () => {
+test('autosaveBlockers checks detected block ranges without hard-blocking uncovered images', () => {
   const s = cleanState();
   s.queue.items[0].stimuli = [{ id: 'stim-1', order: 1, sourceNum: 1, nums: [2], missing: [] }];
   s.queue.items[1].needsImage = true;
-  eq(parser.autosaveBlockers(s)[0].code, 'stimulus-unassigned');
+  eq(parser.autosaveBlockers(s), []);
   s.imagePlan = [{ stimulusId: 'stim-1', nums: [2] }];
-  eq(parser.autosaveBlockers(s)[0].code, 'stimulus-unassigned');
+  eq(parser.autosaveBlockers(s), []);
   s.imagePlan = [{ stimulusId: 'stim-1', nums: [2], name: 'table.png' }];
-  eq(parser.autosaveBlockers(s)[0].code, 'stimulus-unassigned');
+  eq(parser.autosaveBlockers(s), []);
   s.imagePlan = [{ stimulusId: 'stim-1', nums: [2], name: 'table.png', file: {} }];
   eq(parser.autosaveBlockers(s), []);
 });
@@ -1267,16 +1267,21 @@ test('autosaveBlockers rejects a stimulus range outside the queue', () => {
   assert(first.detail.indexOf('9') > -1, first.detail);
 });
 
-test('autosaveBlockers requires an image on a flagged question', () => {
+test('autosaveBlockers defers uncovered needsImage to per-question pause and blocks missing-text and constant-long', () => {
   const s = cleanState();
   s.queue.items[0].needsImage = true;
-  eq(parser.autosaveBlockers(s)[0].code, 'image-required');
-  s.imagePlan = [{ nums: [1] }];
-  eq(parser.autosaveBlockers(s)[0].code, 'image-required');
-  s.imagePlan = [{ nums: [1], name: 'single.png' }];
-  eq(parser.autosaveBlockers(s)[0].code, 'image-required');
+  eq(parser.autosaveBlockers(s), []);
   s.imagePlan = [{ nums: [1], name: 'single.png', file: {} }];
   eq(parser.autosaveBlockers(s), []);
+
+  const missing = cleanState();
+  missing.queue.items[1].flags = ['[missing text] placeholder'];
+  eq(parser.autosaveBlockers(missing)[0].code, 'missing-text');
+
+  const longConstant = cleanState();
+  longConstant.queue.items[0].constantText = 'x'.repeat(60001);
+  longConstant.form.constantText = longConstant.queue.items[0].constantText;
+  eq(parser.autosaveBlockers(longConstant)[0].code, 'constant-long');
 });
 
 test('autosaveBlockers accepts a mapped stimulus covering the flagged question', () => {
@@ -2059,9 +2064,9 @@ test('blockerText maps every known code to a plain sentence', () => {
     'key-letter', 'no-answer', 'answer-mismatch', 'ef-present', 'flags', 'options-not-abcd',
     'option-empty', 'option-duplicate', 'option-long', 'question-short',
     'meta-missing', 'not-confirmed', 'mode-unconfirmed', 'mode-changed',
-    'meta-changed', 'stimulus-unassigned', 'stimulus-range', 'image-required',
+    'meta-changed', 'stimulus-unassigned', 'stimulus-range', 'image-required', 'missing-text',
     'file-attached', 'has-explanation', 'saving-marker', 'save-in-progress',
-    'stopped', 'lock', 'hidden', 'saved-log', 'duplicate', 'form-edited'];
+    'stopped', 'lock', 'hidden', 'saved-log', 'duplicate', 'form-edited', 'constant-long'];
   for (const code of codes) {
     const text = parser.blockerText({ code, detail: 'detail' });
     assert(text.indexOf('Cannot auto-save:') === 0, code + ': ' + text);
@@ -2252,13 +2257,13 @@ testAsync('UI image plan is hidden for a queue without stimuli', async () => {
   eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
 });
 
-testAsync('UI image plan shows an ordered detected block and blocks Start', async () => {
+testAsync('UI image plan shows an ordered detected block without blocking Start', async () => {
   const ui = uiHarness.createUI({ storage: imageStorage('stim-shown') });
   const panel = ui.doc.getElementById('ocr_image_plan');
   eq(panel.hidden, false);
   eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image');
   eq(ui.doc.getElementById('ocr_img_range_0').value, '14-15');
-  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
   eq(ui.doc.getElementById('ocr_img_generic_range'), null);
 });
 
@@ -2281,7 +2286,7 @@ testAsync('UI image plan rejects an empty range', async () => {
   ui.doc.getElementById('ocr_img_range_0').value = '';
   ui.click('ocr_img_attach_0');
   eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image');
-  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
 });
 
 testAsync('UI image plan blocks an out-of-paste range', async () => {
@@ -2299,11 +2304,11 @@ testAsync('UI generic image row appears only for uncovered flagged questions', a
 
   const ui = uiHarness.createUI({ storage: imageStorage('generic-needed', 18) });
   eq(ui.doc.getElementById('ocr_img_generic_range').value, '18');
-  eq(ui.doc.getElementById('ocr_img_missing_18').textContent, 'Question Q18 needs an image.');
+  eq(ui.doc.getElementById('ocr_img_missing_18').textContent, 'Question Q18 needs an image; auto-save will pause here.');
   chooseImage(ui, 'ocr_img_generic_file', fakeImage('single.png'));
   ui.click('ocr_img_generic_attach');
   eq(ui.doc.getElementById('ocr_img_generic_status').textContent, 'Ready');
-  eq(ui.doc.getElementById('ocr_auto_start').disabled, true, 'a generic row must not satisfy the detected block');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false, 'image assignments no longer block Start');
   chooseImage(ui, 'ocr_img_file_0', fakeImage('table.png'));
   ui.click('ocr_img_attach_0');
   eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready');
@@ -2321,7 +2326,7 @@ testAsync('UI image plan is empty after reload and never stored', async () => {
   const reloaded = uiHarness.createUI({ storage });
   eq(reloaded.doc.getElementById('ocr_img_status_0').textContent, 'No image');
   eq(reloaded.doc.getElementById('ocr_img_file_name_0').textContent, '');
-  eq(reloaded.doc.getElementById('ocr_auto_start').disabled, true);
+  eq(reloaded.doc.getElementById('ocr_auto_start').disabled, false);
 });
 
 testAsync('UI Reset clears the image plan', async () => {
@@ -2346,7 +2351,7 @@ testAsync('UI full Load clears the plan and re-detects the blocks', async () => 
   eq(holder.stimuli[0].nums, [14, 15]);
   eq(ui.doc.getElementById('ocr_image_plan').hidden, false);
   eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image');
-  eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
 });
 
 testAsync('UI key-only Load keeps the queue and image plan', async () => {
@@ -2407,7 +2412,7 @@ testAsync('UI saved log keeps its shape when the save used an image', async () =
   eq(Object.keys(entry).sort(), ['at', 'batchId', 'fp', 'id', 'inactive', 'mode', 'num']);
 });
 
-testAsync('UI plan row clears after its last covered save', async () => {
+testAsync('UI plan row stays Ready across covered saves in the batch', async () => {
   const storage = imageStorage('stim-clear');
   storage.ocrQueue.i = 1;
   const ui = uiHarness.createUI({
@@ -2422,8 +2427,274 @@ testAsync('UI plan row clears after its last covered save', async () => {
   await ui.submit();
   eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready', 'Q15 still needs the shared image');
   await ui.submit();
-  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image');
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready');
   eq(ui.doc.getElementById('ocr_auto_start').disabled, true);
+});
+
+test('PC04 BLOCK-1 to BLOCK-11: exact frozen vectors and controls', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const I = 'Use the diagram below to answer questions 20 to 22.';
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const s1 = parser.parsePaste(full('19. What does the diagram below, used for questions 20 to 22, show?\n[image]\n' + O));
+  eq(s1.items[0].d, 'four', 'S1 Q19.D');
+  eq(s1.items[0].stimuli[0].nums, [], 'S1 empty nums');
+  eq(s1.items.filter(item => item.needsImage), [], 'S1 no needsImage');
+
+  for (const [label, q19Text] of [
+    ['S2', '19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nd) "' + I + '"\n[image]'],
+    ['S3', '19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nD/ "' + I + '"\n[image]'],
+    ['S4', '19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nD.\n"' + I + '"\n[image]'],
+    ['unquoted S4', '19. Which of these instructions mentions the diagram?\nA. one\nB. two\nC. three\nD.\n' + I + '\n[image]'],
+    ['S5', '19. Which of these instructions mentions the diagram? A. one B. two C. three D. "' + I + '"\n[image]']
+  ]) {
+    const res = parser.parsePaste(full(q19Text));
+    eq(res.items[0].stimuli[0].nums, [], label + ' nums');
+    eq(res.items.filter(item => item.needsImage), [], label + ' needsImage');
+    assert(res.items[0].d.includes(I), label + ' keeps intro in Q19.D');
+  }
+
+  for (const [label, ending, wantNums] of [
+    ['N1', '25 October 2023 is the issue date.', [20, 21, 22]],
+    ['N2', '25-10-2023 is the issue date.', [20, 21, 22]],
+    ['N3', '1,200 copies were issued.', [20, 21, 22]],
+    ['N4', '25 dollars is the deposit.', [20, 21, 22]],
+    ['N5', '25.50 is the balance.', [20, 21, 22]],
+    ['V6', '25 in cash was deposited.', [20, 21, 22]],
+    ['V9', '25 in the local currency was deposited.', [20, 21, 22]],
+    ['V9-ctrl', '25 in the section below.', [20, 21, 22, 25]],
+    ['adv-bank', '25 in the bank was deposited.', [20, 21, 22]],
+    ['V10', '25 in the table is the cash deposit.', [20, 21, 22]],
+    ['V11', '25 in the same section.', [20, 21, 22, 25]],
+    ['V11-ctrl', '25 in this section.', [20, 21, 22, 25]]
+  ]) {
+    const intro = 'Use the diagram below to answer questions 20 to 22, ' + ending;
+    const res = parser.parsePaste(full(H + '\n\n' + intro + '\n[image]'));
+    const q19 = res.items[0];
+    eq(q19.d, 'four', label + ' Q19.D');
+    eq(q19.flags, [], label + ' Q19 flags');
+    eq(q19.stimuli.length, 1, label + ' one stimulus');
+    eq(q19.stimuli[0].text, intro, label + ' literal intro');
+    eq(q19.stimuli[0].nums, wantNums, label + ' nums');
+    eq(q19.stimuli[0].missing, [], label + ' missing');
+    eq(res.items.filter(item => item.needsImage).map(item => item.num), wantNums, label + ' flagged items');
+  }
+
+  for (const [label, marker] of [['G1', '[image]]'], ['G2', '[[image]'], ['G3', '[image: 21]]'], ['G4', '[[image: 21]'], ['V8-close', '[[image: 21]]]'], ['V8-open', '[[[image: 21]]'], ['diag-bad', '[diagram]]'], ['missing', '[missing text]']]) {
+    const bad = parser.parsePaste(full(H + '\n' + I + '\n' + marker));
+    eq(bad.items[0].stimuli, undefined, label + ' no stimulus');
+    eq(bad.items[0].d, 'four ' + I + ' ' + marker, label + ' Q19.D preserved');
+  }
+
+  const a1 = parser.parsePaste(full(H + '\n' + I + '\nBalance: 500\nOrdinary explanatory prose stays in this option.\n[image]'));
+  eq(a1.items[0].d, 'four Ordinary explanatory prose stays in this option.', 'A1 Q19.D preserved');
+  eq(a1.items[0].stimuli[0].nums, [], 'A1 empty nums');
+  const a3 = parser.parsePaste(full(H + '\n' + I + '\nBalance: 500\nOrdinary explanatory prose stays in this option.\n[image: 21]'));
+  eq(a3.items[0].d, 'four Ordinary explanatory prose stays in this option.', 'A3 Q19.D preserved');
+  eq(a3.items[0].stimuli[0].nums, [21], 'A3 explicit range');
+
+  const r1 = parser.parsePaste(full(H + '\nAnswer questions 20, 22 and 24.'));
+  eq(r1.items[0].d, 'four', 'R1 Q19.D');
+  eq(r1.items[1].sectionInstruction, 'Answer questions 20, 22 and 24.', 'R1 Q20 sectionInstruction');
+});
+
+test('PC05 and PC07 parser additions: constantText, [diagram], leading stimuli, gap recovery, [missing text], and wrap safety', () => {
+  const interText = fs.readFileSync(path.join(INPUT_DIR, 'new-edge-inter-question-text.txt'), 'utf8');
+  const parsedText = parser.parsePaste(interText);
+  eq(parsedText.items[0].d, 'a delivery note');
+  eq(parsedText.items[0].stimuli[0].needsImage, false);
+  eq(parsedText.items.filter(item => item.needsImage), []);
+  eq(parsedText.items[1].constantText, 'Opening stock 4,000\nClosing stock 12,000\nPurchases 17,000');
+  eq(parsedText.items[2].constantText, 'Opening stock 4,000\nClosing stock 12,000\nPurchases 17,000');
+
+  const interDiag = fs.readFileSync(path.join(INPUT_DIR, 'new-edge-inter-question-diagram.txt'), 'utf8');
+  const parsedDiag = parser.parsePaste(interDiag);
+  eq(parsedDiag.items[0].d, 'credit transfer.');
+  eq(parsedDiag.items[0].stimuli[0].needsImage, true);
+  eq(parsedDiag.items.filter(item => item.needsImage).map(item => item.num), [21, 22, 23]);
+  eq(parsedDiag.items[1].constantText, undefined);
+
+  const leading = parser.parsePaste([
+    'WASSCE 2021 COMMERCE',
+    'Use the following information to answer questions 1 and 2.',
+    'Bamidele Co.Ltd has authorized capital of 40,000,000 shares.',
+    '',
+    '1. First question stem here?',
+    'A. one B. two C. three D. four',
+    '',
+    '2. Second question stem here?',
+    'A. one B. two C. three D. four'
+  ].join('\n'));
+  eq(leading.items[0].constantText, 'Bamidele Co.Ltd has authorized capital of 40,000,000 shares.');
+  eq(leading.items[1].constantText, 'Bamidele Co.Ltd has authorized capital of 40,000,000 shares.');
+  eq(leading.items[0].needsImage, undefined);
+
+  const diagCartoon = parser.parsePaste([
+    '14. Previous question stem here?',
+    'A. one B. two C. three D. legal rights',
+    '',
+    '[diagram]',
+    '',
+    'Use the cartoon in Fig 1 to answer questions 15 and 16.',
+    '',
+    '15. Question fifteen stem here?',
+    'A. one B. two C. three D. four',
+    '',
+    '16. Question sixteen stem here?',
+    'A. one B. two C. three D. four'
+  ].join('\n'));
+  eq(diagCartoon.items[0].d, 'legal rights');
+  eq(diagCartoon.items.filter(item => item.needsImage).map(item => item.num), [15, 16]);
+
+  const unanchoredWrap = parser.parsePaste([
+    '46. Which of the following is the best way?',
+    'A. Acquisition',
+    'B. Standing',
+    'C. Learning',
+    'D. Undergoing mentorship under prominent political',
+    'leaders',
+    '',
+    '47. Next question stem here?',
+    'A. one B. two C. three D. four'
+  ].join('\n'));
+  eq(unanchoredWrap.items[0].d, 'Undergoing mentorship under prominent political leaders');
+  eq(unanchoredWrap.items[0].flags, []);
+
+  const gapDialogue = parser.parsePaste([
+    '33. Political parties intend to implement manifestoes?',
+    'A. campaigns B. manifestoes C. agenda D. propaganda',
+    '',
+    'Use the dialogue below to answer questions 34 and 35.',
+    'Mr. Ganaba: Where are you going today?',
+    'Mr. Katoun: Going to the farm for market day.',
+    '',
+    'From the dialogue above, Mr. Katoun demonstrated',
+    'A. survival mode',
+    'B. intolerance',
+    'C. apathy',
+    'D. hard work',
+    '',
+    'As seen in the dialogue above, Mr. Ganaba acted as',
+    'A. mobilizer',
+    'B. analyst',
+    'C. observer',
+    'D. [Option missing]',
+    '',
+    '36. The constitution specifies rights?',
+    'A. one B. two C. three D. four'
+  ].join('\n'));
+  eq(gapDialogue.items.map(item => item.num), [33, 34, 35, 36]);
+  eq(gapDialogue.items[0].d, 'propaganda');
+  eq(gapDialogue.items[1].constantText, 'Mr. Ganaba: Where are you going today?\nMr. Katoun: Going to the farm for market day.');
+  eq(gapDialogue.items[2].constantText, 'Mr. Ganaba: Where are you going today?\nMr. Katoun: Going to the farm for market day.');
+  assert(gapDialogue.items[2].flags.includes('[missing text] placeholder'));
+});
+
+testAsync('UI Track 2: constant_text fill/clear, ready-image pause/resume, missing-text, RAM cache, and concurrency hardening', async () => {
+  const storage = {
+    ocrQueue: {
+      items: [
+        {
+          num: 19, question: 'Standalone before stimulus', a: 'a', b: 'b', c: 'c', d: 'd', flags: [],
+          stimuli: [{ id: 'stim-1', order: 1, sourceNum: 19, nums: [20, 21], marker: 'Use...', text: 'Passage', needsImage: true, missing: [] }]
+        },
+        { num: 20, question: 'Image covered twenty', a: 'a', b: 'b', c: 'c', d: 'd', flags: [], needsImage: true },
+        { num: 21, question: 'Text stimulus twenty one', a: 'a', b: 'b', c: 'c', d: 'd', flags: [], constantText: 'Shared passage line' },
+        { num: 22, question: 'Uncovered image pause target', a: 'a', b: 'b', c: 'c', d: 'd', flags: [], needsImage: true }
+      ],
+      i: 0,
+      batchId: 't2-batch'
+    },
+    ansKey: { 19: 'A', 20: 'B', 21: 'C', 22: 'D' },
+    ansKeyBatch: 't2-batch',
+    ansKeyConflicts: [],
+    ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' },
+    ocrSavedLog: []
+  };
+  const ui = uiHarness.createUI({
+    storage,
+    inactiveChecked: true,
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 601)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 602)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 603)' }
+    ]
+  });
+  ui.setField('constant_text', 'stale prefill text');
+  ui.reinject();
+  eq(ui.form.elements.constant_text.value, '', 'standalone item clears stale constant_text');
+  eq(ui.submitListenersCount(), 1, 'reinjection does not stack submit listeners');
+  eq(ui.visibilityListenersCount(), 1, 'reinjection does not stack visibility listeners');
+  eq(ui.activeIntervals(), 1, 'reinjection does not stack intervals');
+
+  const png = new ui.sandbox.File(['\x89PNG\r\n\x1a\n'], 'diag.png', { type: 'image/png' });
+  chooseImage(ui, 'ocr_img_file_0', png);
+  ui.doc.getElementById('ocr_img_range_0').value = '20';
+  ui.click('ocr_img_attach_0');
+  await ui.flush();
+  // Simulate mobile URI expiry after RAM caching: cached File stays valid!
+  png.arrayBuffer = async () => { throw new Error('expired content uri'); };
+
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.doc.getElementById('ocr_live_status').textContent.indexOf('PAUSED (IMAGE)') === 0, 'paused at uncovered Q22');
+  eq(ui.posts.length, 3, 'Q19-Q21 saved before Q22 pause with 0 POSTs for Q22');
+  eq(ui.posts[0].body.get('question_image').name, undefined, 'Q19 gets no image');
+  eq(ui.posts[0].body.get('constant_text'), '');
+  eq(ui.posts[1].body.get('question_image').name, 'diag.png', 'Q20 uploads RAM-cached image');
+  eq(ui.posts[2].body.get('constant_text'), 'Shared passage line', 'Q21 sends constant_text');
+  eq(ui.storage.get('ocrQueue').i, 3, 'stopped cleanly at Q22');
+
+  // Corrupt localStorage handling & missing-text block
+  const missingUi = uiHarness.createUI({
+    storage: {
+      ocrQueue: { items: [{ num: 1, question: 'Q [missing text]', a: 'a', b: 'b', c: 'c', d: 'd', flags: ['[missing text] placeholder'] }], i: 0, batchId: 'm1' },
+      ansKey: { 1: 'A' }, ansKeyBatch: 'm1', ansKeyConflicts: [], ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' }, ocrSavedLog: []
+    }
+  });
+  eq(missingUi.doc.getElementById('ocr_auto_start').disabled, true, 'missing-text disables Start');
+  await missingUi.click('ocr_auto_start');
+  eq(missingUi.posts.length, 0);
+
+  // Unbatched manual queue must NOT pre-tick stale retained ansKey in fillForm/tick
+  const manualQueueUi = uiHarness.createUI({
+    storage: {
+      ocrQueue: { items: [{ num: 1, question: 'Manual queue item', a: 'a', b: 'b', c: 'c', d: 'd', flags: [] }], i: 0 },
+      ansKey: { 1: 'A' },
+      ansKeyBatch: 'other-batch',
+      ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' },
+      ocrSavedLog: []
+    }
+  });
+  assert(manualQueueUi.doc.radios.every(r => !r.checked), 'unbatched manual queue does not pre-tick retained ansKey');
+  await manualQueueUi.click('ocr_auto_start');
+  eq(manualQueueUi.posts.length, 0, 'unbatched queue blocks Start with 0 POSTs');
+  assert(manualQueueUi.doc.getElementById('ocr_live_blocked').textContent.includes('no batch identity'), 'unbatched queue reports batch-missing');
+
+  // Concurrent manual save during in-flight POST after reinjection cannot double-POST
+  let resolveSlow;
+  let postCount = 0;
+  const slowUi = uiHarness.createUI({
+    storage: uiHarness.sampleStorage('slow-b'),
+    reply: () => {
+      postCount++;
+      if (postCount === 1) return new Promise(resolve => { resolveSlow = resolve; });
+      return { redirected: true, text: 'Question saved successfully (Question ID: 501)' };
+    }
+  });
+  slowUi.storage.set('ocrSubmitted', true);
+  slowUi.form.dispatch('submit');
+  slowUi.reinject();
+  eq(slowUi.storage.get('ocrSubmitted'), null, 'clears stale ocrSubmitted marker defensively');
+  slowUi.form.dispatch('submit');
+  eq(slowUi.posts.length, 1, 'reinjection during in-flight save prevents second POST');
+  resolveSlow({ redirected: true, text: 'Question saved successfully (Question ID: 500)' });
+  await slowUi.flush();
+  eq(slowUi.posts.length, 1, 'still only 1 POST after settlement');
+  eq(slowUi.storage.get('ocrQueue').i, 1, 'advanced once');
 });
 
 (async () => {

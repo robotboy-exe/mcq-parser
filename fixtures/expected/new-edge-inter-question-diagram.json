@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "new-edge-inter-question-diagram",
+  "source": [
+    "sample.txt WASSCE JUNE 2019 COMMERCE excerpt",
+    "User OCR: [diagram] and its text sit between Q20 and Q21; the intro is after the text"
+  ],
+  "provenance": "User-supplied OCR in sample.txt, Q20-Q23 verbatim slice with the matching key lines. The exam header and surrounding questions are omitted. The diagram text is unchanged. Not present in the bank or ANOMALIES.txt.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-inter-question-diagram.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 4,
+    "nums": [20, 21, 22, 23],
+    "questions": [
+      {
+        "num": 20,
+        "question": "An instruction to a bank to make regular payment to a third party on behalf of a customer is",
+        "a": "standing order.",
+        "b": "money order.",
+        "c": "money transfer.",
+        "d": "credit transfer.",
+        "flags": [],
+        "needs_image": false
+      },
+      {
+        "num": 21,
+        "question": "The diagram above shows a",
+        "a": "standing order.",
+        "b": "receipt.",
+        "c": "cheque.",
+        "d": "bill of exchange.",
+        "needs_image": true
+      },
+      {
+        "num": 22,
+        "question": "XYZ Bank of Commerce PLC is the",
+        "a": "payee.",
+        "b": "endorser.",
+        "c": "drawer.",
+        "d": "drawee.",
+        "needs_image": true
+      },
+      {
+        "num": 23,
+        "question": "Oki Williams is the",
+        "a": "payee.",
+        "b": "endorser.",
+        "c": "drawer.",
+        "d": "drawee.",
+        "needs_image": true
+      }
+    ],
+    "needs_image": [21, 22, 23],
+    "stimulus_count": 1,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": 20,
+        "nums": [21, 22, 23],
+        "text_contains": [
+          "XYZ Bank of Commerce PLC",
+          "55 Jones Road, Freetown",
+          "Pay Peter Saidy or Order the sum of Sixty thousand leones.",
+          "Le 60,000.00",
+          "SIGN: Oki Williams",
+          "Use the diagram above to answer questions 21 to 23."
+        ],
+        "missing": []
+      }
+    ],
+    "key": {
+      "20": "A",
+      "21": "C",
+      "22": "D",
+      "23": "C"
+    },
+    "forbidden_flags": [
+      "inter-question text removed (no intro)",
+      "option D missing",
+      "question text missing or very short"
+    ]
+  },
+  "must_not": [
+    "The [diagram] line or cheque text is saved as Q20 option D",
+    "Q21-Q23 are left without an image requirement",
+    "The diagram marker remains in a saved question"
+  ],
+  "notes": [
+    "Q20.D is exactly 'credit transfer.'",
+    "The marker and all diagram text before the intro become one marker-source stimulus covering Q21-Q23.",
+    "The intro follows the diagram text, so the block must be removed from both sides of the intro."
+  ],
+  "discrepancies": []
+}

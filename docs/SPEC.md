@@ -422,12 +422,26 @@ block from the question text.
 - **Table evidence:** a pipe row, a separator row, a `label: number` row, a
   `total/subtotal/balance/net/gross` row with a number, or at least two rows
   with two or more number tokens (or three or more number tokens).
-- **Markers:** standalone `[image]`, `[[image]]`, `[image: 14-15]`,
-  `[[image: 14-15]]`; inline double-bracket markers only. A standalone marker
-  uses an adjacent block first, then the nearest valid block in the same
-  question chunk forward then backward; if none is valid, only the marker is
-  removed. An inline marker removes only its own text. `[missing text]` is not
-  a marker.
+- **Markers:** standalone `[image]`, `[[image]]`, `[diagram]`, `[[diagram]]`,
+  `[image: 14-15]`, `[[image: 14-15]]`; inline double-bracket markers only. A
+  standalone marker uses an adjacent block first, then the nearest valid block
+  in the same question chunk forward then backward; `stimulusIntroRangeText`
+  recognizes `same section` alongside `above`/`below`/`following` (`V11`) and
+  terminates locator phrases before verb predicates (`V10`: `in the table is
+  ...`). If none is valid, only the marker is removed. An inline marker removes
+  only its own text. `[missing text]` is not a marker and cannot fabricate a
+  stimulus block without a marker or non-placeholder body.
+- **Anchored & leading stimulus blocks:** `extractAnchoredInterQuestionBlocks`
+  (runs after a complete selected A–D set only when anchored by a supported
+  marker or ranged intro, never deleting unanchored Option D wraps) and
+  `extractLeadingStimuli` extract multi-question text/diagram blocks cleanly out
+  of stems and options; `inStimulusBlock` in `splitRegions` protects multi-line
+  dialogue inside an anchored intro block from premature colon/speaker splitting;
+  `inferMissingGapNums` assigns numbers for recovered gap items. Non-image
+  blocks populate `constantText` on covered items; visual/marker blocks set
+  `needsImage` without touching `constantText`. `[missing text]` markers on
+  items or extracted stimulus bodies add `MISSING_TEXT_FLAG`
+  (`'[missing text] placeholder'`).
 - **Ranges:** `parseStimulusRange` accepts `14-15`, `14–15`, `14 to 15`,
   `14 and 15`, `14,16`, and `Q14-Q15`; a span over 50 keeps only its endpoints.
 - **Output:** `q.stimuli` is present only when non-empty. Each entry is
@@ -736,13 +750,24 @@ first one and stops. An empty list means safe. It checks:
 10. Subject, category, and year are set and the single confirmation is ticked.
 11. The selected mode did not change since Start.
 12. No file is selected natively in `question_image` or `answer_video`.
-    Diagram/table words alone do not block, but a detected stimulus must have an
-    image plan row with a file and a range (`stimulus-unassigned`), every range
-    must name a question in this paste (`stimulus-range`), and the current
-    `needsImage` question must be covered by a ready plan row (`image-required`)
-    (D-38, D-59, D-60).
-13. No `ocrSaving` marker, no save in progress, Stop is off, and this tab holds
-    `autoLock` (another tab is refused while its lock is under 15 seconds old).
+    In the converged stimulus bookmarklet (`src/bookmarklet.js`), diagram/table
+    words alone do not block. Detected stimulus blocks populate an in-tab image
+    plan with RAM-cached File upload (`cacheFileInMemory`) and optional bulk
+    selection when two or more image blocks exist. A ready attached image permits
+    autosave for questions inside its range (`Ready`); any question whose
+    range/image association is missing or uncovered (`needsImage`) pauses cleanly
+    before POST (`PAUSED (IMAGE)` in auto-save, `PAUSED` in dry run) so the
+    owner can save by hand and press Start again (D-38, D-59, D-60, D-113).
+    An item flagged with `MISSING_TEXT_FLAG` (`missing-text`) or a `constantText`
+    over 60,000 UTF-8 bytes (`constant-long`) disables Start and blocks autosave
+    before any POST.
+13. No `ocrSaving` marker, no save in progress (`owner.inFlight`), Stop is off,
+    and this tab holds `autoLock` (another tab is refused while its lock is
+    under 15 seconds old). Reinjection clears prior listeners, intervals, and
+    banners via `form.__ocrStimulusCleanup()`, removes `ocrSubmitted` defensively,
+    normalizes malformed storage, checks `ansKeyBatch === queue.batchId` in
+    `keyAppliesForQueue()`, and shares `owner.inFlight` so concurrent manual
+    Save or Start cannot double-POST.
 14. The page is visible; a hidden tab finishes the current save and pauses.
 15. The form still matches the loaded question; an edited form stops the run
     with `form no longer matches`.

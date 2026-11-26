@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.5.5
+// Version: 2.5.7
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.5.5";
+const PARSER_VERSION = "2.5.7";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -17,10 +17,13 @@ const STEM_LINE = /^\s*\d{1,3}[.)]\s+\S.{11,}/;
 const KEY_WORD = /\b(ANSWERS?|KEY|SCHEME|SOLUTIONS?)\b/i;
 const INLINE_PAIR = /(\d{1,3})\s*[.\-:)]\s*\(?([A-F])\)?(?![A-Za-z])/gi;
 const LOOSE = { E: /\n[^\S\n]*E[^\S\n]+(?=\S)/, F: /\n[^\S\n]*F[^\S\n]+(?=\S)/ };
-const STIMULUS_MARKER_LINE = /^[^\S\n]*\[\[?\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]?[^\S\n]*$/i;
-const STIMULUS_MARKER_INLINE = /\[\[\s*image(?:\s*:\s*([^\]]*?))?\s*\]\]/gi;
-const STIMULUS_INTRO = /\b(?:use|study|consider|refer\s+to|the\s+following|below|above)\b[^\n]{0,100}\b(?:information|data|table|schedule|list|diagram|figure|chart|passage|graph|extract)\b[^\n]{0,100}\bquestions?\b/i;
-const STIMULUS_INTRO_RANGE = /\bquestions?\s+\d{1,3}\s*(?:and|to|[-–—])\s*\d{1,3}\b/i;
+const STIMULUS_MARKER_LINE = /^[^\S\n]*(?:\[\[\s*(?:image|diagram)(?:\s*:\s*([^\]]*?))?\s*\]\]|\[\s*(?:image|diagram)(?:\s*:\s*([^\]]*?))?\s*\])[^\S\n]*$/i;
+const STIMULUS_MARKER_INLINE = /\[\[\s*(?:image|diagram)(?:\s*:\s*([^\]]*?))?\s*\]\]/gi;
+const MISSING_TEXT_FLAG = '[missing text] placeholder';
+const MISSING_TEXT_RE = /\[[^\]]*missing[^\]]*\]/i;
+const STIMULUS_INTRO = /\b(?:use|study|read|consider|refer\s+to|based\s+on|the\s+following|below|above)\b[^\n]{0,120}\b(?:information|data|table|schedule|list|diagram|figure|fig\.?\s*\d*|chart|passage|graph|extract|dialogue|conversation|quotation|quote|cartoon|comic|story|monologue|map|picture|illustration|images?|text)\b[^\n]{0,120}\bquestions?\b|\b(?:use|study|read|consider|refer\s+to|based\s+on)\b[^\n]{0,120}\b(?:to\s+answer|relates?\s+to)\b[^\n]{0,60}\bquestions?\s+(?:Q\s*)?\d{1,3}\b/i;
+const STIMULUS_INTRO_PREFIX = /^[^\S\n]*(?:carefully\s+)?(?:use|study|read|consider|refer\s+to|the\s+following|below|above)\b[^.!?\n]{0,160}?\bquestions?\b(?:\s+(?:Q\s*)?\d{1,3}(?:\s*(?:and|to|[-–—&])\s*(?:Q\s*)?\d{1,3})*)?[^.!?\n]*?[.:][^\S\n]*/i;
+const STIMULUS_IMAGE_NOUN = /\b(?:image|images|diagram|diagrams|figure|figures|fig\.?|cartoon|cartoons|comic|comics|picture|pictures|illustration|illustrations|drawing|drawings|sketch|sketches|map|maps|chart|charts|graph|graphs|photo|photograph|photographs|table|tables)\b/i;
 
 function parseHeader(text) {
   const header = text.split('\n').slice(0, 3).join(' ').toUpperCase();
@@ -97,7 +100,8 @@ function pickSubjectIndex(header, optionTexts) {
 
 function compactExamAcronyms(text) {
   return text
-    .replace(/(?:[A-Z]\.){2,}[A-Z]?(?![A-Za-z])/g, run => run.replace(/[^A-Z]/g, ''))
+    .replace(/(?:[A-Z]\.[^\S\n]*){2,}[A-Z]\.?(?![A-Za-z])/g, run => run.replace(/[^A-Z]/g, ''))
+    .replace(/\b(?:W\s+A\s+S\s+S\s+C\s+E|W\s+A\s+S\s+C\s+E|W\s+A\s+E\s+C|S\s+S\s+C\s+E|N\s+E\s+C\s+O|J\s+A\s+M\s+B|U\s+T\s+M\s+E|G\s+C\s+E)\b/g, run => run.replace(/\s+/g, ''))
     .replace(/\bPOSTUTME\b/g, 'POST UTME');
 }
 
@@ -122,7 +126,7 @@ function pickCategoryIndex(header, optionTexts) {
 }
 
 const REGION_STEM = /^[^\S\n]*(\d{1,3})\s*\.\s+(\S.*)$/;
-const REGION_OPTION = /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-Fa-f]\s*[.)])[^\S\n]*\S/;
+const REGION_OPTION = /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-Fa-f]\s*[.)]|[A-F]\/[^\S\n]+)[^\S\n]*\S/;
 const REGION_HEADING = /^(?:SECTION|PART|PAPER)\s+[A-Z0-9IVXLC]+\b/i;
 const REGION_INSTRUCTION = /\b(?:lettered\s+A\s+to\s+D|from\s+the\s+words|choose\s+(?:the|a|an|one)|select\s+the|pick\s+the|answer\s+(?:all|the|questions?)|read\s+the|study\s+the|use\s+the|refer\s+to|complete\s+each|fill\s+(?:each|in\s+the)|the\s+following\s+(?:passage|words|sentences?|questions?)|questions?\s+\d{1,3}\s*(?:to|and|[-–—])\s*\d{1,3})\b/i;
 const REGION_PAREN = /(^|[^A-Za-z])\(\s*([A-Fa-f])\s*\)\s*[.)]*[^\S\n]*/g;
@@ -222,12 +226,16 @@ function splitRegions(text) {
   let pending = [];
   let last = 0;
   let sawOption = false;
+  let bareOption = false;
+  let inStimulusBlock = false;
 
   function finish() {
     if (!current) return;
     chunks.push({ num: current.num, text: current.lines.join('\n'), structural: current.structural });
     current = null;
     sawOption = false;
+    bareOption = false;
+    inStimulusBlock = false;
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -237,6 +245,7 @@ function splitRegions(text) {
       const n = +REGION_STEM.exec(line)[1];
       if (last && (n <= last || n > last + 5)) {
         (current ? current.lines : head).push(line);
+        bareOption = false;
         continue;
       }
       finish();
@@ -246,27 +255,35 @@ function splitRegions(text) {
       // A complete inline A-D set owns a following heading/instruction the same
       // way whole-line options do (BLOCK-4 inline layout).
       sawOption = inlineOptionSet(REGION_STEM.exec(line)[2]);
+      bareOption = false;
+      inStimulusBlock = false;
       continue;
     }
     if (kind === 'blank') {
       (current ? current.lines : head).push(line);
+      bareOption = false;
+      if (inStimulusBlock === 'body') inStimulusBlock = false;
       continue;
     }
     if (kind === 'option') {
       if (current) {
         current.lines.push(line);
         sawOption = true;
+        bareOption = false;
+        inStimulusBlock = false;
       } else {
         head.push(line);
       }
       continue;
     }
     if (current && (kind === 'heading' ||
-      (kind === 'instruction' && sawOption && !STIMULUS_INTRO.test(line) && !STIMULUS_INTRO_RANGE.test(line)))) {
+      (kind === 'instruction' && sawOption && !(bareOption && /^["'\u201c\u2018].*["'\u201d\u2019]$/.test(line.trim())) && !stimulusIntroLine(line)))) {
       pending.push({ kind, text: line.trim() });
+      bareOption = false;
+      inStimulusBlock = false;
       continue;
     }
-    if (kind === 'text' && current && sawOption) {
+    if (kind === 'text' && current && sawOption && !bareOption && !inStimulusBlock) {
       let following = 0;
       for (let j = i + 1; j < lines.length; j++) {
         if (kinds[j] === 'option') following++;
@@ -278,6 +295,12 @@ function splitRegions(text) {
         continue;
       }
     }
+    if (current && sawOption && stimulusIntroLine(line)) {
+      inStimulusBlock = 'intro';
+    } else if (inStimulusBlock && line.trim()) {
+      inStimulusBlock = 'body';
+    }
+    bareOption = Boolean(current && isBareOptionLabel(line));
     (current ? current.lines : head).push(line);
   }
   finish();
@@ -582,7 +605,12 @@ function stimulusQuestionLine(line) {
 }
 
 function stimulusOptionLine(line) {
-  return /^[^\S\n]*[A-F][^\S\n]*[.)][^\S\n]*/.test(line) || /^[^\S\n]*[A-F][^\S\n]+(?=\d)/.test(line);
+  return /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-F][^\S\n]*[.)]|[a-f][^\S\n]*(?:\)|\.(?=[^\S\n]|$))|[A-Fa-f]\/[^\S\n]+)[^\S\n]*\S?/.test(line)
+    || /^[^\S\n]*[A-F][^\S\n]+(?=\d)/.test(line);
+}
+
+function isBareOptionLabel(line) {
+  return /^[^\S\n]*(?:\(\s*[A-Fa-f]\s*\)|[A-Fa-f][^\S\n]*(?:\)|\.(?=[^\S\n]|$))|[A-Fa-f]\/)[^\S\n]*$/.test(line);
 }
 
 function stimulusDividerLine(line) {
@@ -596,18 +624,69 @@ function stimulusKeyHeading(line) {
 function stimulusStructuralLine(line) {
   return stimulusQuestionLine(line)
     || stimulusOptionLine(line)
+    || inlineOptionSet(line)
     || stimulusDividerLine(line)
     || stimulusKeyHeading(line)
     || KEY_LINE.test(line)
     || PLACEHOLDER.test(line);
 }
 
+function stimulusIntroRangeText(line) {
+  const s = String(line == null ? '' : line).trim();
+  const leadRe = /\bquestions?\s+/gi;
+  let lead;
+  while ((lead = leadRe.exec(s))) {
+    const pos = lead.index + lead[0].length;
+    const first = s.slice(pos).match(/^(?:Q\s*)?\d{1,3}(?!\d)/i);
+    if (!first) continue;
+    const afterFirst = s.slice(pos);
+    if (/^(?:Q\s*)?\d+(?:,\d{3}\b|\.\d|\/\d|\s*[-–—]\s*\d+\s*[-–—]\s*\d+)/i.test(afterFirst)) continue;
+    let end = pos + first[0].length;
+    let count = 1;
+    let safeEnd = 0;
+    let safeCount = 0;
+    let inCommaTail = false;
+    while (end < s.length) {
+      const rest = s.slice(end);
+      const next = rest.match(/^(\s*(?:,\s*(?:and|&)|[-–—]|to|and|&|,)\s*)((?:Q\s*)?\d{1,3}(?!\d))/i);
+      if (!next) break;
+      const conn = next[1];
+      const tok = next[2];
+      const afterConn = rest.slice(conn.length);
+      if (/^(?:Q\s*)?\d+(?:,\d{3}\b|\.\d|\/\d|\s*[-–—]\s*\d+\s*[-–—]\s*\d+)/i.test(afterConn)) break;
+      if (/^\s*,/.test(conn)) {
+        if (count >= 2 && !inCommaTail) {
+          safeEnd = end;
+          safeCount = count;
+        }
+        inCommaTail = true;
+      }
+      end += next[0].length;
+      count++;
+      const afterTok = s.slice(end);
+      // BLOCK-10 & BLOCK-11: a locator phrase after a comma-list member (e.g.
+      // `in the same section.` or `in the table`) qualifies only when followed
+      // by a clause terminator/directional word, not a verb predicate such as
+      // `in the table is the cash deposit`.
+      const validEnd = /^(?:$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively|are|refer|use|based|on|for|from|of|under|with|which|that)\b|\s+in\s+(?:(?:the|this|that|these|those)\s+(?:(?:above|below|following|same)\s+)?(?:section|part|diagram|figure|chart|table|graph|passage|extract|box|list|schedule|questions?|paper|exam|test|exercise)|section|part)(?=$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively)\b|\s+(?:and|&)\s+(?:Q\s*)?\d{1,3}\b|\s*,\s*(?:(?:and|&)\s*)?(?:Q\s*)?\d{1,3}\b))/i.test(afterTok);
+      if (!inCommaTail || /^Q/i.test(tok) || validEnd) {
+        safeEnd = end;
+        safeCount = count;
+        inCommaTail = false;
+      }
+    }
+    if (safeCount >= 2) return s.slice(pos, safeEnd);
+  }
+  return '';
+}
+
 function stimulusIntroLine(line) {
   if (stimulusStructuralLine(line)) return false;
   const t = line.trim();
   if (!t || t.length > 220) return false;
+  if (/\?$/.test(t) || /^["'\u201c\u2018].*["'\u201d\u2019]$/.test(t)) return false;
   return STIMULUS_INTRO.test(t)
-    || (STIMULUS_INTRO_RANGE.test(t) && /\b(?:below|above|following)\b/i.test(t));
+    || (stimulusIntroRangeText(t) !== '' && /\b(?:below|above|following)\b/i.test(t));
 }
 
 function stimulusStrongTableLine(line) {
@@ -641,7 +720,12 @@ function stimulusMarkerLine(line) {
 
 function stimulusTransparentLine(lines, index) {
   const line = lines[index];
-  return !line.trim() || stimulusMarkerLine(line) || stimulusBlockLine(line);
+  if (!line.trim() || stimulusMarkerLine(line)) return true;
+  if (!stimulusBlockLine(line)) return false;
+  let prev = index - 1;
+  while (prev >= 0 && !lines[prev].trim()) prev--;
+  if (prev >= 0 && isBareOptionLabel(lines[prev])) return false;
+  return true;
 }
 
 function stimulusRun(lines, index) {
@@ -668,7 +752,10 @@ function stimulusEvidence(lines, start, end) {
   for (let i = start; i <= end; i++) {
     const line = lines[i];
     if (!line.trim() || stimulusMarkerLine(line) || stimulusStructuralLine(line)) continue;
-    if (stimulusIntroLine(line)) intro++;
+    if (stimulusIntroLine(line)) {
+      intro++;
+      continue;
+    }
     if (stimulusStrongTableLine(line)) {
       strong++;
       table++;
@@ -712,9 +799,10 @@ function nearestStimulusBlock(lines, markerLine) {
 function parseStimulusRange(text) {
   const s = String(text == null ? '' : text);
   const nums = new Set();
-  const rangeRe = /(\d{1,3})\s*(?:[-–—]|to|and|&)\s*(\d{1,3})/gi;
+  const rangeRe = /(?:Q\s*)?(\d+)\s*(?:[-–—]|to|and|&)\s*(?:Q\s*)?(\d+)/gi;
   let m;
   while ((m = rangeRe.exec(s))) {
+    if (m[1].length > 3 || m[2].length > 3) continue;
     let a = +m[1];
     let b = +m[2];
     if (a > b) {
@@ -729,11 +817,97 @@ function parseStimulusRange(text) {
     }
     for (let n = a; n <= b; n++) nums.add(n);
   }
-  for (const d of s.match(/\d{1,3}/g) || []) {
+  for (const d of s.match(/\d+/g) || []) {
+    if (d.length > 3) continue;
     const n = +d;
     if (n > 0) nums.add(n);
   }
   return [...nums].filter(n => Number.isInteger(n) && n > 0).sort((a, b) => a - b);
+}
+
+function stimulusIntroRange(line) {
+  if (!stimulusIntroLine(line)) return [];
+  const text = stimulusIntroRangeText(line);
+  return text ? parseStimulusRange(text) : [];
+}
+
+function stimulusSingleQuestionRef(line) {
+  if (!stimulusIntroLine(line)) return [];
+  const m = String(line == null ? '' : line).trim().match(/\bquestions?\s+(?:Q\s*)?(\d{1,3})(?!\d)/i);
+  if (!m) return [];
+  const n = +m[1];
+  return n > 0 ? [n] : [];
+}
+
+function stimulusBlockIntroRange(lines, start, end) {
+  const nums = new Set();
+  for (let i = start; i <= end; i++) {
+    const ranged = stimulusIntroRange(lines[i]);
+    const list = ranged.length ? ranged : stimulusSingleQuestionRef(lines[i]);
+    for (const n of list) nums.add(n);
+  }
+  return [...nums].sort((a, b) => a - b);
+}
+
+function stimulusMarkerRange(lines, block, markerRange, adjacent) {
+  const explicit = parseStimulusRange(markerRange);
+  if (explicit.length) return explicit;
+  if (!adjacent || !block) return [];
+  return stimulusBlockIntroRange(lines, block.start, block.end);
+}
+
+function rangedBlockConsumesStem(lines, trimmed) {
+  const optIdx = lines.findIndex(line => stimulusOptionLine(line) || inlineOptionSet(line));
+  if (optIdx === -1 || trimmed.start >= optIdx) return false;
+  for (let i = 0; i < optIdx; i++) {
+    if (i >= trimmed.start && i <= trimmed.end) continue;
+    if (lines[i].trim() && !stimulusMarkerLine(lines[i])) return false;
+  }
+  return true;
+}
+
+function stripStimulusIntro(text) {
+  const lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n');
+  const kept = [];
+  for (const rawLine of lines) {
+    let line = rawLine.replace(STIMULUS_MARKER_INLINE, ' ');
+    if (stimulusMarkerLine(line)) continue;
+    if (STIMULUS_INTRO_PREFIX.test(line)) {
+      line = line.replace(STIMULUS_INTRO_PREFIX, '');
+      if (!line.trim()) continue;
+    } else if (stimulusIntroLine(line)) {
+      continue;
+    }
+    kept.push(line);
+  }
+  return kept.join('\n').replace(/^\s*\n+|\n+\s*$/g, '').trim();
+}
+
+function stimulusTableNotation(text) {
+  const lines = String(text == null ? '' : text).split('\n');
+  let strongCount = 0;
+  let numericRowCount = 0;
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) continue;
+    if (/^\|.*\|$/.test(t)) return true;
+    if (/[-+|=]{3,}/.test(t) && /^[-+|= ]{4,}$/.test(t)) return true;
+    if (stimulusStrongTableLine(t)) {
+      strongCount++;
+      if (strongCount >= 2) return true;
+    } else if (t.length <= 120 && stimulusNumberTokens(t) >= 3) {
+      numericRowCount++;
+      if (numericRowCount >= 2) return true;
+    }
+  }
+  return false;
+}
+
+function stimulusNeedsImage(stim) {
+  if (!stim || typeof stim !== 'object') return false;
+  if (stim.source === 'marker') return true;
+  if (STIMULUS_IMAGE_NOUN.test(stim.marker || '')) return true;
+  return stimulusTableNotation(stripStimulusIntro(stim.text));
 }
 
 function extractStimulusMarkers(raw, num) {
@@ -743,12 +917,13 @@ function extractStimulusMarkers(raw, num) {
     const line = lines[i];
     const standalone = line.match(STIMULUS_MARKER_LINE);
     if (standalone) {
-      markers.push({ at: i, line: i, inline: false, range: standalone[1] || '', marker: line.trim() });
+      markers.push({ at: i, line: i, inline: false, range: standalone[1] || standalone[2] || '', marker: line.trim() });
       continue;
     }
     STIMULUS_MARKER_INLINE.lastIndex = 0;
     let m;
     while ((m = STIMULUS_MARKER_INLINE.exec(line))) {
+      if ((m.index > 0 && line[m.index - 1] === '[') || line[m.index + m[0].length] === ']') continue;
       markers.push({
         at: i + m.index / Math.max(1, line.length),
         line: i,
@@ -764,9 +939,12 @@ function extractStimulusMarkers(raw, num) {
   for (const mk of markers) {
     if (mk.inline) continue;
     const run = stimulusRun(lines, mk.line);
-    mk.block = validStimulusBlock(lines, run.start, run.end)
-      ? trimStimulusRun(lines, run)
-      : nearestStimulusBlock(lines, mk.line);
+    const trimmed = trimStimulusRun(lines, run);
+    const hasTableBlock = validStimulusBlock(lines, run.start, run.end);
+    const hasRangedIntro = !rangedBlockConsumesStem(lines, trimmed)
+      && stimulusBlockIntroRange(lines, trimmed.start, trimmed.end).length > 0;
+    mk.adjacent = hasTableBlock || hasRangedIntro;
+    mk.block = mk.adjacent ? trimmed : nearestStimulusBlock(lines, mk.line);
   }
   const removed = new Set();
   for (const mk of markers) {
@@ -786,7 +964,7 @@ function extractStimulusMarkers(raw, num) {
     return {
       at: mk.at,
       sourceNum: num,
-      nums: parseStimulusRange(mk.range),
+      nums: stimulusMarkerRange(lines, mk.block, mk.range, mk.adjacent),
       marker: mk.marker,
       text,
       source: 'marker'
@@ -814,23 +992,229 @@ function extractStimulusIntros(raw, num) {
     if (removed.has(i) || !stimulusIntroLine(lines[i])) continue;
     const run = stimulusRun(lines, i);
     const evidence = stimulusEvidence(lines, run.start, run.end);
-    if (!validStimulusBlock(lines, run.start, run.end) || !evidence.table) continue;
-    const content = trimStimulusRun(lines, run);
-    for (let j = content.start; j <= content.end; j++) removed.add(j);
-    stimuli.push({
-      at: i,
-      sourceNum: num,
-      nums: parseStimulusRange(lines[i]),
-      marker: lines[i].trim(),
-      text: lines.slice(content.start, content.end + 1).join('\n').trim(),
-      source: 'intro'
-    });
+    const introNums = stimulusIntroRange(lines[i]);
+    const singleNums = introNums.length ? introNums : stimulusSingleQuestionRef(lines[i]);
+    if (validStimulusBlock(lines, run.start, run.end) && evidence.table) {
+      const content = trimStimulusRun(lines, run);
+      for (let j = content.start; j <= content.end; j++) removed.add(j);
+      stimuli.push({
+        at: i,
+        sourceNum: num,
+        nums: singleNums,
+        marker: lines[i].trim(),
+        text: lines.slice(content.start, content.end + 1).join('\n').trim(),
+        source: 'intro'
+      });
+    }
   }
   if (!removed.size) return { text: raw, stimuli: [] };
   return {
     text: lines.filter((line, i) => !removed.has(i)).join('\n'),
     stimuli
   };
+}
+
+function lineIndexAt(text, index) {
+  return text.slice(0, index).split('\n').length - 1;
+}
+
+function tailDuplicateOptionSet(lines, start, end) {
+  const text = lines.slice(start, end).join('\n');
+  const first = text.split('\n').find(line => line.trim());
+  if (!first || !stimulusOptionLine(first)) return false;
+  const scan = text.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
+  const matches = optionLabelMatches(text, scan);
+  return REQUIRED_OPTION_LETTERS.split('').every(letter => matches.some(match => match.letter === letter));
+}
+
+function hasMalformedMarkerLine(lines, start, end) {
+  for (let i = start; i < end; i++) {
+    const line = lines[i];
+    if (stimulusMarkerLine(line)) continue;
+    STIMULUS_MARKER_INLINE.lastIndex = 0;
+    const inlineMatch = STIMULUS_MARKER_INLINE.exec(line);
+    if (inlineMatch && line[inlineMatch.index - 1] !== '[' && line[inlineMatch.index + inlineMatch[0].length] !== ']') {
+      continue;
+    }
+    if (/\[\s*(?:image|diagram)\b|\b(?:image|diagram)(?:\s*:[^\]]*)?\s*\]/i.test(line)) return true;
+  }
+  return false;
+}
+
+function lineHasMarkerToken(line) {
+  if (stimulusMarkerLine(line)) return true;
+  STIMULUS_MARKER_INLINE.lastIndex = 0;
+  const m = STIMULUS_MARKER_INLINE.exec(line);
+  return Boolean(m && line[m.index - 1] !== '[' && line[m.index + m[0].length] !== ']');
+}
+
+function extractMarkerRangeFromLines(lines, start, end) {
+  for (let i = start; i <= end; i++) {
+    const standalone = lines[i].match(STIMULUS_MARKER_LINE);
+    if (standalone) return parseStimulusRange(standalone[1] || standalone[2] || '');
+    STIMULUS_MARKER_INLINE.lastIndex = 0;
+    const m = STIMULUS_MARKER_INLINE.exec(lines[i]);
+    if (m && lines[i][m.index - 1] !== '[' && lines[i][m.index + m[0].length] !== ']') {
+      const r = parseStimulusRange(m[1] || '');
+      if (r.length) return r;
+    }
+  }
+  return [];
+}
+
+function tableFollowedByPlainProse(lines, introIdx, markerIdx) {
+  let sawTable = false;
+  for (let i = introIdx + 1; i < markerIdx; i++) {
+    const t = lines[i].trim();
+    if (!t) continue;
+    if (stimulusTableLine(t)) {
+      sawTable = true;
+      continue;
+    }
+    if (sawTable && !/^fig(?:ure)?\.?\s*\d+$/i.test(t) && !stimulusIntroLine(t)) return true;
+  }
+  return false;
+}
+
+function extractAnchoredInterQuestionBlocks(raw, num) {
+  const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
+  const matches = optionLabelMatches(raw, scanRaw);
+  const best = bestOptionCandidate(matches);
+  if (!best || !hasCompleteOptionSet(best.picked)) return { text: raw, stimuli: [] };
+  let last = best.picked.reduce((a, b) => b.start > a.start ? b : a);
+  const pickedLetters = new Set(best.picked.map(option => option.letter));
+  for (const letter of 'EF') {
+    if (pickedLetters.has(letter)) continue;
+    const loose = LOOSE[letter].exec(raw.slice(last.end));
+    if (!loose) continue;
+    const start = last.end + loose.index;
+    last = { letter, start, end: start + loose[0].length };
+  }
+  const lines = raw.split('\n');
+  const tailStart = lineIndexAt(raw, last.end) + 1;
+  if (tailStart >= lines.length) return { text: raw, stimuli: [] };
+  let tailEnd = tailStart;
+  while (tailEnd < lines.length) {
+    const line = lines[tailEnd];
+    if (stimulusQuestionLine(line) || stimulusDividerLine(line) || stimulusKeyHeading(line)
+      || KEY_LINE.test(line) || PLACEHOLDER.test(line)) break;
+    tailEnd++;
+  }
+  if (tailEnd <= tailStart || tailDuplicateOptionSet(lines, tailStart, tailEnd)) {
+    return { text: raw, stimuli: [] };
+  }
+  if (hasMalformedMarkerLine(lines, tailStart, tailEnd)) return { text: raw, stimuli: [] };
+  let firstNonBlank = -1;
+  let lastNonBlank = -1;
+  const markers = [];
+  const intros = [];
+  for (let i = tailStart; i < tailEnd; i++) {
+    if (lines[i].trim()) {
+      if (firstNonBlank < 0) firstNonBlank = i;
+      lastNonBlank = i;
+    }
+    if (lineHasMarkerToken(lines[i])) markers.push(i);
+    if (stimulusIntroLine(lines[i])) intros.push(i);
+  }
+  if (firstNonBlank < 0) return { text: raw, stimuli: [] };
+  let extractStart = -1;
+  let extractEnd = -1;
+  let primaryIntro = -1;
+  if (markers.length && intros.length) {
+    const firstMarker = markers[0];
+    const aboveIntro = intros.slice().reverse().find(idx => idx > firstMarker && /\babove\b/i.test(lines[idx]));
+    if (aboveIntro !== undefined) {
+      extractStart = firstMarker;
+      extractEnd = aboveIntro;
+      primaryIntro = aboveIntro;
+    }
+  }
+  if (extractStart < 0 && markers.length && markers[0] === firstNonBlank) {
+    const onlyHeaderCaptionOrTable = lines.slice(markers[0] + 1, lastNonBlank + 1).every(line => {
+      const t = line.trim();
+      return !t || lineHasMarkerToken(line) || stimulusIntroLine(t) || stimulusTableLine(t) || /^fig(?:ure)?\.?\s*\d+$/i.test(t);
+    });
+    if (onlyHeaderCaptionOrTable) {
+      extractStart = markers[0];
+      extractEnd = lastNonBlank;
+      primaryIntro = intros.find(idx => idx > extractStart) ?? -1;
+    }
+  }
+  if (extractStart < 0 && intros.length) {
+    const anchorIntro = intros.find(idx =>
+      stimulusIntroRange(lines[idx]).length > 0
+      || stimulusSingleQuestionRef(lines[idx]).length > 0
+      || markers.some(m => m >= idx)
+    );
+    if (anchorIntro !== undefined && !markers.some(m => m < anchorIntro)) {
+      const nextMarker = markers.find(m => m > anchorIntro);
+      const hasBodyAfter = lines.slice(anchorIntro + 1, lastNonBlank + 1).some(line => {
+        const t = line.trim();
+        return Boolean(t && !MISSING_TEXT_RE.test(t));
+      });
+      const bareVisual = STIMULUS_IMAGE_NOUN.test(lines[anchorIntro]) && anchorIntro === lastNonBlank;
+      if ((hasBodyAfter || bareVisual) && (nextMarker === undefined || !tableFollowedByPlainProse(lines, anchorIntro, nextMarker))) {
+        extractStart = anchorIntro;
+        extractEnd = lastNonBlank;
+        primaryIntro = anchorIntro;
+      }
+    }
+  }
+  if (extractStart < 0) return { text: raw, stimuli: [] };
+  const preStartText = lines.slice(0, extractStart).join('\n');
+  if (!raw.slice(last.end, preStartText.length).trim()) return { text: raw, stimuli: [] };
+  const slice = lines.slice(extractStart, extractEnd + 1);
+  const blockMarkers = markers.filter(m => m >= extractStart && m <= extractEnd);
+  const anchorLine = blockMarkers.length ? blockMarkers[0] : (primaryIntro >= 0 ? primaryIntro : extractStart);
+  const explicitNums = extractMarkerRangeFromLines(lines, extractStart, extractEnd);
+  const introRangeNums = stimulusBlockIntroRange(lines, extractStart, extractEnd);
+  const text = slice.filter(line => !stimulusMarkerLine(line))
+    .map(line => line.replace(STIMULUS_MARKER_INLINE, ' ').trimRight())
+    .join('\n')
+    .trim();
+  const stimuli = [{
+    at: anchorLine,
+    sourceNum: num,
+    nums: explicitNums.length ? explicitNums : introRangeNums,
+    marker: lines[anchorLine].trim(),
+    text,
+    source: blockMarkers.length ? 'marker' : 'intro'
+  }];
+  const cleaned = lines.map((line, i) => (i >= extractStart && i <= extractEnd ? '' : line));
+  return { text: cleaned.join('\n'), stimuli };
+}
+
+function extractLeadingStimuli(text) {
+  const m = /(?:^|\n)\s*(\d{1,3})\.\s+/.exec(text);
+  if (!m) return [];
+  const head = text.slice(0, m.index).trim();
+  if (!head) return [];
+  const headOpts = head.match(OPTION);
+  if (headOpts && headOpts.length >= 2) return [];
+  const lines = head.replace(/\r\n?/g, '\n').split('\n');
+  let start = 0;
+  while (start < lines.length && (!lines[start].trim() || sectionTitleLine(lines[start]))) start++;
+  if (start >= lines.length) return [];
+  const body = lines.slice(start).join('\n');
+  const extracted = extractStimuli(body, null);
+  if (extracted.stimuli.length) return extracted.stimuli;
+  const bodyLines = body.split('\n');
+  const markerIndex = bodyLines.findIndex(line => stimulusMarkerLine(line));
+  const introIndex = bodyLines.findIndex(line =>
+    stimulusIntroLine(line) && (stimulusIntroRange(line).length > 0 || stimulusSingleQuestionRef(line).length > 0)
+  );
+  if (markerIndex < 0 && introIndex < 0) return [];
+  if (hasMalformedMarkerLine(bodyLines, 0, bodyLines.length)) return [];
+  const anchor = markerIndex >= 0 ? markerIndex : introIndex;
+  const explicit = markerIndex >= 0 ? extractMarkerRangeFromLines(bodyLines, markerIndex, markerIndex) : [];
+  const introRange = introIndex >= 0 ? stimulusBlockIntroRange(bodyLines, 0, bodyLines.length - 1) : [];
+  return [{
+    sourceNum: null,
+    nums: explicit.length ? explicit : introRange,
+    marker: bodyLines[anchor].trim(),
+    text: bodyLines.filter(line => !stimulusMarkerLine(line)).join('\n').trim(),
+    source: markerIndex >= 0 ? 'marker' : 'intro'
+  }];
 }
 
 function extractStimuli(raw, num) {
@@ -849,36 +1233,57 @@ function extractStimuli(raw, num) {
   };
 }
 
-function applyStimulusFlags(items) {
+function applyStimulusFlags(items, leadingStimuli) {
   const list = Array.isArray(items) ? items : [];
   const byNum = new Map();
   for (const item of list) {
     if (!item || typeof item !== 'object') continue;
     if (Object.prototype.hasOwnProperty.call(item, 'needsImage')) delete item.needsImage;
+    if (Object.prototype.hasOwnProperty.call(item, 'constantText')) delete item.constantText;
     if (Number.isInteger(item.num)) byNum.set(item.num, item);
   }
   let order = 0;
-  for (const item of list) {
-    if (!item || !Array.isArray(item.stimuli)) continue;
-    for (const stim of item.stimuli) {
-      if (!stim || typeof stim !== 'object') continue;
-      order++;
-      stim.id = 'stim-' + order;
-      stim.order = order;
-      if (!Number.isInteger(stim.sourceNum)) stim.sourceNum = item.num;
-      const nums = [];
-      for (const n of Array.isArray(stim.nums) ? stim.nums : []) {
-        if (!Number.isInteger(n) || n <= 0 || nums.includes(n)) continue;
-        nums.push(n);
+  const applyOne = (stim, defaultSourceNum) => {
+    if (!stim || typeof stim !== 'object') return;
+    order++;
+    stim.id = 'stim-' + order;
+    stim.order = order;
+    if (!Number.isInteger(stim.sourceNum) && defaultSourceNum !== undefined) stim.sourceNum = defaultSourceNum;
+    const nums = [];
+    for (const n of Array.isArray(stim.nums) ? stim.nums : []) {
+      if (!Number.isInteger(n) || n <= 0 || nums.includes(n)) continue;
+      nums.push(n);
+    }
+    nums.sort((a, b) => a - b);
+    stim.nums = nums;
+    stim.missing = [];
+    const img = stimulusNeedsImage(stim);
+    stim.needsImage = img;
+    const ct = img ? '' : stripStimulusIntro(stim.text);
+    for (const n of nums) {
+      const target = byNum.get(n);
+      if (target) {
+        if (ct) target.constantText = target.constantText ? target.constantText + '\n\n' + ct : ct;
+        if (img) target.needsImage = true;
+      } else {
+        stim.missing.push(n);
       }
-      nums.sort((a, b) => a - b);
-      stim.nums = nums;
-      stim.missing = [];
-      for (const n of nums) {
-        const target = byNum.get(n);
-        if (target) target.needsImage = true;
-        else stim.missing.push(n);
-      }
+    }
+  };
+  const leading = Array.isArray(leadingStimuli) ? leadingStimuli.filter(s => s && typeof s === 'object') : [];
+  if (leading.length && list[0] && typeof list[0] === 'object') {
+    list[0].stimuli = leading.concat(Array.isArray(list[0].stimuli) ? list[0].stimuli : []);
+    for (const stim of list[0].stimuli) applyOne(stim, list[0].num);
+    for (let i = 1; i < list.length; i++) {
+      const item = list[i];
+      if (!item || !Array.isArray(item.stimuli)) continue;
+      for (const stim of item.stimuli) applyOne(stim, item.num);
+    }
+  } else {
+    for (const stim of leading) applyOne(stim, null);
+    for (const item of list) {
+      if (!item || !Array.isArray(item.stimuli)) continue;
+      for (const stim of item.stimuli) applyOne(stim, item.num);
     }
   }
   return list;
@@ -901,7 +1306,15 @@ function optionInlineMatches(raw) {
 function parseQuestion(chunk) {
   const { num, text } = chunk || {};
   const normalized = String(text == null ? '' : text).replace(/\r\n?/g, '\n').replace(/[^\S\n]+/g, ' ').replace(/\n{3,}/g, '\n\n');
-  const extracted = extractStimuli(normalized, num);
+  const inter = extractAnchoredInterQuestionBlocks(normalized, num);
+  const extracted = extractStimuli(inter.text, num);
+  const stimuli = extracted.stimuli.concat(inter.stimuli.map(stim => ({
+    sourceNum: stim.sourceNum,
+    nums: stim.nums,
+    marker: stim.marker,
+    text: stim.text,
+    source: stim.source
+  })));
   const raw = extracted.text.replace(/\n{3,}/g, '\n\n');
   // Options stay one line; stems keep blank-line paragraphs and fold single wraps.
   const clean = s => s.replace(/\s+/g, ' ').trim();
@@ -1046,8 +1459,45 @@ function parseQuestion(chunk) {
   }
   if (q.e || q.f) q.flags.push('E/F options present');
   if (chunk && chunk.sectionInstruction) q.sectionInstruction = chunk.sectionInstruction;
-  if (extracted.stimuli.length) q.stimuli = extracted.stimuli;
+  if (MISSING_TEXT_RE.test(normalized)
+    || MISSING_TEXT_RE.test(raw)
+    || stimuli.some(stim => MISSING_TEXT_RE.test(stim.text || ''))) {
+    q.flags.push(MISSING_TEXT_FLAG);
+  }
+  if (stimuli.length) q.stimuli = stimuli;
   return q;
+}
+
+function inferMissingGapNums(items) {
+  const list = Array.isArray(items) ? items : [];
+  let i = 0;
+  while (i < list.length) {
+    const cur = list[i];
+    if (!cur || !Number.isInteger(cur.num)) { i++; continue; }
+    let j = i + 1;
+    while (j < list.length && list[j] && list[j].num === null) j++;
+    const count = j - i - 1;
+    const next = list[j];
+    if (count >= 1 && count <= 5 && next && Number.isInteger(next.num) && next.num - cur.num - 1 === count) {
+      const complete = list.slice(i + 1, j).every(item =>
+        ['a', 'b', 'c', 'd'].every(letter => String(item[letter] || '').trim().length > 0)
+      );
+      if (complete) {
+        for (let k = 0; k < count; k++) {
+          const item = list[i + 1 + k];
+          item.num = cur.num + k + 1;
+          if (Array.isArray(item.flags)) {
+            item.flags = item.flags.filter(flag => flag !== 'question number missing');
+          }
+          if (Array.isArray(item.stimuli)) {
+            item.stimuli.forEach(stim => { if (stim && stim.sourceNum == null) stim.sourceNum = item.num; });
+          }
+        }
+      }
+    }
+    i = j;
+  }
+  return list;
 }
 
 function flagNumberingGaps(items) {
@@ -1715,8 +2165,9 @@ function parseBody(text) {
   const header = parseHeader(fixed);
   const regioned = splitQuestionRegions(fixed);
   let items = regioned.chunks.map(item => parseQuestion(item));
+  items = inferMissingGapNums(items);
   items = flagNumberingGaps(items);
-  items = applyStimulusFlags(items);
+  items = applyStimulusFlags(items, extractLeadingStimuli(fixed));
   return { salvage, sections, header, items, regions: regioned.regions };
 }
 
@@ -1804,6 +2255,8 @@ function parsePaste(raw) {
     sectionEvidence: {
       how: sections.how,
       boundary: sections.boundary,
+      salvaged: salvage.salvaged,
+      inserts: salvage.inserts,
       contexts: detected.contexts.map(context => context.evidence)
     },
     warnings
@@ -1820,6 +2273,7 @@ const OCRParserCore = {
   KEY_WORD,
   INLINE_PAIR,
   LOOSE,
+  MISSING_TEXT_FLAG,
   parseHeader,
   pickSubjectIndex,
   pickCategoryIndex,
@@ -1830,6 +2284,9 @@ const OCRParserCore = {
   splitQuestionRegions,
   parseQuestion,
   parseStimulusRange,
+  stripStimulusIntro,
+  stimulusNeedsImage,
+  extractLeadingStimuli,
   extractStimuli,
   applyStimulusFlags,
   flagNumberingGaps,

@@ -1,22 +1,35 @@
 function runOCRBookmarklet() {
   document.querySelectorAll('script[src*="ocr_helper.js"]').forEach(s => s.remove());
+  const errBanner = document.getElementById('ocr_error');
+  if (errBanner) errBanner.remove();
   const op1 = document.getElementById('ocr_input')?.closest('.admin-field');
   if (op1) op1.remove();
   const op2 = document.getElementById('ans_panel');
   if (op2) op2.remove();
+  ['ans_res', 'ans_diag', 'ocr_save_flag'].forEach(id => {
+    const stale = document.getElementById(id);
+    if (stale) stale.remove();
+  });
   const form = document.querySelector('input[name=action][value=save_question]')?.form;
   const f = document.querySelector('input[name=correct_option]');
   if (!form || !f || location.search.includes('edit=')) {
     alert('Please open the "Add a New Question" page first.');
     return;
   }
+  if (typeof form.__ocrStimulusCleanup === 'function') form.__ocrStimulusCleanup();
+  const owner = form.__ocrStimulusOwner || (form.__ocrStimulusOwner = { gen: 0, inFlight: null });
   const hadServerError = Boolean(document.querySelector('.admin-error'));
   const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
-  const SALVAGE_FLAG = 'OCR boundaries repaired; verify question and option split';
   const $ = id => document.getElementById(id);
   const L = localStorage;
+  const isPlainObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
   const store = {
-    get: k => JSON.parse(L.getItem(k) || 'null'),
+    get: k => {
+      let raw = null;
+      try { raw = L.getItem(k); } catch (e) { return undefined; }
+      if (raw === null) return null;
+      try { return JSON.parse(raw); } catch (e) { return undefined; }
+    },
     set: (k, v) => L.setItem(k, JSON.stringify(v)),
     del: k => L.removeItem(k)
   };
@@ -59,10 +72,18 @@ function runOCRBookmarklet() {
     if (category !== undefined) $('exam_category_id').options[category].selected = true;
     return Boolean(year) || subject !== undefined || category !== undefined;
   }
+  function keyAppliesForQueue() {
+    const kb = store.get('ansKeyBatch');
+    return Boolean(queue.batchId && typeof kb === 'string' && kb && kb === queue.batchId);
+  }
   function fillForm(q, auto) {
-    Object.entries(store.get('ocrMeta') || {}).forEach(([id, v]) => ($(id).value = v));
+    const savedMeta = store.get('ocrMeta');
+    if (isPlainObject(savedMeta)) {
+      Object.entries(savedMeta).forEach(([id, v]) => { if ($(id)) $(id).value = v; });
+    }
+    if ($('constant_text')) $('constant_text').value = q.constantText || '';
     $('question_text').value = q.question;
-    const keyAnswer = key[q.num];
+    const keyAnswer = keyAppliesForQueue() ? key[q.num] : null;
     let finalA = q.a || '';
     let finalB = q.b || '';
     let finalC = q.c || '';
@@ -93,19 +114,22 @@ function runOCRBookmarklet() {
     }
     if (!auto && form.elements.is_active) form.elements.is_active.checked = true;
   }
-  let queue = store.get('ocrQueue') || { items: [], i: 0 };
+  const storedQueue = store.get('ocrQueue');
+  let queue = isPlainObject(storedQueue) && Array.isArray(storedQueue.items)
+    ? {
+      items: storedQueue.items,
+      i: Number.isInteger(storedQueue.i) && storedQueue.i >= 0 ? storedQueue.i : 0,
+      batchId: storedQueue.batchId
+    }
+    : { items: [], i: 0 };
   let imagePlan = [];
   const imagePending = new Map();
   const saveQ = () => store.set('ocrQueue', queue);
   let last = queue.i;
-  let savedLog = [];
-  try { savedLog = store.get('ocrSavedLog') || []; } catch (e) {}
+  let savedLog = store.get('ocrSavedLog');
   if (!Array.isArray(savedLog)) savedLog = [];
-  let batchHistory = [];
-  try {
-    const storedHistory = store.get('ocrBatchHistory');
-    if (Array.isArray(storedHistory)) batchHistory = storedHistory;
-  } catch (e) {}
+  let batchHistory = store.get('ocrBatchHistory');
+  if (!Array.isArray(batchHistory)) batchHistory = [];
   let saveInProgress = false;
   let dryRunning = false;
   let dryStop = false;
@@ -211,8 +235,8 @@ function runOCRBookmarklet() {
       hasImage: Boolean(e.question_image && (e.question_image.value || (e.question_image.files && e.question_image.files.length))),
       hasVideo: Boolean(e.answer_video && (e.answer_video.value || (e.answer_video.files && e.answer_video.files.length))),
       hasExplanation: Boolean(e.answer_explanation && e.answer_explanation.value && e.answer_explanation.value.trim()),
-      savingMarker: (() => { try { return store.get('ocrSaving'); } catch (err) { return null; } })(),
-      saveInProgress: saveInProgress,
+      savingMarker: store.get('ocrSaving') || null,
+      saveInProgress: saveInProgress || Boolean(owner.inFlight && !owner.inFlight.settled),
       stopRequested: liveStop,
       lock: readLock(),
       tabId: autoTabId,
@@ -223,6 +247,7 @@ function runOCRBookmarklet() {
       recentRows: recentRows(),
       form: {
         question: e.question_text ? e.question_text.value : '',
+        constantText: e.constant_text ? e.constant_text.value : undefined,
         options: ['option_a', 'option_b', 'option_c', 'option_d'].map(id => e[id] ? e[id].value : '')
       }
     };
@@ -232,7 +257,7 @@ function runOCRBookmarklet() {
     return list.map(n => Number(n)).filter(n => Number.isInteger(n) && n > 0);
   }
   function planReady(row) {
-    return Boolean(row && row.file && typeof row.name === 'string' && row.name.trim() && planNums(row).length);
+    return Boolean(row && row.file && !row.cacheError && typeof row.name === 'string' && row.name.trim() && planNums(row).length);
   }
   function planRowFor(num) {
     return imagePlan.find(row => planReady(row) && planNums(row).includes(Number(num))) || null;
@@ -247,8 +272,41 @@ function runOCRBookmarklet() {
     });
     return list.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
   }
+  function unRangedImageBoundary(q) {
+    if (!q) return null;
+    for (const stim of detectedStimuli()) {
+      if (stim.needsImage === false) continue;
+      const plan = stimulusPlan(stim);
+      const effectiveNums = plan && planNums(plan).length ? planNums(plan) : (Array.isArray(stim.nums) ? stim.nums : []);
+      if (effectiveNums.length) continue;
+      let boundary = null;
+      if (stim.sourceNum == null) {
+        boundary = queue.items[0] || null;
+      } else {
+        const srcIdx = queue.items.findIndex(item => item && item.num === stim.sourceNum);
+        if (srcIdx > -1) boundary = queue.items[srcIdx + 1] || null;
+      }
+      if (boundary && boundary === q) return stim;
+    }
+    return null;
+  }
+  function questionImagePauseReason(q) {
+    if (!q) return null;
+    if (planRowFor(q.num)) return null;
+    if (q.needsImage) return 'image required';
+    if (imagePlan.some(row => row && !planReady(row) && planNums(row).includes(Number(q.num)))) return 'image required';
+    if (unRangedImageBoundary(q)) return 'image block has no question range';
+    return null;
+  }
   function needsImageQuestions() {
     return queue.items.filter(item => item && item.needsImage && Number.isInteger(item.num));
+  }
+  function missingTextItem() {
+    const pending = queue.items.slice(Number.isInteger(queue.i) && queue.i > 0 ? queue.i : 0);
+    return pending.find(item => item && Array.isArray(item.flags) && item.flags.includes(MISSING_TEXT_FLAG)) || null;
+  }
+  function missingTextDetail(item) {
+    return 'Question ' + (item && item.num != null ? item.num : '?') + ' contains a [missing] marker. Edit it and save by hand, or re-paste and Load again.';
   }
   function queueNumberSet() {
     return new Set(queue.items.map(item => item.num).filter(Number.isInteger));
@@ -265,19 +323,47 @@ function runOCRBookmarklet() {
     return parseStimulusRange(text);
   }
   function planStatus(row) {
+    if (row && row.cacheError) return 'File read failed (' + row.cacheError + '); re-select image';
     if (!planReady(row)) return 'No image';
     const known = queueNumberSet();
     const bad = planNums(row).filter(n => !known.has(n));
     if (bad.length) return 'Range not in this paste: ' + bad.join(', ');
     return 'Ready';
   }
+  function cacheFileInMemory(file, onDone) {
+    if (!file || file._cached || typeof file.arrayBuffer !== 'function' || typeof File === 'undefined') return;
+    file.arrayBuffer().then(buf => {
+      const mem = new File([buf], file.name || 'image.png', {
+        type: file.type || 'application/octet-stream',
+        lastModified: file.lastModified || Date.now()
+      });
+      mem._cached = true;
+      if (typeof onDone === 'function') onDone(mem, null);
+    }).catch(err => {
+      if (typeof onDone === 'function') onDone(null, err);
+    });
+  }
   function setImagePlanRow(stimulusId, nums, file) {
     const entry = {
       stimulusId: stimulusId == null ? null : stimulusId,
       nums: (Array.isArray(nums) ? nums : []).slice(),
       file: file,
-      name: file && file.name ? String(file.name) : ''
+      name: file && file.name ? String(file.name) : '',
+      cached: Boolean(file && file._cached),
+      cacheError: ''
     };
+    cacheFileInMemory(file, (mem, err) => {
+      if (entry.file !== file) return;
+      if (mem) {
+        entry.file = mem;
+        entry.cached = true;
+        entry.cacheError = '';
+      } else if (err) {
+        entry.cacheError = err && err.message ? String(err.message) : 'read failed';
+        renderImagePlan();
+        renderAuto();
+      }
+    });
     const at = imagePlan.findIndex(row => stimulusId == null ? row && row.stimulusId == null : row && String(row.stimulusId) === String(stimulusId));
     if (at > -1) imagePlan[at] = entry;
     else imagePlan.push(entry);
@@ -289,9 +375,7 @@ function runOCRBookmarklet() {
   }
   function imageGateBlockers() {
     try {
-      return autosaveBlockers(gateState()).filter(blocker => blocker && (
-        blocker.code === 'stimulus-unassigned' || blocker.code === 'stimulus-range' || blocker.code === 'image-required'
-      ));
+      return autosaveBlockers(gateState()).filter(blocker => blocker && blocker.code === 'stimulus-range');
     } catch (e) {
       return [];
     }
@@ -319,16 +403,26 @@ function runOCRBookmarklet() {
     heading.style.fontWeight = 'bold';
     heading.textContent = 'Image plan (this tab only; reload clears files)';
     box.appendChild(heading);
+    const imageStimuli = [];
     stimuli.forEach((stim, idx) => {
+      const needsImg = stim.needsImage !== false;
       const row = document.createElement('div');
       row.style.margin = '6px 0';
       row.style.paddingLeft = '6px';
-      row.style.borderLeft = '3px solid #1769aa';
+      row.style.borderLeft = '3px solid ' + (needsImg ? '#1769aa' : '#0f766e');
       const plan = stimulusPlan(stim);
       const title = document.createElement('div');
-      title.textContent = 'Image block ' + (Number.isInteger(stim.order) ? stim.order : idx + 1)
-        + (Number.isInteger(stim.sourceNum) ? ' (after Q' + stim.sourceNum + ')' : '');
+      const rangeText = formatPlanRange(plan ? planNums(plan) : stim.nums);
+      title.textContent = (needsImg ? 'Image block ' : 'Text block ')
+        + (Number.isInteger(stim.order) ? stim.order : idx + 1)
+        + (Number.isInteger(stim.sourceNum) ? ' (after Q' + stim.sourceNum + ')' : '')
+        + (!needsImg && rangeText ? ' — constant_text for Q' + rangeText : '');
       row.appendChild(title);
+      if (!needsImg) {
+        box.appendChild(row);
+        return;
+      }
+      imageStimuli.push({ stim, idx });
       const range = document.createElement('input');
       range.type = 'text';
       range.id = 'ocr_img_range_' + idx;
@@ -338,15 +432,21 @@ function runOCRBookmarklet() {
       row.appendChild(document.createTextNode(' '));
       const file = document.createElement('input');
       file.type = 'file';
-      file.accept = 'image/*';
+      file.accept = 'image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif';
       file.id = 'ocr_img_file_' + idx;
       const selected = document.createElement('span');
       selected.id = 'ocr_img_file_name_' + idx;
       selected.textContent = fileLine(imagePending.get(stim.id) || (plan && plan.file));
       file.onchange = () => {
         const chosen = pickFile(file);
-        if (chosen) imagePending.set(stim.id, chosen);
-        else imagePending.delete(stim.id);
+        if (chosen) {
+          imagePending.set(stim.id, chosen);
+          cacheFileInMemory(chosen, mem => {
+            if (mem && imagePending.get(stim.id) === chosen) imagePending.set(stim.id, mem);
+          });
+        } else {
+          imagePending.delete(stim.id);
+        }
         selected.textContent = fileLine(chosen || (plan && plan.file));
       };
       row.appendChild(file);
@@ -382,11 +482,14 @@ function runOCRBookmarklet() {
       status.id = 'ocr_img_status_' + idx;
       status.textContent = planStatus(plan);
       status.style.fontWeight = 'bold';
-      status.style.color = planStatus(plan) === 'Ready' ? '#0d6b3f' : (planStatus(plan) === 'No image' ? '' : '#b45309');
+      status.style.color = planStatus(plan) === 'Ready' ? '#0d6b3f' : (planStatus(plan) === 'No image' ? '' : (plan && plan.cacheError ? '#b00020' : '#b45309'));
       row.appendChild(status);
       box.appendChild(row);
     });
-    if (stimuli.length) {
+    if (imageStimuli.length >= 2) {
+      const bulkNote = document.createElement('div');
+      bulkNote.textContent = 'Bulk attach: choose one file per block, top to bottom.';
+      box.appendChild(bulkNote);
       const bulkFiles = document.createElement('input');
       bulkFiles.type = 'file';
       bulkFiles.accept = 'image/*';
@@ -397,17 +500,17 @@ function runOCRBookmarklet() {
       bulk.type = 'button';
       bulk.className = 'admin-btn admin-btn-muted';
       bulk.id = 'ocr_img_bulk';
-      bulk.textContent = 'Use ranges in order';
+      bulk.textContent = 'Attach picked files to blocks in order';
       bulk.onclick = () => {
         const picked = bulkFiles.files ? Array.from(bulkFiles.files) : [];
-        stimuli.forEach((stim, idx) => {
-          const chosen = picked[idx] || imagePending.get(stim.id);
+        imageStimuli.forEach(({ stim, idx }, pickIdx) => {
+          const chosen = picked[pickIdx] || imagePending.get(stim.id);
           if (!chosen) return;
           const input = $('ocr_img_range_' + idx);
           const nums = parsePlanRange(input ? input.value : '');
           if (!nums.length) return;
           setImagePlanRow(stim.id, nums, chosen);
-          if (!picked[idx]) imagePending.delete(stim.id);
+          imagePending.delete(stim.id);
         });
         renderImagePlan();
         renderAuto();
@@ -435,7 +538,7 @@ function runOCRBookmarklet() {
       row.appendChild(document.createTextNode(' '));
       const file = document.createElement('input');
       file.type = 'file';
-      file.accept = 'image/*';
+      file.accept = 'image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif';
       file.id = 'ocr_img_generic_file';
       row.appendChild(file);
       const attach = document.createElement('button');
@@ -476,7 +579,7 @@ function runOCRBookmarklet() {
     missing.forEach(num => {
       const line = document.createElement('div');
       line.id = 'ocr_img_missing_' + num;
-      line.textContent = 'Question Q' + num + ' needs an image.';
+      line.textContent = 'Question Q' + num + ' needs an image; auto-save will pause here.';
       line.style.color = '#b45309';
       line.style.fontWeight = 'bold';
       box.appendChild(line);
@@ -671,10 +774,13 @@ function runOCRBookmarklet() {
       if (url) link.href = url;
     }
   }
-  const DRY_COLORS = { idle: '#0f766e', running: '#0f766e', stopping: '#0f766e', complete: '#0f766e', stale: '#0f766e', stopped: '#b45309', blocked: '#b45309' };
-  const LIVE_COLORS = { idle: '#6b7280', running: '#1769aa', stopping: '#b45309', stopped: '#b45309', paused: '#b45309', incomplete: '#b45309', complete: '#0d6b3f', blocked: '#b00020', 'needs-check': '#b00020' };
+  const DRY_COLORS = { idle: '#0f766e', running: '#0f766e', stopping: '#0f766e', complete: '#0f766e', stale: '#0f766e', stopped: '#b45309', blocked: '#b45309', paused: '#b45309' };
+  const LIVE_COLORS = { idle: '#6b7280', running: '#1769aa', stopping: '#b45309', stopped: '#b45309', paused: '#b45309', 'paused-image': '#b45309', incomplete: '#b45309', complete: '#0d6b3f', blocked: '#b00020', 'needs-check': '#b00020' };
   function dryLabel() { return dryState.toUpperCase(); }
-  function liveLabel() { return liveState === 'needs-check' ? 'NEEDS-CHECK' : liveState.toUpperCase(); }
+  function liveLabel() {
+    if (liveState === 'paused-image') return 'PAUSED (IMAGE)';
+    return liveState === 'needs-check' ? 'NEEDS-CHECK' : liveState.toUpperCase();
+  }
   function renderDryProgress() {
     const box = $('ocr_dry_progress');
     const bar = $('ocr_dry_progress_bar');
@@ -728,9 +834,11 @@ function runOCRBookmarklet() {
     const panel = $('ocr_live_panel');
     if (panel) panel.style.borderLeftColor = status.style.color;
     const blocked = $('ocr_live_blocked');
-    blocked.textContent = liveBlocked;
-    blocked.style.color = liveBlocked ? '#b00020' : '';
-    blocked.style.fontWeight = liveBlocked ? 'bold' : '';
+    const missing = missingTextItem();
+    const blockedText = liveBlocked || (missing ? 'Cannot auto-save: ' + missingTextDetail(missing) : '');
+    blocked.textContent = blockedText;
+    blocked.style.color = blockedText ? '#b00020' : '';
+    blocked.style.fontWeight = blockedText ? 'bold' : '';
     renderLiveProgress();
   }
   function renderAuto() {
@@ -742,7 +850,9 @@ function runOCRBookmarklet() {
     }
     renderBatchConfirm();
     const marker = (() => { try { return store.get('ocrSaving'); } catch (e) { return null; } })();
-    const disabled = anyRunning() || !confirmTicked || (activeMode && !activeConfirmed) || Boolean(marker) || !queue.items[queue.i] || imageGateBlockers().length > 0;
+    const disabled = anyRunning() || Boolean(owner.inFlight && !owner.inFlight.settled)
+      || !confirmTicked || (activeMode && !activeConfirmed) || Boolean(marker)
+      || !queue.items[queue.i] || Boolean(missingTextItem()) || imageGateBlockers().length > 0;
     $('ocr_auto_start').disabled = disabled;
     $('ocr_auto_stop').disabled = !liveRunning;
     $('ocr_auto_dry').disabled = anyRunning();
@@ -809,14 +919,27 @@ function runOCRBookmarklet() {
     liveBlocked = blockerText(blocker);
     liveState = 'blocked';
   }
-  function setResult(text, danger) {
+  function setResult(text, danger, diag) {
     const r = $('ans_res');
     if (!r) return;
     r.textContent = text;
     r.style.color = danger ? '#b00020' : '#1769aa';
+    let d = $('ans_diag');
+    if (!d && diag) {
+      d = document.createElement('div');
+      d.id = 'ans_diag';
+      d.className = 'admin-note';
+      d.style.color = '#b00020';
+      d.style.wordBreak = 'break-word';
+      if (r.insertAdjacentElement) r.insertAdjacentElement('afterend', d);
+    }
+    if (d) {
+      d.textContent = diag || '';
+      d.hidden = !diag;
+    }
   }
   function busySaving() {
-    if (!saveInProgress) return false;
+    if (!saveInProgress && !(owner.inFlight && !owner.inFlight.settled)) return false;
     if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
     if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
     liveBlocked = busyNotice;
@@ -830,7 +953,7 @@ function runOCRBookmarklet() {
     liveBlocked = '';
   }
   function markLiveStopped() {
-    if (liveState !== 'paused' && liveState !== 'needs-check' && liveState !== 'blocked') {
+    if (liveState !== 'paused' && liveState !== 'paused-image' && liveState !== 'needs-check' && liveState !== 'blocked') {
       liveState = 'stopped';
       liveStatus = 'Stopped.';
     }
@@ -864,12 +987,19 @@ function runOCRBookmarklet() {
   async function saveCurrentQuestion(opts) {
     const auto = Boolean(opts && opts.auto);
     const active = Boolean(opts && opts.active);
-    if (saveInProgress) return { kind: 'busy', message: 'A save is already running.' };
+    if (saveInProgress || (owner.inFlight && !owner.inFlight.settled)) {
+      return { kind: 'busy', message: 'A save is already running.' };
+    }
     saveInProgress = true;
+    try { store.del('ocrSubmitted'); } catch (e) {}
     const q = queue.items[queue.i];
     const num = q ? q.num : null;
     const savedBatchId = queue.batchId || null;
     const savedIndex = queue.i;
+    let resolveInFlight;
+    const inFlightDone = new Promise(resolve => { resolveInFlight = resolve; });
+    const flight = { gen: owner.gen, settled: false, promise: inFlightDone };
+    owner.inFlight = flight;
     let priorSaving = null;
     let ctl = null, timer = null;
     try {
@@ -900,7 +1030,16 @@ function runOCRBookmarklet() {
       let usedPlanRow = null;
       if (!nativeImage) {
         usedPlanRow = planRowFor(num);
-        if (usedPlanRow) fd.set('question_image', usedPlanRow.file, usedPlanRow.name);
+        if (usedPlanRow) {
+          const validBlob = usedPlanRow.file && !usedPlanRow.cacheError
+            && (typeof Blob === 'undefined' || usedPlanRow.file instanceof Blob || typeof usedPlanRow.file.size === 'number');
+          if (!validBlob) {
+            restorePriorMarker(priorSaving);
+            setResult('NOT saved: attached image is invalid. Re-select the image file.', true);
+            return { kind: 'rejected', reason: 'image', message: 'attached image is invalid.' };
+          }
+          fd.set('question_image', usedPlanRow.file, usedPlanRow.name);
+        }
       }
       const fingerprint = makeSavedFingerprint({
         subject_id: fd.get('subject_id'),
@@ -910,18 +1049,43 @@ function runOCRBookmarklet() {
       }, { subject: selectedText('subject_id'), category: selectedText('exam_category_id') });
       ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
       if (ctl) timer = setTimeout(() => ctl.abort(), usedPlanRow ? 60000 : 30000);
-      const res = await fetch(location.href, { method: 'POST', body: fd, credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
+      let res;
+      try {
+        res = await fetch(location.href, { method: 'POST', body: fd, credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
+      } catch (err) {
+        restorePriorMarker(priorSaving);
+        const msg = err && err.name === 'AbortError' ? 'save request timed out.' : (err && err.message ? err.message : 'network error.');
+        const diag = usedPlanRow
+          ? 'img=' + usedPlanRow.name + ' (' + (usedPlanRow.file ? usedPlanRow.file.size : '?') + 'B), cached=' + Boolean(usedPlanRow.cached) + (usedPlanRow.cacheError ? ', cacheErr=' + usedPlanRow.cacheError : '')
+          : '';
+        setResult('NOT saved: ' + msg, true, diag);
+        return { kind: 'rejected', reason: 'network', message: msg };
+      }
       const txt = await res.text();
       const doc = new DOMParser().parseFromString(txt, 'text/html');
       const er = doc.querySelector('.admin-error');
       const result = classifySaveResponse({ redirected: res.redirected, text: txt, errorText: er ? er.textContent.trim() : '', lastId: maxSavedId(savedLog) });
       if (result.kind === 'rejected') {
         restorePriorMarker(priorSaving);
-        setResult('NOT saved: ' + result.message, true);
+        const diag = usedPlanRow
+          ? 'img=' + usedPlanRow.name + ' (' + (usedPlanRow.file ? usedPlanRow.file.size : '?') + 'B), cached=' + Boolean(usedPlanRow.cached)
+          : '';
+        setResult('NOT saved: ' + result.message, true, diag);
         return result;
       }
       if (result.kind === 'ambiguous') {
-        setResult('Unknown. It may have saved. Check the list.', true);
+        const sm = txt.match(SAVE_SUCCESS);
+        const flashEl = doc.querySelector('.admin-success, .admin-alert, .admin-error');
+        const titleEl = doc.querySelector('title');
+        const imgInfo = usedPlanRow ? usedPlanRow.name + ' (' + (usedPlanRow.file ? usedPlanRow.file.size : '?') + 'B)' : (nativeImage ? 'native' : 'none');
+        const snippet = (flashEl ? flashEl.textContent : (doc.body ? doc.body.textContent : txt)).replace(/\s+/g, ' ').trim().slice(0, 140);
+        const diag = 'Diag: HTTP ' + (res.status || '?')
+          + ', redirected=' + Boolean(res.redirected)
+          + ', img=' + imgInfo
+          + ', matchedId=' + (sm ? sm[1] : 'none') + '/lastId=' + maxSavedId(savedLog)
+          + (titleEl ? ', title="' + titleEl.textContent.trim().slice(0, 60) + '"' : '')
+          + (snippet ? ', body="' + snippet + '"' : '');
+        setResult('Unknown. It may have saved. Check the list.', true, diag);
         return result;
       }
       let inactive = null;
@@ -946,20 +1110,20 @@ function runOCRBookmarklet() {
         return { kind: 'saved', id: result.id, inactive: inactive, entry: entry, failed: committed.stage };
       }
       recordBatchHistory();
-      if (usedPlanRow) {
-        const laterNeeds = queue.items.slice(savedIndex + 1)
-          .some(item => item && item.needsImage && planNums(usedPlanRow).includes(item.num));
-        if (!laterNeeds) imagePlan = imagePlan.filter(row => row !== usedPlanRow);
-      }
       if (sameQueue && q) invalidateDry('a save advanced the queue');
       clearSavedMarker(priorSaving, num);
+      try { store.del('ocrSubmitted'); } catch (e) {}
       ['question_image', 'answer_video'].forEach(n => { const el = form.elements[n]; if (el) el.value = ''; });
       const ae = form.elements.answer_explanation;
       if (ae) ae.value = '';
       saveMeta();
       showOCR(auto);
       last = cur().i;
-      if (last > -1) tick(); else form.reset();
+      if (last > -1) tick();
+      else {
+        form.reset();
+        if ($('constant_text')) $('constant_text').value = '';
+      }
       let unverifiedStop = false;
       if (auto) {
         const tracked = trackUnverified(unverifiedStreak, inactive);
@@ -996,8 +1160,11 @@ function runOCRBookmarklet() {
       return { kind: 'ambiguous', message: 'Unknown. It may have saved. Check the list.' };
     } finally {
       if (timer) clearTimeout(timer);
+      flight.settled = true;
+      if (owner.inFlight === flight) owner.inFlight = null;
       saveInProgress = false;
       if (liveBlocked === busyNotice) liveBlocked = '';
+      if (resolveInFlight) resolveInFlight();
     }
   }
   function renderOCR() {
@@ -1075,6 +1242,11 @@ function runOCRBookmarklet() {
         dryStatus = dryChecked + ' of ' + dryTotal + ' checked; stops at #' + (q.num == null ? '?' : q.num) + '.';
         break;
       }
+      if (questionImagePauseReason(q)) {
+        dryState = 'paused';
+        dryStatus = 'would pause at #' + (q.num == null ? '?' : q.num) + ' for an image; ' + dryChecked + ' of ' + dryTotal + ' checked.';
+        break;
+      }
       if (planRowFor(q.num)) dryImageCount++;
       dq.i++;
       dryChecked++;
@@ -1129,6 +1301,15 @@ function runOCRBookmarklet() {
         if (liveStop) { markLiveStopped(); break; }
         const blockers = autosaveBlockers(gateState());
         if (blockers.length) { showLiveBlocked(blockers[0]); break; }
+        const current = queue.items[queue.i];
+        const pauseReason = questionImagePauseReason(current);
+        if (pauseReason) {
+          liveState = 'paused-image';
+          liveStatus = 'Paused at question ' + (current.num == null ? '?' : current.num)
+            + ': ' + pauseReason + '. Save it by hand, then press Start again.';
+          liveBlocked = '';
+          break;
+        }
         const result = await saveCurrentQuestion({ auto: true, active: liveMode === 'active' });
         if (runToken !== liveToken) return;
         if (result.kind !== 'saved') {
@@ -1160,39 +1341,38 @@ function runOCRBookmarklet() {
     if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
     resetConfirm();
     const raw = $('ocr_text').value;
-    const salvage = splitSectionsWithSalvage(raw);
-    const parts = salvage.parts;
-    const text = FIXES.reduce((t, [re, fix]) => t.replace(re, fix), parts.questions);
-    const items = applyStimulusFlags(flagNumberingGaps(splitQuestionItems(text).map(parseQuestion)));
-    if (salvage.salvaged) items.forEach(item => item.flags.push(SALVAGE_FLAG));
-    const detailed = parts.answers.trim() ? parseKeyDetailed(parts.answers) : { key: {}, conflicts: [] };
-    const newKey = detailed.key;
+    const parsed = parsePaste(raw);
+    const parts = parsed.sections || { questions: '', answers: '', how: 'none', boundary: '' };
+    const items = parsed.items || [];
+    const newKey = parsed.key || {};
+    const salvaged = Boolean(parsed.sectionEvidence && parsed.sectionEvidence.salvaged);
+    const salvageInserts = (parsed.sectionEvidence && parsed.sectionEvidence.inserts) || 0;
     const hasKey = Object.keys(newKey).length > 0;
     if (!items.length) {
       if (hasKey) {
         key = newKey;
-        keyConflicts = detailed.conflicts;
+        keyConflicts = parsed.keyConflicts || [];
         store.set('ansKey', key);
         store.set('ansKeyConflicts', keyConflicts);
         if (queue.batchId) store.set('ansKeyBatch', queue.batchId);
         else store.del('ansKeyBatch');
         if (queue.items[queue.i]) fillForm(queue.items[queue.i]);
-        if (applyHeaderInfo(parts.boundary, parts.answers)) saveMeta();
+        if (applyHeaderInfo(parts.boundary || '', parts.answers || '')) saveMeta();
         tick(true);
-        $('ans_msg').textContent += ' (' + Object.keys(key).length + ' answers in key.)';
+        if (keyAppliesForQueue()) $('ans_msg').textContent += ' (' + Object.keys(key).length + ' answers in key.)';
         invalidateDry('the answer key changed');
         renderOCR();
-        $('ocr_status').innerHTML += ' Answer key only (' + Object.keys(key).length + ' entries, ' + parts.how + '). Question queue left unchanged.';
+        $('ocr_status').innerHTML += ' Answer key only (' + Object.keys(key).length + ' entries, ' + (parts.how || 'none') + '). Question queue left unchanged.';
         scheduleAutoDry();
         return;
       }
       renderAuto();
       return alert('No questions found in that text.');
     }
-    applyHeaderInfo(text, parts.boundary, parts.answers);
+    applyHeaderInfo(parts.questions || raw, parts.boundary || '', parts.answers || '');
     saveMeta();
     key = hasKey ? newKey : {};
-    keyConflicts = hasKey ? detailed.conflicts : [];
+    keyConflicts = hasKey ? (parsed.keyConflicts || []) : [];
     const batchId = newBatchId();
     if (hasKey) {
       store.set('ansKey', key);
@@ -1214,13 +1394,13 @@ function runOCRBookmarklet() {
     liveMode = null;
     invalidateDry('a new batch was loaded');
     showOCR();
-    if (salvage.salvaged) {
-      $('ocr_status').innerHTML += '<div class="admin-note">OCR boundaries repaired (' + salvage.inserts + ' inserts); verify the split.</div>';
+    if (salvaged) {
+      $('ocr_status').innerHTML += '<div class="admin-note">OCR boundaries repaired (' + salvageInserts + ' inserts); verify the split.</div>';
     }
     if (hasKey) {
       tick();
-      $('ans_msg').textContent += ' (' + Object.keys(key).length + ' answers in key.)';
-      $('ocr_status').innerHTML += ' Answer key: ' + Object.keys(key).length + ' entries (' + parts.how + ').';
+      if (keyAppliesForQueue()) $('ans_msg').textContent += ' (' + Object.keys(key).length + ' answers in key.)';
+      $('ocr_status').innerHTML += ' Answer key: ' + Object.keys(key).length + ' entries (' + (parts.how || 'none') + ').';
     } else {
       $('ans_msg').textContent = 'No answer key section detected. Any earlier key was cleared.';
       $('ocr_status').innerHTML += '<div class="admin-note">No answer-key section detected. Questions loaded with no key. Add a divider like <code>=== ANSWER KEY ===</code> on its own line if the key was missed.</div>';
@@ -1323,41 +1503,48 @@ function runOCRBookmarklet() {
   };
   $('ocr_saved_copy').onclick = () => copyText(savedCopyText());
   $('ocr_paused_clear').onclick = () => { store.del('ocrSaving'); liveBlocked = ''; renderAuto(); };
-  document.addEventListener('visibilitychange', () => {
+  const onVisibilityChange = () => {
     if (document.hidden && liveRunning) {
       liveStop = true;
       liveState = 'paused';
       liveStatus = 'Paused because the tab was hidden. Start again when ready.';
       renderAuto();
     }
-  });
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  const fieldCleanups = [];
   FIELDS.forEach(id => {
     const el = $(id);
-    if (el) el.addEventListener('change', () => {
+    if (!el) return;
+    const onFieldChange = () => {
       if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
       if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
       clearConfirm();
       invalidateDry('the metadata changed');
       renderAuto();
-    });
+    };
+    el.addEventListener('change', onFieldChange);
+    fieldCleanups.push(() => { if (typeof el.removeEventListener === 'function') el.removeEventListener('change', onFieldChange); });
   });
-  let key = {};
-  let keyConflicts = [];
-  try { key = store.get('ansKey') || {}; } catch (e) {}
-  try { keyConflicts = store.get('ansKeyConflicts') || []; } catch (e) {}
-  if (!Array.isArray(keyConflicts)) keyConflicts = [];
+  const storedKey = store.get('ansKey');
+  let key = isPlainObject(storedKey) ? storedKey : {};
+  if (storedKey !== null && storedKey !== undefined && !isPlainObject(storedKey)) store.del('ansKey');
+  const storedConflicts = store.get('ansKeyConflicts');
+  let keyConflicts = Array.isArray(storedConflicts) ? storedConflicts : [];
   function cur() {
-    try {
-      const q = store.get('ocrQueue');
-      return q && q.items && q.items[q.i] ? { i: q.i, n: q.items[q.i].num, q: q.items[q.i] } : { i: -1, n: null };
-    } catch (e) {
-      return { i: -1, n: null };
-    }
+    const q = store.get('ocrQueue');
+    return isPlainObject(q) && Array.isArray(q.items) && q.items[q.i]
+      ? { i: q.i, n: q.items[q.i].num, q: q.items[q.i] }
+      : { i: -1, n: null };
   }
   function tick(ask) {
     const m = $('ans_msg');
     if (!Object.keys(key).length) {
       m.textContent = 'No key saved yet.';
+      return;
+    }
+    if (!keyAppliesForQueue()) {
+      m.textContent = 'Stored key (' + Object.keys(key).length + ' answers) belongs to another list and was not applied.';
       return;
     }
     const c = cur();
@@ -1401,31 +1588,63 @@ function runOCRBookmarklet() {
     $('ans_msg').textContent = 'Key cleared.';
     renderAuto();
   };
-  form.addEventListener('submit', function (e) {
+  function onFormSubmit(e) {
     e.preventDefault();
     e.stopImmediatePropagation();
     if (!queue.items.length) saveMeta();
-    const b = form.querySelector('button[type=submit]'), r = $('ans_res');
-    if (saveInProgress) return;
-    let marker = null;
-    try { marker = store.get('ocrSaving'); } catch (err) {}
+    const b = form.querySelector('button[type=submit]');
+    if (saveInProgress || (owner.inFlight && !owner.inFlight.settled)) {
+      setResult(busyNotice, false);
+      return;
+    }
+    const marker = store.get('ocrSaving');
     if (marker) {
       setResult("An earlier save is unconfirmed. Check the list, then tap 'I checked. Clear warning.'", true);
       return;
     }
     if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
-    b.disabled = true;
+    if (b) b.disabled = true;
     setResult('Saving...', false);
-    saveCurrentQuestion({ auto: false }).then(() => { b.disabled = false; renderAuto(); }).catch(() => { b.disabled = false; renderAuto(); });
-  }, true);
-  setInterval(() => {
+    saveCurrentQuestion({ auto: false }).then(() => {
+      if (b && (!owner.inFlight || owner.inFlight.settled)) b.disabled = false;
+      renderAuto();
+    }).catch(() => {
+      if (b && (!owner.inFlight || owner.inFlight.settled)) b.disabled = false;
+      renderAuto();
+    });
+  }
+  form.addEventListener('submit', onFormSubmit, true);
+  const pollId = setInterval(() => {
     const c = cur().i;
     if (c !== last) {
       last = c;
       tick();
     }
   }, 600);
+  form.__ocrStimulusCleanup = () => {
+    owner.gen++;
+    loadToken++;
+    liveToken++;
+    liveStop = true;
+    dryStop = true;
+    clearInterval(pollId);
+    if (autoHeartbeat) { clearTimeout(autoHeartbeat); autoHeartbeat = null; }
+    if (typeof document.removeEventListener === 'function') document.removeEventListener('visibilitychange', onVisibilityChange);
+    if (typeof form.removeEventListener === 'function') form.removeEventListener('submit', onFormSubmit, true);
+    fieldCleanups.forEach(fn => fn());
+  };
   syncLiveStateFromStorage();
   hadServerError ? renderOCR() : showOCR();
   tick();
+  if (owner.inFlight && !owner.inFlight.settled) {
+    if (sb) sb.disabled = true;
+    liveBlocked = busyNotice;
+    setResult('An earlier save is still running. Wait for it to finish.', false);
+    renderAuto();
+    owner.inFlight.promise.then(() => {
+      if (sb && (!owner.inFlight || owner.inFlight.settled)) sb.disabled = false;
+      if (liveBlocked === busyNotice) liveBlocked = '';
+      renderAuto();
+    });
+  }
 }

@@ -2,9 +2,12 @@
 
 Approved: 2026-11-14; owner-amended 2026-11-15 (D-91), 2026-11-17
 (EL01, D-103, D-104), 2026-11-18 (D-105, D-106), and 2026-11-19
-(D-108), and 2026-11-24 (three product surfaces, one parser source, scratch-only
-cycle workflow). Supersedes the `owner-tool-2026-11` product intent while
-preserving every review-settled shipped behavior below.
+(D-108), 2026-11-24 (one parser source, scratch-only cycle workflow), and
+2026-11-26 (PC07 two-surface convergence: deployed manual helper plus one
+supported stimulus-first bookmarklet; key-only retained only through
+comparator/rollback checks until a separate reviewed retirement diff). Supersedes
+the `owner-tool-2026-11` product intent while preserving every review-settled
+shipped behavior below.
 
 This file is the behavior tie-breaker for the `parser-convergence-2026-11`
 cycle. The package files own implementation detail. If a package conflicts with
@@ -35,13 +38,21 @@ this file, stop and ask instead of silently changing the product direction.
 
 ## Product surface intent
 
-- Keep three products, not one configurable product: the deployed manual helper,
-  the key/autosave bookmarklet, and the stimulus/image bookmarklet.
-- Root `ocr_helper.js` remains the deployed manual helper. It must not acquire
-  answer-key loading, dry run, autosave, batch history, or image-plan behavior.
-- Keep the two bookmarklets separate in this cycle. They may have different UI,
-  storage policy, save policy, and release cadence because their users and needs
-  differ.
+- Converge on two supported products over one canonical parser source:
+  1. the deployed manual helper (`ocr_helper.js`, loaded by
+     `admin_questions.php` after `src/parser/core.js`), which must not acquire
+     answer-key loading, dry run, autosave, batch history, Constant Text
+     writing, or image-plan behavior;
+  2. one supported stimulus-first bookmarklet (`src/bookmarklet.js`, built from
+     `src/parser/core.js` + `src/bookmarklets/stimulus/autosave.js` +
+     `src/ui/ui.js`) combining answer-key load/fill, dry run, autosave, image
+     plan (RAM-cached upload + ready-image autosave within range + pause when
+     uncovered/unranged), Constant Text routing/clearing, `[missing text]`
+     blocking, and PC01 concurrency/storage/provenance hardening.
+- Retain `src/bookmarklets/key/` (`src/bookmarklets/key/bookmarklet.js`) only as
+  a frozen comparator during verification and as a rollback reference through
+  desktop + owner Brave/Android acceptance; retire it only in a separate,
+  owner-authorized, reviewed diff.
 - Product-specific behavior belongs in focused surface modules and entry points.
   Do not fork the parser to obtain product differences.
 - A generated bookmarklet may inline the canonical parser; generated copies are

@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "new-edge-inter-question-text",
+  "source": [
+    "sample.txt WASSCE JUNE 2021 COMMERCE excerpt",
+    "User OCR: text-only information block between Q19 and Q20; no tag or table"
+  ],
+  "provenance": "User-supplied OCR in sample.txt, Q19-Q21 verbatim slice with the matching key lines. The exam header and surrounding questions are omitted. The information block is unchanged. Not present in the bank or ANOMALIES.txt.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-inter-question-text.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 3,
+    "nums": [19, 20, 21],
+    "questions": [
+      {
+        "num": 19,
+        "question": "An error on an invoice may be rectified by issuing",
+        "a": "an advice note",
+        "b": "a consignment note",
+        "c": "a credit note",
+        "d": "a delivery note",
+        "flags": [],
+        "needs_image": false
+      },
+      {
+        "num": 20,
+        "question": "What is the average stock?",
+        "a": "10,500",
+        "b": "8,500",
+        "c": "8,000",
+        "d": "6,000",
+        "needs_image": false
+      },
+      {
+        "num": 21,
+        "question": "The cost of goods sold is",
+        "a": "4,000",
+        "b": "9,000",
+        "c": "16,000",
+        "d": "21,000",
+        "needs_image": false
+      }
+    ],
+    "needs_image": [],
+    "stimulus_count": 1,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": 19,
+        "nums": [20, 21],
+        "text_contains": [
+          "Use the information below to answer questions 20 and 21.",
+          "Opening stock 4,000",
+          "Closing stock 12,000",
+          "Purchases 17,000"
+        ],
+        "missing": []
+      }
+    ],
+    "key": {
+      "19": "C",
+      "20": "C",
+      "21": "B"
+    },
+    "forbidden_flags": [
+      "inter-question text removed (no intro)",
+      "option D missing",
+      "question text missing or very short"
+    ]
+  },
+  "must_not": [
+    "The information block or intro is saved as Q19 option D",
+    "Q20-Q21 require an attached image",
+    "The intro or data remains in a saved question field"
+  ],
+  "notes": [
+    "Q19.D is exactly 'a delivery note'.",
+    "The intro and the three data lines become one intro-source stimulus covering Q20-Q21 with needsImage false.",
+    "The block is after Q19's options and before Q20, so it must not enter Q19's stem or options."
+  ],
+  "discrepancies": []
+}

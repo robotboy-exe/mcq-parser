@@ -76,7 +76,10 @@ function fakeElement(doc, tag, props) {
     addEventListener(type, fn) {
       (this.listeners[type] = this.listeners[type] || []).push(fn);
     },
-    removeEventListener() {},
+    removeEventListener(type, fn) {
+      if (!this.listeners[type]) return;
+      this.listeners[type] = this.listeners[type].filter(cb => cb !== fn);
+    },
     dispatch(type, event) {
       const e = event || { preventDefault() {}, stopImmediatePropagation() {} };
       (this.listeners[type] || []).slice().forEach(fn => fn(e));
@@ -168,6 +171,11 @@ function createDocument() {
     },
     addEventListener(type, fn) {
       if (type === 'visibilitychange') this.visibilityListeners.push(fn);
+    },
+    removeEventListener(type, fn) {
+      if (type === 'visibilitychange') {
+        this.visibilityListeners = this.visibilityListeners.filter(cb => cb !== fn);
+      }
     }
   };
   doc.body = fakeElement(doc, 'body');
@@ -200,6 +208,7 @@ function createForm(doc) {
     subject_id: subject,
     exam_category_id: category,
     exam_year: fakeElement(doc, 'input', { id: 'exam_year', name: 'exam_year', value: '2021' }),
+    constant_text: fakeElement(doc, 'textarea', { id: 'constant_text', name: 'constant_text', value: '' }),
     question_text: fakeElement(doc, 'textarea', { id: 'question_text', name: 'question_text', value: '' }),
     option_a: fakeElement(doc, 'input', { id: 'option_a', name: 'option_a', value: '' }),
     option_b: fakeElement(doc, 'input', { id: 'option_b', name: 'option_b', value: '' }),
@@ -226,6 +235,7 @@ function createForm(doc) {
   form.querySelector = selector => doc.query(form, selector);
   form.querySelectorAll = selector => doc.queryAll(form, selector);
   form.reset = () => {
+    fields.constant_text.value = '';
     fields.question_text.value = '';
     ['option_a', 'option_b', 'option_c', 'option_d'].forEach(name => { fields[name].value = ''; });
   };
@@ -324,7 +334,7 @@ function createUI(options) {
   const fetchMock = async (url, init) => {
     if (init && init.method === 'POST') {
       posts.push({ url, body: init.body });
-      const reply = replyFor(init);
+      const reply = await replyFor(init);
       nextError = Object.prototype.hasOwnProperty.call(reply, 'errorText') ? reply.errorText : null;
       return {
         redirected: Boolean(reply.redirected),
@@ -339,11 +349,44 @@ function createUI(options) {
     };
   };
 
+  class MockBlob {
+    constructor(parts, init) {
+      this._parts = Array.isArray(parts) ? parts : [];
+      this.type = init && init.type ? String(init.type) : 'application/octet-stream';
+      this.size = this._parts.reduce((acc, part) => {
+        if (part instanceof ArrayBuffer) return acc + part.byteLength;
+        if (ArrayBuffer.isView(part)) return acc + part.byteLength;
+        return acc + Buffer.byteLength(String(part == null ? '' : part));
+      }, 0);
+    }
+    async arrayBuffer() {
+      const chunks = this._parts.map(part => {
+        if (part instanceof ArrayBuffer) return Buffer.from(part);
+        if (ArrayBuffer.isView(part)) return Buffer.from(part.buffer, part.byteOffset, part.byteLength);
+        return Buffer.from(String(part == null ? '' : part));
+      });
+      const buf = Buffer.concat(chunks);
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+    }
+  }
+  class MockFile extends MockBlob {
+    constructor(parts, name, init) {
+      super(parts, init);
+      this.name = String(name == null ? 'image.png' : name);
+      this.lastModified = init && init.lastModified ? Number(init.lastModified) : Date.now();
+    }
+  }
+
+  let intervalSeq = 0;
+  const intervals = new Map();
+
   const sandbox = {
     document: doc,
     localStorage,
     location: { href: 'https://example.test/admin_questions.php', pathname: '/admin_questions.php', search: '' },
     navigator: {},
+    Blob: MockBlob,
+    File: MockFile,
     FormData: FormDataMock,
     DOMParser: FakeDOMParser,
     fetch: fetchMock,
@@ -356,8 +399,12 @@ function createUI(options) {
       return SET_TIMEOUT(fn, ms >= 1000 ? 0 : ms);
     },
     clearTimeout: id => { if (id) CLEAR_TIMEOUT(id); },
-    setInterval: () => 0,
-    clearInterval: () => {},
+    setInterval: fn => {
+      const id = ++intervalSeq;
+      intervals.set(id, fn);
+      return id;
+    },
+    clearInterval: id => { intervals.delete(id); },
     Date,
     Math,
     JSON,
@@ -379,6 +426,7 @@ function createUI(options) {
   return {
     doc,
     form,
+    sandbox,
     storage: {
       get: key => {
         const raw = storage.get(key);
@@ -392,6 +440,12 @@ function createUI(options) {
     posts,
     gets,
     flush,
+    reinject() {
+      vm.runInContext(UI_SOURCE + '\nrunOCRBookmarklet();', sandbox, { filename: UI_FILE });
+    },
+    activeIntervals: () => intervals.size,
+    visibilityListenersCount: () => doc.visibilityListeners.length,
+    submitListenersCount: () => (form.listeners.submit || []).length,
     setField(name, value) {
       form.elements[name].value = value;
     },

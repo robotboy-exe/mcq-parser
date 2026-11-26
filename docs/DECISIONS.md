@@ -1891,3 +1891,63 @@ the trailing covered spaced label wins, and the label inside an earlier stem
 initialism (`A. D.`, `A. B.`) or a later in-text mention can never be restored.
 Unspaced `A.D.` abbreviations remain excluded. `OPTION`, `LOOSE`, `FIXES`,
 `splitQuestions`, and product policy are still untouched.
+
+## D-112 — Marker-adjacent range extraction and anchored inter-question stimulus blocks
+
+**Choice.** Extend `src/parser/core.js` (`2.5.7`) with:
+1. Marker-adjacent range extraction on `[image]` / `[image: ...]` and balanced
+   `[diagram]` / `[[diagram]]` lines when adjacent to a supported stimulus
+   intro, taking the explicit marker range ahead of intro/adjacent ranges
+   (except inline double-bracket precedence where explicit inline range wins),
+   without matching malformed unclosed/extra-bracket markers (`[image]]`,
+   `[[image]`, `[diagram]]`, etc.) or option-quoted/prosed distractors
+   (`S1`–`S5`, `A1`–`A3`).
+2. `stimulusIntroRangeText` termination fixes for carried `PC04` `BLOCK-10`
+   (`V10`: locator phrases such as `in the table` stop before verb predicates
+   like `is the cash deposit` rather than consuming unrelated trailing numbers)
+   and `BLOCK-11` (`V11`: `in the same section` recognized alongside `above`,
+   `below`, and `following`), while keeping `25 October 2023`, `25-10-2023`,
+   `1,200`, `25 dollars`, `25.50`, `25 in cash`, `25 in the bank`, and
+   `25 in the local currency` excluded (`N1`–`N5`, `V6`, `V9`, `adv-bank`).
+3. Anchored-only inter-question stimulus extraction (`extractAnchoredInterQuestionBlocks`,
+   `extractLeadingStimuli`, `applyStimulusFlags`, `inferMissingGapNums`,
+   `inStimulusBlock` state in `splitRegions`, and `MISSING_TEXT_RE` /
+   `[missing text] placeholder` flagging): anchored only after a complete
+   selected A–D set and only on a supported marker or explicit ranged intro (not
+   unanchored Option D tails such as `leaders`, and not bare `[missing text]`
+   after an intro without an image marker or text/table body), classifying
+   non-image blocks as `constantText` and image-noun/marker blocks as
+   `needsImage`.
+
+**Why.** Preserves every donor `ed96b11` text/diagram stimulus capability and
+`inferMissingGapNums` / dialogue protection while fixing `V10`/`V11` and keeping
+the strict canonical-bank, wrapped-option, and malformed-marker invariants intact.
+
+**Risk.** Carried `BLOCK-10` and `BLOCK-11` stay open until an independent Phase 7
+review verifies both frozen contracts on `scratch/pc07-stimulus-first`.
+
+## D-113 — Stimulus-first two-surface convergence (PC07)
+
+**Choice.** Under the 2026-11-26 Gate 1 approval (`go`), converge on two
+supported runtime products over canonical `src/parser/core.js` (`2.5.7`):
+1. `ocr_helper.js` (`EXPECTED_CORE_VERSION = '2.5.7'`, `deployed/admin_questions.php`
+   loading `?v=2.5.7` and `?v=2.4.10`): manual load and manual form POST only;
+   never writes `constant_text` and never adds key/dry-run/autosave/image UI.
+2. `src/bookmarklet.js` (built from `core.js` + `src/bookmarklets/stimulus/autosave.js`
+   + `src/ui/ui.js`): the single supported bookmarklet combining donor `ed96b11`
+   Constant Text fill/clear, RAM-cached File upload (`cacheFileInMemory`),
+   ready-image autosave within an attached row's range, per-question
+   `PAUSED (IMAGE)` when uncovered/unranged, `[missing text]` gate, single/bulk
+   image picker, key-only load, diagnostics (`#ans_diag`), and PC01 concurrency,
+   clean reinjection (`form.__ocrStimulusCleanup()`, shared `owner.inFlight`),
+   defensive `ocrSubmitted` delete, corrupted-storage normalization, and
+   `ansKeyBatch` provenance guards.
+
+**Why.** Eliminates maintaining two diverging bookmarklets while keeping the
+working stimulus features the owner relies on, without relaxing manual-helper
+isolation or server contracts.
+
+**Risk.** `src/bookmarklets/key/` (`bookmarklet.js` pinned to `2.5.7`) stays
+built and tested as a frozen comparator and rollback reference
+(`9afe4f8:src/bookmarklets/key/bookmarklet.js`) until the owner accepts the
+replacement on desktop and Brave/Android and a separate reviewed diff retires it.
