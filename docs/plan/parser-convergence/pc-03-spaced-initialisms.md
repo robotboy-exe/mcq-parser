@@ -285,4 +285,7 @@ URL; no PHP changed). No browser install gate is part of PC03.
 
 **Review status.** The re-review record is at
 [`reviews/parser-convergence-2026-11-phase-3-re-review.md`](../reviews/parser-convergence-2026-11-phase-3-re-review.md).
-`Commit: deferred`.
+This fix is committed on `scratch/pc03-spaced-initialisms` at the owner's
+explicit request as `78a8f17`; this handoff-only child records the pushed ref
+the re-review must target. Re-review is required. Nothing is merged.
+`Commit: 78a8f17`.
