@@ -1,7 +1,7 @@
 (function () {
   // Production adapter over the canonical parser core in src/parser/core.js.
   // The admin page loads the core first; Node tests resolve it through require.
-  const EXPECTED_CORE_VERSION = '2.5.7';
+  const EXPECTED_CORE_VERSION = '2.5.8';
   const isNode = typeof module !== 'undefined' && module.exports && typeof require === 'function';
   const core = isNode
     ? require('./src/parser/core.js')

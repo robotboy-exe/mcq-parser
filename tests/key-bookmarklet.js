@@ -193,7 +193,7 @@ test('artifact is one line, syntax-valid, percent-free, and deterministic', () =
   const second = crypto.createHash('sha256').update(fs.readFileSync(ARTIFACT, 'utf8')).digest('hex');
   assert.strictEqual(first, second, 'build output is deterministic');
 
-  assert.strictEqual(body.includes('PARSER_VERSION = "2.5.7"'), true, 'inlines the canonical core version');
+  assert.strictEqual(body.includes('PARSER_VERSION = "2.5.8"'), true, 'inlines the canonical core version');
   assert.strictEqual(body.includes('window.OCRParser'), true, 'inlines the canonical core');
   assert.strictEqual(body.includes('__ocrBookmarklet = true'), true, 'runs the boot step');
   assert.strictEqual(body.includes('const EXPECTED_CORE_VERSION'), true, 'runs the key entry');
@@ -207,7 +207,7 @@ test('runs the real artifact against the canonical core, not a copy', () => {
     assert(panel.includes(id), 'panel id ' + id);
   }
   assert.strictEqual(result.field('ocr_title').textContent, 'Bookmarklet paste');
-  assert.strictEqual(CORE.version, '2.5.7');
+  assert.strictEqual(CORE.version, '2.5.8');
   assert.strictEqual(typeof linkComprehension, 'function');
 });
 
@@ -910,7 +910,7 @@ test('refuses to run without the canonical core and never touches Constant Text'
   const cases = [
     ['missing window.OCRParser', undefined, /window\.OCRParser is missing/],
     ['version mismatch', { version: '2.3.0', parsePaste() {} }, /reports version 2\.3\.0/],
-    ['missing parsePaste', { version: '2.5.7' }, /no parsePaste export/]
+    ['missing parsePaste', { version: '2.5.8' }, /no parsePaste export/]
   ];
   for (const [label, core, pattern] of cases) {
     const run = runKeyEntry(core);
@@ -1061,7 +1061,11 @@ test('key comparator Load reproduces frozen PC04 and PC05 stimulus ranges cleanl
     ['V6', 'Use the diagram below to answer questions 20 to 22, 25 in cash was deposited.', [20, 21, 22], [20, 21, 22]],
     ['V10', 'Use the diagram below to answer questions 20 to 22, 25 in the table is the cash deposit.', [20, 21, 22], [20, 21, 22]],
     ['V11', 'Use the diagram below to answer questions 20 to 22, 25 in the same section.', [20, 21, 22, 25], [20, 21, 22, 25]],
-    ['V11-ctrl', 'Use the diagram below to answer questions 20 to 22, 25 in this section.', [20, 21, 22, 25], [20, 21, 22, 25]]
+    ['V11-ctrl', 'Use the diagram below to answer questions 20 to 22, 25 in this section.', [20, 21, 22, 25], [20, 21, 22, 25]],
+    ['BLOCK-19-neg', 'Use the diagram below to answer questions 20 to 22, 25 in the table above is the cash deposit.', [20, 21, 22], [20, 21, 22]],
+    ['BLOCK-19-pos', 'Use the diagram below to answer questions 20 to 22, 25 in the table above.', [20, 21, 22, 25], [20, 21, 22, 25]],
+    ['BLOCK-20-bad', 'Use the diagram below to answer questions 20 to 2023.', [], []],
+    ['BLOCK-20-one', 'Use the diagram below to answer questions 20.', [20], [20]]
   ];
   for (const [label, intro, wantNums, wantImgNums] of cases) {
     const result = keyBookmarklet();
@@ -1086,6 +1090,14 @@ test('key comparator Load reproduces frozen PC04 and PC05 stimulus ranges cleanl
   const diagQ = JSON.parse(diagRes.storage.get('ocrQueue'));
   assert.strictEqual(diagQ.items[0].d, 'credit transfer.');
   assert.deepStrictEqual(diagQ.items.filter(item => item.needsImage).map(item => item.num), [21, 22, 23]);
+
+  const wrapRaw = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'inputs', 'new-edge-anchored-option-wrap.txt'), 'utf8');
+  const wrapRes = keyBookmarklet();
+  loadPaste(wrapRes, wrapRaw);
+  const wrapQ = JSON.parse(wrapRes.storage.get('ocrQueue'));
+  assert.strictEqual(wrapQ.items[0].d, 'Undergoing mentorship under prominent political leaders');
+  assert.deepStrictEqual(wrapQ.items[0].flags, []);
+  assert.deepStrictEqual(wrapQ.items.filter(item => item.needsImage).map(item => item.num), [20, 21, 22]);
 });
 
 (async () => {

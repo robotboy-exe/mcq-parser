@@ -18,6 +18,7 @@ function runOCRBookmarklet() {
   }
   if (typeof form.__ocrStimulusCleanup === 'function') form.__ocrStimulusCleanup();
   const owner = form.__ocrStimulusOwner || (form.__ocrStimulusOwner = { gen: 0, inFlight: null });
+  const myGen = owner.gen;
   const hadServerError = Boolean(document.querySelector('.admin-error'));
   const FIELDS = ['subject_id', 'exam_category_id', 'exam_year'];
   const $ = id => document.getElementById(id);
@@ -74,7 +75,8 @@ function runOCRBookmarklet() {
   }
   function keyAppliesForQueue() {
     const kb = store.get('ansKeyBatch');
-    return Boolean(queue.batchId && typeof kb === 'string' && kb && kb === queue.batchId);
+    if (queue.batchId) return Boolean(typeof kb === 'string' && kb && kb === queue.batchId);
+    return Boolean(queue.how === 'key-paste');
   }
   function fillForm(q, auto) {
     const savedMeta = store.get('ocrMeta');
@@ -114,23 +116,22 @@ function runOCRBookmarklet() {
     }
     if (!auto && form.elements.is_active) form.elements.is_active.checked = true;
   }
-  const storedQueue = store.get('ocrQueue');
-  let queue = isPlainObject(storedQueue) && Array.isArray(storedQueue.items)
-    ? {
-      items: storedQueue.items,
-      i: Number.isInteger(storedQueue.i) && storedQueue.i >= 0 ? storedQueue.i : 0,
-      batchId: storedQueue.batchId
-    }
-    : { items: [], i: 0 };
-  let imagePlan = [];
-  const imagePending = new Map();
+  function normalizeStoredQueue(rawQ) {
+    return isPlainObject(rawQ) && Array.isArray(rawQ.items)
+      ? Object.assign({
+        items: rawQ.items,
+        i: Number.isInteger(rawQ.i) && rawQ.i >= 0 ? rawQ.i : 0,
+        batchId: rawQ.batchId
+      }, typeof rawQ.how === 'string' && rawQ.how ? { how: rawQ.how } : {})
+      : { items: [], i: 0 };
+  }
+  let queue = normalizeStoredQueue(store.get('ocrQueue'));
   const saveQ = () => store.set('ocrQueue', queue);
   let last = queue.i;
   let savedLog = store.get('ocrSavedLog');
   if (!Array.isArray(savedLog)) savedLog = [];
   let batchHistory = store.get('ocrBatchHistory');
   if (!Array.isArray(batchHistory)) batchHistory = [];
-  let saveInProgress = false;
   let dryRunning = false;
   let dryStop = false;
   let dryState = 'idle';
@@ -236,14 +237,14 @@ function runOCRBookmarklet() {
       hasVideo: Boolean(e.answer_video && (e.answer_video.value || (e.answer_video.files && e.answer_video.files.length))),
       hasExplanation: Boolean(e.answer_explanation && e.answer_explanation.value && e.answer_explanation.value.trim()),
       savingMarker: store.get('ocrSaving') || null,
-      saveInProgress: saveInProgress || Boolean(owner.inFlight && !owner.inFlight.settled),
+      saveInProgress: saveFlight.isBusy(),
       stopRequested: liveStop,
       lock: readLock(),
       tabId: autoTabId,
       now: Date.now(),
       visible: !document.hidden,
       savedLog: savedLog,
-      imagePlan: imagePlan,
+      imagePlan: imagePlanCtrl.getPlan(),
       recentRows: recentRows(),
       form: {
         question: e.question_text ? e.question_text.value : '',
@@ -252,55 +253,16 @@ function runOCRBookmarklet() {
       }
     };
   }
-  function planNums(row) {
-    const list = row && Array.isArray(row.nums) ? row.nums : [];
-    return list.map(n => Number(n)).filter(n => Number.isInteger(n) && n > 0);
-  }
-  function planReady(row) {
-    return Boolean(row && row.file && !row.cacheError && typeof row.name === 'string' && row.name.trim() && planNums(row).length);
-  }
-  function planRowFor(num) {
-    return imagePlan.find(row => planReady(row) && planNums(row).includes(Number(num))) || null;
-  }
-  function stimulusPlan(stim) {
-    return imagePlan.find(row => row && String(row.stimulusId) === String(stim.id)) || null;
-  }
-  function detectedStimuli() {
-    const list = [];
-    queue.items.forEach(item => {
-      (item && Array.isArray(item.stimuli) ? item.stimuli : []).forEach(stim => { if (stim) list.push(stim); });
-    });
-    return list.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
-  }
-  function unRangedImageBoundary(q) {
-    if (!q) return null;
-    for (const stim of detectedStimuli()) {
-      if (stim.needsImage === false) continue;
-      const plan = stimulusPlan(stim);
-      const effectiveNums = plan && planNums(plan).length ? planNums(plan) : (Array.isArray(stim.nums) ? stim.nums : []);
-      if (effectiveNums.length) continue;
-      let boundary = null;
-      if (stim.sourceNum == null) {
-        boundary = queue.items[0] || null;
-      } else {
-        const srcIdx = queue.items.findIndex(item => item && item.num === stim.sourceNum);
-        if (srcIdx > -1) boundary = queue.items[srcIdx + 1] || null;
-      }
-      if (boundary && boundary === q) return stim;
-    }
-    return null;
-  }
-  function questionImagePauseReason(q) {
-    if (!q) return null;
-    if (planRowFor(q.num)) return null;
-    if (q.needsImage) return 'image required';
-    if (imagePlan.some(row => row && !planReady(row) && planNums(row).includes(Number(q.num)))) return 'image required';
-    if (unRangedImageBoundary(q)) return 'image block has no question range';
-    return null;
-  }
-  function needsImageQuestions() {
-    return queue.items.filter(item => item && item.needsImage && Number.isInteger(item.num));
-  }
+  const imagePlanCtrl = createStimulusImagePlan({
+    $,
+    getQueue: () => queue,
+    parseRange: text => parseStimulusRange(text),
+    renderAuto: () => renderAuto()
+  });
+  const planRowFor = num => imagePlanCtrl.planRowFor(num);
+  const questionImagePauseReason = q => imagePlanCtrl.questionImagePauseReason(q);
+  const clearImagePlan = () => imagePlanCtrl.clear();
+  const renderImagePlan = () => imagePlanCtrl.render($('ocr_image_plan'));
   function missingTextItem() {
     const pending = queue.items.slice(Number.isInteger(queue.i) && queue.i > 0 ? queue.i : 0);
     return pending.find(item => item && Array.isArray(item.flags) && item.flags.includes(MISSING_TEXT_FLAG)) || null;
@@ -308,282 +270,12 @@ function runOCRBookmarklet() {
   function missingTextDetail(item) {
     return 'Question ' + (item && item.num != null ? item.num : '?') + ' contains a [missing] marker. Edit it and save by hand, or re-paste and Load again.';
   }
-  function queueNumberSet() {
-    return new Set(queue.items.map(item => item.num).filter(Number.isInteger));
-  }
-  function formatPlanRange(nums) {
-    const list = (Array.isArray(nums) ? nums : []).map(Number).filter(n => Number.isInteger(n) && n > 0);
-    if (!list.length) return '';
-    if (list.length === 1) return String(list[0]);
-    let contiguous = true;
-    for (let i = 1; i < list.length; i++) if (list[i] !== list[i - 1] + 1) { contiguous = false; break; }
-    return contiguous ? list[0] + '-' + list[list.length - 1] : list.join(', ');
-  }
-  function parsePlanRange(text) {
-    return parseStimulusRange(text);
-  }
-  function planStatus(row) {
-    if (row && row.cacheError) return 'File read failed (' + row.cacheError + '); re-select image';
-    if (!planReady(row)) return 'No image';
-    const known = queueNumberSet();
-    const bad = planNums(row).filter(n => !known.has(n));
-    if (bad.length) return 'Range not in this paste: ' + bad.join(', ');
-    return 'Ready';
-  }
-  function cacheFileInMemory(file, onDone) {
-    if (!file || file._cached || typeof file.arrayBuffer !== 'function' || typeof File === 'undefined') return;
-    file.arrayBuffer().then(buf => {
-      const mem = new File([buf], file.name || 'image.png', {
-        type: file.type || 'application/octet-stream',
-        lastModified: file.lastModified || Date.now()
-      });
-      mem._cached = true;
-      if (typeof onDone === 'function') onDone(mem, null);
-    }).catch(err => {
-      if (typeof onDone === 'function') onDone(null, err);
-    });
-  }
-  function setImagePlanRow(stimulusId, nums, file) {
-    const entry = {
-      stimulusId: stimulusId == null ? null : stimulusId,
-      nums: (Array.isArray(nums) ? nums : []).slice(),
-      file: file,
-      name: file && file.name ? String(file.name) : '',
-      cached: Boolean(file && file._cached),
-      cacheError: ''
-    };
-    cacheFileInMemory(file, (mem, err) => {
-      if (entry.file !== file) return;
-      if (mem) {
-        entry.file = mem;
-        entry.cached = true;
-        entry.cacheError = '';
-      } else if (err) {
-        entry.cacheError = err && err.message ? String(err.message) : 'read failed';
-        renderImagePlan();
-        renderAuto();
-      }
-    });
-    const at = imagePlan.findIndex(row => stimulusId == null ? row && row.stimulusId == null : row && String(row.stimulusId) === String(stimulusId));
-    if (at > -1) imagePlan[at] = entry;
-    else imagePlan.push(entry);
-    return entry;
-  }
-  function clearImagePlan() {
-    imagePlan = [];
-    imagePending.clear();
-  }
   function imageGateBlockers() {
     try {
       return autosaveBlockers(gateState()).filter(blocker => blocker && blocker.code === 'stimulus-range');
     } catch (e) {
       return [];
     }
-  }
-  function pickFile(input) {
-    const files = input && input.files;
-    if (files && files[0]) return files[0];
-    return input && input.value ? { name: String(input.value).split(/[\\/]/).pop() } : null;
-  }
-  function fileLine(file) {
-    if (!file) return '';
-    const size = Number(file.size);
-    return String(file.name || '') + (Number.isFinite(size) ? ' (' + size + ' bytes)' : '');
-  }
-  function renderImagePlan() {
-    const box = $('ocr_image_plan');
-    if (!box) return;
-    box.textContent = '';
-    const stimuli = detectedStimuli();
-    const needs = needsImageQuestions();
-    box.hidden = !stimuli.length && !needs.length;
-    if (box.hidden) return;
-    const known = queueNumberSet();
-    const heading = document.createElement('div');
-    heading.style.fontWeight = 'bold';
-    heading.textContent = 'Image plan (this tab only; reload clears files)';
-    box.appendChild(heading);
-    const imageStimuli = [];
-    stimuli.forEach((stim, idx) => {
-      const needsImg = stim.needsImage !== false;
-      const row = document.createElement('div');
-      row.style.margin = '6px 0';
-      row.style.paddingLeft = '6px';
-      row.style.borderLeft = '3px solid ' + (needsImg ? '#1769aa' : '#0f766e');
-      const plan = stimulusPlan(stim);
-      const title = document.createElement('div');
-      const rangeText = formatPlanRange(plan ? planNums(plan) : stim.nums);
-      title.textContent = (needsImg ? 'Image block ' : 'Text block ')
-        + (Number.isInteger(stim.order) ? stim.order : idx + 1)
-        + (Number.isInteger(stim.sourceNum) ? ' (after Q' + stim.sourceNum + ')' : '')
-        + (!needsImg && rangeText ? ' — constant_text for Q' + rangeText : '');
-      row.appendChild(title);
-      if (!needsImg) {
-        box.appendChild(row);
-        return;
-      }
-      imageStimuli.push({ stim, idx });
-      const range = document.createElement('input');
-      range.type = 'text';
-      range.id = 'ocr_img_range_' + idx;
-      range.value = formatPlanRange(plan ? planNums(plan) : stim.nums);
-      range.placeholder = 'e.g. 14-15';
-      row.appendChild(range);
-      row.appendChild(document.createTextNode(' '));
-      const file = document.createElement('input');
-      file.type = 'file';
-      file.accept = 'image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif';
-      file.id = 'ocr_img_file_' + idx;
-      const selected = document.createElement('span');
-      selected.id = 'ocr_img_file_name_' + idx;
-      selected.textContent = fileLine(imagePending.get(stim.id) || (plan && plan.file));
-      file.onchange = () => {
-        const chosen = pickFile(file);
-        if (chosen) {
-          imagePending.set(stim.id, chosen);
-          cacheFileInMemory(chosen, mem => {
-            if (mem && imagePending.get(stim.id) === chosen) imagePending.set(stim.id, mem);
-          });
-        } else {
-          imagePending.delete(stim.id);
-        }
-        selected.textContent = fileLine(chosen || (plan && plan.file));
-      };
-      row.appendChild(file);
-      row.appendChild(selected);
-      const attach = document.createElement('button');
-      attach.type = 'button';
-      attach.className = 'admin-btn admin-btn-muted';
-      attach.id = 'ocr_img_attach_' + idx;
-      attach.textContent = plan && plan.file ? 'Replace' : 'Attach';
-      attach.onclick = () => {
-        const chosen = imagePending.get(stim.id) || pickFile(file);
-        const nums = parsePlanRange(range.value);
-        if (!chosen || !nums.length) return;
-        setImagePlanRow(stim.id, nums, chosen);
-        imagePending.delete(stim.id);
-        renderImagePlan();
-        renderAuto();
-      };
-      row.appendChild(attach);
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'admin-btn admin-btn-muted';
-      remove.id = 'ocr_img_remove_' + idx;
-      remove.textContent = 'Remove';
-      remove.onclick = () => {
-        imagePlan = imagePlan.filter(entry => !entry || String(entry.stimulusId) !== String(stim.id));
-        imagePending.delete(stim.id);
-        renderImagePlan();
-        renderAuto();
-      };
-      row.appendChild(remove);
-      const status = document.createElement('div');
-      status.id = 'ocr_img_status_' + idx;
-      status.textContent = planStatus(plan);
-      status.style.fontWeight = 'bold';
-      status.style.color = planStatus(plan) === 'Ready' ? '#0d6b3f' : (planStatus(plan) === 'No image' ? '' : (plan && plan.cacheError ? '#b00020' : '#b45309'));
-      row.appendChild(status);
-      box.appendChild(row);
-    });
-    if (imageStimuli.length >= 2) {
-      const bulkNote = document.createElement('div');
-      bulkNote.textContent = 'Bulk attach: choose one file per block, top to bottom.';
-      box.appendChild(bulkNote);
-      const bulkFiles = document.createElement('input');
-      bulkFiles.type = 'file';
-      bulkFiles.accept = 'image/*';
-      bulkFiles.multiple = true;
-      bulkFiles.id = 'ocr_img_bulk_files';
-      box.appendChild(bulkFiles);
-      const bulk = document.createElement('button');
-      bulk.type = 'button';
-      bulk.className = 'admin-btn admin-btn-muted';
-      bulk.id = 'ocr_img_bulk';
-      bulk.textContent = 'Attach picked files to blocks in order';
-      bulk.onclick = () => {
-        const picked = bulkFiles.files ? Array.from(bulkFiles.files) : [];
-        imageStimuli.forEach(({ stim, idx }, pickIdx) => {
-          const chosen = picked[pickIdx] || imagePending.get(stim.id);
-          if (!chosen) return;
-          const input = $('ocr_img_range_' + idx);
-          const nums = parsePlanRange(input ? input.value : '');
-          if (!nums.length) return;
-          setImagePlanRow(stim.id, nums, chosen);
-          imagePending.delete(stim.id);
-        });
-        renderImagePlan();
-        renderAuto();
-      };
-      box.appendChild(bulk);
-    }
-    const stimNums = new Set();
-    stimuli.forEach(stim => (Array.isArray(stim.nums) ? stim.nums : []).forEach(n => stimNums.add(Number(n))));
-    const uncovered = needs.filter(item => !stimNums.has(Number(item.num))).map(item => item.num);
-    const generic = imagePlan.find(entry => entry && entry.stimulusId == null) || null;
-    if (uncovered.length || generic) {
-      const row = document.createElement('div');
-      row.style.margin = '6px 0';
-      row.style.paddingLeft = '6px';
-      row.style.borderLeft = '3px solid #6b7280';
-      const title = document.createElement('div');
-      title.textContent = 'Add image for other questions';
-      row.appendChild(title);
-      const range = document.createElement('input');
-      range.type = 'text';
-      range.id = 'ocr_img_generic_range';
-      range.value = formatPlanRange(generic ? planNums(generic) : uncovered);
-      range.placeholder = 'e.g. 18';
-      row.appendChild(range);
-      row.appendChild(document.createTextNode(' '));
-      const file = document.createElement('input');
-      file.type = 'file';
-      file.accept = 'image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif';
-      file.id = 'ocr_img_generic_file';
-      row.appendChild(file);
-      const attach = document.createElement('button');
-      attach.type = 'button';
-      attach.className = 'admin-btn admin-btn-muted';
-      attach.id = 'ocr_img_generic_attach';
-      attach.textContent = generic && generic.file ? 'Replace' : 'Attach';
-      attach.onclick = () => {
-        const chosen = pickFile(file);
-        const nums = parsePlanRange(range.value);
-        if (!chosen || !nums.length) return;
-        setImagePlanRow(null, nums, chosen);
-        renderImagePlan();
-        renderAuto();
-      };
-      row.appendChild(attach);
-      if (generic) {
-        const remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'admin-btn admin-btn-muted';
-        remove.id = 'ocr_img_generic_remove';
-        remove.textContent = 'Remove';
-        remove.onclick = () => {
-          imagePlan = imagePlan.filter(entry => !entry || entry.stimulusId != null);
-          renderImagePlan();
-          renderAuto();
-        };
-        row.appendChild(remove);
-      }
-      const status = document.createElement('div');
-      status.id = 'ocr_img_generic_status';
-      status.textContent = generic ? planStatus(generic) : 'No image';
-      status.style.fontWeight = 'bold';
-      row.appendChild(status);
-      box.appendChild(row);
-    }
-    const missing = needs.map(item => item.num).filter(num => !planRowFor(num));
-    missing.forEach(num => {
-      const line = document.createElement('div');
-      line.id = 'ocr_img_missing_' + num;
-      line.textContent = 'Question Q' + num + ' needs an image; auto-save will pause here.';
-      line.style.color = '#b45309';
-      line.style.fontWeight = 'bold';
-      box.appendChild(line);
-    });
   }
   function batchLabel() {
     const meta = currentMeta();
@@ -729,15 +421,17 @@ function runOCRBookmarklet() {
       list.appendChild(row);
     });
   }
-  function recordBatchHistory() {
+  function recordBatchHistory(logOverride, batchIdOverride) {
     try {
+      const targetBatchId = batchIdOverride !== undefined ? batchIdOverride : queue.batchId;
+      const targetLog = Array.isArray(logOverride) ? logOverride : savedLog;
       const meta = currentMeta();
       const entry = makeBatchHistoryEntry({
-        batchId: queue.batchId,
+        batchId: targetBatchId,
         subject: meta.subjectText || meta.subject,
         category: meta.categoryText || meta.category,
         year: meta.year,
-        entries: savedForBatch(savedLog, queue.batchId),
+        entries: savedForBatch(targetLog, targetBatchId),
         at: Date.now()
       });
       if (!entry) return;
@@ -749,7 +443,9 @@ function runOCRBookmarklet() {
       batchHistory = upsertBatchHistory(stored, entry, 15);
       store.set('ocrBatchHistory', batchHistory);
     } catch (e) {}
-    try { renderBatchHistory(); } catch (e) {}
+    if (myGen === owner.gen) {
+      try { renderBatchHistory(); } catch (e) {}
+    }
   }
   function renderPaused() {
     const box = $('ocr_paused');
@@ -758,7 +454,7 @@ function runOCRBookmarklet() {
     if (!box || !text) return;
     let marker = null;
     try { marker = store.get('ocrSaving'); } catch (e) {}
-    if (!marker || saveInProgress) { box.hidden = true; if (link) link.hidden = true; return; }
+    if (!marker || saveFlight.isBusy()) { box.hidden = true; if (link) link.hidden = true; return; }
     box.hidden = false;
     const when = marker.at ? new Date(marker.at).toLocaleTimeString() : 'an earlier time';
     text.textContent = 'Question ' + (marker.num == null ? '?' : marker.num) + ' may have saved at ' + when + '. It was not retried. Check Recently Added Questions first.';
@@ -850,7 +546,7 @@ function runOCRBookmarklet() {
     }
     renderBatchConfirm();
     const marker = (() => { try { return store.get('ocrSaving'); } catch (e) { return null; } })();
-    const disabled = anyRunning() || Boolean(owner.inFlight && !owner.inFlight.settled)
+    const disabled = anyRunning() || saveFlight.isBusy()
       || !confirmTicked || (activeMode && !activeConfirmed) || Boolean(marker)
       || !queue.items[queue.i] || Boolean(missingTextItem()) || imageGateBlockers().length > 0;
     $('ocr_auto_start').disabled = disabled;
@@ -939,7 +635,7 @@ function runOCRBookmarklet() {
     }
   }
   function busySaving() {
-    if (!saveInProgress && !(owner.inFlight && !owner.inFlight.settled)) return false;
+    if (!saveFlight.isBusy()) return false;
     if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
     if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
     liveBlocked = busyNotice;
@@ -958,215 +654,37 @@ function runOCRBookmarklet() {
       liveStatus = 'Stopped.';
     }
   }
-  async function verifyInactive(id) {
-    let ctl = null, timer = null;
-    try {
-      ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      if (ctl) timer = setTimeout(() => ctl.abort(), 30000);
-      const res = await fetch(location.pathname + '?edit=' + encodeURIComponent(id), { credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
-      if (!res.ok) return null;
-      const txt = await res.text();
-      const doc = new DOMParser().parseFromString(txt, 'text/html');
-      const cb = doc.querySelector('input[name=is_active], #is_active');
-      if (!cb) return null;
-      return cb.checked ? false : true;
-    } catch (e) {
-      return null;
-    } finally {
-      if (timer) clearTimeout(timer);
-    }
-  }
-  function restorePriorMarker(prior) {
-    if (prior) store.set('ocrSaving', prior);
-    else store.del('ocrSaving');
-  }
-  function clearSavedMarker(prior, num) {
-    if (prior && prior.num !== num) store.set('ocrSaving', prior);
-    else store.del('ocrSaving');
-  }
-  async function saveCurrentQuestion(opts) {
-    const auto = Boolean(opts && opts.auto);
-    const active = Boolean(opts && opts.active);
-    if (saveInProgress || (owner.inFlight && !owner.inFlight.settled)) {
-      return { kind: 'busy', message: 'A save is already running.' };
-    }
-    saveInProgress = true;
-    try { store.del('ocrSubmitted'); } catch (e) {}
-    const q = queue.items[queue.i];
-    const num = q ? q.num : null;
-    const savedBatchId = queue.batchId || null;
-    const savedIndex = queue.i;
-    let resolveInFlight;
-    const inFlightDone = new Promise(resolve => { resolveInFlight = resolve; });
-    const flight = { gen: owner.gen, settled: false, promise: inFlightDone };
-    owner.inFlight = flight;
-    let priorSaving = null;
-    let ctl = null, timer = null;
-    try {
-      try { priorSaving = store.get('ocrSaving'); } catch (e) {}
-      try {
-        const markerMeta = currentMeta();
-        store.set('ocrSaving', {
-          num: num,
-          at: Date.now(),
-          subject: markerMeta.subject,
-          category: markerMeta.category,
-          year: markerMeta.year
-        });
-      } catch (e) {
-        setResult('NOT saved: browser storage is unavailable, so the save was not attempted.', true);
-        return { kind: 'rejected', reason: 'storage', message: 'browser storage is unavailable.' };
-      }
-      renderAuto();
-      if (!auto && form.elements.is_active) form.elements.is_active.checked = true;
-      const fd = new FormData(form);
-      if (auto) {
-        if (active) fd.set('is_active', '1');
-        else fd.delete('is_active');
-        fd.set('autosave', '1');
-      }
-      const nativeImage = form.elements.question_image
-        && (form.elements.question_image.value || (form.elements.question_image.files && form.elements.question_image.files.length));
-      let usedPlanRow = null;
-      if (!nativeImage) {
-        usedPlanRow = planRowFor(num);
-        if (usedPlanRow) {
-          const validBlob = usedPlanRow.file && !usedPlanRow.cacheError
-            && (typeof Blob === 'undefined' || usedPlanRow.file instanceof Blob || typeof usedPlanRow.file.size === 'number');
-          if (!validBlob) {
-            restorePriorMarker(priorSaving);
-            setResult('NOT saved: attached image is invalid. Re-select the image file.', true);
-            return { kind: 'rejected', reason: 'image', message: 'attached image is invalid.' };
-          }
-          fd.set('question_image', usedPlanRow.file, usedPlanRow.name);
-        }
-      }
-      const fingerprint = makeSavedFingerprint({
-        subject_id: fd.get('subject_id'),
-        exam_category_id: fd.get('exam_category_id'),
-        exam_year: fd.get('exam_year'),
-        question_text: fd.get('question_text')
-      }, { subject: selectedText('subject_id'), category: selectedText('exam_category_id') });
-      ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      if (ctl) timer = setTimeout(() => ctl.abort(), usedPlanRow ? 60000 : 30000);
-      let res;
-      try {
-        res = await fetch(location.href, { method: 'POST', body: fd, credentials: 'same-origin', signal: ctl ? ctl.signal : undefined });
-      } catch (err) {
-        restorePriorMarker(priorSaving);
-        const msg = err && err.name === 'AbortError' ? 'save request timed out.' : (err && err.message ? err.message : 'network error.');
-        const diag = usedPlanRow
-          ? 'img=' + usedPlanRow.name + ' (' + (usedPlanRow.file ? usedPlanRow.file.size : '?') + 'B), cached=' + Boolean(usedPlanRow.cached) + (usedPlanRow.cacheError ? ', cacheErr=' + usedPlanRow.cacheError : '')
-          : '';
-        setResult('NOT saved: ' + msg, true, diag);
-        return { kind: 'rejected', reason: 'network', message: msg };
-      }
-      const txt = await res.text();
-      const doc = new DOMParser().parseFromString(txt, 'text/html');
-      const er = doc.querySelector('.admin-error');
-      const result = classifySaveResponse({ redirected: res.redirected, text: txt, errorText: er ? er.textContent.trim() : '', lastId: maxSavedId(savedLog) });
-      if (result.kind === 'rejected') {
-        restorePriorMarker(priorSaving);
-        const diag = usedPlanRow
-          ? 'img=' + usedPlanRow.name + ' (' + (usedPlanRow.file ? usedPlanRow.file.size : '?') + 'B), cached=' + Boolean(usedPlanRow.cached)
-          : '';
-        setResult('NOT saved: ' + result.message, true, diag);
-        return result;
-      }
-      if (result.kind === 'ambiguous') {
-        const sm = txt.match(SAVE_SUCCESS);
-        const flashEl = doc.querySelector('.admin-success, .admin-alert, .admin-error');
-        const titleEl = doc.querySelector('title');
-        const imgInfo = usedPlanRow ? usedPlanRow.name + ' (' + (usedPlanRow.file ? usedPlanRow.file.size : '?') + 'B)' : (nativeImage ? 'native' : 'none');
-        const snippet = (flashEl ? flashEl.textContent : (doc.body ? doc.body.textContent : txt)).replace(/\s+/g, ' ').trim().slice(0, 140);
-        const diag = 'Diag: HTTP ' + (res.status || '?')
-          + ', redirected=' + Boolean(res.redirected)
-          + ', img=' + imgInfo
-          + ', matchedId=' + (sm ? sm[1] : 'none') + '/lastId=' + maxSavedId(savedLog)
-          + (titleEl ? ', title="' + titleEl.textContent.trim().slice(0, 60) + '"' : '')
-          + (snippet ? ', body="' + snippet + '"' : '');
-        setResult('Unknown. It may have saved. Check the list.', true, diag);
-        return result;
-      }
-      let inactive = null;
-      if (auto) inactive = await verifyInactive(result.id);
-      const entry = { num: num, id: result.id, at: Date.now(), batchId: savedBatchId, inactive: auto ? inactive : false, mode: auto ? (active ? 'active' : 'draft') : 'manual' };
-      if (fingerprint) entry.fp = fingerprint;
-      const sameQueue = queue.i === savedIndex && queue.items[savedIndex] === q && (queue.batchId || null) === savedBatchId;
-      const committed = commitSave({
-        read: () => store.get('ocrSavedLog') || [],
-        current: savedLog,
-        entry: entry,
-        cap: 200,
-        write: log => store.set('ocrSavedLog', log),
-        advance: sameQueue && q ? () => { queue.i++; saveQ(); } : null
-      });
-      savedLog = committed.log;
-      if (!committed.ok) {
-        const failText = 'Saved as #' + result.id + ' but could not be logged. Do not retry.';
-        liveBlocked = failText;
-        setResult(failText, true);
-        if (auto) { liveStop = true; liveState = 'needs-check'; }
-        return { kind: 'saved', id: result.id, inactive: inactive, entry: entry, failed: committed.stage };
-      }
-      recordBatchHistory();
-      if (sameQueue && q) invalidateDry('a save advanced the queue');
-      clearSavedMarker(priorSaving, num);
-      try { store.del('ocrSubmitted'); } catch (e) {}
-      ['question_image', 'answer_video'].forEach(n => { const el = form.elements[n]; if (el) el.value = ''; });
-      const ae = form.elements.answer_explanation;
-      if (ae) ae.value = '';
-      saveMeta();
-      showOCR(auto);
-      last = cur().i;
-      if (last > -1) tick();
-      else {
-        form.reset();
-        if ($('constant_text')) $('constant_text').value = '';
-      }
-      let unverifiedStop = false;
-      if (auto) {
-        const tracked = trackUnverified(unverifiedStreak, inactive);
-        unverifiedStreak = tracked.streak;
-        if (tracked.stop) {
-          unverifiedStop = true;
-          liveStop = true;
-        }
-      }
-      if (auto && inactive === null) {
-        if (unverifiedStop) {
-          liveBlocked = 'Stopped after 2 unverified checks. Check the saved list before continuing.';
-          liveState = 'needs-check';
-          setResult(liveBlocked, true);
-        } else {
-          setResult('Saved as #' + result.id + '. Could not verify; check the list.', false);
-        }
-      } else if (auto && inactive === !active) {
-        setResult('Saved as question #' + result.id + ' (' + (active ? 'active' : 'inactive') + ').', false);
-      } else if (auto && active) {
-        setResult('SAVED AS INACTIVE: question #' + result.id + ' is not live. Check the list.', true);
-        liveStop = true;
-        liveState = 'needs-check';
-      } else if (auto) {
-        setResult('SAVED AS ACTIVE: question #' + result.id + '. Check the list and turn it off.', true);
-        liveStop = true;
-        liveState = 'needs-check';
-      } else {
-        setResult('Saved as question #' + result.id + '.', false);
-      }
-      return { kind: 'saved', id: result.id, inactive: inactive, entry: entry };
-    } catch (e) {
-      setResult('Unknown. It may have saved. Check the list.', true);
-      return { kind: 'ambiguous', message: 'Unknown. It may have saved. Check the list.' };
-    } finally {
-      if (timer) clearTimeout(timer);
-      flight.settled = true;
-      if (owner.inFlight === flight) owner.inFlight = null;
-      saveInProgress = false;
-      if (liveBlocked === busyNotice) liveBlocked = '';
-      if (resolveInFlight) resolveInFlight();
-    }
-  }
+  const saveFlight = createStimulusSaveFlight({
+    form,
+    owner,
+    store,
+    $,
+    isPlainObject,
+    currentMeta,
+    selectedText,
+    getQueue: () => queue,
+    setQueue: next => { queue = next; },
+    getSavedLog: () => savedLog,
+    setSavedLog: next => { savedLog = next; },
+    getLast: () => last,
+    setLast: next => { last = next; },
+    cur: () => cur(),
+    planRowFor,
+    invalidateDry,
+    recordBatchHistory,
+    showOCR: auto => showOCR(auto),
+    tick: ask => tick(ask),
+    renderAuto,
+    saveMeta,
+    setResult,
+    setLiveBlocked: msg => { liveBlocked = msg; },
+    setLiveState: st => { liveState = st; },
+    setLiveStop: flag => { liveStop = flag; },
+    getUnverifiedStreak: () => unverifiedStreak,
+    setUnverifiedStreak: next => { unverifiedStreak = next; },
+    clearBusyNotice: () => { if (liveBlocked === busyNotice) liveBlocked = ''; },
+    busyNotice
+  });
   function renderOCR() {
     const q = queue.items[queue.i];
     const active = queue.items.length > 0;
@@ -1310,7 +828,7 @@ function runOCRBookmarklet() {
           liveBlocked = '';
           break;
         }
-        const result = await saveCurrentQuestion({ auto: true, active: liveMode === 'active' });
+        const result = await saveFlight.saveCurrentQuestion({ auto: true, active: liveMode === 'active' });
         if (runToken !== liveToken) return;
         if (result.kind !== 'saved') {
           if (result.message) liveBlocked = result.message;
@@ -1354,8 +872,15 @@ function runOCRBookmarklet() {
         keyConflicts = parsed.keyConflicts || [];
         store.set('ansKey', key);
         store.set('ansKeyConflicts', keyConflicts);
-        if (queue.batchId) store.set('ansKeyBatch', queue.batchId);
-        else store.del('ansKeyBatch');
+        if (queue.batchId) {
+          store.set('ansKeyBatch', queue.batchId);
+        } else {
+          store.del('ansKeyBatch');
+          if (queue.items.length) {
+            queue.how = 'key-paste';
+            saveQ();
+          }
+        }
         if (queue.items[queue.i]) fillForm(queue.items[queue.i]);
         if (applyHeaderInfo(parts.boundary || '', parts.answers || '')) saveMeta();
         tick(true);
@@ -1584,6 +1109,10 @@ function runOCRBookmarklet() {
     store.del('ansKey');
     store.del('ansKeyBatch');
     store.del('ansKeyConflicts');
+    if (!queue.batchId && queue.how) {
+      delete queue.how;
+      saveQ();
+    }
     invalidateDry('the answer key changed');
     $('ans_msg').textContent = 'Key cleared.';
     renderAuto();
@@ -1593,7 +1122,7 @@ function runOCRBookmarklet() {
     e.stopImmediatePropagation();
     if (!queue.items.length) saveMeta();
     const b = form.querySelector('button[type=submit]');
-    if (saveInProgress || (owner.inFlight && !owner.inFlight.settled)) {
+    if (saveFlight.isBusy()) {
       setResult(busyNotice, false);
       return;
     }
@@ -1605,11 +1134,11 @@ function runOCRBookmarklet() {
     if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; }
     if (b) b.disabled = true;
     setResult('Saving...', false);
-    saveCurrentQuestion({ auto: false }).then(() => {
-      if (b && (!owner.inFlight || owner.inFlight.settled)) b.disabled = false;
+    saveFlight.saveCurrentQuestion({ auto: false }).then(() => {
+      if (b && !saveFlight.isBusy()) b.disabled = false;
       renderAuto();
     }).catch(() => {
-      if (b && (!owner.inFlight || owner.inFlight.settled)) b.disabled = false;
+      if (b && !saveFlight.isBusy()) b.disabled = false;
       renderAuto();
     });
   }
@@ -1636,15 +1165,32 @@ function runOCRBookmarklet() {
   syncLiveStateFromStorage();
   hadServerError ? renderOCR() : showOCR();
   tick();
-  if (owner.inFlight && !owner.inFlight.settled) {
-    if (sb) sb.disabled = true;
-    liveBlocked = busyNotice;
-    setResult('An earlier save is still running. Wait for it to finish.', false);
+  saveFlight.attachObserver(sb, myGen, outcome => {
+    queue = normalizeStoredQueue(store.get('ocrQueue'));
+    const nextLog = store.get('ocrSavedLog');
+    savedLog = Array.isArray(nextLog) ? nextLog : [];
+    const nextHist = store.get('ocrBatchHistory');
+    batchHistory = Array.isArray(nextHist) ? nextHist : [];
+    syncLiveStateFromStorage();
+    if (outcome && outcome.clearFields) {
+      saveFlight.clearFormTransientFields();
+      saveMeta();
+      invalidateDry('a save advanced the queue');
+      showOCR(outcome.auto);
+      last = cur().i;
+      if (last > -1) tick();
+      else {
+        form.reset();
+        if ($('constant_text')) $('constant_text').value = '';
+      }
+    } else {
+      showOCR();
+      last = cur().i;
+      if (last > -1) tick();
+    }
+    if (outcome && outcome.resultText) {
+      setResult(outcome.resultText, Boolean(outcome.danger), outcome.diag || '');
+    }
     renderAuto();
-    owner.inFlight.promise.then(() => {
-      if (sb && (!owner.inFlight || owner.inFlight.settled)) sb.disabled = false;
-      if (liveBlocked === busyNotice) liveBlocked = '';
-      renderAuto();
-    });
-  }
+  });
 }

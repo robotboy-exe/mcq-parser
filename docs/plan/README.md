@@ -28,11 +28,12 @@ Last updated: 2026-11-26.
 - Current package: `PC01`, `PC02`, and `PC03` remain `done` and merged on
   `scratch/parser-convergence-cycle` (through `9afe4f8`). Unfinished
   `PC04`–`PC06` are superseded by Phase 7 (`PC07`, stimulus-first convergence)
-  implemented on `scratch/pc07-stimulus-first` (`Commit: deferred`), with
-  `PC04` `BLOCK-10` and `BLOCK-11` carried **open** for independent Phase 7
-  verification. `src/bookmarklets/key/*` stays retained as comparator and
-  rollback reference until desktop + owner Brave/Android verification and a
-  separate reviewed retirement diff.
+  on `scratch/pc07-stimulus-first`. Phase 7 review (`5711f96`) closed carried
+  `PC04` `BLOCK-10` and `BLOCK-11` and opened `BLOCK-12`–`BLOCK-22`; the Phase 7
+  fix session (`D1`–`D5` approved) is complete and awaiting independent Phase 7
+  re-review. `src/bookmarklets/key/*` stays retained as comparator and rollback
+  reference until desktop + owner Brave/Android verification and a separate
+  reviewed retirement diff.
   New `tests/single-source.js` passes 15 checks and the full Node/PHP baseline
   is green; a Cloud Chromium probe ran both generated artifacts on the real
   staging admin page. The 2026-11-26 rigorous review of candidate `01e2c02`
@@ -384,7 +385,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | superseded by PC07 (Gate 1 approved 2026-11-26; `BLOCK-10` & `BLOCK-11` carried **open** into Phase 7) | preserved as history/evidence |
 | 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | superseded by PC07 (anchored blocks, leading stimuli, gap recovery, & `[missing text]` implemented in Phase 7) | preserved as history/evidence |
 | 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | superseded by PC07 (key-only retirement deferred to separate reviewed diff after owner acceptance) | desktop + Brave/Android acceptance for `src/bookmarklet.js` |
-| 7 | PC07 | [Stimulus-First Convergence](parser-convergence/pc-07-stimulus-first.md) | PC01–PC03 settled & Gate 1 `go` | in progress — implementation handoff complete on `scratch/pc07-stimulus-first` (`Commit: deferred`); `BLOCK-10` & `BLOCK-11` open for Phase 7 review | desktop + owner Brave/Android check before key-only retirement |
+| 7 | PC07 | [Stimulus-First Convergence](parser-convergence/pc-07-stimulus-first.md) | PC01–PC03 settled & Gate 1 `go` | in progress — `BLOCK-10`/`BLOCK-11` closed by Phase 7 review (`5711f96`); `BLOCK-12`–`BLOCK-22` fixed on `scratch/pc07-stimulus-first`, awaiting independent Phase 7 re-review | desktop + owner Brave/Android check before key-only retirement |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.
@@ -462,7 +463,7 @@ verifies the detail path with the rest of Release A.
 | phase 4 | PC04 marker-adjacent range | rigorous | superseded by PC07 (Gate 1 approved 2026-11-26); `BLOCK-10` & `BLOCK-11` carried **open** into Phase 7 |
 | phase 5 | PC05 anchored stimulus boundaries and missing classification | rigorous | superseded by PC07 |
 | phase 6 | PC06 bookmarklet policy and scratch release | rigorous | superseded by PC07; key-only retirement deferred to separate reviewed diff after owner acceptance |
-| phase 7 | PC07 stimulus-first convergence | rigorous | in progress — implementation handoff complete on `scratch/pc07-stimulus-first` (`Commit: deferred`); awaiting push/publication & independent Phase 7 review |
+| phase 7 | PC07 stimulus-first convergence | rigorous | in progress — `BLOCK-10`/`BLOCK-11` closed (`5711f96`); `BLOCK-12`–`BLOCK-22` fixed on `scratch/pc07-stimulus-first`; awaiting Phase 7 re-review |
 | cycle | settled phases on `scratch/parser-convergence-cycle` | rigorous cycle-wide | blocked until Phase 7 review (and key-only retirement delta, if applicable) settles |
 
 ## Current path to cycle close
@@ -472,12 +473,12 @@ verifies the detail path with the rest of Release A.
 2. **PC07** — supersedes unfinished `PC04`–`PC06` (history retained in
    `docs/plan/parser-convergence/pc-04..06.md` and `phase-4*.md`): implemented
    on `scratch/pc07-stimulus-first` from `9afe4f8` converging onto two supported
-   surfaces (`ocr_helper.js` `?v=2.4.10` manual helper + `src/bookmarklet.js`
-   stimulus-first bookmarklet over `src/parser/core.js` `2.5.7`), carrying
-   `BLOCK-10` (`V10`) and `BLOCK-11` (`V11`) open for independent Phase 7 review
-   and retaining `src/bookmarklets/key/` as comparator/rollback reference.
-3. **Phase 7 rigorous review** — publish/push candidate after separate owner
-   authorization, then run independent review (`docs/plan/reviews/parser-convergence-2026-11-phase-7.md`).
+   surfaces (`ocr_helper.js` `?v=2.4.11` manual helper + `src/bookmarklet.js`
+   stimulus-first bookmarklet over `src/parser/core.js` `2.5.8` and focused
+   `image-plan.js`/`save-flight.js` modules), with `BLOCK-10`/`BLOCK-11` closed
+   and `BLOCK-12`–`BLOCK-22` fixed (`D1`–`D5` approved); `src/bookmarklets/key/`
+   remains retained as comparator/rollback reference.
+3. **Phase 7 rigorous re-review** — run independent re-review (`docs/plan/reviews/parser-convergence-2026-11-phase-7-re-review.md`).
 4. **Owner device checks & key-only retirement** — after Phase 7 settles, owner
    verifies the installed replacement bookmarklet on desktop and Brave/Android,
    then a separate reviewed diff retires `src/bookmarklets/key/`.
@@ -485,13 +486,14 @@ verifies the detail path with the rest of Release A.
    rigorous cycle-wide review settle, decide whether and how to integrate the
    reviewed scratch cycle into real branches.
 
-Current workflow stop: PC07 implementation and handoff are complete on
-`scratch/pc07-stimulus-first` (`Commit: deferred`). All baseline tests (76
-runner, 187 unit, 42 helper, 43 key comparator, 15 single-source, 10 underline,
+Current workflow stop: PC07 fix session for `BLOCK-12`–`BLOCK-22` is complete on
+`scratch/pc07-stimulus-first` (`D1`–`D5` approved). All baseline tests (77
+runner, 196 unit, 42 helper, 43 key comparator, 15 single-source, 10 underline,
 7 preview, 26 math-tool, 69 JS + 33 PHP marker, 8 store, 14 ordering, 7/7 lint
 on PHP 8.3.32 and PHP 8.5.12, 7 bank hashes) and real Chromium + SQLite staging
-checks passed; `BLOCK-10` and `BLOCK-11` remain **open** pending independent
-Phase 7 review. No commit, push, merge, deploy, or live action is authorized.
+checks passed; `BLOCK-10` and `BLOCK-11` are closed and `BLOCK-12`–`BLOCK-22`
+await independent Phase 7 re-review. No merge, deploy, or live action is
+authorized.
 
 ## Archived `math-editor-2026-11` close path
 

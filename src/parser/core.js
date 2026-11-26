@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.5.7
+// Version: 2.5.8
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.5.7";
+const PARSER_VERSION = "2.5.8";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -664,11 +664,10 @@ function stimulusIntroRangeText(line) {
       end += next[0].length;
       count++;
       const afterTok = s.slice(end);
-      // BLOCK-10 & BLOCK-11: a locator phrase after a comma-list member (e.g.
-      // `in the same section.` or `in the table`) qualifies only when followed
-      // by a clause terminator/directional word, not a verb predicate such as
-      // `in the table is the cash deposit`.
-      const validEnd = /^(?:$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively|are|refer|use|based|on|for|from|of|under|with|which|that)\b|\s+in\s+(?:(?:the|this|that|these|those)\s+(?:(?:above|below|following|same)\s+)?(?:section|part|diagram|figure|chart|table|graph|passage|extract|box|list|schedule|questions?|paper|exam|test|exercise)|section|part)(?=$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively)\b|\s+(?:and|&)\s+(?:Q\s*)?\d{1,3}\b|\s*,\s*(?:(?:and|&)\s*)?(?:Q\s*)?\d{1,3}\b))/i.test(afterTok);
+      // BLOCK-10, BLOCK-11 & BLOCK-19: a locator phrase after a comma-list member
+      // (e.g. `in the same section.` or `in the table above.`) qualifies only when
+      // followed by a clause terminator/list continuation, not a verb predicate.
+      const validEnd = /^(?:$|\s*(?:[.,;:!?)\]]|$)|\s+(?:below|above|following|only|respectively|are|refer|use|based|on|for|from|of|under|with|which|that)\b|\s+in\s+(?:(?:the|this|that|these|those)\s+(?:(?:above|below|following|same)\s+)?(?:section|part|diagram|figure|chart|table|graph|passage|extract|box|list|schedule|questions?|paper|exam|test|exercise)|section|part)(?:\s+(?:below|above|following|only|respectively)\b)?(?=$|\s*(?:[.,;:!?)\]]|$)|\s+(?:and|&)\s+(?:Q\s*)?\d{1,3}\b|\s*,\s*(?:(?:and|&)\s*)?(?:Q\s*)?\d{1,3}\b))/i.test(afterTok);
       if (!inCommaTail || /^Q/i.test(tok) || validEnd) {
         safeEnd = end;
         safeCount = count;
@@ -833,8 +832,11 @@ function stimulusIntroRange(line) {
 
 function stimulusSingleQuestionRef(line) {
   if (!stimulusIntroLine(line)) return [];
-  const m = String(line == null ? '' : line).trim().match(/\bquestions?\s+(?:Q\s*)?(\d{1,3})(?!\d)/i);
+  const trimmed = String(line == null ? '' : line).trim();
+  const m = trimmed.match(/\bquestions?\s+(?:Q\s*)?(\d{1,3})(?!\d)/i);
   if (!m) return [];
+  const after = trimmed.slice(m.index + m[0].length);
+  if (/^\s*(?:[-–—]|to|and|&|,)\s*(?:Q\s*)?\d/i.test(after)) return [];
   const n = +m[1];
   return n > 0 ? [n] : [];
 }
@@ -1154,8 +1156,21 @@ function extractAnchoredInterQuestionBlocks(raw, num) {
       });
       const bareVisual = STIMULUS_IMAGE_NOUN.test(lines[anchorIntro]) && anchorIntro === lastNonBlank;
       if ((hasBodyAfter || bareVisual) && (nextMarker === undefined || !tableFollowedByPlainProse(lines, anchorIntro, nextMarker))) {
+        let end = lastNonBlank;
+        if (nextMarker !== undefined) {
+          end = nextMarker;
+          while (end + 1 <= lastNonBlank) {
+            const t = lines[end + 1].trim();
+            if (!t || lineHasMarkerToken(lines[end + 1]) || stimulusIntroLine(t) || stimulusTableLine(t) || /^fig(?:ure)?\.?\s*\d+$/i.test(t)) {
+              end++;
+            } else {
+              break;
+            }
+          }
+          while (end > nextMarker && !lines[end].trim()) end--;
+        }
         extractStart = anchorIntro;
-        extractEnd = lastNonBlank;
+        extractEnd = end;
         primaryIntro = anchorIntro;
       }
     }
@@ -1243,7 +1258,12 @@ function applyStimulusFlags(items, leadingStimuli) {
     if (Number.isInteger(item.num)) byNum.set(item.num, item);
   }
   let order = 0;
-  const applyOne = (stim, defaultSourceNum) => {
+  const flagMissing = target => {
+    if (!target || typeof target !== 'object') return;
+    if (!Array.isArray(target.flags)) target.flags = [];
+    if (!target.flags.includes(MISSING_TEXT_FLAG)) target.flags.push(MISSING_TEXT_FLAG);
+  };
+  const applyOne = (stim, defaultSourceNum, ownerItem) => {
     if (!stim || typeof stim !== 'object') return;
     order++;
     stim.id = 'stim-' + order;
@@ -1260,30 +1280,35 @@ function applyStimulusFlags(items, leadingStimuli) {
     const img = stimulusNeedsImage(stim);
     stim.needsImage = img;
     const ct = img ? '' : stripStimulusIntro(stim.text);
+    const hasMissing = MISSING_TEXT_RE.test(stim.text || '');
     for (const n of nums) {
       const target = byNum.get(n);
       if (target) {
         if (ct) target.constantText = target.constantText ? target.constantText + '\n\n' + ct : ct;
         if (img) target.needsImage = true;
+        if (hasMissing) flagMissing(target);
       } else {
         stim.missing.push(n);
       }
     }
+    if (hasMissing && !nums.length && ownerItem) flagMissing(ownerItem);
   };
   const leading = Array.isArray(leadingStimuli) ? leadingStimuli.filter(s => s && typeof s === 'object') : [];
   if (leading.length && list[0] && typeof list[0] === 'object') {
-    list[0].stimuli = leading.concat(Array.isArray(list[0].stimuli) ? list[0].stimuli : []);
-    for (const stim of list[0].stimuli) applyOne(stim, list[0].num);
+    const itemStims = Array.isArray(list[0].stimuli) ? list[0].stimuli : [];
+    for (const stim of leading) applyOne(stim, undefined, list[0]);
+    for (const stim of itemStims) applyOne(stim, list[0].num, list[0]);
+    list[0].stimuli = leading.concat(itemStims);
     for (let i = 1; i < list.length; i++) {
       const item = list[i];
       if (!item || !Array.isArray(item.stimuli)) continue;
-      for (const stim of item.stimuli) applyOne(stim, item.num);
+      for (const stim of item.stimuli) applyOne(stim, item.num, item);
     }
   } else {
-    for (const stim of leading) applyOne(stim, null);
+    for (const stim of leading) applyOne(stim, undefined, null);
     for (const item of list) {
       if (!item || !Array.isArray(item.stimuli)) continue;
-      for (const stim of item.stimuli) applyOne(stim, item.num);
+      for (const stim of item.stimuli) applyOne(stim, item.num, item);
     }
   }
   return list;

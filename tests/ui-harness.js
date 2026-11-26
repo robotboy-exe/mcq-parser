@@ -5,6 +5,11 @@ const path = require('path');
 const vm = require('vm');
 
 const UI_FILE = path.resolve(__dirname, '../src/ui/ui.js');
+const IMAGE_PLAN_FILE = path.resolve(__dirname, '../src/bookmarklets/stimulus/image-plan.js');
+const SAVE_FLIGHT_FILE = path.resolve(__dirname, '../src/bookmarklets/stimulus/save-flight.js');
+const STIMULUS_ARTIFACT_FILE = path.resolve(__dirname, '../src/bookmarklet.js');
+const IMAGE_PLAN_SOURCE = fs.readFileSync(IMAGE_PLAN_FILE, 'utf8');
+const SAVE_FLIGHT_SOURCE = fs.readFileSync(SAVE_FLIGHT_FILE, 'utf8');
 const UI_SOURCE = fs.readFileSync(UI_FILE, 'utf8');
 const parser = require('../src/parser/parser.js');
 const SET_TIMEOUT = setTimeout;
@@ -415,9 +420,13 @@ function createUI(options) {
     Boolean,
     console
   };
-  Object.keys(parser).forEach(key => { sandbox[key] = parser[key]; });
+  sandbox.window = sandbox;
+  const runCode = opts.built
+    ? () => vm.runInContext(fs.readFileSync(STIMULUS_ARTIFACT_FILE, 'utf8').replace(/^javascript:/, ''), sandbox, { filename: STIMULUS_ARTIFACT_FILE })
+    : () => vm.runInContext(IMAGE_PLAN_SOURCE + '\n' + SAVE_FLIGHT_SOURCE + '\n' + UI_SOURCE + '\nrunOCRBookmarklet();', sandbox, { filename: UI_FILE });
+  if (!opts.built) Object.keys(parser).forEach(key => { sandbox[key] = parser[key]; });
   vm.createContext(sandbox);
-  vm.runInContext(UI_SOURCE + '\nrunOCRBookmarklet();', sandbox, { filename: UI_FILE });
+  runCode();
 
   const flush = async () => {
     for (let i = 0; i < 20; i++) await new Promise(resolve => SET_TIMEOUT(resolve, 0));
@@ -441,7 +450,7 @@ function createUI(options) {
     gets,
     flush,
     reinject() {
-      vm.runInContext(UI_SOURCE + '\nrunOCRBookmarklet();', sandbox, { filename: UI_FILE });
+      runCode();
     },
     activeIntervals: () => intervals.size,
     visibilityListenersCount: () => doc.visibilityListeners.length,

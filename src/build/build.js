@@ -4,6 +4,8 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const corePath = path.join(root, 'parser', 'core.js');
 const autosavePath = path.join(root, 'bookmarklets', 'stimulus', 'autosave.js');
+const imagePlanPath = path.join(root, 'bookmarklets', 'stimulus', 'image-plan.js');
+const saveFlightPath = path.join(root, 'bookmarklets', 'stimulus', 'save-flight.js');
 const uiPath = path.join(root, 'ui', 'ui.js');
 const outPath = path.join(root, 'bookmarklet.js');
 const minOutPath = path.join(root, 'bookmarklet.min.js');
@@ -220,9 +222,11 @@ function minify(source) {
 
 const core = stripLineComments(fs.readFileSync(corePath, 'utf8'));
 const autosave = stripLineComments(fs.readFileSync(autosavePath, 'utf8'));
+const imagePlan = stripLineComments(fs.readFileSync(imagePlanPath, 'utf8'));
+const saveFlight = stripLineComments(fs.readFileSync(saveFlightPath, 'utf8'));
 const ui = stripLineComments(fs.readFileSync(uiPath, 'utf8'));
 
-const body = [core, autosave, ui, 'runOCRBookmarklet();']
+const body = [core, autosave, imagePlan, saveFlight, ui, 'runOCRBookmarklet();']
   .join('\n')
   .split(/\r?\n/)
   .map(line => line.trim())

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "new-edge-anchored-option-wrap",
+  "source": [
+    "PC07 phase-7 BLOCK-17 intercepted-wrap regression",
+    "Wrapped Option D line 'leaders' sits after an anchored intro + [image] marker"
+  ],
+  "provenance": "Transcribed from docs/plan/reviews/parser-convergence-2026-11-phase-7.md BLOCK-17 reproduction with complete Q19-Q22 options.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/new-edge-anchored-option-wrap.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 4,
+    "nums": [19, 20, 21, 22],
+    "questions": [
+      {
+        "num": 19,
+        "question": "Which of the following is the best way?",
+        "a": "one",
+        "b": "two",
+        "c": "three",
+        "d": "Undergoing mentorship under prominent political leaders",
+        "flags": [],
+        "needs_image": false
+      },
+      {
+        "num": 20,
+        "question": "Question twenty?",
+        "flags": [],
+        "needs_image": true
+      },
+      {
+        "num": 21,
+        "question": "Question twenty one?",
+        "flags": [],
+        "needs_image": true
+      },
+      {
+        "num": 22,
+        "question": "Question twenty two?",
+        "flags": [],
+        "needs_image": true
+      }
+    ],
+    "needs_image": [20, 21, 22],
+    "stimulus_count": 1,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": 19,
+        "nums": [20, 21, 22],
+        "text_contains": [
+          "Use the diagram below to answer questions 20 to 22."
+        ],
+        "missing": []
+      }
+    ],
+    "forbidden_flags": [
+      "option D missing",
+      "question text missing or very short"
+    ]
+  },
+  "must_not": [
+    "Wrapped Option D continuation 'leaders' is moved into image metadata",
+    "Q19 option D is truncated"
+  ],
+  "notes": [
+    "Anchored extraction stops at [image] so trailing non-stimulus prose 'leaders' rejoins Option D."
+  ],
+  "discrepancies": []
+}

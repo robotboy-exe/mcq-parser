@@ -37,10 +37,10 @@ parser logic back to it.
 
 The deployed helper and the converged bookmarklet are separate products.
 `ocr_helper.js` is the deployed manual product and keeps only manual Load,
-form fill, and manual POST (`EXPECTED_CORE_VERSION = '2.5.7'`); it must never
+form fill, and manual POST (`EXPECTED_CORE_VERSION = '2.5.8'`); it must never
 regain answer-key load, dry run, autosave, in-place save, image plan, batch
 history, Constant Text writes, or a bookmarklet title. Under D-113 (`PC07`),
-`src/bookmarklet.js` (`core.js` + `src/bookmarklets/stimulus/autosave.js` +
+`src/bookmarklet.js` (`core.js` + `src/bookmarklets/stimulus/{autosave,image-plan,save-flight}.js` +
 `src/ui/ui.js`) is the single supported bookmarklet product, while
 `src/bookmarklets/key/entry.js` (`src/bookmarklets/key/bookmarklet.js`) stays
 retained strictly as a comparator and rollback reference until owner desktop +

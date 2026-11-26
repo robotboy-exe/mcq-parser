@@ -335,7 +335,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.7/.test(result.thrown.message));
+  assert(/2\.5\.8/.test(result.thrown.message));
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -710,7 +710,11 @@ test('Load handles PC04 V9, V9-ctrl, V6, V10, V11, V11-ctrl, adv-bank, and PC05 
     ['V10', '20 to 22, 25 in the table is the cash deposit.', [20, 21, 22]],
     ['V11', '20 to 22, 25 in the same section.', [20, 21, 22, 25]],
     ['V11-ctrl', '20 to 22, 25 in this section.', [20, 21, 22, 25]],
-    ['adv-bank', '20 to 22, 25 in the bank was deposited.', [20, 21, 22]]
+    ['adv-bank', '20 to 22, 25 in the bank was deposited.', [20, 21, 22]],
+    ['BLOCK-19-neg', '20 to 22, 25 in the table above is the cash deposit.', [20, 21, 22]],
+    ['BLOCK-19-pos', '20 to 22, 25 in the table above.', [20, 21, 22, 25]],
+    ['BLOCK-20-bad', '20 to 2023.', []],
+    ['BLOCK-20-one', '20.', [20]]
   ];
   for (const [label, clause, wantNums] of rangeCases) {
     const paste = full(H + '\n\nUse the diagram below to answer questions ' + clause + '\n[image]');
@@ -724,7 +728,8 @@ test('Load handles PC04 V9, V9-ctrl, V6, V10, V11, V11-ctrl, adv-bank, and PC05 
   for (const [fixtureId, wantFirstD, wantNums] of [
     ['new-edge-image-intro-marker', 'imposition of embargo', [20, 21, 22]],
     ['new-edge-inter-question-text', 'a delivery note', [20, 21]],
-    ['new-edge-inter-question-diagram', 'credit transfer.', [21, 22, 23]]
+    ['new-edge-inter-question-diagram', 'credit transfer.', [21, 22, 23]],
+    ['new-edge-anchored-option-wrap', 'Undergoing mentorship under prominent political leaders', [20, 21, 22]]
   ]) {
     const raw = readFixtureInput(fixtureId);
     const result = loadThroughForm(raw);
@@ -733,6 +738,29 @@ test('Load handles PC04 V9, V9-ctrl, V6, V10, V11, V11-ctrl, adv-bank, and PC05 
     const stimItem = state.queue.items.find(item => Array.isArray(item.stimuli) && item.stimuli.length);
     assert.deepStrictEqual(stimItem.stimuli[0].nums, wantNums, fixtureId + ' nums');
   }
+
+  // BLOCK-16: manual helper writes no constant_text on leading shared body, and keeps in-stem [missing text] advisory-only.
+  const leadingMissing = [
+    'Use the information below to answer questions 1 and 2.',
+    'Opening balance [missing text]',
+    'Closing stock unknown',
+    '',
+    '1. First clean question stem here?',
+    O,
+    '',
+    '2. Second clean question stem here?',
+    O
+  ].join('\n');
+  const leadRes = loadThroughForm(leadingMissing);
+  assert.strictEqual(leadRes.document.getElementById('constant_text').value, '', 'BLOCK-16 manual leaves constant_text empty');
+  const stemMissing = [
+    '1. First question [missing text] stem here?',
+    O
+  ].join('\n');
+  const stemRes = loadThroughForm(stemMissing);
+  const stemState = formState(stemRes);
+  assert(stemState.queue.items[0].flags.includes(require('../src/parser/core.js').MISSING_TEXT_FLAG), 'BLOCK-16 manual in-stem advisory flag');
+  assert.strictEqual(stemRes.document.getElementById('constant_text').value, '', 'BLOCK-16 manual still leaves constant_text empty');
 });
 
 (async () => {

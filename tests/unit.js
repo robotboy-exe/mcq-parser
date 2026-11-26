@@ -552,7 +552,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.5.7', 'parser version');
+  eq(parsed.version, '2.5.8', 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');
@@ -2695,6 +2695,508 @@ testAsync('UI Track 2: constant_text fill/clear, ready-image pause/resume, missi
   await slowUi.flush();
   eq(slowUi.posts.length, 1, 'still only 1 POST after settlement');
   eq(slowUi.storage.get('ocrQueue').i, 1, 'advanced once');
+});
+
+testAsync('BLOCK-12: lost save response and AbortError timeout keep ocrSaving and block duplicate POSTs', async () => {
+  for (const [label, makeErr] of [
+    ['transport', () => new Error('Failed to fetch')],
+    ['timeout', () => Object.assign(new Error('The operation was aborted'), { name: 'AbortError' })]
+  ]) {
+    const storage = uiHarness.sampleStorage('b12-' + label);
+    const ui = uiHarness.createUI({
+      storage,
+      reply: () => Promise.reject(makeErr())
+    });
+    await ui.submit();
+    eq(ui.posts.length, 1, label + ': 1 POST issued');
+    eq(ui.storage.get('ocrQueue').i, 0, label + ': queue index remains 0');
+    eq(ui.storage.get('ocrSavedLog'), [], label + ': no verified save logged');
+    assert(ui.storage.get('ocrSaving'), label + ': pending ocrSaving marker kept');
+    eq(ui.doc.getElementById('ans_res').textContent, 'Unknown. It may have saved. Check the list.', label + ': uncertain warning shown');
+    eq(ui.doc.getElementById('ocr_paused').hidden, false, label + ': paused warning visible');
+    eq(ui.doc.getElementById('ocr_auto_start').disabled, true, label + ': Start disabled');
+    await ui.submit();
+    await ui.click('ocr_auto_start');
+    eq(ui.posts.length, 1, label + ': subsequent manual Save and Start issue 0 extra POSTs');
+  }
+});
+
+testAsync('BLOCK-13: reinjection during delayed save adopts settled queue and logs Q2 as book 2', async () => {
+  const twoItemQueue = {
+    ocrQueue: {
+      items: [
+        { num: 1, question: 'PC07 R7 repeat activation first question?', a: 'one', b: 'two', c: 'three', d: 'four', flags: [] },
+        { num: 2, question: 'PC07 R7 repeat activation second question?', a: 'one', b: 'two', c: 'three', d: 'four', flags: [] }
+      ],
+      i: 0,
+      batchId: 'b13-batch'
+    },
+    ansKey: { 1: 'A', 2: 'C' },
+    ansKeyBatch: 'b13-batch',
+    ansKeyConflicts: [],
+    ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' },
+    ocrSavedLog: []
+  };
+  let resolveQ1;
+  let calls = 0;
+  const ui = uiHarness.createUI({
+    storage: JSON.parse(JSON.stringify(twoItemQueue)),
+    reply: () => {
+      calls++;
+      if (calls === 1) return new Promise(resolve => { resolveQ1 = resolve; });
+      return { redirected: true, text: 'Question saved successfully (Question ID: 501)' };
+    }
+  });
+  ui.form.dispatch('submit');
+  eq(ui.posts.length, 1, 'Q1 posted once');
+  ui.reinject();
+  eq(ui.doc.submitButton.disabled, true, 'Save disabled after reinjection while pending');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true, 'Start disabled after reinjection while pending');
+  ui.form.dispatch('submit');
+  await ui.click('ocr_auto_start');
+  eq(ui.posts.length, 1, 'pending Save/Start blocked');
+
+  resolveQ1({ redirected: true, text: 'Question saved successfully (Question ID: 500)' });
+  await ui.flush();
+  eq(ui.storage.get('ocrQueue').i, 1, 'queue advanced to index 1');
+  eq(ui.storage.get('ocrSavedLog').map(e => e.num), [1], 'Q1 logged once');
+  eq(ui.form.elements.question_text.value, 'PC07 R7 repeat activation second question?', 'Q2 filled after settlement');
+  eq(ui.doc.radios[2].checked, true, 'Q2 radio C ticked');
+  assert(ui.doc.getElementById('ocr_status').innerHTML.includes('book number 2'), 'status shows Q2 book number 2');
+
+  await ui.submit();
+  eq(ui.posts.length, 2, 'Q2 posted once');
+  eq(ui.storage.get('ocrQueue').i, 2, 'final queue index is 2');
+  eq(ui.storage.get('ocrSavedLog').map(e => ({ num: e.num, id: e.id })), [
+    { num: 1, id: 500 },
+    { num: 2, id: 501 }
+  ], 'Q1 #500 and Q2 #501 logged with right book numbers');
+
+  let resolveReject;
+  const rejUi = uiHarness.createUI({
+    storage: JSON.parse(JSON.stringify(twoItemQueue)),
+    reply: () => {
+      if (!resolveReject) return new Promise(resolve => { resolveReject = resolve; });
+      return { redirected: true, text: 'Question saved successfully (Question ID: 600)' };
+    }
+  });
+  rejUi.form.dispatch('submit');
+  rejUi.reinject();
+  resolveReject({ redirected: false, text: '<div class="admin-error">Validation failed.</div>', errorText: 'Validation failed.' });
+  await rejUi.flush();
+  eq(rejUi.storage.get('ocrQueue').i, 0, 'rejected delayed save stays at index 0');
+  eq(rejUi.storage.get('ocrSavedLog'), [], 'rejected save writes no log');
+  eq(rejUi.form.elements.question_text.value, 'PC07 R7 repeat activation first question?', 'Q1 stays on form');
+  eq(rejUi.doc.radios[0].checked, true, 'Q1 radio A stays checked');
+  await rejUi.submit();
+  eq(rejUi.posts.length, 2, 'Q1 retry succeeds once');
+  eq(rejUi.storage.get('ocrQueue').i, 1, 'retry advances only to index 1');
+});
+
+testAsync('BLOCK-14: leading unassociated [image] pauses at Q1 with 0 POSTs', async () => {
+  const paste = [
+    '[image]',
+    '',
+    '1. PC07 R7 leading image first question?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '2. PC07 R7 leading image second question?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '=== ANSWER KEY ===',
+    '1. A',
+    '2. B'
+  ].join('\n');
+  const parsed = parser.parsePaste(paste);
+  eq(parsed.items[0].stimuli.length, 1, 'one unresolved block');
+  eq(parsed.items[0].stimuli[0].sourceNum, null, 'leading block preserves sourceNum null');
+  eq(parsed.items[0].stimuli[0].nums, [], 'no guessed target');
+
+  const ui = uiHarness.createUI({
+    inactiveChecked: true,
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 500)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 501)' }
+    ]
+  });
+  ui.setPaste(paste);
+  ui.click('ocr_load');
+  await waitFor(() => ui.doc.getElementById('ocr_dry_status').textContent.indexOf('PAUSED') === 0, 'dry pauses');
+  assert(ui.doc.getElementById('ocr_dry_status').textContent.includes('#1'), 'dry pauses at #1: ' + ui.doc.getElementById('ocr_dry_status').textContent);
+  await ui.click('ocr_auto_start');
+  assert(ui.doc.getElementById('ocr_live_status').textContent.indexOf('PAUSED (IMAGE)') === 0, 'live pauses for image');
+  assert(ui.doc.getElementById('ocr_live_status').textContent.includes('question 1'), 'live pauses at Q1: ' + ui.doc.getElementById('ocr_live_status').textContent);
+  eq(ui.posts.length, 0, '0 POSTs before pause');
+  eq(ui.storage.get('ocrQueue').i, 0, 'still at index 0');
+
+  ui.doc.getElementById('ocr_img_range_0').value = '1';
+  chooseImage(ui, 'ocr_img_file_0', fakeImage('lead.png'));
+  ui.click('ocr_img_attach_0');
+  await ui.flush();
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.storage.get('ocrQueue').i === 2, 'Q1 saves with attached image and Q2 completes');
+  eq(ui.posts.length, 2, 'Q1 and ordinary Q2 posted');
+  eq(ui.posts[0].body.get('question_image').name, 'lead.png', 'Q1 uploads attached PNG');
+  eq(ui.posts[1].body.get('question_image').name, undefined, 'Q2 stays image-free');
+
+  // Control: trailing block after Q1 with range Q2-Q3 permits Q1 and pauses at uncovered Q2.
+  const trailingPaste = [
+    '1. First standalone question?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    'Use the diagram below to answer questions 2 to 3.',
+    '[image]',
+    '',
+    '2. Second question?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '3. Third question?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '=== ANSWER KEY ===',
+    '1. A',
+    '2. B',
+    '3. C'
+  ].join('\n');
+  const ctrlUi = uiHarness.createUI({
+    inactiveChecked: true,
+    replies: [{ redirected: true, text: 'Question saved successfully (Question ID: 510)' }]
+  });
+  ctrlUi.setPaste(trailingPaste);
+  ctrlUi.click('ocr_load');
+  await waitFor(() => ctrlUi.doc.getElementById('ocr_dry_status').textContent.indexOf('PAUSED') === 0, 'trailing dry pauses at #2');
+  assert(ctrlUi.doc.getElementById('ocr_dry_status').textContent.includes('#2'));
+  await ctrlUi.click('ocr_auto_start');
+  await waitFor(() => ctrlUi.doc.getElementById('ocr_live_status').textContent.indexOf('PAUSED (IMAGE)') === 0, 'trailing pauses at Q2');
+  eq(ctrlUi.posts.length, 1, 'trailing control saves Q1 before pausing at Q2');
+  eq(ctrlUi.storage.get('ocrQueue').i, 1, 'trailing control stops at index 1');
+});
+
+testAsync('BLOCK-15: partial bulk Attach never adopts pending single-file selection', async () => {
+  const paste = [
+    '1. First question standalone stem?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '[image: 2]',
+    '',
+    '2. Second question image target?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '[image: 3]',
+    '',
+    '3. Third question image target?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '=== ANSWER KEY ===',
+    '1. A',
+    '2. B',
+    '3. C'
+  ].join('\n');
+  const ui = uiHarness.createUI({
+    inactiveChecked: true,
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 500)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 501)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 502)' }
+    ]
+  });
+  ui.setPaste(paste);
+  ui.click('ocr_load');
+  chooseImage(ui, 'ocr_img_file_1', fakeImage('pc07-stale-not-attached.png', 111));
+  const bulkInput = ui.doc.getElementById('ocr_img_bulk_files');
+  bulkInput.files = [fakeImage('pc07-bulk-picked.png', 222)];
+  ui.click('ocr_img_bulk');
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready', 'first block attached from bulk pick');
+  eq(ui.doc.getElementById('ocr_img_status_1').textContent, 'No image', 'omitted second block stays No image');
+  await waitFor(() => ui.doc.getElementById('ocr_dry_status').textContent.indexOf('PAUSED') === 0, 'dry finishes before Start');
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.doc.getElementById('ocr_live_status').textContent.indexOf('PAUSED (IMAGE)') === 0, 'pauses at Q3');
+  eq(ui.posts.length, 2, 'only Q1 and Q2 posted; Q3 got 0 POSTs');
+  eq(ui.posts[1].body.get('question_image').name, 'pc07-bulk-picked.png', 'Q2 uses bulk-picked PNG');
+
+  // Control: ordered two-file bulk Attach marks both blocks Ready and saves all 3.
+  const fullBulkUi = uiHarness.createUI({
+    inactiveChecked: true,
+    replies: [
+      { redirected: true, text: 'Question saved successfully (Question ID: 520)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 521)' },
+      { redirected: true, text: 'Question saved successfully (Question ID: 522)' }
+    ]
+  });
+  fullBulkUi.setPaste(paste);
+  fullBulkUi.click('ocr_load');
+  fullBulkUi.doc.getElementById('ocr_img_bulk_files').files = [
+    fakeImage('bulk-1.png', 101),
+    fakeImage('bulk-2.png', 202)
+  ];
+  fullBulkUi.click('ocr_img_bulk');
+  eq(fullBulkUi.doc.getElementById('ocr_img_status_0').textContent, 'Ready');
+  eq(fullBulkUi.doc.getElementById('ocr_img_status_1').textContent, 'Ready');
+  await waitFor(() => fullBulkUi.doc.getElementById('ocr_dry_status').textContent.indexOf('COMPLETE') === 0, 'two-file dry complete');
+  await fullBulkUi.click('ocr_auto_start');
+  await waitFor(() => fullBulkUi.doc.getElementById('ocr_live_status').textContent.indexOf('COMPLETE') === 0, 'two-file bulk completes');
+  eq(fullBulkUi.posts.length, 3);
+  eq(fullBulkUi.posts[1].body.get('question_image').name, 'bulk-1.png');
+  eq(fullBulkUi.posts[2].body.get('question_image').name, 'bulk-2.png');
+});
+
+testAsync('BLOCK-16: leading shared Constant Text with [missing text] blocks Start with 0 POSTs', async () => {
+  const paste = [
+    'Use the information below to answer questions 1 and 2.',
+    'Opening balance [missing text]',
+    'Closing stock unknown',
+    '',
+    '1. First clean question stem here?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '2. Second clean question stem here?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. four',
+    '',
+    '=== ANSWER KEY ===',
+    '1. A',
+    '2. B'
+  ].join('\n');
+  const parsed = parser.parsePaste(paste);
+  eq(parsed.items[0].constantText, 'Opening balance [missing text]\nClosing stock unknown');
+  eq(parsed.items[1].constantText, 'Opening balance [missing text]\nClosing stock unknown');
+  assert(parsed.items[0].flags.includes(parser.MISSING_TEXT_FLAG), 'Q1 carries missing-text flag');
+  assert(parsed.items[1].flags.includes(parser.MISSING_TEXT_FLAG), 'Q2 carries missing-text flag');
+
+  const ui = uiHarness.createUI();
+  ui.setPaste(paste);
+  ui.click('ocr_load');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true, 'Start disabled');
+  assert(ui.doc.getElementById('ocr_live_blocked').textContent.includes('[missing]'), 'blocked explains missing marker');
+  await ui.click('ocr_auto_start');
+  eq(ui.posts.length, 0, '0 POSTs');
+
+  const clean = parser.parsePaste(paste.replace(' [missing text]', ''));
+  eq(clean.items[0].flags, [], 'clean body without marker has no flags');
+  eq(clean.items[1].flags, [], 'clean Q2 without marker has no flags');
+});
+
+test('BLOCK-17: anchored extraction preserves wrapped Option D continuation after [image]', () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const paste = [
+    '19. Which of the following is the best way?',
+    'A. one',
+    'B. two',
+    'C. three',
+    'D. Undergoing mentorship under prominent political',
+    'Use the diagram below to answer questions 20 to 22.',
+    '[image]',
+    'leaders',
+    '',
+    '20. Question twenty?',
+    O,
+    '',
+    '21. Question twenty one?',
+    O,
+    '',
+    '22. Question twenty two?',
+    O
+  ].join('\n');
+  const res = parser.parsePaste(paste);
+  eq(res.items[0].d, 'Undergoing mentorship under prominent political leaders', 'Q19.D preserves leaders');
+  eq(res.items[0].flags, [], 'Q19 unflagged');
+  eq(res.items[0].stimuli.length, 1, 'one stimulus');
+  eq(res.items[0].stimuli[0].text, 'Use the diagram below to answer questions 20 to 22.', 'intro-only metadata');
+  eq(res.items[0].stimuli[0].nums, [20, 21, 22], 'targets Q20-Q22');
+  eq(res.items.filter(item => item.needsImage).map(item => item.num), [20, 21, 22], 'Q20-Q22 flagged');
+});
+
+testAsync('BLOCK-18: deliberately pasted key applies to unbatched manual-helper queue without enabling autosave', async () => {
+  const manualStorage = {
+    ocrQueue: {
+      items: [
+        { num: 1, question: 'Manual queue one?', a: 'a1', b: 'b1', c: 'c1', d: 'd1', flags: [] },
+        { num: 2, question: 'Manual queue two?', a: 'a2', b: 'b2', c: 'c2', d: 'd2', flags: [] }
+      ],
+      i: 0
+    },
+    ansKey: { 1: 'A', 2: 'B' },
+    ansKeyBatch: 'prior-batch',
+    ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' },
+    ocrSavedLog: []
+  };
+  const ui = uiHarness.createUI({ storage: manualStorage });
+  assert(ui.doc.radios.every(r => !r.checked), 'prior key inert initially');
+  ui.reinject();
+  assert(ui.doc.radios.every(r => !r.checked), 'prior key inert on re-entry');
+
+  ui.setPaste('Answer Key\n1. D\n2. C');
+  ui.click('ocr_load');
+  eq(ui.doc.radios[3].checked, true, 'deliberate key Load ticks Q1 Option D');
+  ui.click('ocr_skip');
+  eq(ui.doc.radios[2].checked, true, 'Q2 ticks Option C after Skip');
+  await ui.click('ocr_auto_start');
+  eq(ui.posts.length, 0, 'unbatched Start safety gate remains enforced');
+
+  // When manual helper replaces the queue again (without batchId or how), key becomes inert again.
+  const replaced = uiHarness.createUI({
+    storage: {
+      ocrQueue: {
+        items: [
+          { num: 1, question: 'Replaced manual one?', a: 'a', b: 'b', c: 'c', d: 'd', flags: [] }
+        ],
+        i: 0
+      },
+      ansKey: ui.storage.get('ansKey'),
+      ansKeyBatch: ui.storage.get('ansKeyBatch'),
+      ocrMeta: manualStorage.ocrMeta,
+      ocrSavedLog: []
+    }
+  });
+  assert(replaced.doc.radios.every(r => !r.checked), 'key becomes inert after manual helper replaces queue');
+});
+
+testAsync('BLOCK-19 and BLOCK-20: directional-word cash predicate and malformed year endpoint controls', async () => {
+  const O = 'A. one\nB. two\nC. three\nD. four';
+  const H = '19. Which statement is correct?\n' + O;
+  const suffix = [20, 21, 22, 23, 24, 25, 26]
+    .map(n => n + '. Which of the following is correct here?\n' + O)
+    .join('\n\n');
+  const full = prefix => prefix + '\n\n' + suffix;
+
+  const b19Neg = parser.parsePaste(full(H + '\n\nUse the diagram below to answer questions 20 to 22, 25 in the table above is the cash deposit.\n[image]'));
+  eq(b19Neg.items[0].d, 'four', 'BLOCK-19 neg Q19.D');
+  eq(b19Neg.items[0].stimuli[0].nums, [20, 21, 22], 'BLOCK-19 neg excludes cash 25');
+  eq(b19Neg.items.filter(i => i.needsImage).map(i => i.num), [20, 21, 22]);
+
+  const b19Pos = parser.parsePaste(full(H + '\n\nUse the diagram below to answer questions 20 to 22, 25 in the table above.\n[image]'));
+  eq(b19Pos.items[0].stimuli[0].nums, [20, 21, 22, 25], 'BLOCK-19 pos includes Q25');
+
+  const b20Malformed = parser.parsePaste(full(H + '\n\nUse the diagram below to answer questions 20 to 2023.\n[image]'));
+  eq(b20Malformed.items[0].stimuli[0].nums, [], 'BLOCK-20 malformed year range yields empty nums');
+  eq(b20Malformed.items.filter(i => i.needsImage), [], 'BLOCK-20 malformed yields no needsImage');
+
+  const b20Single = parser.parsePaste(full(H + '\n\nUse the diagram below to answer questions 20.\n[image]'));
+  eq(b20Single.items[0].stimuli[0].nums, [20], 'BLOCK-20 genuine single reference yields [20]');
+
+  const b20Explicit = parser.parsePaste(full(H + '\n\nUse the diagram below to answer questions 20 to 2023.\n[image: 21]'));
+  eq(b20Explicit.items[0].stimuli[0].nums, [21], 'BLOCK-20 explicit [image: 21] wins');
+
+  const ui = uiHarness.createUI();
+  ui.setPaste(full(H + '\n\nUse the diagram below to answer questions 20 to 2023.\n[image]'));
+  ui.click('ocr_load');
+  eq(ui.doc.getElementById('ocr_img_range_0').value, '', 'BLOCK-20 default Attach range is empty');
+  eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'No image', 'BLOCK-20 default status is No image');
+});
+
+testAsync('Real generated stimulus bookmarklet artifact passes BLOCK-12 to BLOCK-16, BLOCK-18, and BLOCK-22 flows', async () => {
+  // BLOCK-12 transport error & AbortError on built artifact
+  const b12Ui = uiHarness.createUI({
+    built: true,
+    storage: uiHarness.sampleStorage('built-b12'),
+    reply: () => Promise.reject(new Error('Failed to fetch'))
+  });
+  await b12Ui.submit();
+  assert(b12Ui.storage.get('ocrSaving'), 'built artifact keeps ocrSaving on transport error');
+  eq(b12Ui.doc.getElementById('ans_res').textContent, 'Unknown. It may have saved. Check the list.');
+  await b12Ui.submit();
+  eq(b12Ui.posts.length, 1, 'built artifact prevents retry while marker exists');
+
+  // BLOCK-13 delayed save + reinjection on built artifact
+  let resolveBuiltQ1;
+  let builtCalls = 0;
+  const b13Ui = uiHarness.createUI({
+    built: true,
+    storage: {
+      ocrQueue: {
+        items: [
+          { num: 1, question: 'Built Q1?', a: 'a1', b: 'b1', c: 'c1', d: 'd1', flags: [] },
+          { num: 2, question: 'Built Q2?', a: 'a2', b: 'b2', c: 'c2', d: 'd2', flags: [] }
+        ],
+        i: 0,
+        batchId: 'built-b13'
+      },
+      ansKey: { 1: 'A', 2: 'C' },
+      ansKeyBatch: 'built-b13',
+      ansKeyConflicts: [],
+      ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' },
+      ocrSavedLog: []
+    },
+    reply: () => {
+      builtCalls++;
+      if (builtCalls === 1) return new Promise(resolve => { resolveBuiltQ1 = resolve; });
+      return { redirected: true, text: 'Question saved successfully (Question ID: 701)' };
+    }
+  });
+  b13Ui.form.dispatch('submit');
+  b13Ui.reinject();
+  resolveBuiltQ1({ redirected: true, text: 'Question saved successfully (Question ID: 700)' });
+  await b13Ui.flush();
+  eq(b13Ui.storage.get('ocrQueue').i, 1);
+  eq(b13Ui.form.elements.question_text.value, 'Built Q2?');
+  eq(b13Ui.doc.radios[2].checked, true);
+  await b13Ui.submit();
+  eq(b13Ui.posts.length, 2);
+  eq(b13Ui.storage.get('ocrSavedLog').map(e => ({ num: e.num, id: e.id })), [
+    { num: 1, id: 700 },
+    { num: 2, id: 701 }
+  ]);
+
+  // BLOCK-14 + BLOCK-16 + BLOCK-18 on built artifact
+  const builtUi = uiHarness.createUI({ built: true });
+  builtUi.setPaste('[image]\n\n1. Leading Q1?\nA. a\nB. b\nC. c\nD. d\n\n2. Leading Q2?\nA. a\nB. b\nC. c\nD. d\n\n=== ANSWER KEY ===\n1. A\n2. B');
+  builtUi.click('ocr_load');
+  await builtUi.click('ocr_auto_start');
+  assert(builtUi.doc.getElementById('ocr_live_status').textContent.includes('question 1'));
+  eq(builtUi.posts.length, 0);
+
+  builtUi.setPaste('Use the information below to answer questions 1 and 2.\nOpening [missing text]\nClosing 10\n\n1. Q1?\nA. a\nB. b\nC. c\nD. d\n\n2. Q2?\nA. a\nB. b\nC. c\nD. d\n\n=== ANSWER KEY ===\n1. A\n2. B');
+  builtUi.click('ocr_load');
+  eq(builtUi.doc.getElementById('ocr_auto_start').disabled, true);
+  await builtUi.click('ocr_auto_start');
+  eq(builtUi.posts.length, 0);
+
+  const b18Built = uiHarness.createUI({
+    built: true,
+    storage: {
+      ocrQueue: {
+        items: [{ num: 1, question: 'Manual built?', a: 'a', b: 'b', c: 'c', d: 'd', flags: [] }],
+        i: 0
+      },
+      ansKey: { 1: 'A' },
+      ansKeyBatch: 'stale-b',
+      ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2021' },
+      ocrSavedLog: []
+    }
+  });
+  assert(b18Built.doc.radios.every(r => !r.checked));
+  b18Built.setPaste('Answer Key\n1. D');
+  b18Built.click('ocr_load');
+  eq(b18Built.doc.radios[3].checked, true);
 });
 
 (async () => {

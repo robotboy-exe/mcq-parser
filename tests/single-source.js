@@ -14,6 +14,8 @@ const ROOT = path.resolve(__dirname, '..');
 const CORE_FILE = path.join(ROOT, 'src', 'parser', 'core.js');
 const FACADE_FILE = path.join(ROOT, 'src', 'parser', 'parser.js');
 const AUTOSAVE_FILE = path.join(ROOT, 'src', 'bookmarklets', 'stimulus', 'autosave.js');
+const IMAGE_PLAN_FILE = path.join(ROOT, 'src', 'bookmarklets', 'stimulus', 'image-plan.js');
+const SAVE_FLIGHT_FILE = path.join(ROOT, 'src', 'bookmarklets', 'stimulus', 'save-flight.js');
 const STIMULUS_BUILD = path.join(ROOT, 'src', 'build', 'build.js');
 const KEY_BUILD = path.join(ROOT, 'src', 'bookmarklets', 'key', 'build.js');
 const STIMULUS_OUT = path.join(ROOT, 'src', 'bookmarklet.js');
@@ -135,10 +137,12 @@ test('autosave module owns policy only', () => {
   assert.ok(source.indexOf("require('./core.js')") === -1, 'autosave.js must not depend on the core');
 });
 
-test('stimulus build inlines the current core and the autosave module', () => {
+test('stimulus build inlines the current core and the focused stimulus modules', () => {
   const body = artifactBody(STIMULUS_OUT);
   assert.ok(body.indexOf(flatten(fs.readFileSync(CORE_FILE, 'utf8'))) !== -1, 'stimulus artifact must inline core.js');
   assert.ok(body.indexOf(flatten(fs.readFileSync(AUTOSAVE_FILE, 'utf8'))) !== -1, 'stimulus artifact must inline autosave.js');
+  assert.ok(body.indexOf(flatten(fs.readFileSync(IMAGE_PLAN_FILE, 'utf8'))) !== -1, 'stimulus artifact must inline image-plan.js');
+  assert.ok(body.indexOf(flatten(fs.readFileSync(SAVE_FLIGHT_FILE, 'utf8'))) !== -1, 'stimulus artifact must inline save-flight.js');
   assert.ok(body.indexOf(flatten(fs.readFileSync(FACADE_FILE, 'utf8'))) === -1, 'stimulus artifact must not inline the facade');
 });
 
@@ -190,6 +194,9 @@ const PARITY_FIXTURES = [
     '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25 in the local currency was deposited.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
     '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25 in the table is the cash deposit.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four\n25. Later?\nA. one\nB. two\nC. three\nD. four',
     '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25 in the same section.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four\n25. Later?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 22, 25 in the table above is the cash deposit.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four\n25. Later?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which statement is correct?\nA. one\nB. two\nC. three\nD. four\n\nUse the diagram below to answer questions 20 to 2023.\n[image]\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
+    '19. Which of the following is the best way?\nA. one\nB. two\nC. three\nD. Undergoing mentorship under prominent political\nUse the diagram below to answer questions 20 to 22.\n[image]\nleaders\n\n20. Next?\nA. one\nB. two\nC. three\nD. four',
     '33. Q33?\nA. a\nB. b\nC. c\nD. d\n\nUse the dialogue below to answer questions 34 to 35.\nA: Hello\nB: World\n\nFirst unnumbered\nA. a\nB. b\nC. c\nD. d\n\nSecond unnumbered\nA. a\nB. b\nC. c\nD. [Option missing]\n\n36. Final?\nA. a\nB. b\nC. c\nD. d'
   ]);
 

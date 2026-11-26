@@ -14,14 +14,15 @@ Updated: 2026-11-26
 | 4 | `PC04` — `parser-convergence/pc-04-marker-range.md` | superseded by `PC07` (`BLOCK-10` & `BLOCK-11` carried open into Phase 7) |
 | 5 | `PC05` — `parser-convergence/pc-05-stimulus-boundaries.md` | superseded by `PC07` |
 | 6 | `PC06` — `parser-convergence/pc-06-bookmarklet-policy-release.md` | superseded by `PC07` |
-| 7 | `PC07` — `parser-convergence/pc-07-stimulus-first.md` | in progress (implementation handoff complete; awaiting publish & Phase 7 review) |
+| 7 | `PC07` — `parser-convergence/pc-07-stimulus-first.md` | in progress (`BLOCK-10`/`BLOCK-11` closed; `BLOCK-12`–`BLOCK-22` fixed, awaiting Phase 7 re-review) |
 
 Current gate: PC01, PC02, and PC03 remain `done` and settled on
 `scratch/parser-convergence-cycle` (through `9afe4f8`). Unfinished PC04–PC06 are
-superseded by Phase 7 (`PC07`, approved at Gate 1 on 2026-11-26) and implemented
-on `scratch/pc07-stimulus-first` with `PC04` `BLOCK-10` and `BLOCK-11` carried
-open for independent Phase 7 verification. Historical PC04–PC06 package specs
-and `phase-4*` review records stay intact as evidence, and `src/bookmarklets/key/*`
+superseded by Phase 7 (`PC07`, approved at Gate 1 on 2026-11-26) on
+`scratch/pc07-stimulus-first`. Phase 7 review (`5711f96`) closed carried
+`BLOCK-10` and `BLOCK-11`; `BLOCK-12`–`BLOCK-22` are fixed (`D1`–`D5` approved)
+and await independent Phase 7 re-review. Historical PC04–PC06 package specs and
+`phase-4*` review records stay intact as evidence, and `src/bookmarklets/key/*`
 stays retained as comparator and rollback reference until desktop + owner
 Brave/Android acceptance and a separate reviewed retirement diff. No deploy or
 live action is authorized.

@@ -1894,7 +1894,7 @@ Unspaced `A.D.` abbreviations remain excluded. `OPTION`, `LOOSE`, `FIXES`,
 
 ## D-112 — Marker-adjacent range extraction and anchored inter-question stimulus blocks
 
-**Choice.** Extend `src/parser/core.js` (`2.5.7`) with:
+**Choice.** Extend `src/parser/core.js` (`2.5.8`) with:
 1. Marker-adjacent range extraction on `[image]` / `[image: ...]` and balanced
    `[diagram]` / `[[diagram]]` lines when adjacent to a supported stimulus
    intro, taking the explicit marker range ahead of intro/adjacent ranges
@@ -1929,16 +1929,16 @@ review verifies both frozen contracts on `scratch/pc07-stimulus-first`.
 ## D-113 — Stimulus-first two-surface convergence (PC07)
 
 **Choice.** Under the 2026-11-26 Gate 1 approval (`go`), converge on two
-supported runtime products over canonical `src/parser/core.js` (`2.5.7`):
-1. `ocr_helper.js` (`EXPECTED_CORE_VERSION = '2.5.7'`, `deployed/admin_questions.php`
-   loading `?v=2.5.7` and `?v=2.4.10`): manual load and manual form POST only;
+supported runtime products over canonical `src/parser/core.js` (`2.5.8`):
+1. `ocr_helper.js` (`EXPECTED_CORE_VERSION = '2.5.8'`, `deployed/admin_questions.php`
+   loading `?v=2.5.8` and `?v=2.4.11`): manual load and manual form POST only;
    never writes `constant_text` and never adds key/dry-run/autosave/image UI.
-2. `src/bookmarklet.js` (built from `core.js` + `src/bookmarklets/stimulus/autosave.js`
+2. `src/bookmarklet.js` (built from `core.js` + `src/bookmarklets/stimulus/{autosave,image-plan,save-flight}.js`
    + `src/ui/ui.js`): the single supported bookmarklet combining donor `ed96b11`
    Constant Text fill/clear, RAM-cached File upload (`cacheFileInMemory`),
    ready-image autosave within an attached row's range, per-question
    `PAUSED (IMAGE)` when uncovered/unranged, `[missing text]` gate, single/bulk
-   image picker, key-only load, diagnostics (`#ans_diag`), and PC01 concurrency,
+   image picker, key-only load (`how: 'key-paste'` for manual-queue confirmation), diagnostics (`#ans_diag`), and PC01 concurrency,
    clean reinjection (`form.__ocrStimulusCleanup()`, shared `owner.inFlight`),
    defensive `ocrSubmitted` delete, corrupted-storage normalization, and
    `ansKeyBatch` provenance guards.
@@ -1947,7 +1947,7 @@ supported runtime products over canonical `src/parser/core.js` (`2.5.7`):
 working stimulus features the owner relies on, without relaxing manual-helper
 isolation or server contracts.
 
-**Risk.** `src/bookmarklets/key/` (`bookmarklet.js` pinned to `2.5.7`) stays
+**Risk.** `src/bookmarklets/key/` (`bookmarklet.js` pinned to `2.5.8`) stays
 built and tested as a frozen comparator and rollback reference
 (`9afe4f8:src/bookmarklets/key/bookmarklet.js`) until the owner accepts the
 replacement on desktop and Brave/Android and a separate reviewed diff retires it.
