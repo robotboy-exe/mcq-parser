@@ -1,15 +1,10 @@
 # PC01 — Product Surface Separation
 
-- **Status:** in progress — the 2026-11-25 re-review of candidate `b7b18cd`
-  closed `BLOCK-1`, `BLOCK-3`, `BLOCK-4`, `FIX-1`, and `FIX-2`; `BLOCK-2`
-  stayed open after two review rounds and the owner chose `fix` on 2026-11-25
-  against its frozen closure criteria; first-round `FIX-3` is fixed in the same
-  session. The 2026-11-26 re-review 2 of candidate `6e28e82` closed `BLOCK-2`
-  and `FIX-3` and recorded first-round `BLOCK-5` (an adopted in-place save
-  wedges autosave and can silently skip question 2) and `FIX-4` (Start during
-  an in-flight in-place save posts the same question twice). Both are fixed in
-  the 2026-11-26 fix session below. Independent re-review of the fixed
-  candidate is pending.
+- **Status:** done — review-settled. The 2026-11-26 re-review 3 of candidate
+  `cc72e3b` ([record](../reviews/parser-convergence-2026-11-phase-1-re-review-3.md))
+  returned `PASS` with no new findings, closing `BLOCK-5` and `FIX-4`, so every
+  `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` is closed. The package is merged into
+  `scratch/parser-convergence-cycle`, and PC02 is unblocked.
 - **Product baseline:** `793cb8f`
 - **Package base:** record the docs-only cycle-setup commit on
   `scratch/parser-convergence-cycle` at Gate 1; verify its product tree equals
@@ -667,7 +662,11 @@ driven exactly, then released to the real server.
 
 #### Status after this session
 
-`BLOCK-5` and `FIX-4` are not closed by the fix: both need an independent
-re-review of this candidate against their frozen criteria, and PC01 stays
-`in progress` with commit readiness, scratch-cycle merge, and PC02 blocked until
-that re-review settles. `Commit:` deferred.
+The 2026-11-26 re-review 3 of candidate `cc72e3b`
+([record](../reviews/parser-convergence-2026-11-phase-1-re-review-3.md)) returned
+`PASS` and closed `BLOCK-5` and `FIX-4` with no new findings, so PC01 is
+review-settled: every `BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` is closed. The
+package was fast-forward merged into `scratch/parser-convergence-cycle` from
+`bb78c57` to the docs tip `e6f34f8`, whose product tree is byte-identical to the
+reviewed candidate `cc72e3b`, and PC02 is unblocked. `Commit:` `cc72e3b`
+(reviewed product candidate; package docs tip `e6f34f8`).

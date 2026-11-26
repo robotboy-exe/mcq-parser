@@ -1,13 +1,14 @@
 # Current Status
 
-Last updated: 2026-11-25.
+Last updated: 2026-11-26.
 
 ## Active cycle
 
 - Cycle: `parser-convergence-2026-11`; active map:
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
 - Frozen base: `793cb8f`; scratch integration line:
-  `scratch/parser-convergence-cycle`; current package PC01 is `in progress`.
+  `scratch/parser-convergence-cycle`; PC01 is `done` and review-settled;
+  current package PC02 is `not started`.
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /
@@ -60,8 +61,14 @@ Last updated: 2026-11-25.
   green (68 runner, 173 unit, 38 helper, 10 underline, 7 preview, 26 math-tool,
   69 render-markup, 7 bank hashes; 33 renderer, 8 store, 14 ordering, 7/7 lint),
   and a real-page disposable-browser probe wrote two rows per scenario with no
-  duplicate POST. PC01 remains `in progress`; commit, scratch-cycle merge, and
-  PC02 stay blocked until the fixed candidate is re-reviewed.
+  duplicate POST. The 2026-11-26 re-review 3 of candidate `cc72e3b`
+  ([record](plan/reviews/parser-convergence-2026-11-phase-1-re-review-3.md))
+  returned `PASS` and closed `BLOCK-5` and `FIX-4` with no new findings, so PC01
+  is review-settled and `done`. The package was fast-forward merged into
+  `scratch/parser-convergence-cycle` from `bb78c57` to `e6f34f8` (product tree
+  byte-identical to the reviewed candidate `cc72e3b`), and
+  `scratch/pc02-single-parser-source` is cut from that tip. PC02 is
+  `not started`; its Gate 1 is the next step and no implementation has begun.
 - Implementation runs on the owner's VM on short-lived `scratch/pcNN-*`
   branches and is pushed to GitHub. This environment performs independent
   reviews of the exact pushed refs before any package joins the scratch cycle

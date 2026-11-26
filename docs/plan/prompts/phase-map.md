@@ -1,7 +1,7 @@
 # Current Phase Map
 
 Current cycle: `parser-convergence-2026-11`
-Updated: 2026-11-25
+Updated: 2026-11-26
 
 `phase N` means phase N of this cycle. Status lives in
 `docs/plan/README.md`; this file only maps phase numbers to packages.
@@ -15,11 +15,12 @@ Updated: 2026-11-25
 | 5 | `PC05` — `parser-convergence/pc-05-stimulus-boundaries.md` |
 | 6 | `PC06` — `parser-convergence/pc-06-bookmarklet-policy-release.md` |
 
-Current gate: PC01 is `in progress`. The 2026-11-26 re-review 2 of candidate
-`6e28e82` closed `BLOCK-2`/`FIX-3` and recorded first-round `BLOCK-5`/`FIX-4`;
-the same-day fix session is applied on `scratch/pc01-product-separation` and an
-independent re-review of that fixed candidate is pending. No commit, merge,
-deploy, or live action is authorized while it is open.
+Current gate: PC01 is `done`. The 2026-11-26 re-review 3 of candidate `cc72e3b`
+returned `PASS` with no new findings, closing `BLOCK-5`/`FIX-4`; every
+`BLOCK-1`–`BLOCK-5` and `FIX-1`–`FIX-4` is closed. `scratch/pc01-product-separation`
+is merged into `scratch/parser-convergence-cycle`, and
+`scratch/pc02-single-parser-source` is cut from that tip. PC02 is `not started`:
+phase 2 Gate 1 is the next step. No deploy or live action is authorized.
 
 ## Starting a new cycle
 
