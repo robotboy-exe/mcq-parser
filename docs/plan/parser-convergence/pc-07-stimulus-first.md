@@ -213,6 +213,58 @@ Before `src/parser/core.js` changes on `9afe4f8`:
   - Node: `runner.js` **77 PASS** (0 fail/pending), `unit.js` **197 PASS**, `ocr-helper.js` **42 PASS**, `key-bookmarklet.js` **43 PASS**, `single-source.js` **15 PASS**, `underline-toolbar.js` **10 PASS**, `question-preview.js` **7 PASS**, `math-tool.js` **26 PASS**, `render-markup.js` **69 PASS**, `extract-bank.js --check` **OK (7 hashes)**.
   - PHP (8.5.12 & 8.3.32 CLI): `php -l deployed/*.php` **7/7**, `php-render.php` **33 PASS**, `admin-question-store.php` **8 PASS**, `cbt-question-order.php` **14 PASS**.
   - Disposable Chromium 157 CDP + PHP/SQLite staging (`http://127.0.0.1:3051/admin_questions.php`, stopped and wiped afterwards): `loadedScripts` verified (`src/parser/core.js?v=2.5.8`, `ocr_helper.js?v=2.4.11`), `pageErrors: []`, `BLOCK-23` held draft Q1 + reinject + settlement (`progressText: "1/2"`, `liveStatus: "INCOMPLETE — queue resumed at 2 of 2"`, `activeChecked: true`, `confirmChecked: false`, `startDisabled: true`, `unconfirmedPosted: 0`) + explicit Draft Q2 (`#116`/`#117` both `active=0`), Active confirmation path (`#118` `active=0` / `#119` `active=1`), no-reinjection draft control (`#120`–`#121` `active=0`), `BLOCK-13` manual success (`#122`–`#123`) + held invalid-PNG rejection (`0` rows, `i=0`), and `BLOCK-15` partial bulk (`Ready`/`No image`, paused with `0` Q3 POSTs, `#124` none / `#125` bulk `64abf93fb4c1…` / `#126` explicit single `b1ff9c8ea3a7…`) + ordered two-file bulk (`#127` none / `#128` `fce481932ea5…` / `#129` `f8b0314d877c…`), all HTTP GET PNG bytes matched exact SHA-256s.
-- **Commit:** deferred
+- **Commit:** deferred *(superseded by Fix Note 3: `d65177b`)*
+
+## Phase 7 Fix Note 3 (`BLOCK-24`, `BLOCK-25`, 2026-11-27)
+
+- **Owner Gate 1 decisions (`go, approve D1 D2`):**
+  - `D1`: add the two `built: true` regressions for `BLOCK-24` and `BLOCK-25` to `tests/unit.js` (append-only).
+  - `D2`: update the two older tests that still asserted the pre-fix re-arm (`UI key-only Load keeps the queue and image plan`, `UI Track 2: constant_text fill/clear, …`); their subject assertions are unchanged.
+- **Target / base:** Phase 7 re-review 2 (`docs/plan/reviews/parser-convergence-2026-11-phase-7-re-review-2.md`, `9585eb6`) on candidate `b2344b1`; package base remains `9afe4f8`.
+
+### Failing-first reproduction on `b2344b1`
+
+- Added both regressions first and ran the suite unchanged: **`PASS: 197, FAIL: 2`**
+  - `[FAIL] BLOCK-24: real generated stimulus artifact keeps confirmation cleared through a key-only Load` — `key-only Load disables Start until confirmation` (`false !== true`).
+  - `[FAIL] BLOCK-25: real generated stimulus artifact keeps confirmation cleared on a same-page re-activation` — `re-activation clears the confirmation` (`true !== false`).
+- Both reproduced through `tests/ui-harness.js` running the tracked `src/bookmarklet.js`, and again independently in the real browser replay below.
+
+### Frozen closure mapping (`BLOCK-24`, `BLOCK-25`)
+
+- `BLOCK-24`: `src/ui/ui.js` Load handler no longer resets the mode/confirmation defaults before parsing. The key-only branch now calls `clearConfirm()` (`:882`) so the correction still updates the retained queue (Q2→D, same `batchId`, same `i`) while leaving the selected mode untouched, the confirmation unchecked and Start disabled; the questions branch (`:914`) and the invalid-paste fallback (`:906`) keep `resetConfirm()`, so a new questions paste and a garbage paste behave exactly as before.
+- `BLOCK-25`: the module records same-page ownership before cleanup (`const reactivated = Boolean(form.__ocrStimulusOwner)`, `:19`). A re-activation that resumes an existing batch with no in-flight save now clears confirmation and keeps Active displayed (`:1217–1219`), instead of leaving the fresh checked defaults when `attachObserver` returns `false`. First activation, new paste and page reload are unchanged.
+- `D2` test updates: the key-only test now asserts the cleared confirmation/disabled Start and re-ticks before checking the retained queue and image plan; the Constant Text test ticks once after its opening re-injection. No production behavior beyond the two frozen criteria changed.
+
+### Externalize-first measurements (base `9afe4f8`) & final artifact
+
+| Production file | `9afe4f8` base L / B | `+/-` vs `9afe4f8` | Final L / B / SHA-256 | Responsibility, deploy path & direct test |
+|---|---:|---:|---|---|
+| `src/ui/ui.js` | 1,431 / 61,701 | `+282/-492` *(this session `+7/-1`)* | 1,221 / 51,589 / `9f8885ad078a71234ef85e7cb5fcb629d3ebe5965394fa95f2b5ed89e2d7897d` | Stimulus DOM mount/paint, generation guard, confirmation/mode wiring; inlined by `src/build/build.js`; `unit.js` (source + `built: true`) and staging. |
+| `src/parser/core.js` | 1,855 / 65,965 | `+538/-56` | 2,337 / 86,964 / `cf55f29681df…` *(unchanged)* | Canonical parser `2.5.8`; site root and both bookmarklets. |
+| `src/bookmarklets/stimulus/{autosave,image-plan,save-flight}.js` | — | *(unchanged this session)* | 593 / 25,277; 394 / 14,990; 358 / 15,275 | Pure policy, image plan, save transport; inlined. |
+| `ocr_helper.js` | 127 / 4,917 | `+1/-1` *(live `+51/-45`)* | 127 / 4,917 / `ed3c6f2999d5…` *(unchanged)* | Manual adapter `EXPECTED_CORE_VERSION = '2.5.8'`. |
+| `src/bookmarklets/key/entry.js` | 596 / 24,700 | `+1/-1` | 596 / 24,700 / `862ae2b6758e…` *(unchanged)* | Retained comparator entry. |
+| `src/build/build.js` | 272 / 8,028 | `+5/-1` | 276 / 8,377 / `f8a0c2942986…` *(unchanged)* | Builder, not deployed. |
+| `deployed/admin_questions.php` | 1,057 / 62,877 | `+2/-2` *(live `+96/-85`)* | 1,057 / 62,878 / `060192857589…` *(unchanged)* | Native server page; no PHP change in this session. |
+
+- **Excluded generated artifact:** `src/bookmarklet.js` — 1 LF line, 171,327 B (171,326 B without LF), SHA-256 `a8df911c80828e22378cef62dfee3e40e866c9aa7404b9ed295c79c3bdd5f49a`. `src/bookmarklets/key/bookmarklet.js` unchanged (`1 L / 94,131 B`, `b482ec78…`).
+- **No new live-origin additions** (D-71 cap unaffected: no `deployed/*.php` change). Deployment tokens stay `src/parser/core.js?v=2.5.8` and `ocr_helper.js?v=2.4.11`.
+- **Tests:** `tests/unit.js` 3,437 → 3,583 L / 154,266 → 162,007 B (`+147/-1`), two new `built: true` regressions plus the two owner-approved `D2` updates.
+
+### Re-verified baseline
+
+- Node: `runner.js` **77 PASS** (0 fail/0 pending), `unit.js` **199 PASS** (0 fail), `ocr-helper.js` 42, `key-bookmarklet.js` 43, `single-source.js` 15, `underline-toolbar.js` 10, `question-preview.js` 7, `math-tool.js` 26, `render-markup.js` 69; `tools/extract-bank.js --check` 7 hashes OK.
+- Builders: `node src/build/build.js --check` matches (171,326 B URL), `node src/bookmarklets/key/build.js --check` matches (94,130 B URL), `wc -l` 1 each, stripped-body `node --check` passes.
+- PHP: `php-render.php` 33, `admin-question-store.php` 8, `cbt-question-order.php` 14, `php -l deployed/*.php` 7/7 on **8.3.32** and **8.5.8**. (8.5.12 has no published static build for this environment; no PHP file changed.)
+
+### Real browser + staging evidence
+
+- Chrome for Testing **158.0.8127.88** (headless shell, locally provisioned shared libraries and fonts) via CDP, against disposable PHP/SQLite phone staging on `127.0.0.1:3055`, real login and the real native Add form. Served `src/parser/core.js?v=2.5.8`. Staging stopped and the disposable root/DB left outside the repository.
+- `BLOCK-24` (year 2083): held Q1 → re-activate → settle (Q1 `#102`, inactive) → key-only Load `1. A / 2. D` → state `{ i: 1, radio: D, active: true, confirm: false, startDisabled: true }`, same `batchId`; unconfirmed Start **0 POSTs**; explicit Draft + tick → single POST without `is_active`, `correct_option=3`, `autosave=1` → Q2 `#103` inactive, log `[Q1 draft, Q2 draft]`.
+- `BLOCK-25` (year 2094): held Q1 → settle (Q1 `#104`, inactive) → idle same-page re-activation `gen 0 → 1` keeps `i=1`, Q2/C and the single log, 0 POSTs during activation; state `{ active: true, confirm: false, startDisabled: true }`; unconfirmed Start **0 POSTs**; confirmed Draft → single POST without `is_active`, `correct_option=2` → Q2 `#105` inactive.
+- SQLite (read-only): `#102` year 2083 option A inactive, `#103` year 2083 option D inactive, `#104` year 2094 option A inactive, `#105` year 2094 option C inactive.
+- Not verified here: physical desktop bookmark installation, owner Brave/Android, and the deferred key-only retirement gate.
+
+- **Commit:** `d65177b` on `scratch/pc07-stimulus-first` (owner-authorized; re-review still required before any merge).
 
 NEXT COMMAND: @docs/plan/prompts/review-session.md review phase 7

@@ -11,6 +11,24 @@ Last updated: 2026-11-26.
   and review-settled. Unfinished `PC04`–`PC06` are superseded by Phase 7
   (`PC07`, approved at Gate 1 on 2026-11-26); carried `PC04` findings
   `BLOCK-10` and `BLOCK-11` are **closed** by Phase 7 review (`5711f96`).
+- PC07 Phase 7 fix session 3 (`BLOCK-24`, `BLOCK-25`, 2026-11-27, package base
+  `9afe4f8`, branch `scratch/pc07-stimulus-first`, Gate 1 `go, approve D1 D2`,
+  commit `d65177b`): Phase 7 re-review 2 (`9585eb6`) closed `BLOCK-15`,
+  `BLOCK-21`, and `BLOCK-23`, then showed that key-only Load and an idle
+  same-page re-activation each silently restored the Active confirmation, so an
+  unconfirmed Start could publish a live row. `src/ui/ui.js` (`1,221 L /
+  51,589 B`, `9f8885ad…`) now resets the defaults only for a real questions
+  paste, clears confirmation for a key-only correction while keeping the chosen
+  mode, and clears it again when a re-activation resumes an existing batch with
+  no in-flight save; rebuilt `src/bookmarklet.js` (`1 L / 171,327 B`,
+  `a8df911c…`). Two `built: true` regressions were added failing-first, and the
+  two older tests that asserted the old re-arm were updated under `D2`. Full
+  Node and PHP 8.3.32 / 8.5.8 suites pass (77 runner, 199 unit, 42 helper, 43 key
+  comparator, 15 single-source, 10 underline, 7 preview, 26 math-tool, 69 JS +
+  33 PHP marker, 8 store, 14 ordering, 7/7 lint, 7 bank hashes), and disposable
+  Chromium 158 + PHP/SQLite staging reproduced both paths with held Q1 POSTs
+  (`#102`–`#105`, all inactive, 0 unconfirmed POSTs). Awaiting independent
+  Phase 7 re-review before any merge.
 - PC07 Phase 7 fix session 2 (`BLOCK-15`, `BLOCK-21`, `BLOCK-23`, 2026-11-26,
   package base `9afe4f8`, reconciled donor snapshot `ed96b11` SHA-256
   `dcde1c25…`, branch `scratch/pc07-stimulus-first`, Gate 1 `go, approve D1 D2`,

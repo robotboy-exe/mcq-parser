@@ -14,7 +14,7 @@ Updated: 2026-11-26
 | 4 | `PC04` — `parser-convergence/pc-04-marker-range.md` | superseded by `PC07` (`BLOCK-10` & `BLOCK-11` carried open into Phase 7) |
 | 5 | `PC05` — `parser-convergence/pc-05-stimulus-boundaries.md` | superseded by `PC07` |
 | 6 | `PC06` — `parser-convergence/pc-06-bookmarklet-policy-release.md` | superseded by `PC07` |
-| 7 | `PC07` — `parser-convergence/pc-07-stimulus-first.md` | in progress (`BLOCK-10`–`BLOCK-14`, `BLOCK-16`–`BLOCK-20`, `BLOCK-22` closed; `BLOCK-15`, `BLOCK-21`, `BLOCK-23` fixed in session 2, awaiting Phase 7 re-review) |
+| 7 | `PC07` — `parser-convergence/pc-07-stimulus-first.md` | in progress (`BLOCK-10`–`BLOCK-15`, `BLOCK-16`–`BLOCK-23` closed; `BLOCK-24` and `BLOCK-25` fixed in session 3 at `d65177b`, awaiting Phase 7 re-review) |
 
 Current gate: PC01, PC02, and PC03 remain `done` and settled on
 `scratch/parser-convergence-cycle` (through `9afe4f8`). Unfinished PC04–PC06 are
