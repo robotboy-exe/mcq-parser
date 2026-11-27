@@ -2362,7 +2362,12 @@ testAsync('UI key-only Load keeps the queue and image plan', async () => {
   ui.click('ocr_load');
   eq(ui.storage.get('ocrQueue').items.length, 3);
   eq(ui.doc.getElementById('ocr_img_status_0').textContent, 'Ready');
-  eq(ui.doc.getElementById('ocr_auto_start').disabled, false);
+  eq(ui.doc.getElementById('ocr_confirm_tick').checked, false, 'key-only Load clears the confirmation');
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, true, 'key-only Load disables Start until a new tick');
+  const keyOnlyTick = ui.doc.getElementById('ocr_confirm_tick');
+  keyOnlyTick.checked = true;
+  keyOnlyTick.onchange();
+  eq(ui.doc.getElementById('ocr_auto_start').disabled, false, 'Start enabled once the retained batch is confirmed');
 });
 
 testAsync('UI save injects the image only on a covered question', async () => {
@@ -2630,6 +2635,10 @@ testAsync('UI Track 2: constant_text fill/clear, ready-image pause/resume, missi
   eq(ui.submitListenersCount(), 1, 'reinjection does not stack submit listeners');
   eq(ui.visibilityListenersCount(), 1, 'reinjection does not stack visibility listeners');
   eq(ui.activeIntervals(), 1, 'reinjection does not stack intervals');
+  eq(ui.doc.getElementById('ocr_confirm_tick').checked, false, 're-activation clears the confirmation');
+  const trackTick = ui.doc.getElementById('ocr_confirm_tick');
+  trackTick.checked = true;
+  trackTick.onchange();
 
   const png = new ui.sandbox.File(['\x89PNG\r\n\x1a\n'], 'diag.png', { type: 'image/png' });
   chooseImage(ui, 'ocr_img_file_0', png);
@@ -3418,6 +3427,143 @@ testAsync('BLOCK-23: real generated stimulus artifact keeps settlement state con
   eq(ctrlUi.posts.length, 2);
   eq(ctrlUi.posts[0].body.get('is_active'), null, 'ctrl Q1 omits is_active');
   eq(ctrlUi.posts[1].body.get('is_active'), null, 'ctrl Q2 omits is_active');
+});
+
+testAsync('BLOCK-24: real generated stimulus artifact keeps confirmation cleared through a key-only Load', async () => {
+  const mkStorage = id => ({
+    ocrQueue: {
+      items: [
+        { num: 1, question: 'PC07 RR8 key only first question?', a: 'one', b: 'two', c: 'three', d: 'four', flags: [] },
+        { num: 2, question: 'PC07 RR8 key only second question?', a: 'one', b: 'two', c: 'three', d: 'four', flags: [] }
+      ],
+      i: 1,
+      batchId: id
+    },
+    ansKey: { 1: 'A', 2: 'C' },
+    ansKeyBatch: id,
+    ansKeyConflicts: [],
+    ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2083' },
+    ocrSavedLog: [{ num: 1, id: 119, mode: 'draft', inactive: true, batchId: id }]
+  });
+
+  // Adopted batch state: Active selected, confirmation unchecked, Start disabled.
+  const ui = uiHarness.createUI({ built: true, storage: mkStorage('b24-key-only') });
+  const mode = ui.doc.getElementById('ocr_active_mode');
+  const tickEl = () => ui.doc.getElementById('ocr_confirm_tick');
+  const start = ui.doc.getElementById('ocr_auto_start');
+  eq(mode.checked, true, 'adopted panel starts on Active');
+  tickEl().checked = false;
+  tickEl().onchange();
+  eq(start.disabled, true, 'adopted panel disables Start until confirmation');
+
+  ui.setPaste('Answer Key\n1. A\n2. D');
+  await ui.click('ocr_load');
+  await ui.flush();
+
+  eq(ui.storage.get('ocrQueue').batchId, 'b24-key-only', 'key-only Load keeps the batch identity');
+  eq(ui.storage.get('ocrQueue').i, 1, 'key-only Load keeps the queue position');
+  eq(ui.doc.radios[3].checked, true, 'key-only Load ticks Q2 Option D');
+  eq(mode.checked, true, 'key-only Load keeps Active selected');
+  eq(tickEl().checked, false, 'key-only Load clears the confirmation');
+  eq(start.disabled, true, 'key-only Load disables Start until confirmation');
+  await ui.click('ocr_auto_start');
+  eq(ui.posts.length, 0, 'unconfirmed Start after key-only Load sends 0 POSTs');
+
+  // Explicit Draft confirmation saves Q2/D once without is_active.
+  mode.checked = false;
+  mode.onchange();
+  tickEl().checked = true;
+  tickEl().onchange();
+  eq(start.disabled, false, 'Start enabled once Draft is confirmed');
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.storage.get('ocrQueue').i === 2, 'Q2 completes after confirmed Draft');
+  eq(ui.posts.length, 1, 'confirmed Draft posts Q2 once');
+  eq(ui.posts[0].body.get('is_active'), null, 'confirmed Draft Q2 POST omits is_active');
+  eq(ui.posts[0].body.get('autosave'), '1', 'confirmed Draft Q2 POST sends autosave=1');
+  eq(ui.posts[0].body.get('correct_option'), '3', 'confirmed Draft Q2 POST sends answer D');
+  eq(ui.storage.get('ocrSavedLog').map(e => ({ num: e.num, mode: e.mode })), [
+    { num: 1, mode: 'draft' },
+    { num: 2, mode: 'draft' }
+  ], 'Q2 logged under book 2 as draft');
+
+  // Control: an already-confirmed Draft keeps Draft, clears confirmation, disables Start.
+  const draftUi = uiHarness.createUI({ built: true, storage: mkStorage('b24-draft-ctrl') });
+  const draftMode = draftUi.doc.getElementById('ocr_active_mode');
+  const draftTickEl = () => draftUi.doc.getElementById('ocr_confirm_tick');
+  const draftStart = draftUi.doc.getElementById('ocr_auto_start');
+  draftMode.checked = false;
+  draftMode.onchange();
+  draftTickEl().checked = true;
+  draftTickEl().onchange();
+  eq(draftStart.disabled, false, 'confirmed Draft control starts enabled');
+  draftUi.setPaste('Answer Key\n1. D\n2. C');
+  await draftUi.click('ocr_load');
+  await draftUi.flush();
+  eq(draftMode.checked, false, 'confirmed Draft control keeps Draft after key-only Load');
+  eq(draftTickEl().checked, false, 'confirmed Draft control clears confirmation after key-only Load');
+  eq(draftStart.disabled, true, 'confirmed Draft control disables Start until a new tick');
+
+  // Control: a new questions paste still makes a new batch with the checked defaults.
+  draftUi.setPaste('1. PC07 RR8 replacement one?\nA. a\nB. b\nC. c\nD. d\n\n2. PC07 RR8 replacement two?\nA. a\nB. b\nC. c\nD. d\n\n=== ANSWER KEY ===\n1. A\n2. B');
+  await draftUi.click('ocr_load');
+  await draftUi.flush();
+  assert(draftUi.storage.get('ocrQueue').batchId !== 'b24-draft-ctrl', 'new questions paste creates a new batch');
+  eq(draftUi.storage.get('ocrQueue').i, 0, 'new questions paste restarts at index 0');
+  eq(draftMode.checked, true, 'new questions paste restores the Active default');
+  eq(draftTickEl().checked, true, 'new questions paste restores the checked confirmation');
+  eq(draftStart.disabled, false, 'new questions paste leaves Start enabled');
+});
+
+testAsync('BLOCK-25: real generated stimulus artifact keeps confirmation cleared on a same-page re-activation', async () => {
+  const mkStorage = id => ({
+    ocrQueue: {
+      items: [
+        { num: 1, question: 'PC07 RR8 reactivation first question?', a: 'one', b: 'two', c: 'three', d: 'four', flags: [] },
+        { num: 2, question: 'PC07 RR8 reactivation second question?', a: 'one', b: 'two', c: 'three', d: 'four', flags: [] }
+      ],
+      i: 1,
+      batchId: id
+    },
+    ansKey: { 1: 'A', 2: 'C' },
+    ansKeyBatch: id,
+    ansKeyConflicts: [],
+    ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '2094' },
+    ocrSavedLog: [{ num: 1, id: 144, mode: 'draft', inactive: true, batchId: id }]
+  });
+
+  const ui = uiHarness.createUI({ built: true, storage: mkStorage('b25-idle-reactivation') });
+  const mode = ui.doc.getElementById('ocr_active_mode');
+  const tickEl = () => ui.doc.getElementById('ocr_confirm_tick');
+  const start = ui.doc.getElementById('ocr_auto_start');
+  eq(tickEl().checked, true, 'first activation keeps the checked defaults');
+
+  // Same-page activation after settlement: no in-flight save, same batch and index.
+  ui.reinject();
+  await ui.flush();
+  eq(ui.storage.get('ocrQueue').i, 1, 're-activation keeps the queue position');
+  eq(ui.doc.radios[2].checked, true, 're-activation keeps Q2 Option C');
+  eq(ui.storage.get('ocrSavedLog').map(e => e.num), [1], 're-activation keeps the single verified Q1 log');
+  eq(ui.posts.length, 0, 're-activation sends no POST');
+  eq(mode.checked, true, 're-activation displays Active');
+  eq(tickEl().checked, false, 're-activation clears the confirmation');
+  eq(start.disabled, true, 're-activation disables Start until confirmation');
+  await ui.click('ocr_auto_start');
+  eq(ui.posts.length, 0, 'unconfirmed Start after re-activation sends 0 POSTs');
+
+  mode.checked = false;
+  mode.onchange();
+  tickEl().checked = true;
+  tickEl().onchange();
+  eq(start.disabled, false, 'Start enabled once Draft is confirmed');
+  await ui.click('ocr_auto_start');
+  await waitFor(() => ui.storage.get('ocrQueue').i === 2, 'Q2 completes after confirmed Draft');
+  eq(ui.posts.length, 1, 'confirmed Draft posts Q2 once');
+  eq(ui.posts[0].body.get('is_active'), null, 'confirmed Draft Q2 POST omits is_active');
+  eq(ui.posts[0].body.get('correct_option'), '2', 'confirmed Draft Q2 POST sends answer C');
+  eq(ui.storage.get('ocrSavedLog').map(e => ({ num: e.num, mode: e.mode })), [
+    { num: 1, mode: 'draft' },
+    { num: 2, mode: 'draft' }
+  ], 'Q2 logged under book 2 as draft');
 });
 
 (async () => {

@@ -16,6 +16,7 @@ function runOCRBookmarklet() {
     alert('Please open the "Add a New Question" page first.');
     return;
   }
+  const reactivated = Boolean(form.__ocrStimulusOwner);
   if (typeof form.__ocrStimulusCleanup === 'function') form.__ocrStimulusCleanup();
   const owner = form.__ocrStimulusOwner || (form.__ocrStimulusOwner = { gen: 0, inFlight: null });
   const myGen = owner.gen;
@@ -868,7 +869,6 @@ function runOCRBookmarklet() {
     if (busySaving()) return;
     if (liveRunning) { liveStop = true; if (liveState === 'running') liveState = 'stopping'; liveStatus = 'Stopping for a new Load.'; }
     if (dryRunning) { dryStop = true; if (dryState === 'running') dryState = 'stopping'; }
-    resetConfirm();
     const raw = $('ocr_text').value;
     const parsed = parsePaste(raw);
     const parts = parsed.sections || { questions: '', answers: '', how: 'none', boundary: '' };
@@ -879,6 +879,7 @@ function runOCRBookmarklet() {
     const hasKey = Object.keys(newKey).length > 0;
     if (!items.length) {
       if (hasKey) {
+        clearConfirm();
         key = newKey;
         keyConflicts = parsed.keyConflicts || [];
         store.set('ansKey', key);
@@ -902,6 +903,7 @@ function runOCRBookmarklet() {
         scheduleAutoDry();
         return;
       }
+      resetConfirm();
       renderAuto();
       return alert('No questions found in that text.');
     }
@@ -909,6 +911,7 @@ function runOCRBookmarklet() {
     saveMeta();
     key = hasKey ? newKey : {};
     keyConflicts = hasKey ? (parsed.keyConflicts || []) : [];
+    resetConfirm();
     const batchId = newBatchId();
     if (hasKey) {
       store.set('ansKey', key);
@@ -1209,6 +1212,9 @@ function runOCRBookmarklet() {
     renderAuto();
   });
   if (adopted) {
+    clearConfirm();
+    renderAuto();
+  } else if (reactivated && queue.items.length) {
     clearConfirm();
     renderAuto();
   }
