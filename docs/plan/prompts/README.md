@@ -13,6 +13,15 @@ first response is read-only, includes `WAITING FOR GO`, and ends with
 `NEXT COMMAND: go` when the gate passes. After an explicit `go`, execute only
 that package and stop after its handoff.
 
+## Proposed stimulus-first successor
+
+Use [stimulus-convergence-scratch.md](stimulus-convergence-scratch.md) to
+preflight the pinned working stimulus bookmarklet and the proposed
+[PC07](../parser-convergence/pc-07-stimulus-first.md) cycle amendment. The
+draft does not change the active phase map. If approved, PC07 uses the existing
+phase, independent review, and fix gates; the full exact candidate and all
+carried PC04 findings need independent evidence before merge.
+
 ## Review session
 
 Use [`review-session.md`](review-session.md) with `review phase N`, a package ID,
