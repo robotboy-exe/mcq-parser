@@ -38,6 +38,17 @@
 - No root `package.json`, lint, typecheck, CI, or test framework. `.opencode/package.json` is only the OpenCode notification plugin; do not `npm install` for project work.
 - Termux has no `/tmp`; use `$HOME/tmp` for temp files.
 
+## Browser evidence environment (cloud chat VM)
+
+Applies when a disposable Chromium runs inside this cloud chat VM (bare container, no root, no system Chrome, no fonts). The owner's VM and Termux with a real Chrome install do not need it. These are host-provisioning notes only: no product behavior, spec or decision depends on them.
+
+- **A dead renderer looks like a hang.** CDP `Runtime.evaluate` (and even `Runtime.terminateExecution`) timing out after a page loads can mean Chrome's renderer aborted, not that JS is busy. Capture Chrome's stderr and grep it for `FATAL` before re-debugging the page or the server.
+- **Fonts are required.** With no fonts/fontconfig, Skia aborts with `FATAL:third_party/skia/src/ports/SkFontMgr_FontConfigInterface.cpp:163] Not implemented.` after a text-heavy page (the logged-in admin page) renders. Fix by extracting a font package (for example Debian `fonts-dejavu-core`) into the local prefix and pointing Chrome at a minimal config, exported before launch: `FONTCONFIG_FILE=$HOME/tmp/fonts.conf` containing `<dir>…/usr/share/fonts</dir>` and `<cachedir>…/fontcache</cachedir>`, plus `XDG_CACHE_HOME=$HOME/tmp/fontcache`. Verify with `--dump-dom` on a page that runs JS.
+- **Missing shared libraries without root.** Extract the Debian runtime `.debs` into a local prefix and set `LD_LIBRARY_PATH` to their `usr/lib/x86_64-linux-gnu` and `lib/x86_64-linux-gnu`; confirm with `ldd <chrome-headless-shell> | grep "not found"` returning nothing before trusting a run.
+- **`php -S` is single-threaded and session-locks.** A paused or abandoned save POST can hold the PHP session lock, so later page loads appear to hang and every CDP evaluation times out. Restart disposable staging and start from a clean request; delete a stale `ocr-phone-staging.pid` only after confirming the recorded PID is gone (PIDs are reused).
+- **Log in with curl plus a cookie, not the login form over CDP.** `GET` the page, scrape `name="csrf_token"`, `POST action=login&username=…&password=…&csrf_token=…` with a cookie jar, then in the page set `document.cookie='PHPSESSID=<id>; path=/'` and `Page.reload`. Submitting the login form through CDP races the navigation and can hang the evaluation channel.
+- **Kill browsers by PID, never by pattern.** Chrome spawns child processes; launch detached and kill the process group by the recorded PID, because a `pkill -f` pattern also matches the agent's own command line.
+
 ## Editing rules
 
 - `src/bookmarklet.js` and `src/bookmarklets/key/bookmarklet.js` are generated; never edit them by hand. Edit `src/parser/core.js` + `src/bookmarklets/stimulus/autosave.js` + `src/ui/ui.js` or `src/bookmarklets/key/boot.js` + `entry.js`, then rebuild. `src/parser/parser.js` is only a Node facade and is never inlined. `src/bookmarklet.min.js` is an untracked local artifact; do not edit, rely on, or rebuild it.
