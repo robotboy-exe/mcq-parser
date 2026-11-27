@@ -1,16 +1,29 @@
 # Current Status
 
-Last updated: 2026-11-26.
+Last updated: 2026-11-27.
 
 ## Active cycle
 
 - Cycle: `parser-convergence-2026-11`; active map:
   [`plan/prompts/phase-map.md`](plan/prompts/phase-map.md).
-- Settled scratch cycle base through PC03: `9afe4f8`; active PC07 implementation
-  branch: `scratch/pc07-stimulus-first`; `PC01`, `PC02`, and `PC03` are `done`
-  and review-settled. Unfinished `PC04`–`PC06` are superseded by Phase 7
-  (`PC07`, approved at Gate 1 on 2026-11-26); carried `PC04` findings
-  `BLOCK-10` and `BLOCK-11` are **closed** by Phase 7 review (`5711f96`).
+- Settled scratch cycle line: `scratch/parser-convergence-cycle` (`PC01`,
+  `PC02`, `PC03`, and `PC07` are `done` and review-settled; `PC07` fast-forward
+  merged from `scratch/pc07-stimulus-first` over prior cycle tip `9afe4f8`, with
+  `src/`, `ocr_helper.js`, `deployed/`, `fixtures/`, and `tests/`
+  byte-identical to reviewed candidate `984b2f0`). Unfinished `PC04`–`PC06` are
+  superseded by Phase 7 (`PC07`, approved at Gate 1 on 2026-11-26); carried
+  `PC04` findings `BLOCK-10` and `BLOCK-11` are **closed** by Phase 7 review
+  (`5711f96`).
+- PC07 Phase 7 re-review 3 (2026-11-27, target `984b2f0`, published
+  `3647783`): `PASS WITH ACCEPTED FINDINGS`; `BLOCK-24` (key-only Load re-armed
+  Active) and `BLOCK-25` (idle same-page re-activation re-armed it) are
+  **closed**, with no new `BLOCK`/`FIX` (`BLOCK-10`–`BLOCK-25` all closed).
+  `NOTE-1` remains open as documentation and `NOTE-2` (stale workflow
+  summaries) is reconciled; `PC07` is reconciled to `done` and merged into
+  `scratch/parser-convergence-cycle`. Cycle-wide rigorous review on
+  `scratch/parser-convergence-cycle` is now the unblocked next step, while
+  desktop + owner Brave/Android acceptance and a separately reviewed key-only
+  retirement diff remain external/deferred gates.
 - PC07 Phase 7 fix session 3 (`BLOCK-24`, `BLOCK-25`, 2026-11-27, package base
   `9afe4f8`, branch `scratch/pc07-stimulus-first`, Gate 1 `go, approve D1 D2`,
   commit `d65177b`): Phase 7 re-review 2 (`9585eb6`) closed `BLOCK-15`,
@@ -27,8 +40,8 @@ Last updated: 2026-11-26.
   comparator, 15 single-source, 10 underline, 7 preview, 26 math-tool, 69 JS +
   33 PHP marker, 8 store, 14 ordering, 7/7 lint, 7 bank hashes), and disposable
   Chromium 158 + PHP/SQLite staging reproduced both paths with held Q1 POSTs
-  (`#102`–`#105`, all inactive, 0 unconfirmed POSTs). Awaiting independent
-  Phase 7 re-review before any merge.
+  (`#102`–`#105`, all inactive, 0 unconfirmed POSTs). Independent re-review 3
+  later closed both (above).
 - PC07 Phase 7 fix session 2 (`BLOCK-15`, `BLOCK-21`, `BLOCK-23`, 2026-11-26,
   package base `9afe4f8`, reconciled donor snapshot `ed96b11` SHA-256
   `dcde1c25…`, branch `scratch/pc07-stimulus-first`, Gate 1 `go, approve D1 D2`,
@@ -48,7 +61,7 @@ Last updated: 2026-11-26.
   26 math-tool, 69 JS + 33 PHP marker, 8 store, 14 ordering, 7/7 lint, 7 bank
   hashes), and disposable Chromium + PHP/SQLite staging verified `BLOCK-15`,
   `BLOCK-23`, and `BLOCK-13` controls (`#116`–`#129`, HTTP GET PNG SHA-256s, 0
-  `pageErrors`). Awaiting independent Phase 7 re-review.
+  `pageErrors`). Later Phase 7 re-reviews 2–3 closed all findings (see above).
 - PC01 implementation (2026-11-24, package base `bb78c57`, branch
   `scratch/pc01-product-separation`): the deployed `ocr_helper.js` is restored
   byte-identically to the reviewed published baseline (`94a7593`, 127 L /
@@ -186,8 +199,8 @@ Last updated: 2026-11-26.
 - Products stay separate: deployed manual helper, key/autosave bookmarklet, and
   stimulus/image bookmarklet. All must consume one canonical parser source.
 - `main`, `owner-tool-integration`, `experiments`, and `experiments-alt` are
-  read-only until PC06 and the cycle-wide review settle and the owner separately
-  authorizes integration.
+  read-only until PC07 (plus any separate key-only retirement diff) and the
+  cycle-wide review settle and the owner separately authorizes integration.
 - Preserved evidence: `scratch/stimulus-followups` at `f3f5957`. Quarantined,
   non-evidence exploration: dirty `scratch/single-core-port` plus its external
   patch/archive. Neither is a cherry-pick source.

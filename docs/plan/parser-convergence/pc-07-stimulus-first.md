@@ -1,6 +1,6 @@
 # PC07 — Stimulus-First Convergence
 
-- **Status:** in progress (Phase 7 fix session 2 for `BLOCK-15`, `BLOCK-21`, `BLOCK-23` complete; `Commit: deferred`; awaiting independent Phase 7 re-review)
+- **Status:** done — settled by Phase 7 re-review 3 of `984b2f0` (published `3647783`, `PASS WITH ACCEPTED FINDINGS`, closing `BLOCK-24`/`BLOCK-25` and all `BLOCK-10`–`BLOCK-25`) and fast-forward merged into `scratch/parser-convergence-cycle` from `9afe4f8` (product/test/fixture tree matching `984b2f0`)
 - **Phase:** 7
 - **Depends on:** PC01–PC03 settled (`scratch/parser-convergence-cycle`) and Gate 1 `go` approved (2026-11-26)
 - **Package base:** `9afe4f8` (settled `scratch/parser-convergence-cycle` tip)
@@ -111,7 +111,7 @@ Before `src/parser/core.js` changes on `9afe4f8`:
 
 - **Commit:** deferred
 - **Closed carried findings:** `BLOCK-10` (`V10`) and `BLOCK-11` (`V11`) closed by Phase 7 initial review ([record](../reviews/parser-convergence-2026-11-phase-7.md)).
-- **Open Phase 7 findings (`BLOCK-12`–`BLOCK-22`, fixed below awaiting independent Phase 7 re-review):**
+- **Phase 7 findings (`BLOCK-12`–`BLOCK-22`, resolved in Fix Notes 1–2 and closed by Phase 7 re-reviews 1–2; see Fix Note 3 and settlement below for `BLOCK-24`–`BLOCK-25`):**
 
 ## Phase 7 Fix Note (`BLOCK-12`–`BLOCK-22`, 2026-11-26)
 
@@ -265,6 +265,29 @@ Before `src/parser/core.js` changes on `9afe4f8`:
 - SQLite (read-only): `#102` year 2083 option A inactive, `#103` year 2083 option D inactive, `#104` year 2094 option A inactive, `#105` year 2094 option C inactive.
 - Not verified here: physical desktop bookmark installation, owner Brave/Android, and the deferred key-only retirement gate.
 
-- **Commit:** `d65177b` on `scratch/pc07-stimulus-first` (owner-authorized; re-review still required before any merge).
+- **Commit:** `d65177b` on `scratch/pc07-stimulus-first` (reviewed candidate `984b2f0`; Phase 7 re-review 3 published at `3647783`); reconciled to `done` and fast-forward merged into `scratch/parser-convergence-cycle` from `9afe4f8`.
 
-NEXT COMMAND: @docs/plan/prompts/review-session.md review phase 7
+### Phase 7 re-review 3 settlement & scratch merge (2026-11-27)
+
+- **Verdict:** `PASS WITH ACCEPTED FINDINGS` on target `984b2f0` (published
+  `3647783`); `BLOCK-24` and `BLOCK-25` are **closed**, with no new
+  `BLOCK`/`FIX` (`BLOCK-10`–`BLOCK-25` all closed). `NOTE-1` (build docs
+  omitting the two extracted stimulus modules) remains open documentation and
+  `NOTE-2` (stale workflow summaries) is reconciled in this handoff.
+- **Merge:** `scratch/pc07-stimulus-first` is fast-forward merged into
+  `scratch/parser-convergence-cycle` over `9afe4f8`, with `src/`,
+  `ocr_helper.js`, `deployed/`, `fixtures/`, and `tests/` byte-identical to
+  reviewed candidate `984b2f0`.
+- **Reconciliation:** `PC07` is reconciled to `done` in
+  [`../README.md`](../README.md), [`../../STATUS.md`](../../STATUS.md),
+  [`../prompts/phase-map.md`](../prompts/phase-map.md), root
+  [`../../../AGENTS.md`](../../../AGENTS.md), and this package record. No
+  product, test, fixture, generated, or review-evidence file was changed.
+- **Next step & deferred gates:** the cycle-wide rigorous review on
+  `scratch/parser-convergence-cycle` is now the unblocked next step; desktop +
+  owner Brave/Android acceptance of `src/bookmarklet.js` and a separately
+  reviewed key-only retirement diff (retiring `src/bookmarklets/key/`) remain
+  external/deferred gates. No real-branch integration, deploy, or live action is
+  authorized.
+
+NEXT COMMAND: @docs/plan/prompts/review-session.md review phases 1-3,7 on scratch/parser-convergence-cycle
