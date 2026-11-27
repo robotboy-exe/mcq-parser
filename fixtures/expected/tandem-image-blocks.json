@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "tandem-image-blocks",
+  "source": [
+    "docs/plan/reviews/parser-convergence-2026-11-cycle-review.md BLOCK-30 reproduction, 2026-11-27",
+    "docs/DECISIONS.md 1897-1904: explicit marker ranges are authoritative"
+  ],
+  "provenance": "Two separately anchored image blocks between one option boundary, transcribed from the named review vector.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/tandem-image-blocks.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 3,
+    "nums": [
+      19,
+      20,
+      21
+    ],
+    "questions": [
+      {
+        "num": 19,
+        "question": "CR27 What was agreed in A. D.?",
+        "a": "Ninety",
+        "b": "Eighty",
+        "c": "Seventy (see B. note)",
+        "d": "Sixty",
+        "flags": [],
+        "needs_image": false
+      },
+      {
+        "num": 20,
+        "question": "CR27Pair Which figure matches the first chart?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "needs_image": true
+      },
+      {
+        "num": 21,
+        "question": "CR27Pair Which figure matches the second chart?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "needs_image": true
+      }
+    ],
+    "needs_image": [
+      20,
+      21
+    ],
+    "stimulus_count": 2,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": 19,
+        "nums": [
+          20
+        ],
+        "text_contains": [
+          "Use the diagram below to answer question 20."
+        ],
+        "missing": []
+      },
+      {
+        "order": 2,
+        "source_num": 19,
+        "nums": [
+          21
+        ],
+        "text_contains": [
+          "Use the diagram below to answer question 21."
+        ],
+        "missing": []
+      }
+    ],
+    "forbidden_flags": [
+      "option D missing",
+      "option D contains section heading or instruction"
+    ]
+  },
+  "must_not": [
+    "The two blocks collapse into one stimulus",
+    "Q21 is left without an image requirement",
+    "Q19 option D absorbs the diagram wording"
+  ],
+  "notes": [
+    "Each explicit marker keeps its own range and both intros stay with their own block."
+  ],
+  "discrepancies": []
+}

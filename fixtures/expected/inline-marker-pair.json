@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "inline-marker-pair",
+  "source": [
+    "docs/plan/reviews/parser-convergence-2026-11-cycle-review.md BLOCK-32 reproduction, 2026-11-27",
+    "docs/SPEC.md 425-432: an inline marker removes only its own text"
+  ],
+  "provenance": "One stem with two balanced inline double-bracket markers, transcribed from the named review vector.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/inline-marker-pair.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [
+      20,
+      21
+    ],
+    "questions": [
+      {
+        "num": 20,
+        "question": "CR27 What does C. I. F. mean and on this invoice?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [],
+        "needs_image": true
+      },
+      {
+        "num": 21,
+        "question": "CR27Next What follows the invoice?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [],
+        "needs_image": true
+      }
+    ],
+    "needs_image": [
+      20,
+      21
+    ],
+    "stimulus_count": 2,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": 20,
+        "nums": [
+          20
+        ],
+        "missing": []
+      },
+      {
+        "order": 2,
+        "source_num": 20,
+        "nums": [
+          21
+        ],
+        "missing": []
+      }
+    ],
+    "forbidden_flags": [
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "The stem loses `on this invoice?`",
+    "Either marker remains in the saved stem",
+    "Only one marker range survives"
+  ],
+  "notes": [
+    "Both removals are applied from the right so the earlier offset cannot shift the later one."
+  ],
+  "discrepancies": []
+}

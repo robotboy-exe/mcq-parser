@@ -335,7 +335,7 @@ test('refuses a parser core whose version does not match the adapter', () => {
   const result = loadHelperInBrowser({ parser });
   assert(result.thrown, 'helper should throw on a version mismatch');
   assert(/2\.3\.0/.test(result.thrown.message));
-  assert(/2\.5\.8/.test(result.thrown.message));
+  assert(result.thrown.message.indexOf(require('../src/parser/core.js').version) > -1);
   assert.strictEqual(result.errors.length, 1);
   assert.strictEqual(result.inserted.length, 1);
   assert.strictEqual(result.inserted[0].id, 'ocr_error');
@@ -683,6 +683,25 @@ test('Load does not preselect a correct-answer radio without a key', () => {
   assert.strictEqual(result.document.getElementById('question_text').value, 'lout');
   assert.strictEqual(result.document.getElementById('option_a').value, 'cow');
   assert.deepStrictEqual(result.radios.map((radio) => radio.checked), [false, false, false, false]);
+});
+
+test('parseAll drops a trailing divider or answer-key footer from Option D', () => {
+  // BLOCK-34: the manual adapter parses one paste without section filtering.
+  const base = '19. CR27 One question about the ledger entry in A. D.?\nA. Six units\nB. Seven units\nC. Eight units\nD. Nine units';
+  const expected = {
+    question: 'CR27 One question about the ledger entry in A. D.?',
+    a: 'Six units', b: 'Seven units', c: 'Eight units', d: 'Nine units'
+  };
+  for (const suffix of ['\n========', '\n=== ANSWER KEY ===\n19. A']) {
+    const items = helper.parseAll(base + suffix);
+    assert.strictEqual(items.length, 1, 'one question');
+    assert.deepStrictEqual(
+      { question: items[0].question, a: items[0].a, b: items[0].b, c: items[0].c, d: items[0].d },
+      expected
+    );
+    assert.deepStrictEqual(items[0].flags, [], 'no advisory flag');
+  }
+  assert.strictEqual(helper.parseAll(base)[0].d, 'Nine units', 'the no-footer control is unchanged');
 });
 
 test('helper suite executes the real exported parseAll', () => {

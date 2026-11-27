@@ -552,7 +552,7 @@ test('splitSections removes a 19xx answer title without extending option D', () 
 test('parsePaste returns the comprehension contract for a recognized passage', () => {
   const parsed = parser.parsePaste(fs.readFileSync(
     path.join(INPUT_DIR, 'sample-comprehension-passage3.txt'), 'utf8'));
-  eq(parsed.version, '2.5.8', 'parser version');
+  eq(parsed.version, core.version, 'parser version');
   eq(parsed.contexts.length, 1, 'one context');
   eq(parsed.contexts[0].title, 'PASSAGE III', 'context title');
   eq(parsed.contexts[0].targets.join(','), '11,12,13,14,15', 'context targets');
@@ -2121,9 +2121,23 @@ test('classifySaveResponse treats error plus success text as ambiguous', () => {
 });
 
 test('classifySaveResponse rejects the logged-out page', () => {
-  eq(parser.classifySaveResponse({ redirected: false, text: '<h1>Administrator Login</h1>', errorText: '', lastId: 0 }), {
+  const loginPage = '<h1>Administrator Login</h1><form action="admin_questions.php?action=login">'
+    + '<input name="username"><input type="password" name="password"></form>';
+  eq(parser.classifySaveResponse({ redirected: false, text: loginPage, errorText: '', lastId: 0 }), {
     kind: 'rejected', reason: 'expired', message: 'you were logged out. Reload the page and log in.'
   });
+});
+
+test('classifySaveResponse accepts a save whose question mentions the login page', () => {
+  // BLOCK-28: ordinary stem text must not be read as a logout.
+  const page = '<div class="admin-success">Question saved successfully (Question ID: 128).</div>'
+    + '<table class="admin-table"><tbody><tr><td>What does the Administrator Login page let a school officer do?</td>'
+    + '<td>Sign in to manage questions</td></tr></tbody></table>';
+  eq(parser.classifySaveResponse({ redirected: true, text: page, errorText: '', lastId: 100, loginForm: false }), {
+    kind: 'saved', id: 128
+  });
+  eq(parser.classifySaveResponse({ redirected: true, text: page, errorText: '', lastId: 100, loginForm: true }).kind, 'rejected');
+  eq(parser.classifySaveResponse({ redirected: true, text: page, errorText: '', lastId: 200, loginForm: false }).kind, 'ambiguous');
 });
 
 test('classifySaveResponse treats an empty reply as ambiguous', () => {
@@ -3564,6 +3578,81 @@ testAsync('BLOCK-25: real generated stimulus artifact keeps confirmation cleared
     { num: 1, mode: 'draft' },
     { num: 2, mode: 'draft' }
   ], 'Q2 logged under book 2 as draft');
+});
+
+testAsync('UI tab B does not save a question tab A already saved (BLOCK-26)', async () => {
+  const shared = uiHarness.sharedStorageMap(uiHarness.sampleStorage('batch-two-tab'));
+  const tabA = uiHarness.createUI({
+    storageMap: shared,
+    reply: () => ({ redirected: true, text: 'Question saved successfully (Question ID: 107)' })
+  });
+  const tabB = uiHarness.createUI({
+    storageMap: shared,
+    reply: () => ({ redirected: true, text: 'Question saved successfully (Question ID: 108)' })
+  });
+  eq(tabB.posts.length, 0, 'tab B starts with no request');
+  await tabA.submit();
+  eq(tabA.posts.length, 1, 'tab A saves the question once');
+  eq(JSON.parse(shared.get('ocrQueue')).i, 1, 'the shared queue advanced');
+  await tabB.click('ocr_auto_start');
+  await tabB.flush();
+  eq(tabB.posts.length, 0, 'tab B must not post the finished question again');
+  eq(JSON.parse(shared.get('ocrSavedLog')).length, 1, 'the shared log keeps one row');
+  eq(tabB.doc.getElementById('ocr_auto_start').disabled, true, 'tab B cannot start over a finished batch');
+});
+
+testAsync('UI refuses to post a stale answer after another tab corrects the key (BLOCK-27)', async () => {
+  const shared = uiHarness.sharedStorageMap(uiHarness.sampleStorage('batch-key-change'));
+  const tabA = uiHarness.createUI({ storageMap: shared });
+  uiHarness.createUI({ storageMap: shared });
+  eq(tabA.doc.getElementById('ocr_auto_start').disabled, false, 'tab A can start with its confirmed A answer');
+  shared.set('ansKey', JSON.stringify({ 1: 'D' }));
+  await tabA.click('ocr_auto_start');
+  await tabA.flush();
+  eq(tabA.posts.length, 0, 'no POST may use the stale answer');
+  assert(/does not match the key/i.test(tabA.doc.getElementById('ocr_live_blocked').textContent),
+    tabA.doc.getElementById('ocr_live_blocked').textContent);
+});
+
+testAsync('UI keeps an unbatched replacement list at its own pointer (BLOCK-37)', async () => {
+  const oldItem = {
+    num: 1,
+    question: 'CR27ForeignOld Which voucher belongs in this separate list?',
+    a: 'One', b: 'Two', c: 'Three', d: 'Four', flags: []
+  };
+  const newItem = Object.assign({}, oldItem, { question: 'CR27ForeignNew Which voucher belongs in this separate list?' });
+  const shared = uiHarness.sharedStorageMap({
+    ocrQueue: { items: [oldItem], i: 0 },
+    ocrMeta: { subject_id: '1', exam_category_id: '2', exam_year: '1985' },
+    ocrSavedLog: []
+  });
+  const tabA = uiHarness.createUI({
+    storageMap: shared,
+    reply: () => {
+      shared.set('ocrQueue', JSON.stringify({ items: [newItem], i: 0 }));
+      return { redirected: true, text: 'Question saved successfully (Question ID: 127)' };
+    }
+  });
+  await tabA.submit();
+  eq(tabA.posts.length, 1, 'only the old question posts');
+  const stored = JSON.parse(shared.get('ocrQueue'));
+  eq(stored.i, 0, 'the replacement list keeps i=0');
+  eq(stored.items[0].question, newItem.question, 'the replacement text is untouched');
+  eq(JSON.parse(shared.get('ocrSavedLog')).map(entry => entry.id), [127], 'only the posted row is logged');
+});
+
+testAsync('UI completion heading keeps the finished batch metadata (FIX-5)', async () => {
+  const ui = uiHarness.createUI({ storage: uiHarness.sampleStorage('batch-complete'), inactiveChecked: true });
+  await ui.click('ocr_auto_start');
+  await ui.flush();
+  eq(ui.posts.length, 1, 'one save for the batch');
+  const heading = ui.doc.getElementById('ocr_live_status').textContent;
+  assert(/Batch complete: CRS \/ JAMB \/ UTME \/ 2021 — 1 question \(#1 to #1\)/.test(heading), heading);
+  assert(/1 saved\.$/.test(heading), heading);
+  assert(!/-- Select Subject --/.test(heading), 'the reset form fields are not read back into the heading');
+  const history = ui.storage.get('ocrBatchHistory');
+  eq(history.length, 1, 'one history entry');
+  eq(history[0].year, '2021', 'the history keeps the real year');
 });
 
 (async () => {

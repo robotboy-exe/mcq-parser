@@ -290,4 +290,140 @@ Before `src/parser/core.js` changes on `9afe4f8`:
   external/deferred gates. No real-branch integration, deploy, or live action is
   authorized.
 
-NEXT COMMAND: @docs/plan/prompts/review-session.md review phases 1-3,7 on scratch/parser-convergence-cycle
+### Cycle-wide review fix session (2026-11-27)
+
+- **Authority:** the cycle-wide rigorous review
+  [`../reviews/parser-convergence-2026-11-cycle-review.md`](../reviews/parser-convergence-2026-11-cycle-review.md)
+  returned `FIX` on target `ed2d071` with 12 `BLOCK` and two `FIX` findings.
+  Gate 1 passed with owner command `go, approve D1 D2 D3 D4` (D1 `tests/cbt-staging.php`
+  token, D2 test changes, D3 new frozen fixtures, D4 token rotation). No finding
+  was `NOT REPRODUCED`. The review record was not edited.
+- **Line:** this work sits on the cloud review worktree at `3adf0fe` (parent
+  `ed2d071`) as **uncommitted** changes on a chat branch, because this VM cannot
+  push the scratch cycle ref. `Commit: deferred`; integration into
+  `scratch/parser-convergence-cycle` still requires re-review and a separately
+  authorized commit.
+
+#### Failing-first reproduction (unfixed code)
+
+- Parser findings reproduced with the real `src/parser/core.js` and the real
+  exported `ocr_helper.parseAll`: `items:[null,20,21]` (`BLOCK-31`), stem
+  `…mean and [[diagram: 2 oice?` (`BLOCK-32`), manual Option D
+  `Nine units ========` (`BLOCK-34`), `a="Ninety (see"` / `d="note)"` (`BLOCK-36`),
+  one collapsed block where two were expected (`BLOCK-30`), a default range for
+  `20.50`/`20/06` (`BLOCK-33`), and a dropped caption `[missing text]`
+  (`BLOCK-29`).
+- The seven new frozen fixtures run against a detached worktree of the unfixed
+  commit (`$HOME/tmp/gate1/before`, `3adf0fe` plus the new fixtures):
+  **77 PASS / 7 FAIL**, every new fixture failing. On the fixed tree:
+  **84 PASS / 0 FAIL / 0 PENDING**.
+- `FIX-6` reproduced on disposable staging before the edit: **6 PASS / 1 FAIL**
+  (obsolete `src/owner-tool/render.js?v=2.3.3` expectation).
+
+#### Closure matrix
+
+| Finding | Production change | Evidence |
+| --- | --- | --- |
+| `BLOCK-26` | `src/ui/ui.js`: `adoptStoredProgress`, visibility refresh, saveFlight `syncSharedState`/`logHasSaved`; `save-flight.js` already-saved short-circuit | unit `UI completion…`/`BLOCK-26` test; real two tabs: one row `#3033`, B's Start disabled after A finished, B **0 POSTs**, then a second Start **0 POSTs** |
+| `BLOCK-27` | `save-flight.js` + `ui.js` classification of a corrected key, `clearConfirm` on key-only Load | unit test; real two tabs: A refuses the stale key with `The ticked answer does not match the key` and **0 POSTs**, reload refills `D`, then exactly one POST stores `#3034` `correct_option=3`, year 2076, draft |
+| `BLOCK-28` | `autosave.js` structural logout classification (no stem matching) | unit `accepts a save whose question mentions the login page`; real save of a stem containing `Administrator Login page`: one POST, `#3035`, second Start **0 POSTs** |
+| `BLOCK-29` | `core.js` leading-caption absorption keeps `[missing text]` and its flag | fixture `leading-caption-missing-text`; real Load flags Q20 and Q21, a valid PNG attached, Start still disabled, **0 POSTs** |
+| `BLOCK-30` | `core.js` `extractOneAnchoredInterQuestionBlock` loop wrapper + stop before the following intro | fixture `tandem-image-blocks`; real Load plans ranges `20` and `21`, both Q20/Q21 flagged `needsImage` |
+| `BLOCK-31` | `core.js` `countedOptionMatches` with head/leading counts | fixture `leading-passage-spaced-initials`; real Load queue `[20,21]`, no null item |
+| `BLOCK-32` | `core.js` descending inline-marker removal | fixture `inline-marker-pair`; real Load stem `CR32 What does C. I. F. mean and on this invoice?` |
+| `BLOCK-33` | `core.js` `stimulusSingleQuestionRef` decimal/slash guard | fixtures `image-ref-decimal-amount`, `image-ref-slash-date`; real Load leaves the plan range empty for both and posts nothing |
+| `BLOCK-34` | `core.js` `withoutManualFooter` in `splitQuestions` (manual adapter entry, not `ocr_helper.js`) | helper test; real manual page replay for a `========` divider and an `=== ANSWER KEY ===` footer: stem intact, `d="Nine units"` |
+| `BLOCK-35` | `src/bookmarklets/key/entry.js` `itemNeedsImage` hard stop plus dry-run line | key test; real comparator: dry run blocks, Start alerts, **0 POSTs**, no image row; the clean pair still saves 2 rows |
+| `BLOCK-36` | `core.js` `preferPhysicalOptionLines` + `bestOptionCandidate`, gated on `isBareOptionLabel` layouts only | fixture `wrapped-option-d-body-mention`; real Load `a=Ninety (see D. note)`, `b=Eighty`, `c=Seventy`, `d=Sixty`; the three D-91 tests stay green |
+| `BLOCK-37` | `save-flight.js` `sameItemText` identity for unbatched queues | unit test; real held POST with a replaced list in a second tab: one row `#3038`, shared queue stays `i=0`, new text intact, no `All 1 questions done` |
+| `FIX-5` | `ui.js` `batchMeta`, `storedBatchMeta`/`optionTextFor` fallback for the post-reload label | unit test; real five-row draft run: heading `Batch complete: Accounting / JAMB / UTME / 2080 — 5 questions (#1 to #5) · 5 saved.`, history IDs resolve to 5 rows |
+| `FIX-6` | `tests/cbt-staging.php` expects `?v=2.3.4` and asserts the stale token is absent | disposable staging: **7 PASS / 0 FAIL** over real HTTP |
+
+- `FIX-5` needed one further change inside its own contract: the native save is a
+  PRG reload, so the completion heading is rendered by a fresh instance whose
+  `batchMeta` is empty. `batchLabel()` now falls back to the persisted
+  `ocrMeta` (resolved against the current `<select>` options) when both the live
+  form and `batchMeta` are incomplete. The earlier real run reproduced the
+  defect (`-- Select Subject -- / -- Select Exam Category -- / 2026`), the later
+  run passes.
+
+#### Owner-approved test, fixture and token changes
+
+- D1: `tests/cbt-staging.php` now expects `src/owner-tool/render.js?v=2.3.4`
+  and that `?v=2.3.3` appears nowhere.
+- D2: new/updated tests only — `tests/unit.js` (`BLOCK-26`, `BLOCK-27`,
+  `BLOCK-37`, `FIX-5`, login-page save), `tests/ocr-helper.js` (`BLOCK-34`
+  footer, version assertion from `CORE.version`), `tests/key-bookmarklet.js`
+  (`BLOCK-35` no-POST test, version pins made dynamic), `tests/ui-harness.js`
+  (`storageMap` option, exported `sharedStorageMap`). No existing assertion was
+  weakened.
+- D3: seven new frozen fixture pairs (`input_origin: doc`):
+  `leading-caption-missing-text`, `tandem-image-blocks`,
+  `leading-passage-spaced-initials`, `inline-marker-pair`,
+  `image-ref-decimal-amount`, `image-ref-slash-date`,
+  `wrapped-option-d-body-mention`.
+- D4: tokens rotate to `src/parser/core.js?v=2.5.9` (version `2.5.9`) and
+  `ocr_helper.js?v=2.4.12` (`EXPECTED_CORE_VERSION = '2.5.9'`), including the
+  retained key comparator's pin.
+
+#### Per-file additions/deletions from `ed2d071`
+
+| File | +/- | Final | Responsibility | Deployed | Direct production-path test |
+| --- | --- | --- | --- | --- | --- |
+| `src/parser/core.js` | +105/−16 | 2,426 L / 91,154 B / `2626b181…` | region model, leading caption, tandem blocks, counted options, inline markers, range guard, wrapped-option choice, manual footer | yes (`src/`) | runner 84, helper 43, six real Loads |
+| `src/ui/ui.js` | +87/−2 | 1,306 L / 55,061 B | shared-progress adoption, batch metadata, saveFlight wiring | via `src/bookmarklet.js` | unit 204, six real browser checks |
+| `src/bookmarklets/stimulus/save-flight.js` | +48/−3 | 403 L / 17,618 B | identity checks for held/queued saves | via `src/bookmarklet.js` | unit, `BLOCK-26/27/37` real runs |
+| `src/bookmarklets/stimulus/autosave.js` | +11/−1 | 603 L / 25,760 B | structural logout classification | via `src/bookmarklet.js` | unit, `BLOCK-28` real run |
+| `src/bookmarklets/key/entry.js` | +18/−1 | 613 L / 25,499 B | image hard stop, dry-run line, version pin | key comparator build | key 44, `BLOCK-35` real run |
+| `ocr_helper.js` | +1/−1 | 127 L / 4,917 B / `15024aa2…` | adapter version pin only | yes (site root) | helper 43, manual replay |
+| `deployed/admin_questions.php` | +2/−2 | 1,057 L / 62,878 B / `7adc8ded…` | tokens only (`core.js?v=2.5.9`, `ocr_helper.js?v=2.4.12`) | yes (site root) | `php -l`, staging `FIX-6` |
+| `tests/unit.js` | +91/−2 | 1,389→ | approved tests | no | unit 204 |
+| `tests/ocr-helper.js` | +20/−1 | — | approved tests | no | helper 43 |
+| `tests/key-bookmarklet.js` | +29/−3 | — | approved tests | no | key 44 |
+| `tests/ui-harness.js` | +14/−4 | — | `storageMap` support | no | unit 204 |
+| `tests/cbt-staging.php` | +2/−1 | — | `FIX-6` token | no | staging 7/7 |
+| `src/bookmarklet.js` | +1/−1 | 1 L / 178,213 B URL / `daae12d5…` | rebuilt stimulus artifact | distributed | real browser runs |
+| `src/bookmarklets/key/bookmarklet.js` | +1/−1 | 1 L / 97,286 B URL / `b2a3f953…` | rebuilt comparator artifact | distributed | key 44, `BLOCK-35` |
+
+Excluded artifacts: none added. Seven fixture input/expected pairs are new
+untracked files under `fixtures/`.
+
+#### Baseline after the fixes
+
+- Node: `runner.js` **84 PASS** (0 fail/0 pending), `unit.js` **204 PASS** (0 fail),
+  `ocr-helper.js` 43, `key-bookmarklet.js` 44, `single-source.js` 15,
+  `underline-toolbar.js` 10, `question-preview.js` 7, `math-tool.js` 26,
+  `render-markup.js` 69; `tools/extract-bank.js --check` OK.
+- Builders: both `--check` runs match, `wc -l` 1 each, stripped-body
+  `node --check` passes, no CR and no `%HH` escapes.
+- PHP 8.3.6 (provisioned locally): `php-render.php` 33, `admin-question-store.php` 8,
+  `cbt-question-order.php` 14, `php -l deployed/*.php` 7/7, disposable staging
+  `tests/cbt-staging.php` **7 PASS / 0 FAIL**.
+
+#### Real staging and browser evidence
+
+- Disposable PHP/SQLite phone staging on `127.0.0.1:18137`
+  (`OCR_PHONE_STAGING_TMP=$HOME/tmp/gate1`), real curl login plus cookie,
+  headless Chromium 141.0.7390.37 driven by Playwright 1.56.0, real deployed
+  admin page and real native Add form, both rebuilt artifacts executed as the
+  bookmarklets are.
+- **15 of 15** real browser checks pass: nine parser/manual checks
+  (`BLOCK-29`–`BLOCK-34`, `BLOCK-36`) and six save/UI checks (`BLOCK-26`,
+  `BLOCK-27`, `BLOCK-28`, `BLOCK-35`, `BLOCK-37`, `FIX-5`). Logs:
+  `$HOME/tmp/gate1/parser-evidence.log`, `$HOME/tmp/gate1/save-evidence.log`.
+- Rows written to the disposable DB during the evidence (duplicate-guard
+  interactions were avoided with a per-run marker salt): `#3033`–`#3037`,
+  `#3038`, and the five `FIX-5` IDs. Staging was left running for the owner and
+  is outside the repository; no live site, live row, deployment, or push was
+  touched.
+- Not verified here: desktop bookmark installation, owner Brave/Android
+  acceptance, the deferred key-only retirement gate, and a re-review verdict.
+  The duplicate guard blocked early evidence attempts that re-used the same
+  stem and year; those attempts proved nothing and were re-run with unique
+  markers.
+
+- **Re-review required:** every finding above is a fixed `BLOCK`/`FIX`, so the
+  cycle-wide review must verify this frozen matrix and the failing-first record
+  before any commit or merge.
+
+NEXT COMMAND: @docs/plan/prompts/review-session.md re-review the cycle-review fixes (BLOCK-26 to BLOCK-37, FIX-5, FIX-6) on scratch/parser-convergence-cycle

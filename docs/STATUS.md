@@ -24,6 +24,27 @@ Last updated: 2026-11-27.
   `scratch/parser-convergence-cycle` is now the unblocked next step, while
   desktop + owner Brave/Android acceptance and a separately reviewed key-only
   retirement diff remain external/deferred gates.
+- Cycle-wide review fix session (`BLOCK-26`–`BLOCK-37`, `FIX-5`, `FIX-6`,
+  2026-11-27, target `ed2d071`, Gate 1 `go, approve D1 D2 D3 D4`,
+  `Commit: deferred`): the cycle-wide rigorous review returned `FIX` with 12
+  `BLOCK` and two `FIX` findings. Every finding was reproduced failing-first (the
+  seven new frozen fixtures fail 7/7 on a detached unfixed worktree, and the
+  staging `FIX-6` check failed 1 of 7 before its edit). Parser work is in
+  `src/parser/core.js` (`2,426 L / 91,154 B`, `2626b181…`, version `2.5.9`), the
+  save/UI work in `src/ui/ui.js` (`1,306 L / 55,061 B`),
+  `src/bookmarklets/stimulus/save-flight.js`, `src/bookmarklets/stimulus/autosave.js`,
+  and `src/bookmarklets/key/entry.js`, with the adapter pin `ocr_helper.js`
+  (`2.5.9`) and the tokens `src/parser/core.js?v=2.5.9` /
+  `ocr_helper.js?v=2.4.12` in `deployed/admin_questions.php`. Both artifacts were
+  rebuilt (`src/bookmarklet.js` `1 L / 178,213 B`, `daae12d5…`;
+  `src/bookmarklets/key/bookmarklet.js` `1 L / 97,286 B`, `b2a3f953…`). Full Node
+  and PHP 8.3.6 suites pass (84 runner, 204 unit, 43 helper, 44 key comparator,
+  15 single-source, 10 underline, 7 preview, 26 math-tool, 69 JS + 33 PHP marker,
+  8 store, 14 ordering, 7/7 lint, 7 bank hashes, staging 7/7), and disposable
+  Chromium + PHP/SQLite staging passed **15 of 15** real browser checks across
+  `BLOCK-26`–`BLOCK-37`, `FIX-5`, and `FIX-6`. Re-review of the frozen matrix is
+  required before any commit or merge; the work is uncommitted on the cloud
+  review worktree (`3adf0fe`, parent `ed2d071`).
 - PC07 Phase 7 fix session 3 (`BLOCK-24`, `BLOCK-25`, 2026-11-27, package base
   `9afe4f8`, branch `scratch/pc07-stimulus-first`, Gate 1 `go, approve D1 D2`,
   commit `d65177b`): Phase 7 re-review 2 (`9585eb6`) closed `BLOCK-15`,

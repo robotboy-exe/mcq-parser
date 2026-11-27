@@ -29,7 +29,12 @@ those and opened `BLOCK-24`/`BLOCK-25`, which fix session 3 resolved at
 ACCEPTED FINDINGS` and closed both (`NOTE-1` open documentation, `NOTE-2`
 reconciled). Historical PC04–PC06 package specs and `phase-4*` review records
 stay intact as evidence. The cycle-wide rigorous review on
-`scratch/parser-convergence-cycle` is now the unblocked next step, while
+`scratch/parser-convergence-cycle` returned `FIX` with `BLOCK-26`–`BLOCK-37`,
+`FIX-5`, and `FIX-6`; its fix session (2026-11-27, `go, approve D1 D2 D3 D4`)
+reproduced every finding failing-first, fixed only the frozen contracts, rotated
+the tokens to `2.5.9` / `2.4.12`, and passed the full baseline plus 15 of 15 real
+staging/browser checks. That work is uncommitted (`Commit: deferred`) and
+re-review of the frozen matrix is now the unblocked next step, while
 `src/bookmarklets/key/*` stays retained as comparator and rollback reference
 until desktop + owner Brave/Android acceptance and a separate reviewed key-only
 retirement diff. No real-branch integration, deploy, or live action is

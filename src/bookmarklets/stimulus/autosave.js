@@ -367,10 +367,20 @@ function formMatchesQuestion(form, q) {
   return ['a', 'b', 'c', 'd'].every((letter, i) => normalizeAnswer(options[i]) === normalizeAnswer(q[letter]));
 }
 
+function looksLikeLoginPage(html) {
+  const text = String(html == null ? '' : html);
+  return /<input[^>]*type\s*=\s*["']?password/i.test(text)
+    || /<input[^>]*name\s*=\s*["']?password/i.test(text)
+    || /<form[^>]*action\s*=\s*["'][^"']*login/i.test(text);
+}
+
 function classifySaveResponse(reply) {
   const r = reply || {};
   const text = String(r.text == null ? '' : r.text);
-  if (text.indexOf('Administrator Login') > -1) {
+  // BLOCK-28: a logged-out reply is a real login form, not a page that merely
+  // contains the words `Administrator Login` in ordinary question text.
+  const loginPage = r.loginForm === undefined ? looksLikeLoginPage(text) : Boolean(r.loginForm);
+  if (loginPage) {
     return { kind: 'rejected', reason: 'expired', message: 'you were logged out. Reload the page and log in.' };
   }
   if (r.errorText && !r.redirected) {

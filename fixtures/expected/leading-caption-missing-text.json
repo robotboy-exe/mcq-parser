@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "leading-caption-missing-text",
+  "source": [
+    "docs/plan/reviews/parser-convergence-2026-11-cycle-review.md BLOCK-29 reproduction, 2026-11-27",
+    "docs/SPEC.md 442-444, 761-763: a placeholder on an extracted stimulus body adds MISSING_TEXT_FLAG"
+  ],
+  "provenance": "Leading diagram caption with a [missing text] placeholder, transcribed from the named review vector. Option text is the review's literal A-D set.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/leading-caption-missing-text.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [
+      20,
+      21
+    ],
+    "questions": [
+      {
+        "num": 20,
+        "question": "CR27Caption What does C. I. F. mean on the invoice?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [
+          "[missing text] placeholder"
+        ],
+        "needs_image": true
+      },
+      {
+        "num": 21,
+        "question": "CR27Caption What happened in B. C. at the dock?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [
+          "[missing text] placeholder"
+        ],
+        "needs_image": true
+      }
+    ],
+    "needs_image": [
+      20,
+      21
+    ],
+    "stimulus_count": 1,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": null,
+        "nums": [
+          20,
+          21
+        ],
+        "text_contains": [
+          "Use the diagram below to answer questions 20 and 21.",
+          "The caption ends at [missing text]."
+        ],
+        "missing": []
+      }
+    ],
+    "forbidden_flags": [
+      "question number missing",
+      "option D missing"
+    ]
+  },
+  "must_not": [
+    "The leading caption is dropped from the extracted stimulus",
+    "Q20 or Q21 is left without the [missing text] placeholder flag",
+    "A fabricated question number is created from the caption"
+  ],
+  "notes": [
+    "One leading sourceNum:null stimulus carries the intro and the plain caption line."
+  ],
+  "discrepancies": []
+}

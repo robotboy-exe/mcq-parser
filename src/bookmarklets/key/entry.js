@@ -3,7 +3,7 @@
   // inlines the canonical parser core, then boot.js, then this file. This entry
   // owns only the key panel, answer fill, dry run, autosave, and in-place save;
   // it is never loaded by a deployed page.
-  const EXPECTED_CORE_VERSION = '2.5.8';
+  const EXPECTED_CORE_VERSION = '2.5.9';
   const core = typeof window !== 'undefined' ? window.OCRParser : null;
 
   function coreProblem() {
@@ -191,6 +191,14 @@
     return typeof letter === 'string' ? letter.toUpperCase() : '';
   }
 
+  function itemNeedsImage(q) {
+    // BLOCK-35: the retained comparator has no image plan, so an item the parser
+    // marked needsImage can only be saved by hand.
+    if (!q) return false;
+    if (q.needsImage) return true;
+    return (Array.isArray(q.stimuli) ? q.stimuli : []).some(stim => stim && stim.needsImage);
+  }
+
   function dryRunProblems() {
     const problems = [];
     if (!queue.items.length) return ['no questions loaded'];
@@ -202,13 +210,16 @@
     let blank = 0;
     let noKey = 0;
     let badKey = 0;
+    let image = 0;
     for (const q of queue.items) {
       if (!String(q.question || '').trim() || ['a', 'b', 'c', 'd'].some((l) => !String(q[l] || '').trim())) blank++;
       const letter = keyOf(q);
       if (!letter) noKey++;
       else if (LETTERS.indexOf(letter) === -1) badKey++;
+      if (itemNeedsImage(q)) image++;
     }
     if (blank) problems.push(blank + ' question(s) with a blank stem or option');
+    if (image) problems.push(image + ' question(s) need an image, which this bookmarklet cannot attach; save those by hand');
     if (noKey) problems.push(noKey + ' question(s) without an answer key');
     if (badKey) problems.push(badKey + ' question(s) with an unusable key letter');
     return problems;
@@ -379,6 +390,12 @@
     if (!auto || !auto.running) return;
     if (queue.i >= queue.items.length) {
       stopAuto('Autosave complete: ' + queue.items.length + ' of ' + queue.items.length + ' saved.');
+      return;
+    }
+    const current = queue.items[queue.i];
+    if (itemNeedsImage(current)) {
+      stopAuto('Autosave stopped at question ' + (current && current.num != null ? current.num : '?')
+        + ': it needs an image, and this bookmarklet cannot attach one. Save it by hand.');
       return;
     }
     show();

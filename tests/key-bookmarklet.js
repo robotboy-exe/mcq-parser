@@ -193,7 +193,7 @@ test('artifact is one line, syntax-valid, percent-free, and deterministic', () =
   const second = crypto.createHash('sha256').update(fs.readFileSync(ARTIFACT, 'utf8')).digest('hex');
   assert.strictEqual(first, second, 'build output is deterministic');
 
-  assert.strictEqual(body.includes('PARSER_VERSION = "2.5.8"'), true, 'inlines the canonical core version');
+  assert.strictEqual(body.includes('PARSER_VERSION = "' + CORE.version + '"'), true, 'inlines the canonical core version');
   assert.strictEqual(body.includes('window.OCRParser'), true, 'inlines the canonical core');
   assert.strictEqual(body.includes('__ocrBookmarklet = true'), true, 'runs the boot step');
   assert.strictEqual(body.includes('const EXPECTED_CORE_VERSION'), true, 'runs the key entry');
@@ -207,7 +207,7 @@ test('runs the real artifact against the canonical core, not a copy', () => {
     assert(panel.includes(id), 'panel id ' + id);
   }
   assert.strictEqual(result.field('ocr_title').textContent, 'Bookmarklet paste');
-  assert.strictEqual(CORE.version, '2.5.8');
+  assert(/^\d+\.\d+\.\d+$/.test(CORE.version), CORE.version);
   assert.strictEqual(typeof linkComprehension, 'function');
 });
 
@@ -423,6 +423,32 @@ test('keeps the question queued when the in-place save is rejected', async () =>
   assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'the queue does not advance');
   assert(/Question 1 was not saved: Duplicate question/.test(result.field('ocr_status').innerHTML));
   assert(/First autosave question/.test(result.field('question_text').value), 'the same question stays in the form');
+});
+
+test('autosave hard-stops an item the parser marked needsImage', async () => {
+  // BLOCK-35: the retained comparator cannot attach an image, so it must never
+  // post an item that needs one.
+  let calls = 0;
+  const result = ready(keyBookmarklet({ fetch: () => { calls++; return Promise.resolve(savedResponse()); } }));
+  loadPaste(result, [
+    '19. CR27KeyImage Which entrance did the person use?',
+    'A. North gate', 'B. East gate', 'C. South gate', 'D. West gate',
+    '[image: 20]',
+    '20. CR27KeyImage Which entrance is shown on the diagram?',
+    'A. North gate', 'B. East gate', 'C. South gate', 'D. West gate',
+    '',
+    '=== ANSWER KEY ===',
+    '19. A', '20. D'
+  ].join('\n'));
+  const queue = JSON.parse(result.storage.get('ocrQueue'));
+  assert.strictEqual(queue.items.length, 2, 'both questions loaded');
+  assert.strictEqual(Boolean(queue.items[1].needsImage), true, 'Q20 is marked needsImage');
+  assert(/need an image/.test(result.field('ocr_status').innerHTML), result.field('ocr_status').innerHTML);
+  result.field('ocr_auto').onclick();
+  await flush();
+  assert.strictEqual(calls, 0, 'no POST for the image question');
+  assert.strictEqual(JSON.parse(result.storage.get('ocrQueue')).i, 0, 'the pointer does not move');
+  assert.strictEqual(result.storage.has('ocrSubmitted'), false, 'no save attempt');
 });
 
 test('autosave posts each question and completes without a reload', async () => {
@@ -910,7 +936,7 @@ test('refuses to run without the canonical core and never touches Constant Text'
   const cases = [
     ['missing window.OCRParser', undefined, /window\.OCRParser is missing/],
     ['version mismatch', { version: '2.3.0', parsePaste() {} }, /reports version 2\.3\.0/],
-    ['missing parsePaste', { version: '2.5.8' }, /no parsePaste export/]
+    ['missing parsePaste', { version: CORE.version }, /no parsePaste export/]
   ];
   for (const [label, core, pattern] of cases) {
     const run = runKeyEntry(core);

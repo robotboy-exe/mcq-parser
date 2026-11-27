@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "leading-passage-spaced-initials",
+  "source": [
+    "docs/plan/reviews/parser-convergence-2026-11-cycle-review.md BLOCK-31 reproduction, 2026-11-27",
+    "docs/SPEC.md 223-237 and 434-444: leading stimulus extraction, no shared stimulus in saveable fields"
+  ],
+  "provenance": "Leading passage with a spaced initialism and a placeholder, transcribed from the named review vector.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/leading-passage-spaced-initials.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 2,
+    "nums": [
+      20,
+      21
+    ],
+    "questions": [
+      {
+        "num": 20,
+        "question": "CR27Lead Which invoice term applies here?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [
+          "[missing text] placeholder"
+        ],
+        "needs_image": false
+      },
+      {
+        "num": 21,
+        "question": "CR27Lead Which delivery term applies here?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [
+          "[missing text] placeholder"
+        ],
+        "needs_image": false
+      }
+    ],
+    "needs_image": [],
+    "stimulus_count": 1,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": null,
+        "nums": [
+          20,
+          21
+        ],
+        "text_contains": [
+          "The cost was C. I. F. at the port. [missing text]"
+        ],
+        "missing": []
+      }
+    ],
+    "forbidden_flags": [
+      "question number missing"
+    ]
+  },
+  "must_not": [
+    "`C. I. F.` fabricates an unnumbered question",
+    "The leading passage lands in a saved field",
+    "The real Q20/Q21 items lose their numbers"
+  ],
+  "notes": [
+    "The spaced initials stay text, so the head keeps its leading-stimulus shape."
+  ],
+  "discrepancies": []
+}

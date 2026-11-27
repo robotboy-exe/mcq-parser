@@ -42,10 +42,17 @@ Last updated: 2026-11-27.
   in `src/ui/ui.js`; Phase 7 re-review 3 of `984b2f0` (published `3647783`)
   returned `PASS WITH ACCEPTED FINDINGS` and closed `BLOCK-24`/`BLOCK-25` with
   no new `BLOCK`/`FIX` (`NOTE-1` open documentation, `NOTE-2` reconciled).
-  Cycle-wide rigorous review on `scratch/parser-convergence-cycle` is now the
-  unblocked next step; `src/bookmarklets/key/*` stays retained as comparator and
-  rollback reference until desktop + owner Brave/Android acceptance and a
-  separate reviewed retirement diff.
+  The cycle-wide rigorous review (record
+  [`reviews/parser-convergence-2026-11-cycle-review.md`](reviews/parser-convergence-2026-11-cycle-review.md),
+  target `ed2d071`) returned `FIX` with `BLOCK-26`–`BLOCK-37`, `FIX-5`, and
+  `FIX-6`; its fix session (2026-11-27, `go, approve D1 D2 D3 D4`) reproduced
+  every finding failing-first, fixed only the frozen contracts, rotated the
+  tokens to `2.5.9` / `2.4.12`, and passed the full baseline plus **15 of 15**
+  real staging/browser checks. That work is uncommitted on the cloud review
+  worktree (`3adf0fe`, parent `ed2d071`) with `Commit: deferred`, and re-review
+  of the frozen matrix is the unblocked next step. `src/bookmarklets/key/*` stays
+  retained as comparator and rollback reference until desktop + owner
+  Brave/Android acceptance and a separate reviewed retirement diff.
 - Prior settled packages (`PC01`–`PC03`): `PC01` separated the deployed manual
   helper and key bookmarklet products (`done`, merged at `e6f34f8`); `PC02`
   removed the second parser source and moved stimulus helpers to
@@ -401,7 +408,7 @@ Status values are `not started`, `in progress`, `blocked`, and `done`.
 | 4 | PC04 | [Marker-Adjacent Range Extraction](parser-convergence/pc-04-marker-range.md) | PC03 rigorous review settled | superseded by PC07 (Gate 1 approved 2026-11-26; `BLOCK-10` & `BLOCK-11` carried **open** into Phase 7) | preserved as history/evidence |
 | 5 | PC05 | [Inter-Question Stimulus Boundaries](parser-convergence/pc-05-stimulus-boundaries.md) | PC04 rigorous review settled | superseded by PC07 (anchored blocks, leading stimuli, gap recovery, & `[missing text]` implemented in Phase 7) | preserved as history/evidence |
 | 6 | PC06 | [Bookmarklet Policy and Scratch Release](parser-convergence/pc-06-bookmarklet-policy-release.md) | PC05 rigorous review settled | superseded by PC07 (key-only retirement deferred to separate reviewed diff after owner acceptance) | desktop + Brave/Android acceptance for `src/bookmarklet.js` |
-| 7 | PC07 | [Stimulus-First Convergence](parser-convergence/pc-07-stimulus-first.md) | PC01–PC03 settled & Gate 1 `go` | done — `BLOCK-10`–`BLOCK-25` closed; independent Phase 7 re-review 3 of `984b2f0` returned `PASS WITH ACCEPTED FINDINGS` (published `3647783`, no new `BLOCK`/`FIX`; `NOTE-1` open documentation, `NOTE-2` reconciled); fast-forward merged from `scratch/pc07-stimulus-first` into `scratch/parser-convergence-cycle` over `9afe4f8` (product/test/fixture tree matching `984b2f0`) | desktop + owner Brave/Android acceptance and separate reviewed key-only retirement diff |
+| 7 | PC07 | [Stimulus-First Convergence](parser-convergence/pc-07-stimulus-first.md) | PC01–PC03 settled & Gate 1 `go` | done — `BLOCK-10`–`BLOCK-25` closed; independent Phase 7 re-review 3 of `984b2f0` returned `PASS WITH ACCEPTED FINDINGS` (published `3647783`, no new `BLOCK`/`FIX`; `NOTE-1` open documentation, `NOTE-2` reconciled); fast-forward merged from `scratch/pc07-stimulus-first` into `scratch/parser-convergence-cycle` over `9afe4f8` (product/test/fixture tree matching `984b2f0`); the cycle-wide review returned `FIX` (`BLOCK-26`–`BLOCK-37`, `FIX-5`, `FIX-6`) and its fix session (2026-11-27) is uncommitted on the cloud review worktree pending re-review | desktop + owner Brave/Android acceptance and separate reviewed key-only retirement diff |
 
 Status lives only in this table; the active map maps phase numbers to these
 packages. Update the table and the map in the same package handoff.

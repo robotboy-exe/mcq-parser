@@ -261,10 +261,13 @@ function createUI(options) {
   const opts = options || {};
   const doc = createDocument();
   const form = createForm(doc);
-  const storage = new Map();
-  Object.keys(opts.storage || {}).forEach(key => {
-    storage.set(key, JSON.stringify(opts.storage[key]));
-  });
+  // Two harness instances may share one storage map to model two tabs.
+  const storage = opts.storageMap instanceof Map ? opts.storageMap : new Map();
+  if (!(opts.storageMap instanceof Map)) {
+    Object.keys(opts.storage || {}).forEach(key => {
+      storage.set(key, JSON.stringify(opts.storage[key]));
+    });
+  }
   const posts = [];
   const gets = [];
   const replies = (opts.replies || []).slice();
@@ -505,6 +508,13 @@ function sampleStorage(batchId) {
   };
 }
 
+function sharedStorageMap(records) {
+  const map = new Map();
+  Object.keys(records || {}).forEach(key => map.set(key, JSON.stringify(records[key])));
+  return map;
+}
+
+module.exports.sharedStorageMap = sharedStorageMap;
 module.exports.SAMPLE_QUESTION = SAMPLE_QUESTION;
 module.exports.SAMPLE_OPTIONS = SAMPLE_OPTIONS;
 module.exports.SAMPLE_TEXT = SAMPLE_TEXT;

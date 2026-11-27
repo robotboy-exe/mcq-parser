@@ -212,7 +212,8 @@ $check(
 );
 $check(
     str_contains($html, 'Subject: English (Comprehension Pages / Lexis &amp; Structure)')
-        && str_contains($html, 'src/owner-tool/render.js?v=2.3.3')
+        && str_contains($html, 'src/owner-tool/render.js?v=2.3.4')
+        && !str_contains($html, 'src/owner-tool/render.js?v=2.3.3')
         && str_contains($html, 'renderQuestionText(questionArea.querySelector(\'.constant-text\'), q.constant)')
         && preg_match('/\.constant-text\s*\{[^}]*font-weight:\s*800\s*;/s', $html) === 1
         && preg_match('/\.question-text\s*\{[^}]*font-weight:\s*700\s*;/s', $html) === 1,

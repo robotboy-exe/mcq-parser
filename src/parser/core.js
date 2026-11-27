@@ -1,8 +1,8 @@
 // Pure canonical OCR parsing engine for both browser and Node.js.
-// Version: 2.5.8
+// Version: 2.5.9
 // Contract: Pure parsing and diagnostics only; zero DOM, storage, or network dependencies.
 
-const PARSER_VERSION = "2.5.8";
+const PARSER_VERSION = "2.5.9";
 // Pure parsing and auto-save helpers. Browser DOM code lives in ui.js.
 const FIXES = [
   [/govemment/gi, 'government'],
@@ -309,8 +309,9 @@ function splitRegions(text) {
   const headText = head.join('\n');
   const leading = [];
   if (headText.trim()) {
-    const headOptions = (headText.match(OPTION) || []).length
-      + (headText.match(/\(\s*[A-Fa-f]\s*\)/g) || []).length;
+    // BLOCK-31: a spaced dotted initial run (`C. I. F.`) is text, not option
+    // evidence, so the head keeps its leading-stimulus shape.
+    const headOptions = countedOptionMatches(headText).length;
     if (headOptions >= 2) {
       chunks.unshift({ num: null, text: headText, structural: [] });
     } else {
@@ -365,8 +366,26 @@ function splitRegions(text) {
   return { chunks, regions };
 }
 
+function withoutManualFooter(text) {
+  // BLOCK-34: the manual adapter parses one paste without section filtering, so
+  // a trailing divider run or answer-key footer must not land in Option D.
+  const lines = String(text == null ? '' : text).split('\n');
+  let end = lines.length - 1;
+  while (end >= 0) {
+    const t = lines[end].trim();
+    if (!t || stimulusDividerLine(t) || stimulusKeyHeading(t) || KEY_LINE.test(t)) {
+      end--;
+      continue;
+    }
+    break;
+  }
+  return (end === lines.length - 1 ? lines : lines.slice(0, end + 1)).join('\n');
+}
+
 function splitQuestions(text) {
-  return splitRegions(text).chunks;
+  return splitRegions(text).chunks.map(chunk => Object.assign({}, chunk, {
+    text: withoutManualFooter(chunk.text)
+  }));
 }
 
 function splitQuestionRegions(text) {
@@ -490,6 +509,21 @@ function spacedInitialismSpans(raw, matches) {
   return spans;
 }
 
+function countedOptionMatches(raw) {
+  // BLOCK-31: the head/leading checks count only real option labels, so a spaced
+  // dotted initial run (`C. I. F.`) never fabricates a question.
+  const text = String(raw == null ? '' : raw);
+  const found = [];
+  for (const m of text.matchAll(OPTION)) {
+    found.push({ letter: m[1], start: m.index, end: m.index + m[0].length });
+  }
+  for (const m of text.matchAll(/\(\s*([A-Fa-f])\s*\)/g)) {
+    found.push({ letter: m[1].toUpperCase(), start: m.index, end: m.index + m[0].length, parenLower: m[1] !== m[1].toUpperCase() });
+  }
+  const spans = spacedInitialismSpans(text, found);
+  return found.filter(token => !spans.some(span => token.start < span[1] && token.end > span[0]));
+}
+
 const OPTION_LETTERS = 'ABCDEF';
 const REQUIRED_OPTION_LETTERS = 'ABCD';
 const QUESTION_BOUNDARY = /(?:^|\s)\d{1,3}\.\s/;
@@ -556,13 +590,39 @@ function optionCandidateFrom(matches, startIndex) {
   return picked;
 }
 
-function bestOptionCandidate(matches) {
+function preferPhysicalOptionLines(raw, picked, matches) {
+  // BLOCK-36: inside a wrapped set (a bare `A.` label on its own line) a letter
+  // mentioned in the option body (`(see D. note)`) is not the real boundary when
+  // a physical option line for that letter exists between its neighbours. The
+  // frozen D-91/PC03 single-line layouts keep their first-occurrence result.
+  if (!raw || !picked.length) return picked;
+  if (!String(raw).split('\n').some(line => isBareOptionLabel(line))) return picked;
+  const chosen = picked.slice();
+  for (let i = 0; i < chosen.length; i++) {
+    if (isOptionLineStart(raw, chosen[i])) continue;
+    const prev = i > 0 ? chosen[i - 1] : null;
+    const next = i + 1 < chosen.length ? chosen[i + 1] : null;
+    const replacement = matches.find(m => m.letter === chosen[i].letter
+      && isOptionLineStart(raw, m)
+      && (!prev || m.start > prev.start)
+      && (!next || m.start < next.start));
+    if (replacement) chosen[i] = replacement;
+  }
+  return chosen;
+}
+
+function bestOptionCandidate(matches, raw) {
   const picked = [];
   for (const letter of REQUIRED_OPTION_LETTERS) {
     const match = matches.find(p => p.letter === letter);
     if (match) picked.push(match);
   }
   if (!picked.length) return null;
+  const physical = preferPhysicalOptionLines(raw, picked, matches);
+  if (physical !== picked && physical.map(p => p.letter).join('') === picked.map(p => p.letter).join('')) {
+    picked.length = 0;
+    for (const p of physical) picked.push(p);
+  }
   const d = picked.find(p => p.letter === 'D');
   if (d) {
     const e = matches.find(p => p.letter === 'E' && p.start > d.end);
@@ -837,6 +897,8 @@ function stimulusSingleQuestionRef(line) {
   if (!m) return [];
   const after = trimmed.slice(m.index + m[0].length);
   if (/^\s*(?:[-–—]|to|and|&|,)\s*(?:Q\s*)?\d/i.test(after)) return [];
+  // BLOCK-33: a decimal amount or a slash date is not a question reference.
+  if (/^\s*[.,\/]\s*\d/.test(after)) return [];
   const n = +m[1];
   return n > 0 ? [n] : [];
 }
@@ -976,10 +1038,11 @@ function extractStimulusMarkers(raw, num) {
   for (let i = 0; i < lines.length; i++) {
     if (removed.has(i)) continue;
     let line = lines[i];
-    for (const mk of markers) {
-      if (mk.inline && mk.line === i) {
-        line = line.slice(0, mk.index) + ' ' + line.slice(mk.index + mk.length);
-      }
+    // BLOCK-32: remove each inline marker from the right, so an earlier removal
+    // cannot shift the offsets of the markers still ahead of it.
+    const inlineHere = markers.filter(mk => mk.inline && mk.line === i).sort((a, b) => b.index - a.index);
+    for (const mk of inlineHere) {
+      line = line.slice(0, mk.index) + ' ' + line.slice(mk.index + mk.length);
     }
     cleaned.push(line);
   }
@@ -1079,9 +1142,22 @@ function tableFollowedByPlainProse(lines, introIdx, markerIdx) {
 }
 
 function extractAnchoredInterQuestionBlocks(raw, num) {
+  // BLOCK-30: each separately anchored intro/marker pair keeps its own stimulus.
+  let text = raw;
+  const stimuli = [];
+  for (let pass = 0; pass < 8; pass++) {
+    const one = extractOneAnchoredInterQuestionBlock(text, num);
+    if (!one.stimuli.length) break;
+    for (const stim of one.stimuli) stimuli.push(stim);
+    text = one.text;
+  }
+  return { text, stimuli };
+}
+
+function extractOneAnchoredInterQuestionBlock(raw, num) {
   const scanRaw = raw.replace(/(^|\n|\s)([A-F])\/[^\S\n]+/g, (m, lead, letter) => lead + letter + '.' + m.slice(lead.length + 2));
   const matches = optionLabelMatches(raw, scanRaw);
-  const best = bestOptionCandidate(matches);
+  const best = bestOptionCandidate(matches, raw);
   if (!best || !hasCompleteOptionSet(best.picked)) return { text: raw, stimuli: [] };
   let last = best.picked.reduce((a, b) => b.start > a.start ? b : a);
   const pickedLetters = new Set(best.picked.map(option => option.letter));
@@ -1161,7 +1237,9 @@ function extractAnchoredInterQuestionBlocks(raw, num) {
           end = nextMarker;
           while (end + 1 <= lastNonBlank) {
             const t = lines[end + 1].trim();
-            if (!t || lineHasMarkerToken(lines[end + 1]) || stimulusIntroLine(t) || stimulusTableLine(t) || /^fig(?:ure)?\.?\s*\d+$/i.test(t)) {
+            // BLOCK-30: stop before a following intro line, which anchors its
+            // own marker instead of being absorbed into this block.
+            if (!t || lineHasMarkerToken(lines[end + 1]) || stimulusTableLine(t) || /^fig(?:ure)?\.?\s*\d+$/i.test(t)) {
               end++;
             } else {
               break;
@@ -1204,15 +1282,26 @@ function extractLeadingStimuli(text) {
   if (!m) return [];
   const head = text.slice(0, m.index).trim();
   if (!head) return [];
-  const headOpts = head.match(OPTION);
-  if (headOpts && headOpts.length >= 2) return [];
+  // BLOCK-31: spaced initials in the passage are text, not option evidence.
+  if (countedOptionMatches(head).length >= 2) return [];
   const lines = head.replace(/\r\n?/g, '\n').split('\n');
   let start = 0;
   while (start < lines.length && (!lines[start].trim() || sectionTitleLine(lines[start]))) start++;
   if (start >= lines.length) return [];
   const body = lines.slice(start).join('\n');
   const extracted = extractStimuli(body, null);
-  if (extracted.stimuli.length) return extracted.stimuli;
+  if (extracted.stimuli.length) {
+    // BLOCK-29: plain caption lines after the anchored block belong to the
+    // leading stimulus; there is no question in the head to receive them.
+    const caption = String(extracted.text || '').split('\n')
+      .map(line => line.trim())
+      .filter(line => line && !stimulusStructuralLine(line) && !stimulusMarkerLine(line));
+    if (caption.length) {
+      const owner = extracted.stimuli[extracted.stimuli.length - 1];
+      owner.text = [owner.text, caption.join('\n')].filter(Boolean).join('\n');
+    }
+    return extracted.stimuli;
+  }
   const bodyLines = body.split('\n');
   const markerIndex = bodyLines.findIndex(line => stimulusMarkerLine(line));
   const introIndex = bodyLines.findIndex(line =>
@@ -1430,7 +1519,7 @@ function parseQuestion(chunk) {
     }
     matches = deduped;
   }
-  const best = bestOptionCandidate(matches);
+  const best = bestOptionCandidate(matches, raw);
   const pos = {};
   if (best) {
     for (const p of best.picked) pos[p.letter] = { start: p.start, end: p.end };

@@ -31,6 +31,8 @@ function createStimulusSaveFlight(opts) {
   const setLiveStop = o.setLiveStop;
   const getUnverifiedStreak = o.getUnverifiedStreak;
   const setUnverifiedStreak = o.setUnverifiedStreak;
+  const syncSharedState = typeof o.syncSharedState === 'function' ? o.syncSharedState : () => {};
+  const logHasSaved = typeof o.logHasSaved === 'function' ? o.logHasSaved : () => false;
   const busyNotice = o.busyNotice || 'A save is in progress. Wait for it to finish.';
   let saveInProgress = false;
 
@@ -84,6 +86,12 @@ function createStimulusSaveFlight(opts) {
     }
   }
 
+  function sameItemText(a, b) {
+    if (!a || !b) return false;
+    return ['question', 'a', 'b', 'c', 'd'].every(key =>
+      String(a[key] == null ? '' : a[key]) === String(b[key] == null ? '' : b[key]));
+  }
+
   function clearFormTransientFields() {
     ['question_image', 'answer_video'].forEach(n => {
       const el = form.elements[n];
@@ -101,11 +109,42 @@ function createStimulusSaveFlight(opts) {
     }
     saveInProgress = true;
     try { store.del('ocrSubmitted'); } catch (e) {}
+    // BLOCK-26: re-read the shared queue/log before deciding what to post.
+    syncSharedState();
     const startQueue = getQueue();
     const q = startQueue.items[startQueue.i];
     const num = q ? q.num : null;
     const savedBatchId = startQueue.batchId || null;
     const savedIndex = startQueue.i;
+    if (q && num != null) {
+      // BLOCK-28: a question already in this batch's saved log must never be
+      // posted again, even if the surface still shows it.
+      let priorLog = [];
+      try {
+        const rawPrior = store.get('ocrSavedLog');
+        if (Array.isArray(rawPrior)) priorLog = rawPrior;
+      } catch (e) {}
+      if (logHasSaved(priorLog, savedBatchId, num)) {
+        const priorEntry = priorLog.filter(entry => entry && entry.num === num
+          && (entry.batchId || null) === savedBatchId).pop();
+        const priorQueue = readQueueFromStorage();
+        if (priorQueue && priorQueue.i === savedIndex && priorQueue.items[savedIndex]
+          && priorQueue.items[savedIndex].num === num) {
+          const nextQueue = Object.assign({}, priorQueue, { i: priorQueue.i + 1 });
+          store.set('ocrQueue', nextQueue);
+          if (isCurrentGen()) setQueue(nextQueue);
+        }
+        const priorText = 'Saved as question #' + (priorEntry && priorEntry.id != null ? priorEntry.id : '?') + '.';
+        flight.outcome = { kind: 'saved', auto, resultText: priorText, danger: false, diag: '', clearFields: true };
+        if (isCurrentGen()) {
+          clearFormTransientFields();
+          saveMeta();
+          showOCR(auto);
+          setResult(priorText, false);
+        }
+        return { kind: 'saved', id: priorEntry ? priorEntry.id : null, entry: priorEntry };
+      }
+    }
     let resolveInFlight;
     const inFlightDone = new Promise(resolve => { resolveInFlight = resolve; });
     const flight = { gen: owner.gen, settled: false, promise: inFlightDone, outcome: null };
@@ -193,7 +232,10 @@ function createStimulusSaveFlight(opts) {
         redirected: res.redirected,
         text: txt,
         errorText: er ? er.textContent.trim() : '',
-        lastId: knownMaxId
+        lastId: knownMaxId,
+        // BLOCK-28: only a real login form means the session expired; ordinary
+        // question text never does.
+        loginForm: Boolean(doc.querySelector('input[type=password], input[name=password], form[action*="login"]'))
       });
       if (result.kind === 'rejected') {
         restorePriorMarker(priorSaving);
@@ -234,9 +276,12 @@ function createStimulusSaveFlight(opts) {
       };
       if (fingerprint) entry.fp = fingerprint;
       const liveQ = readQueueFromStorage() || getQueue();
+      // BLOCK-37: with no batch identity, the same index and printed number do
+      // not prove the same item. A replacement list must keep its own pointer.
       const sameQueue = Boolean(q && liveQ && liveQ.i === savedIndex
-        && liveQ.items[savedIndex] && liveQ.items[savedIndex].num === q.num
-        && (liveQ.batchId || null) === savedBatchId);
+        && liveQ.items[savedIndex]
+        && (liveQ.batchId || null) === savedBatchId
+        && (savedBatchId !== null || sameItemText(liveQ.items[savedIndex], q)));
       const committed = commitSave({
         read: () => store.get('ocrSavedLog') || [],
         current: getSavedLog(),

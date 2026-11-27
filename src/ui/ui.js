@@ -56,7 +56,22 @@ function runOCRBookmarklet() {
     rf.hidden = true;
     r.insertAdjacentElement('afterend', rf);
   }
-  const saveMeta = () => store.set('ocrMeta', Object.fromEntries(FIELDS.map(id => [id, $(id).value])));
+  let batchMeta = null;
+  const saveMeta = () => {
+    const meta = Object.fromEntries(FIELDS.map(id => [id, $(id).value]));
+    store.set('ocrMeta', meta);
+    // FIX-5: the completion heading needs the batch it just finished, and the
+    // form is reset on the last item.
+    if (meta.subject && meta.category && meta.year) {
+      batchMeta = {
+        subject: meta.subject,
+        category: meta.category,
+        year: meta.year,
+        subjectText: selectedText('subject_id'),
+        categoryText: selectedText('exam_category_id')
+      };
+    }
+  };
   function readHeader(text) {
     const { year, header } = parseHeader(text);
     return {
@@ -217,7 +232,45 @@ function runOCRBookmarklet() {
     const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => td.textContent));
     return recentRowsFromTable(headers, rows);
   }
+  function readStoredArray(name) {
+    try {
+      const value = store.get(name);
+      return Array.isArray(value) ? value : null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function adoptStoredProgress() {
+    // BLOCK-26 & BLOCK-27: the queue, saved log and answer key are shared across
+    // tabs, so every gate decision re-reads them instead of trusting this tab's
+    // cached copy. It only ever moves forward, and only over the same batch.
+    try {
+      const fresh = normalizeStoredQueue(store.get('ocrQueue'));
+      if (fresh.items.length && queue.items.length) {
+        const sameBatch = (fresh.batchId || null) === (queue.batchId || null);
+        const sameItems = fresh.items.length === queue.items.length
+          && fresh.items.every((item, i) => item && queue.items[i]
+            && item.num === queue.items[i].num
+            && String(item.question == null ? '' : item.question) === String(queue.items[i].question == null ? '' : queue.items[i].question));
+        if (sameBatch && sameItems && fresh.i > queue.i) {
+          queue = fresh;
+          last = queue.i;
+        }
+      }
+    } catch (e) {}
+    const log = readStoredArray('ocrSavedLog');
+    if (log) savedLog = log;
+    if (keyAppliesForQueue()) {
+      let storedKey = null;
+      let storedConflicts = null;
+      try { storedKey = store.get('ansKey'); } catch (e) {}
+      try { storedConflicts = store.get('ansKeyConflicts'); } catch (e) {}
+      if (isPlainObject(storedKey)) key = storedKey;
+      if (Array.isArray(storedConflicts)) keyConflicts = storedConflicts;
+    }
+  }
   function gateState(useQueue) {
+    adoptStoredProgress();
     const q = useQueue || queue;
     const e = form.elements;
     const radio = form.querySelector('input[name=correct_option]:checked');
@@ -279,8 +332,31 @@ function runOCRBookmarklet() {
       return [];
     }
   }
+  function optionTextFor(id, value) {
+    const el = $(id);
+    if (!el || !el.options || value == null || value === '') return '';
+    for (const option of el.options) if (option.value === String(value)) return option.text;
+    return '';
+  }
+  function storedBatchMeta() {
+    let saved = null;
+    try { saved = store.get('ocrMeta'); } catch (e) { return null; }
+    if (!isPlainObject(saved) || !saved.subject_id || !saved.exam_category_id || !saved.exam_year) return null;
+    return {
+      subject: saved.subject_id,
+      category: saved.exam_category_id,
+      year: saved.exam_year,
+      subjectText: optionTextFor('subject_id', saved.subject_id),
+      categoryText: optionTextFor('exam_category_id', saved.exam_category_id)
+    };
+  }
   function batchLabel() {
-    const meta = currentMeta();
+    const live = currentMeta();
+    // FIX-5: the native save reloads the page and resets the form, so the batch
+    // metadata comes from the last complete capture or from the stored meta.
+    const meta = live.subject && live.category && live.year
+      ? live
+      : (batchMeta || storedBatchMeta() || live);
     const name = (meta.subjectText || '?') + ' / ' + (meta.categoryText || '?') + ' / ' + (meta.year || '?');
     const count = queue.items.length;
     if (!count) return name;
@@ -679,6 +755,8 @@ function runOCRBookmarklet() {
     tick: ask => tick(ask),
     renderAuto,
     saveMeta,
+    syncSharedState: adoptStoredProgress,
+    logHasSaved: (log, batchId, num) => savedForBatch(log, batchId).some(entry => entry && entry.num === num),
     setResult,
     setLiveBlocked: msg => { liveBlocked = msg; },
     setLiveState: st => { liveState = st; },
@@ -1047,6 +1125,13 @@ function runOCRBookmarklet() {
       liveStop = true;
       liveState = 'paused';
       liveStatus = 'Paused because the tab was hidden. Start again when ready.';
+      renderAuto();
+      return;
+    }
+    if (!document.hidden) {
+      // BLOCK-26 & BLOCK-27: a tab brought forward shows what the shared state
+      // now says, not the batch it left behind.
+      adoptStoredProgress();
       renderAuto();
     }
   };

@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "image-ref-decimal-amount",
+  "source": [
+    "docs/plan/reviews/parser-convergence-2026-11-cycle-review.md BLOCK-33 reproduction, 2026-11-27",
+    "docs/plan/parser-convergence/pc-04-marker-range.md 27-29, 43; D-112 (docs/DECISIONS.md 1905-1911)"
+  ],
+  "provenance": "A decimal amount or slash date after `questions` with a bare marker, transcribed from the named review vector.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/image-ref-decimal-amount.txt",
+  "kind": "questions",
+  "expected": {
+    "queue_count": 3,
+    "nums": [
+      19,
+      20,
+      21
+    ],
+    "questions": [
+      {
+        "num": 19,
+        "question": "CR27Prev Which statement is correct?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [],
+        "needs_image": false
+      },
+      {
+        "num": 20,
+        "question": "CR27Value What is the printed value?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [],
+        "needs_image": false
+      },
+      {
+        "num": 21,
+        "question": "CR27Value What is the next value?",
+        "a": "Cost insurance and freight",
+        "b": "Inland delivery",
+        "c": "Local storage",
+        "d": "Freight only",
+        "flags": [],
+        "needs_image": false
+      }
+    ],
+    "needs_image": [],
+    "stimulus_count": 1,
+    "stimuli": [
+      {
+        "order": 1,
+        "source_num": 19,
+        "nums": [],
+        "text_contains": [
+          "Use the diagram below to answer questions 20.50 is the value printed."
+        ],
+        "missing": []
+      }
+    ],
+    "forbidden_flags": [
+      "question number missing",
+      "option A missing"
+    ]
+  },
+  "must_not": [
+    "The decimal or date is read as question 20",
+    "Q20 gains an image requirement or an attachable default",
+    "Q19 loses its own options"
+  ],
+  "notes": [
+    "The marker block stays unresolved instead of borrowing the digits."
+  ],
+  "discrepancies": []
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "input_origin": "doc",
+  "id": "wrapped-option-d-body-mention",
+  "source": [
+    "docs/plan/reviews/parser-convergence-2026-11-cycle-review.md BLOCK-36 reproduction, 2026-11-27",
+    "docs/DECISIONS.md 1883-1891: an in-option letter mention neither hides the real boundary nor re-orders the set"
+  ],
+  "provenance": "A wrapped Option A whose text mentions `D. note`, transcribed from the named review vector.",
+  "status": "CONFIRMED",
+  "input_file": "fixtures/inputs/wrapped-option-d-body-mention.txt",
+  "kind": "question",
+  "parse_num": 19,
+  "expected": {
+    "question": "19. CR27 What was agreed in A. D.?",
+    "a": "Ninety (see D. note)",
+    "b": "Eighty",
+    "c": "Seventy",
+    "d": "Sixty",
+    "e": "",
+    "f": "",
+    "flags": [],
+    "forbidden_flags": [
+      "option D missing",
+      "a letter appears twice (merged questions?)"
+    ]
+  },
+  "must_not": [
+    "Option A ends at `Ninety (see`",
+    "Option C absorbs `D. Sixty`",
+    "Option D becomes `note)`"
+  ],
+  "notes": [
+    "Only a wrapped set prefers the physical option line for a mentioned letter."
+  ],
+  "discrepancies": []
+}
